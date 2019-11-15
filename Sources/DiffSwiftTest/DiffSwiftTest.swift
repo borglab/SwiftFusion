@@ -3,6 +3,19 @@ struct DiffSwiftTest {
     var text = "Hello, World!"
 }
 
+// I needed to wrap this so that I could provide a derivative, becuase the library does not define
+// a derivative for this.
+@differentiable(vjp: _vjpAtan2wrap)
+func atan2wrap(_ s: Double, _ c: Double) -> Double {
+    return atan2(s, c)
+}
+
+func _vjpAtan2wrap(_ s: Double, _ c: Double) -> (Double, (Double) -> (Double, Double)) {
+    let theta = atan2(s, c)
+    let normSquared = c * c + s * s
+    return (theta, { v in (v * c / normSquared, -v * s / normSquared)})
+}
+
 /// Rot2 class is the Swift type for the SO(2) manifold of 2D Rotations around
 /// the origin
 public struct Rot2 : Equatable, Differentiable {
@@ -11,7 +24,27 @@ public struct Rot2 : Equatable, Differentiable {
   // var theta_ : Double;
   
   /// Cosine and Sine of the rotation angle
-  var c_, s_ : Double;
+  private var c_, s_ : Double;
+
+  @differentiable(vjp: _vjpCos)
+  var c: Double {
+    return c_
+  }
+
+  @usableFromInline
+  func _vjpCos() -> (Double , (Double.TangentVector) -> Rot2.TangentVector) {
+    (self.c_, { v in -v * self.s_ })
+  }
+
+  @differentiable(vjp: _vjpSin)
+  var s: Double {
+    return self.s_
+  }
+
+  @usableFromInline
+  func _vjpSin() -> (Double , (Double.TangentVector) -> Rot2.TangentVector) {
+    (self.s_, { v in v * self.c_ })
+  }
 
   @differentiable(vjp: _vjpInit)
   public init(_ theta: Double) {
@@ -19,16 +52,16 @@ public struct Rot2 : Equatable, Differentiable {
     c_ = cos(theta);
     s_ = sin(theta);
   }
-
+  
   @usableFromInline
   static func _vjpInit(_ theta: Double) -> (Self, (TangentVector) -> Double) {
-    return (.init(theta), { v in
-      theta
+    return (Rot2(theta), { v in
+      v
     })
   }
 
   public init(c: Double, s: Double) {
-    (c_, s_) = (c, s);
+    self.init(atan2wrap(s, c))
   }
 
   public typealias TangentVector = Double;
@@ -44,13 +77,13 @@ public struct Rot2 : Equatable, Differentiable {
   
   @differentiable(vjp: _vjpTheta)
   public var theta: Double {
-    return atan2(s_, c_)
+    return atan2wrap(s_, c_)
   }
 
   @usableFromInline
   func _vjpTheta() -> (Double , (Double.TangentVector) -> Rot2.TangentVector) {
-    return (atan2(self.s_, self.c_), { v in
-      return atan2(self.s_, -self.c_)
+    return (theta, { v in
+      v
     })
   }
 }
@@ -58,38 +91,27 @@ public struct Rot2 : Equatable, Differentiable {
 infix operator *: MultiplicationPrecedence
 public extension Rot2 {
   static func == (lhs: Rot2, rhs: Rot2) -> Bool {
-    return (lhs.c_, lhs.s_) == (rhs.c_, rhs.s_);
+    return (lhs.c, lhs.s) == (rhs.c, rhs.s);
   }
 
   @differentiable(vjp: _vjpMultiply(lhs:rhs:))
   static func * (lhs: Rot2, rhs: Rot2) -> Rot2 {
     return Rot2(
-      c: lhs.c_ * rhs.c_ - lhs.s_ * rhs.s_,
-      s: lhs.s_ * rhs.c_ + lhs.c_ * rhs.s_
+      c: lhs.c * rhs.c - lhs.s * rhs.s,
+      s: lhs.s * rhs.c + lhs.c * rhs.s
     );
   }
 
   @inlinable
   static func _vjpMultiply(lhs: Rot2, rhs: Rot2) -> (Rot2, (Double) -> (Double, Double)) {
       return (lhs * rhs, { v in
-          let lhsGrad = v
-          let rhsGrad = v
-          return (lhsGrad, rhsGrad)
+          (v, v)
       })
   }
 }
 
-@differentiable(vjp: _vjpInverse(r:))
 public func inverse(_ r: Rot2) -> Rot2 {
-  return Rot2(c: r.c_, s: -r.s_);
-}
-
-@inlinable
-func _vjpInverse(r: Rot2) -> (Rot2, (Double) -> (Double)) {
-    return (inverse(r), { v in
-        let rGrad = -v
-        return (rGrad)
-    })
+  return Rot2(c: r.c, s: -r.s);
 }
 
 /// Calculate relative rotation between two rotations rT1 and rT2
