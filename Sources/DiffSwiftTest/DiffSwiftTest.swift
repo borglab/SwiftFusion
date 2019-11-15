@@ -44,13 +44,13 @@ public struct Rot2 : Equatable, Differentiable {
   
   @differentiable(vjp: _vjpTheta)
   public var theta: Double {
-    return atan2(c_, s_)
+    return atan2(s_, c_)
   }
 
   @usableFromInline
   func _vjpTheta() -> (Double , (Double.TangentVector) -> Rot2.TangentVector) {
-    return (atan2(self.c_, self.s_), { v in
-      atan2(self.c_, self.s_)
+    return (atan2(self.s_, self.c_), { v in
+      return atan2(self.s_, -self.c_)
     })
   }
 }
@@ -105,47 +105,4 @@ struct Between: Differentiable {
     func callAsFunction(_ b: Rot2) -> Rot2 {
         between(a, b)
     }
-}
-
-/// Class testing SO(2) manifold type Rot2
-class TestRot2 {
-  func testBetweenIdentitiesTrivial() {
-    let rT1 = Rot2(0), rT2 = Rot2(0);
-    let expected = Rot2(0);
-    let actual = between(rT1, rT2);
-
-    assert(actual == expected);
-  }
-  func testBetweenIdentities() {
-    let rT1 = Rot2(0), rT2 = Rot2(2);
-    let expected = Rot2(2);
-    let actual = between(rT1, rT2);
-
-    assert(actual == expected);
-  }
-
-  func testBetweenDerivatives() {
-    let rT1 = Rot2(0), rT2 = Rot2(1);
-    var model = Between(a: rT1);
-    for _ in 0..<400 {
-      let (loss, 𝛁loss) = valueWithGradient(at: model) { model -> Double in
-        var loss: Double = 0
-        let x = Rot2(0);
-        let y = rT2;
-        let ŷ = model(x)
-        let error = between(y, ŷ).theta
-        loss = loss + (error * error / 2)
-
-        return loss
-      }
-      print("Loss:", loss)
-      // print("W: ", 𝛁loss.weight)
-      // print("b: ", 𝛁loss.bias)
-      model.a.move(along: 𝛁loss.a * 0.01)
-    }
-
-    print("DONE.")
-    print("rT1: ", rT1.theta, "rT2: ", rT2.theta)
-    print("model: ", model.a.theta, "Error: ", between(rT2, model(Rot2(0))).theta)
-  }
 }
