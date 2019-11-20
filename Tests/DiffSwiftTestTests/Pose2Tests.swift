@@ -71,14 +71,6 @@ final class Pose2Tests: XCTestCase {
     let p5T0 = Pose2(Rot2(-pi / 2), Point2(2.1, 2.1))
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
-    // graph.add(gtsam.BetweenFactorPose2(
-    //     1, 2, gtsam.Pose2(2.0, 0.0, 0.0), odometryNoise))
-    // graph.add(gtsam.BetweenFactorPose2(
-    //     2, 3, gtsam.Pose2(2.0, 0.0, pi / 2), odometryNoise))
-    // graph.add(gtsam.BetweenFactorPose2(
-    //     3, 4, gtsam.Pose2(2.0, 0.0, pi / 2), odometryNoise))
-    // graph.add(gtsam.BetweenFactorPose2(
-    //     4, 5, gtsam.Pose2(2.0, 0.0, pi / 2), odometryNoise))
 
     for _ in 0..<1500 {
       let (_, 𝛁loss) = valueWithGradient(at: map) { map -> Double in
