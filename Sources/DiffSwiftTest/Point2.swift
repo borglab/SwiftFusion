@@ -1,30 +1,31 @@
 import TensorFlow
 
 /// Point2 class is the new Swift type for the 2D vector space R^2
-struct Point2: Equatable, Differentiable {
-  var x_, y_: Double
+public struct Point2: Equatable, Differentiable {
+  public var x, y: Double
 
   @differentiable
   init(_ x: Double, _ y: Double) {
-    (x_, y_) = (x, y)
+    (self.x, self.y) = (x, y)
   }
 
   // Differentiable computed property.
-  @differentiable // Implicitly: @differentiable(wrt: self)
+  @differentiable
   var magnitude: Double {
-    (x_ * x_ + y_ * y_).squareRoot()
+    (x * x + y * y).squareRoot()
   }
 
   public static func == (lhs: Point2, rhs: Point2) -> Bool {
-    (lhs.x_, lhs.y_) == (rhs.x_, rhs.y_)
+    (lhs.x, lhs.y) == (rhs.x, rhs.y)
   }
 
   @differentiable
   public static func + (a: Point2, b: Point2) -> Point2 {
-    Point2(a.x_ + b.x_, a.y_ + b.y_)
+    Point2(a.x + b.x, a.y + b.y)
   }
 
+  @differentiable
   public static prefix func - (a: Point2) -> Point2 {
-    Point2(-a.x_, -a.y_)
+    Point2(-a.x, -a.y)
   }
 }

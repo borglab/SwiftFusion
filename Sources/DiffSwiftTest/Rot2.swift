@@ -104,8 +104,20 @@ public extension Rot2 {
       (v, v)
     })
   }
+
+  @differentiable
+  func unrotate(_ p: Point2) -> Point2 {
+    return Point2(c * p.x + s * p.y, -s * p.x + c * p.y)
+  }
 }
 
+extension Rot2: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        return "Rot2(theta: \(theta)"
+    }
+}
+
+@differentiable
 public func inverse(_ r: Rot2) -> Rot2 {
   Rot2(c: r.c, s: -r.s)
 }
@@ -123,4 +135,9 @@ struct Between: Differentiable {
   func callAsFunction(_ b: Rot2) -> Rot2 {
     between(a, b)
   }
+}
+
+@differentiable
+func * (r: Rot2, p: Point2) -> Point2 {
+  return Point2(r.c * p.x + -r.s * p.y, r.s * p.x + r.c * p.y);
 }
