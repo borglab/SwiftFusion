@@ -4,27 +4,27 @@ import XCTest
 final class Pose2Tests: XCTestCase {
   /// test between for trivial values
   func testBetweenIdentitiesTrivial() {
-    let wT1 = Pose2(0,0,0), wT2 = Pose2(0,0,0);
-    let expected = Pose2(0,0,0);
-    let actual = between(wT1, wT2);
+    let wT1 = Pose2(0, 0, 0), wT2 = Pose2(0, 0, 0)
+    let expected = Pose2(0, 0, 0)
+    let actual = between(wT1, wT2)
     XCTAssertEqual(actual, expected)
   }
 
   /// test between function for non-rotated poses
   func testBetweenIdentities() {
-    let wT1 = Pose2(2,1,0), wT2 = Pose2(5, 2, 0);
-    let expected = Pose2(3, 1,0);
-    let actual = between(wT1, wT2);
+    let wT1 = Pose2(2, 1, 0), wT2 = Pose2(5, 2, 0)
+    let expected = Pose2(3, 1, 0)
+    let actual = between(wT1, wT2)
     XCTAssertEqual(actual, expected)
   }
 
   /// test between function for rotated poses
   func testBetweenIdentitiesRotated() {
-    let wT1 = Pose2(1,0,3.1415926/2.0), wT2 = Pose2(1, 0, -3.1415926/2.0);
-    let expected = Pose2(0, 0,-3.1415926);
-    let actual = between(wT1, wT2);
-    //dump(expected, name: "expected");
-    //dump(actual, name: "actual");
+    let wT1 = Pose2(1, 0, 3.1415926 / 2.0), wT2 = Pose2(1, 0, -3.1415926 / 2.0)
+    let expected = Pose2(0, 0, -3.1415926)
+    let actual = between(wT1, wT2)
+    // dump(expected, name: "expected");
+    // dump(actual, name: "actual");
     XCTAssertEqual(actual, expected)
   }
 
@@ -55,9 +55,9 @@ final class Pose2Tests: XCTestCase {
   }
 
   @differentiable
-  func e_pose2 (_ ŷ: Pose2) -> Double {
+  func e_pose2(_ ŷ: Pose2) -> Double {
     // Squared error with Gaussian variance as weights
-    return 0.1 * ŷ.rot_.theta * ŷ.rot_.theta + 0.3 * ŷ.t_.x * ŷ.t_.x + 0.3 * ŷ.t_.y * ŷ.t_.y
+    0.1 * ŷ.rot_.theta * ŷ.rot_.theta + 0.3 * ŷ.t_.x * ŷ.t_.x + 0.3 * ŷ.t_.y * ŷ.t_.y
   }
 
   func testPose2SLAM() {
@@ -89,15 +89,15 @@ final class Pose2Tests: XCTestCase {
         return loss
       }
 
-      //print("𝛁loss", 𝛁loss)
+      // print("𝛁loss", 𝛁loss)
       // 𝛁loss.rot_ = -𝛁loss.rot_
       // 𝛁loss.t_.x = -𝛁loss.t_.x
       // 𝛁loss.t_.y = -𝛁loss.t_.y
       map.move(along: 𝛁loss)
     }
 
-    let dumpjson = { (p: Pose2) -> String in 
-      return "[ \(p.t_.x), \(p.t_.y), \(p.rot_.theta)]"
+    let dumpjson = { (p: Pose2) -> String in
+      "[ \(p.t_.x), \(p.t_.y), \(p.rot_.theta)]"
     }
 
     print("DONE.")
@@ -118,6 +118,6 @@ final class Pose2Tests: XCTestCase {
     ("testBetweenIdentities", testBetweenIdentities),
     ("testBetweenIdentities", testBetweenIdentitiesRotated),
     ("testBetweenDerivatives", testBetweenDerivatives),
-    ("testPose2SLAM", testPose2SLAM)
+    ("testPose2SLAM", testPose2SLAM),
   ]
 }
