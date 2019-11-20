@@ -78,8 +78,8 @@ final class Pose2Tests: XCTestCase {
     // graph.add(gtsam.BetweenFactorPose2(
     //     4, 5, gtsam.Pose2(2.0, 0.0, pi / 2), odometryNoise))
 
-    for _ in 0..<500 {
-      var (_, 𝛁loss) = valueWithGradient(at: map) { map -> Double in
+    for _ in 0..<1500 {
+      let (_, 𝛁loss) = valueWithGradient(at: map) { map -> Double in
         var loss: Double = 0
         let p2T1 = between(between(map[1], map[0]), Pose2(2.0, 0.0, 0.0))
         let p3T2 = between(between(map[2], map[1]), Pose2(2.0, 0.0, pi / 2))
@@ -109,7 +109,8 @@ final class Pose2Tests: XCTestCase {
     print("p3T0: \(dumpjson(map[2]))")
     print("p4T0: \(dumpjson(map[3]))")
     print("p5T0: \(dumpjson(map[4]))")
-    // XCTAssertEqual(pT1.rot_.theta, pT2.rot_.theta, accuracy: 1e-5)
+    let p5T1 = between(map[4], map[0])
+    XCTAssertEqual(p5T1.t_.magnitude, 0.0, accuracy: 1e-2)
   }
 
   static var allTests = [
