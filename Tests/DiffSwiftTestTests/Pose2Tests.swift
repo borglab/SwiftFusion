@@ -56,12 +56,14 @@ final class Pose2Tests: XCTestCase {
 
   @differentiable
   func e_pose2 (_ ŷ: Pose2) -> Double {
+    // Squared error with Gaussian variance as weights
     return 0.1 * ŷ.rot_.theta * ŷ.rot_.theta + 0.3 * ŷ.t_.x * ŷ.t_.x + 0.3 * ŷ.t_.y * ŷ.t_.y
   }
 
   func testPose2SLAM() {
     let pi = 3.1415926
 
+    // Initial estimate for poses
     let p1T0 = Pose2(Rot2(0.2), Point2(0.5, 0.0))
     let p2T0 = Pose2(Rot2(-0.2), Point2(2.3, 0.1))
     let p3T0 = Pose2(Rot2(pi / 2), Point2(4.1, 0.1))
@@ -81,11 +83,14 @@ final class Pose2Tests: XCTestCase {
     for _ in 0..<1500 {
       let (_, 𝛁loss) = valueWithGradient(at: map) { map -> Double in
         var loss: Double = 0
+
+        // Odometry measurements
         let p2T1 = between(between(map[1], map[0]), Pose2(2.0, 0.0, 0.0))
         let p3T2 = between(between(map[2], map[1]), Pose2(2.0, 0.0, pi / 2))
         let p4T3 = between(between(map[3], map[2]), Pose2(2.0, 0.0, pi / 2))
         let p5T4 = between(between(map[4], map[3]), Pose2(2.0, 0.0, pi / 2))
 
+        // Sum through the errors
         let error = self.e_pose2(p2T1) + self.e_pose2(p3T2) + self.e_pose2(p4T3) + self.e_pose2(p5T4)
         loss = loss - (error / 5)
 
@@ -109,7 +114,10 @@ final class Pose2Tests: XCTestCase {
     print("p3T0: \(dumpjson(map[2]))")
     print("p4T0: \(dumpjson(map[3]))")
     print("p5T0: \(dumpjson(map[4]))")
+
     let p5T1 = between(map[4], map[0])
+
+    // Test condition: P_5 should be identical to P_1 (close loop)
     XCTAssertEqual(p5T1.t_.magnitude, 0.0, accuracy: 1e-2)
   }
 
