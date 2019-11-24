@@ -35,22 +35,3 @@ func inverse(_ p: Pose2) -> Pose2 {
 public func between(_ wT1: Pose2, _ wT2: Pose2) -> Pose2 {
   inverse(wT1) * wT2
 }
-
-// extension Pose2.TangentVector: VectorProtocol {
-//   public typealias VectorSpaceScalar = Double
-
-//   // @differentiable(where Scalar: TensorFlowFloatingPoint)
-//   public func scaled(by scale: Double) -> Self {
-//     Self(t_: self.t_.scaled(by: scale), rot_: scale * self.rot_)
-//   }
-
-//   // @differentiable(where Scalar: TensorFlowDoubleingPoint)
-//   public func adding(_ scalar: Double) -> Self {
-//       self.adding(scalar)
-//   }
-
-//   // @differentiable(where Scalar: TensorFlowDoubleingPoint)
-//   public func subtracting(_ scalar: Double) -> Self {
-//       self.subtracting(scalar)
-//   }
-// }
