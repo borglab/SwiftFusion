@@ -3,3 +3,7 @@
 /Packages
 /*.xcodeproj
 xcuserdata/
+/Package.resolved
+/.swiftpm
+/.vscode
+/.idea
