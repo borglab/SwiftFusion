@@ -147,3 +147,11 @@ struct Between: Differentiable {
 func * (r: Rot2, p: Point2) -> Point2 {
   Point2(r.c * p.x + -r.s * p.y, r.s * p.x + r.c * p.y)
 }
+
+// extension Rot2: JacobianEvaluatable {
+//   public typealias ValueType = Double
+
+//   func jacobianAt(n: Int, m: Int) -> ValueType {
+    
+//   }
+// }

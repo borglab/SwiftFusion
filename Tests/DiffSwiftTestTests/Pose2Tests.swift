@@ -141,7 +141,7 @@ final class Pose2Tests: XCTestCase {
 
     let optimizer = SGD(for: map, learningRate: 1.2)
 
-    print("map_history = [")
+    // print("map_history = [")
     for _ in 0..<500 {
       let (_, 𝛁loss) = valueWithGradient(at: map) { map -> Double in
         var loss: Double = 0
@@ -159,18 +159,18 @@ final class Pose2Tests: XCTestCase {
         return loss
       }
 
-      print("[")
-      for v in map.indices {
-        print("\(dumpjson(map[v]))\({ () -> String in if v == map.indices.endIndex - 1 { return "" } else { return "," } }())")
-      }
-      print("],")
+      // print("[")
+      // for v in map.indices {
+      //   print("\(dumpjson(map[v]))\({ () -> String in if v == map.indices.endIndex - 1 { return "" } else { return "," } }())")
+      // }
+      // print("],")
 
       // print("𝛁loss", 𝛁loss)
       // NOTE: this is more like sparse rep not matrix Jacobian
       optimizer.update(&map, along: 𝛁loss)
     }
 
-    print("]")
+    // print("]")
 
     print("map = [")
     for v in map.indices {
