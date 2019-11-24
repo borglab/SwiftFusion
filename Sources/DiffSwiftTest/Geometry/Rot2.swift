@@ -91,6 +91,9 @@ public extension Rot2 {
     (lhs.c, lhs.s) == (rhs.c, rhs.s)
   }
 
+  /// This is the product of two 2D rotations
+  /// @differentiable is an attribute marker of differntiablity
+  /// vjp stands for Vector Jacobian Product (see below)
   @differentiable(vjp: _vjpMultiply(lhs:rhs:))
   static func * (lhs: Rot2, rhs: Rot2) -> Rot2 {
     Rot2(
@@ -98,6 +101,9 @@ public extension Rot2 {
       s: lhs.s * rhs.c + lhs.c * rhs.s)
   }
 
+  /// Vector Jacobian Product of product of Rot2
+  /// lhs/rhs are the arguments of the function you want to evaluate gradient on
+  /// @returns a function that maps from df/dw_n+1 to df/dw_n
   @inlinable
   static func _vjpMultiply(lhs: Rot2, rhs: Rot2) -> (Rot2, (Double) -> (Double, Double)) {
     return (lhs * rhs, { v in

@@ -1,7 +1,7 @@
 @testable import DiffSwiftTest
 import XCTest
 
-final class DiffSwiftTestTests: XCTestCase {
+final class Rot2Tests: XCTestCase {
   func testBetweenIdentitiesTrivial() {
     let rT1 = Rot2(0), rT2 = Rot2(0)
     let expected = Rot2(0)
