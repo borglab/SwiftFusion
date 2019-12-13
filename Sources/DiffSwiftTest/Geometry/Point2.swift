@@ -5,13 +5,13 @@ public struct Point2: Equatable, Differentiable, KeyPathIterable {
   public var x, y: Double
 
   @differentiable
-  init(_ x: Double, _ y: Double) {
+  public init(_ x: Double, _ y: Double) {
     (self.x, self.y) = (x, y)
   }
 
   // Differentiable computed property.
   @differentiable
-  var magnitude: Double {
+  public var magnitude: Double {
     (x * x + y * y).squareRoot()
   }
 

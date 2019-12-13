@@ -5,13 +5,13 @@ public struct Pose2: Equatable, Differentiable, KeyPathIterable {
   var rot_: Rot2
 
   @differentiable
-  init(_ x: Double, _ y: Double, _ theta: Double) {
+  public init(_ x: Double, _ y: Double, _ theta: Double) {
     t_ = Point2(x, y)
     rot_ = Rot2(theta)
   }
 
   @differentiable
-  init(_ r: Rot2, _ t: Point2) {
+  public init(_ r: Rot2, _ t: Point2) {
     t_ = t
     rot_ = r
   }
