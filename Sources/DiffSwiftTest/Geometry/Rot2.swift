@@ -15,7 +15,7 @@ func _vjpAtan2wrap(_ s: Double, _ c: Double) -> (Double, (Double) -> (Double, Do
 
 /// Rot2 class is the Swift type for the SO(2) manifold of 2D Rotations around
 /// the origin
-public struct Rot2: Equatable, Differentiable {
+public struct Rot2: Equatable, Differentiable, KeyPathIterable {
   // TODO: think about the situations where need exact value instead of
   // equivalent classes
   // var theta_ : Double;
@@ -147,11 +147,3 @@ struct Between: Differentiable {
 func * (r: Rot2, p: Point2) -> Point2 {
   Point2(r.c * p.x + -r.s * p.y, r.s * p.x + r.c * p.y)
 }
-
-// extension Rot2: JacobianEvaluatable {
-//   public typealias ValueType = Double
-
-//   func jacobianAt(n: Int, m: Int) -> ValueType {
-    
-//   }
-// }
