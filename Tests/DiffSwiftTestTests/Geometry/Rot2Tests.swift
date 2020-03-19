@@ -9,44 +9,49 @@ import XCTest
 import XCTest
 
 final class Rot2Tests: XCTestCase {
+
+  // checks between function for two identity rotations
   func testBetweenIdentitiesTrivial() {
-    let rT1 = Rot2(0), rT2 = Rot2(0)
+    let R1 = Rot2(0), R2 = Rot2(0)
     let expected = Rot2(0)
-    let actual = between(rT1, rT2)
+    let actual = between(R1, R2)
 
     XCTAssertEqual(actual, expected)
   }
 
-  func testBetweenIdentities() {
-    let rT1 = Rot2(0), rT2 = Rot2(2)
+  // checks between
+  func testBetween() {
+    let R1 = Rot2(0), R2 = Rot2(2)
     let expected = Rot2(2)
-    let actual = between(rT1, rT2)
+    let actual = between(R1, R2)
 
     XCTAssertEqual(actual, expected)
   }
 
-  func testRot2Derivatives() {
-    let rT1 = Rot2(0), rT2 = Rot2(2)
-    let (_, 𝛁actual1) = valueWithGradient(at: rT1) { rT1 -> Double in
-      between(rT1, rT2).theta
+  // Check derivatives for between
+  func testBetweenDerivatives() {
+    let R1 = Rot2(0), R2 = Rot2(2)
+    let (_, 𝛁actual1) = valueWithGradient(at: R1) { R -> Double in
+      between(R, R2).theta
     }
 
-    let (_, 𝛁actual2) = valueWithGradient(at: rT2) { rT2 -> Double in
-      between(rT1, rT2).theta
+    let (_, 𝛁actual2) = valueWithGradient(at: R2) { R -> Double in
+      between(R1, R).theta
     }
 
     XCTAssertEqual(𝛁actual1, -1.0)
     XCTAssertEqual(𝛁actual2, 1.0)
   }
 
-  func testBetweenDerivatives() {
-    var rT1 = Rot2(0), rT2 = Rot2(1)
-    print("Initial rT2: ", rT2.theta)
+  // Check gradient descent
+  func testGradientDescent() {
+    var R1 = Rot2(0), R2 = Rot2(1)
+    print("Initial R2: ", R2.theta)
 
     for _ in 0..<100 {
-      var (_, 𝛁loss) = valueWithGradient(at: rT1) { rT1 -> Double in
+      var (_, 𝛁loss) = valueWithGradient(at: R1) { R1 -> Double in
         var loss: Double = 0
-        let ŷ = between(rT1, rT2)
+        let ŷ = between(R1, R2)
         let error = ŷ.theta
         loss = loss + (error * error / 10)
 
@@ -55,19 +60,19 @@ final class Rot2Tests: XCTestCase {
 
       // print("𝛁loss", 𝛁loss)
       𝛁loss = -𝛁loss
-      rT1.move(along: 𝛁loss)
+      R1.move(along: 𝛁loss)
     }
 
     print("DONE.")
-    print("rT1: ", rT1.theta, "rT2: ", rT2.theta)
+    print("R1: ", R1.theta, "R2: ", R2.theta)
 
-    XCTAssertEqual(rT1.theta, rT2.theta, accuracy: 1e-5)
+    XCTAssertEqual(R1.theta, R2.theta, accuracy: 1e-5)
   }
 
   static var allTests = [
     ("testBetweenIdentitiesTrivial", testBetweenIdentitiesTrivial),
-    ("testBetweenIdentities", testBetweenIdentities),
+//    ("testBetweenIdentities", testBetweenIdentities),
     ("testBetweenDerivatives", testBetweenDerivatives),
-    ("testRot2Derivatives", testRot2Derivatives),
+//    ("testRot2Derivatives", testRot2Derivatives),
   ]
 }
