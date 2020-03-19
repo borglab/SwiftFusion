@@ -1,4 +1,11 @@
+// This file tests for the various identities in Rot2
+
 @testable import DiffSwiftTest
+// @testable import DiffSwiftTest.Geometry.Rot2
+
+import XCTest
+
+// Boilerplate code for running the test cases
 import XCTest
 
 final class Rot2Tests: XCTestCase {

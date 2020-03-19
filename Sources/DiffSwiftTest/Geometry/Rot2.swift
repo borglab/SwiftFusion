@@ -2,12 +2,18 @@ import TensorFlow
 
 // I needed to wrap this so that I could provide a derivative, becuase the library does not define
 // a derivative for this.
-@differentiable(vjp: _vjpAtan2wrap)
+@differentiable
 func atan2wrap(_ s: Double, _ c: Double) -> Double {
   atan2(s, c)
 }
 
-func _vjpAtan2wrap(_ s: Double, _ c: Double) -> (Double, (Double) -> (Double, Double)) {
+// @derivative(of: bar)
+// public func _(_ x: Float) -> (value: Float, differential: (Float) -> Float) {
+//   (x, { dx in dx })
+// }
+
+@derivative(of: atan2wrap)
+func _vjpAtan2wrap(_ s: Double, _ c: Double) -> (value: Double, pullback: (Double) -> (Double, Double)) {
   let theta = atan2(s, c)
   let normSquared = c * c + s * s
   return (theta, { v in (v * c / normSquared, -v * s / normSquared) })
@@ -23,27 +29,29 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
   /// Cosine and Sine of the rotation angle
   private var c_, s_: Double
 
-  @differentiable(vjp: _vjpCos)
+  @differentiable
   var c: Double {
     c_
   }
 
   @usableFromInline
-  func _vjpCos() -> (Double, (Double.TangentVector) -> Rot2.TangentVector) {
+  @derivative(of: c)
+  func _vjpCos() -> (value: Double, pullback: (Double.TangentVector) -> Rot2.TangentVector) {
     (c_, { v in -v * self.s_ })
   }
 
-  @differentiable(vjp: _vjpSin)
+  @differentiable
   var s: Double {
     s_
   }
 
   @usableFromInline
-  func _vjpSin() -> (Double, (Double.TangentVector) -> Rot2.TangentVector) {
+  @derivative(of: s)
+  func _vjpSin() -> (value: Double, pullback: (Double.TangentVector) -> Rot2.TangentVector) {
     (s_, { v in v * self.c_ })
   }
 
-  @differentiable(vjp: _vjpInit)
+  @differentiable
   public init(_ theta: Double) {
     // theta_ = theta;
     c_ = cos(theta)
@@ -51,7 +59,8 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
   }
 
   @usableFromInline
-  static func _vjpInit(_ theta: Double) -> (Self, (TangentVector) -> Double) {
+  @derivative(of: init)
+  static func _vjpInit(_ theta: Double) -> (value: Self, pullback: (TangentVector) -> Double) {
     return (Rot2(theta), { v in
       v
     })
@@ -72,13 +81,14 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
     Double.zero
   }
 
-  @differentiable(vjp: _vjpTheta)
+  @differentiable
   public var theta: Double {
     atan2wrap(s_, c_)
   }
 
   @usableFromInline
-  func _vjpTheta() -> (Double, (Double.TangentVector) -> Rot2.TangentVector) {
+  @derivative(of: theta)
+  func _vjpTheta() -> (value: Double, pullback: (Double.TangentVector) -> Rot2.TangentVector) {
     return (theta, { v in
       v
     })
@@ -94,7 +104,7 @@ public extension Rot2 {
   /// This is the product of two 2D rotations
   /// @differentiable is an attribute marker of differntiablity
   /// vjp stands for Vector Jacobian Product (see below)
-  @differentiable(vjp: _vjpMultiply(lhs:rhs:))
+  @differentiable
   static func * (lhs: Rot2, rhs: Rot2) -> Rot2 {
     Rot2(
       c: lhs.c * rhs.c - lhs.s * rhs.s,
@@ -105,7 +115,8 @@ public extension Rot2 {
   /// lhs/rhs are the arguments of the function you want to evaluate gradient on
   /// @returns a function that maps from df/dw_n+1 to df/dw_n
   @inlinable
-  static func _vjpMultiply(lhs: Rot2, rhs: Rot2) -> (Rot2, (Double) -> (Double, Double)) {
+  @derivative(of: *)
+  static func _vjpMultiply(lhs: Rot2, rhs: Rot2) -> (value: Rot2, pullback: (Double) -> (Double, Double)) {
     return (lhs * rhs, { v in
       (v, v)
     })

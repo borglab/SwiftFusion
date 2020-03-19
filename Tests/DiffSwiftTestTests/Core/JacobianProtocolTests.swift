@@ -39,8 +39,14 @@ class JacobianProtocolTests: XCTestCase {
     }
 
     let j = jacobian(of: ef, at: map, basisVectors: Array(repeating: 1.0, count: 1))
-    print("J(ef) = \(j[0].base as AnyObject)")
+    print("j(ef) = \(j[0].base as AnyObject)")
 
     print("Pose2.TangentVector.basisVectors() = \(Pose2.TangentVector.basisVectors() as AnyObject)")
+
+    print("J(ef) = [")
+    for r in j[0] {
+      print(r.recursivelyAllKeyPaths(to:Double.self).map {r[keyPath: $0]})
+    }
+    print("]")
   }
 }
