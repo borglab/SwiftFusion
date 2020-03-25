@@ -1,7 +1,7 @@
 import XCTest
 
-import DiffSwiftTestTests
+import SwiftFusionTests
 
 var tests = [XCTestCaseEntry]()
-tests += DiffSwiftTestTests.allTests()
+tests += SwiftFusionTests.allTests()
 XCTMain(tests)

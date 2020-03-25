@@ -1,3 +1,3 @@
-struct DiffSwiftTest {
+struct SwiftFusion {
   var text = "Hello, World!"
 }
