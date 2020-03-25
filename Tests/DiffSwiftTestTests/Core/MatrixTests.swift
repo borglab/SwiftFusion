@@ -13,8 +13,8 @@ class MatrixTests: XCTestCase {
     //--------------------------------------------------------------------------
     // testConcat
     func testConcat() {
-        let t1 = MatrixType<Float>(2, 3, with: 1...6)
-        let t2 = MatrixType<Float>(2, 3, with: 7...12)
+        let t1 = SwiftRT.Matrix<Float>(2, 3, with: 1...6)
+        let t2 = SwiftRT.Matrix<Float>(2, 3, with: 7...12)
         let c1 = t1.concat(t2)
 //        XCTAssert(c1.extents == [4, 3])
         let c1Expected: [Float] = [
@@ -38,7 +38,7 @@ class MatrixTests: XCTestCase {
     // test_log
     func test_log() {
         let range = 0..<6
-        let matrix = MatrixType<Float>(3, 2, with: range)
+        let matrix = SwiftRT.Matrix<Float>(3, 2, with: range)
         let values = log(matrix).flatArray
         let expected: [Float] = range.map { Foundation.log(Float($0)) }
         XCTAssert(values == expected)
@@ -48,7 +48,7 @@ class MatrixTests: XCTestCase {
     // test_neg
     func test_neg() {
         let range = 0..<6
-        let matrix = MatrixType<Float>(3, 2, with: range)
+        let matrix = SwiftRT.Matrix<Float>(3, 2, with: range)
         let expected: [Float] = range.map { -Float($0) }
 
         let values = matrix.neg().flatArray
@@ -61,7 +61,7 @@ class MatrixTests: XCTestCase {
     //--------------------------------------------------------------------------
     // test_squared
     func test_squared() {
-        let matrix = MatrixType<Float>(3, 2, with: [0, -1, 2, -3, 4, 5])
+        let matrix = SwiftRT.Matrix<Float>(3, 2, with: [0, -1, 2, -3, 4, 5])
         let values = matrix.squared().flatArray
         let expected: [Float] = (0...5).map { Float($0 * $0) }
         XCTAssert(values == expected)
@@ -70,7 +70,7 @@ class MatrixTests: XCTestCase {
     //--------------------------------------------------------------------------
     // test_multiplication
     func test_multiplication() {
-        let matrix = MatrixType<Float>(3, 2, with: [0, -1, 2, -3, 4, 5])
+        let matrix = SwiftRT.Matrix<Float>(3, 2, with: [0, -1, 2, -3, 4, 5])
         let values = (matrix * matrix).flatArray
         let expected: [Float] = (0...5).map { Float($0 * $0) }
         XCTAssert(values == expected)
