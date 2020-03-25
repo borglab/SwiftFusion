@@ -21,7 +21,7 @@ class JacobianProtocolTests: XCTestCase {
       return d.rot_.theta * d.rot_.theta + d.t_.x * d.t_.x + d.t_.y * d.t_.y
     }
 
-    let j = jacobian(of: ef, at: map, basisVectors: Array(repeating: 1.0, count: 1))
+    let j = jacobian(of: ef, at: map)
     print("J(ef) = \(j[0].base as AnyObject)")
     for item in j[0] {
       XCTAssertEqual(item, Pose2.TangentVector.zero)
@@ -38,7 +38,8 @@ class JacobianProtocolTests: XCTestCase {
       return d.rot_.theta * d.rot_.theta + d.t_.x * d.t_.x + d.t_.y * d.t_.y
     }
 
-    let j = jacobian(of: ef, at: map, basisVectors: Array(repeating: 1.0, count: 1))
+    let j = jacobian(of: ef, at: map)
+    
     print("j(ef) = \(j[0].base as AnyObject)")
 
     print("Pose2.TangentVector.basisVectors() = \(Pose2.TangentVector.basisVectors() as AnyObject)")
@@ -46,6 +47,48 @@ class JacobianProtocolTests: XCTestCase {
     print("J(ef) = [")
     for r in j[0] {
       print(r.recursivelyAllKeyPaths(to:Double.self).map {r[keyPath: $0]})
+    }
+    print("]")
+  }
+    
+  func testJacobian2D() {
+    let p1 = Point2(0, 1), p2 = Point2(0,0), p3 = Point2(0,0);
+    let map: [Point2] = [p1, p2, p3]
+
+    let ef: @differentiable(_ map: [Point2]) -> Point2 = { (_ map: [Point2]) -> Point2 in
+      let d = map[1] - map[0]
+
+      return d
+    }
+
+    let j = jacobian(of: ef, at: map)
+    
+    print("j(ef) = \(j as AnyObject)")
+
+    print("Point2.TangentVector.basisVectors() = \(Point2.TangentVector.basisVectors() as AnyObject)")
+    
+    /* Example output:
+      J(ef) = [
+      [ [-1.0, 0.0],
+        [1.0, 0.0],
+        [0.0, 0.0] ]
+      [ [0.0, -1.0],
+        [0.0, 1.0],
+        [0.0, 0.0] ]
+      ]
+     So this is 2x3 but the data type is Point2.TangentVector.
+     In "normal" Jacobian notation, we should have a 2x6.
+     [ [-1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+       [0.0, -1.0, 0.0, 1.0, 0.0, 0.0] ]
+    */
+    print("J(ef) = [")
+    for c in j {
+      print("[")
+      for r in c {
+        print(r.recursivelyAllKeyPaths(to:Double.self).map {r[keyPath: $0]})
+        print(",")
+      }
+      print("]")
     }
     print("]")
   }

@@ -1,6 +1,6 @@
 /// Pose2 class is the new Swift type for the SE(2) manifold of 2D Euclidean
 /// Poses
-public struct Pose2: Equatable, Differentiable, KeyPathIterable {
+public struct Pose2: Equatable, Differentiable, JacobianEvaluatable {
   public var t_: Point2
   public var rot_: Rot2
 
