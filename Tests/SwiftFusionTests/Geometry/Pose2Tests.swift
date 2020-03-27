@@ -1,4 +1,4 @@
-@testable import DiffSwiftTest
+@testable import SwiftFusion
 import XCTest
 
 final class Pose2Tests: XCTestCase {

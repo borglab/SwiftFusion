@@ -4,13 +4,13 @@
 import PackageDescription
 
 let package = Package(
-  name: "DiffSwiftTest",
+  name: "SwiftFusion",
   platforms: [.macOS(.v10_14)],
   products: [
     // Products define the executables and libraries produced by a package, and make them visible to other packages.
     .library(
-      name: "DiffSwiftTest",
-      targets: ["DiffSwiftTest"]),
+      name: "SwiftFusion",
+      targets: ["SwiftFusion"]),
   ],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
@@ -21,9 +21,9 @@ let package = Package(
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
     // Targets can depend on other targets in this package, and on products in packages which this package depends on.
     .target(
-      name: "DiffSwiftTest",
+      name: "SwiftFusion",
       dependencies: []),
     .testTarget(
-      name: "DiffSwiftTestTests",
-      dependencies: ["DiffSwiftTest", "SwiftRT"]),
+      name: "SwiftFusionTests",
+      dependencies: ["SwiftFusion", "SwiftRT"]),
   ])

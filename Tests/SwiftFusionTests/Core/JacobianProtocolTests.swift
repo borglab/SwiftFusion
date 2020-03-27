@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 
-@testable import DiffSwiftTest
+@testable import SwiftFusion
 
 class JacobianProtocolTests: XCTestCase {
   static var allTests = [

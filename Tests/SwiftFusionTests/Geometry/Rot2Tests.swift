@@ -1,7 +1,7 @@
 // This file tests for the various identities in Rot2
 
-@testable import DiffSwiftTest
-// @testable import DiffSwiftTest.Geometry.Rot2
+@testable import SwiftFusion
+// @testable import SwiftFusion.Geometry.Rot2
 
 import XCTest
 
