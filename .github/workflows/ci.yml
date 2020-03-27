@@ -1,0 +1,18 @@
+on: [pull_request, push]
+name: Standard Testset
+jobs:
+  test:
+    name: macOS Default
+    runs-on: macOS-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Install toolchain
+        run: |
+          wget https://storage.googleapis.com/swift-tensorflow-artifacts/releases/v0.8/rc1/swift-tensorflow-RELEASE-0.8-osx.pkg
+          sudo installer -pkg swift-tensorflow-RELEASE-0.8-osx.pkg -target /
+          echo "::set-env name=PATH::/Library/Developer/Toolchains/swift-latest/usr/bin:${PATH}"
+      - name: Build
+        run: swift build -v
+      - name: Test
+        run: swift test -v
