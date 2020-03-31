@@ -33,7 +33,7 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
   private var c_, s_: Double
 
   @differentiable
-  var c: Double {
+  public var c: Double {
     c_
   }
 
@@ -44,7 +44,7 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
   }
 
   @differentiable
-  var s: Double {
+  public var s: Double {
     s_
   }
 
@@ -145,7 +145,7 @@ public extension Rot2 {
 
 extension Rot2: CustomDebugStringConvertible {
   public var debugDescription: String {
-    "Rot2(theta: \(theta)"
+    "Rot2(theta: \(theta))"
   }
 }
 

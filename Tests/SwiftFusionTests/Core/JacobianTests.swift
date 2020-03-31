@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 
-@testable import SwiftFusion
+import SwiftFusion
 
 class JacobianTests: XCTestCase {
   static var allTests = [

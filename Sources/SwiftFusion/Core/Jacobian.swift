@@ -26,7 +26,7 @@
 /// [ [-1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 ///   [0.0, -1.0, 0.0, 1.0, 0.0, 0.0] ]
 /// ```
-func jacobian<A: Differentiable, B: TangentStandardBasis>(
+public func jacobian<A: Differentiable, B: TangentStandardBasis>(
   of f: @differentiable(A) -> B,
   at p: A,
   basisVectors: [B.TangentVector] = B.tangentStandardBasis
