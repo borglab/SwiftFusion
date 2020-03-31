@@ -99,6 +99,10 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
   }
 }
 
+extension Rot2: TangentStandardBasis {
+  public static var tangentStandardBasis: [Double] { [1.0] }
+}
+
 infix operator *: MultiplicationPrecedence
 public extension Rot2 {
   static func == (lhs: Rot2, rhs: Rot2) -> Bool {
