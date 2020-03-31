@@ -20,13 +20,14 @@ public struct Pose2: Equatable, Differentiable, KeyPathIterable, TangentStandard
     (lhs.t_, lhs.rot_) == (rhs.t_, rhs.rot_)
   }
 
+  @differentiable
   public static func * (a: Pose2, b: Pose2) -> Pose2 {
     Pose2(a.rot_ * b.rot_, a.t_ + a.rot_ * b.t_)
   }
 }
 
 @differentiable
-func inverse(_ p: Pose2) -> Pose2 {
+public func inverse(_ p: Pose2) -> Pose2 {
   Pose2(inverse(p.rot_), p.rot_.unrotate(-p.t_))
 }
 
