@@ -3,7 +3,7 @@ import XCTest
 
 @testable import SwiftFusion
 
-class JacobianProtocolTests: XCTestCase {
+class JacobianTests: XCTestCase {
   static var allTests = [
     ("testJacobianPose2Identity", testJacobianPose2Identity),
     ("testJacobianPose2Trivial", testJacobianPose2Trivial),

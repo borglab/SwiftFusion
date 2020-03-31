@@ -1,7 +1,3 @@
-public protocol JacobianEvaluatable: Differentiable, KeyPathIterable where TangentVector: KeyPathIterable {
-  
-}
-
 // A jacobian can be calculated by applying the pullback (reverse mode) to the basis vectors of
 // the result tangent type, or by applying the differential (forward mode) to the basis vectors of
 // the input tangent type.
@@ -30,39 +26,11 @@ public protocol JacobianEvaluatable: Differentiable, KeyPathIterable where Tange
 /// [ [-1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 ///   [0.0, -1.0, 0.0, 1.0, 0.0, 0.0] ]
 /// ```
-func jacobian<A: Differentiable, B: JacobianEvaluatable>(
+func jacobian<A: Differentiable, B: TangentStandardBasis>(
   of f: @differentiable(A) -> B,
   at p: A,
-  basisVectors: [B.TangentVector] = B.TangentVector.basisVectors()) -> [A.TangentVector] {
+  basisVectors: [B.TangentVector] = B.tangentStandardBasis
+) -> [A.TangentVector] {
   let pb = pullback(at: p, in: f)
   return basisVectors.map { pb($0) }
-}
-
-
-func jacobian<A: Differentiable>(
-  of f: @differentiable(A) -> Double,
-  at p: A) -> [A.TangentVector] {
-  let pb = pullback(at: p, in: f)
-  return [1.0].map { pb($0) }
-}
-
-func jacobian<A: Differentiable>(
-  of f: @differentiable(A) -> Double,
-  at p: A,
-  basisVectors: [Double]) -> [A.TangentVector] {
-  let pb = pullback(at: p, in: f)
-  return basisVectors.map { pb($0) }
-}
-
-public extension KeyPathIterable where Self: AdditiveArithmetic {
-  // Note: Assumes that the scalars are Double.
-  static func basisVectors() -> [Self] {
-    var vectors: [Self] = []
-    for kp in zero.recursivelyAllWritableKeyPaths(to: Double.self) {
-      var vector = zero
-      vector[keyPath: kp] = 1.0
-      vectors.append(vector)
-    }
-    return vectors
-  }
 }

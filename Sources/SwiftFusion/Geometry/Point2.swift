@@ -1,7 +1,7 @@
 import TensorFlow
 
 /// Point2 class is the new Swift type for the 2D vector space R^2
-public struct Point2: Equatable, Differentiable, JacobianEvaluatable {
+public struct Point2: Equatable, Differentiable, KeyPathIterable, TangentStandardBasis {
   public var x, y: Double
 
   @differentiable
