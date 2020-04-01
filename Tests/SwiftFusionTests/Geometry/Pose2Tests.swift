@@ -159,7 +159,7 @@ final class Pose2Tests: XCTestCase {
       let pose = randomPose2()
       let expected = -adjointMatrix(pose)
       assertEqual(
-        Tensor<Double>(matrixRows: jacobian(of: inverse, at: pose)),
+        Tensor<Double>(matrixRows: jacobian(of: SwiftFusion.inverse, at: pose)),
         expected,
         accuracy: 1e-10
       )
@@ -173,7 +173,10 @@ final class Pose2Tests: XCTestCase {
     for _ in 0..<10 {
       let lhs = randomPose2()
       let rhs = randomPose2()
-      let expected = Tensor(concatenating: [adjointMatrix(inverse(rhs)), eye3x3()], alongAxis: 1)
+      let expected = Tensor(
+        concatenating: [adjointMatrix(SwiftFusion.inverse(rhs)), eye3x3()],
+        alongAxis: 1
+      )
       assertEqual(
         Tensor<Double>(matrixRows: jacobian(of: multiply, at: [lhs, rhs])),
         expected,
