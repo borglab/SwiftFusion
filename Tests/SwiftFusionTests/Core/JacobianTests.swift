@@ -1,4 +1,5 @@
 import Foundation
+import TensorFlow
 import XCTest
 
 import SwiftFusion
@@ -17,7 +18,7 @@ class JacobianTests: XCTestCase {
     let f: @differentiable(_ pts: [Pose2]) -> Double = { (_ pts: [Pose2]) -> Double in
       let d = between(pts[0], pts[1])
 
-      return d.rot_.theta * d.rot_.theta + d.t_.x * d.t_.x + d.t_.y * d.t_.y
+      return d.rot.theta * d.rot.theta + d.t.x * d.t.x + d.t.y * d.t.y
     }
 
     let j = jacobian(of: f, at: pts)
@@ -39,21 +40,16 @@ class JacobianTests: XCTestCase {
     }
 
     let j = jacobian(of: f, at: pts)
-    
-    let expected: [Array<Pose2>.TangentVector] = [
-      [Pose2.TangentVector(t_: Point2.TangentVector(x: 0, y: -1.0), rot_: 2.0), Pose2.TangentVector(t_: Point2.TangentVector(x: 0, y: 1.0), rot_: 0.0)],
-      [Pose2.TangentVector(t_: Point2.TangentVector(x: 1.0, y: 0), rot_: -2.0), Pose2.TangentVector(t_: Point2.TangentVector(x: -1.0, y: 0), rot_: 0.0)],
-      [Pose2.TangentVector(t_: Point2.TangentVector(x: 0.0, y: 0.0), rot_: -1.0), Pose2.TangentVector(t_: Point2.TangentVector(x: 0.0, y: 0.0), rot_: 1.0)]
-    ]
-    
-    // TODO(fan): Find a better way to do approximate comparison
-    XCTAssert(
-      expected.recursivelyAllKeyPaths(to:Double.self)
-        .map {j[keyPath: $0] - expected[keyPath: $0]}
-        .reduce(0.0, {$0 + abs($1)}) < 1e-10
-    )
-  }
-  
+
+    let expected = Tensor<Double>([
+      [0.0, -1.0, -2.0, 1.0, 0.0, 0.0],
+      [1.0,  0.0, -2.0, 0.0, 1.0, 0.0],
+      [0.0,  0.0, -1.0, 0.0, 0.0, 1.0]
+    ])
+
+    assertEqual(Tensor<Double>(matrixRows: j), expected, accuracy: 1e-10)
+}
+
   /// tests the Jacobian of a 2D function
   func testJacobian2D() {
     let p1 = Point2(0, 1), p2 = Point2(0,0), p3 = Point2(0,0);

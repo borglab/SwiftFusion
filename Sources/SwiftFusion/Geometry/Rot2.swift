@@ -135,11 +135,19 @@ public extension Rot2 {
     Point2(c * p.x + -s * p.y, s * p.x + c * p.y)
   }
 
+  func rotate(_ p: Point2.TangentVector) -> Point2.TangentVector {
+    Point2.TangentVector(x: c * p.x + -s * p.y, y: s * p.x + c * p.y)
+  }
+
   // Action of inverse on a point
   // Differentiation is automatic as constructor is differentiable and arguments are linear.
   @differentiable
   func unrotate(_ p: Point2) -> Point2 {
     Point2(c * p.x + s * p.y, -s * p.x + c * p.y)
+  }
+
+  func unrotate(_ p: Point2.TangentVector) -> Point2.TangentVector {
+    Point2.TangentVector(x: c * p.x + s * p.y, y: -s * p.x + c * p.y)
   }
 }
 

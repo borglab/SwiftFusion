@@ -1,5 +1,23 @@
-import SwiftFusion
+import TensorFlow
 import XCTest
+
+import SwiftFusion
+
+func randomPose2() -> Pose2 {
+  Pose2(Double.random(in: -10...10), Double.random(in: -10...10), Double.random(in: 0...(2 * .pi)))
+}
+
+func eye3x3() -> Tensor<Double> {
+  Tensor<Double>([
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1]
+  ])
+}
+
+func adjointMatrix(_ x: Pose2) -> Tensor<Double> {
+  Tensor(matrixRows: Pose2.tangentStandardBasis.map { x.adjoint($0) }).transposed()
+}
 
 final class Pose2Tests: XCTestCase {
   /// test between for trivial values
@@ -36,30 +54,30 @@ final class Pose2Tests: XCTestCase {
       var (_, 𝛁loss) = valueWithGradient(at: pT1) { pT1 -> Double in
         var loss: Double = 0
         let ŷ = between(pT1, pT2)
-        let error = ŷ.rot_.theta * ŷ.rot_.theta + ŷ.t_.x * ŷ.t_.x + ŷ.t_.y * ŷ.t_.y
+        let error = ŷ.rot.theta * ŷ.rot.theta + ŷ.t.x * ŷ.t.x + ŷ.t.y * ŷ.t.y
         loss = loss + (error / 10)
 
         return loss
       }
 
       // print("𝛁loss", 𝛁loss)
-      𝛁loss.rot_ = -𝛁loss.rot_
-      𝛁loss.t_.x = -𝛁loss.t_.x
-      𝛁loss.t_.y = -𝛁loss.t_.y
+      𝛁loss.rot = -𝛁loss.rot
+      𝛁loss.t.x = -𝛁loss.t.x
+      𝛁loss.t.y = -𝛁loss.t.y
       pT1.move(along: 𝛁loss)
     }
 
     print("DONE.")
     print("pT1: \(pT1 as AnyObject), pT2: \(pT2 as AnyObject)")
 
-    XCTAssertEqual(pT1.rot_.theta, pT2.rot_.theta, accuracy: 1e-5)
+    XCTAssertEqual(pT1.rot.theta, pT2.rot.theta, accuracy: 1e-5)
   }
 
   /// TODO(fan): Change this to a proper noise model
   @differentiable
   func e_pose2(_ ŷ: Pose2) -> Double {
     // Squared error with Gaussian variance as weights
-    0.1 * ŷ.rot_.theta * ŷ.rot_.theta + 0.3 * ŷ.t_.x * ŷ.t_.x + 0.3 * ŷ.t_.y * ŷ.t_.y
+    0.1 * ŷ.rot.theta * ŷ.rot.theta + 0.3 * ŷ.t.x * ŷ.t.x + 0.3 * ŷ.t.y * ŷ.t.y
   }
 
   /// test convergence for a simple Pose2SLAM
@@ -67,7 +85,7 @@ final class Pose2Tests: XCTestCase {
     let pi = 3.1415926
 
     let dumpjson = { (p: Pose2) -> String in
-      "[ \(p.t_.x), \(p.t_.y), \(p.rot_.theta)]"
+      "[ \(p.t.x), \(p.t.y), \(p.rot.theta)]"
     }
 
     // Initial estimate for poses
@@ -119,7 +137,49 @@ final class Pose2Tests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t_.magnitude, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t.magnitude, 0.0, accuracy: 1e-2)
+  }
+
+  func testDerivativeIdentity() {
+    func identity(_ x: Pose2) -> Pose2 {
+      Pose2(x.rot, x.t)
+    }
+    for _ in 0..<10 {
+      let expected = eye3x3()
+      assertEqual(
+        Tensor<Double>(matrixRows: jacobian(of: identity, at: randomPose2())),
+        expected,
+        accuracy: 1e-10
+      )
+    }
+  }
+
+  func testDerivativeInverse() {
+    for _ in 0..<10 {
+      let pose = randomPose2()
+      let expected = -adjointMatrix(pose)
+      assertEqual(
+        Tensor<Double>(matrixRows: jacobian(of: inverse, at: pose)),
+        expected,
+        accuracy: 1e-10
+      )
+    }
+  }
+
+  func testDerivativeMultiplication() {
+    func multiply(_ x: [Pose2]) -> Pose2 {
+      x[0] * x[1]
+    }
+    for _ in 0..<10 {
+      let lhs = randomPose2()
+      let rhs = randomPose2()
+      let expected = Tensor(concatenating: [adjointMatrix(inverse(rhs)), eye3x3()], alongAxis: 1)
+      assertEqual(
+        Tensor<Double>(matrixRows: jacobian(of: multiply, at: [lhs, rhs])),
+        expected,
+        accuracy: 1e-10
+      )
+    }
   }
 
   /// test convergence for a simple Pose2SLAM
@@ -127,7 +187,7 @@ final class Pose2Tests: XCTestCase {
     let pi = 3.1415926
 
     let dumpjson = { (p: Pose2) -> String in
-      "[ \(p.t_.x), \(p.t_.y), \(p.rot_.theta)]"
+      "[ \(p.t.x), \(p.t.y), \(p.rot.theta)]"
     }
 
     // Initial estimate for poses
@@ -181,7 +241,7 @@ final class Pose2Tests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t_.magnitude, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t.magnitude, 0.0, accuracy: 1e-2)
   }
 
   static var allTests = [
@@ -189,6 +249,9 @@ final class Pose2Tests: XCTestCase {
     ("testBetweenIdentities", testBetweenIdentities),
     ("testBetweenIdentities", testBetweenIdentitiesRotated),
     ("testBetweenDerivatives", testBetweenDerivatives),
+    ("testDerivativeIdentity", testDerivativeIdentity),
+    ("testDerivativeInverse", testDerivativeInverse),
+    ("testDerivativeMultiplication", testDerivativeMultiplication),
     ("testPose2SLAM", testPose2SLAM),
   ]
 }
