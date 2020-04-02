@@ -129,7 +129,8 @@ final class Pose2Tests: XCTestCase {
     for _ in 0..<10 {
       let expected: Tensor<Double> = eye(rowCount: 3)
       assertEqual(
-        Tensor<Double>(matrixRows: jacobian(of: identity, at: Pose2.random())),
+        Tensor<Double>(
+          matrixRows: jacobian(of: identity, at: Pose2(randomWithCovariance: eye(rowCount: 3)))),
         expected,
         accuracy: 1e-10
       )
@@ -139,7 +140,7 @@ final class Pose2Tests: XCTestCase {
   /// Test that the derivative of the group inverse operation is correct at a few random points.
   func testDerivativeInverse() {
     for _ in 0..<10 {
-      let pose = Pose2.random()
+      let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
       let expected = -pose.adjointMatrix
       assertEqual(
         Tensor<Double>(matrixRows: jacobian(of: SwiftFusion.inverse, at: pose)),
@@ -155,8 +156,8 @@ final class Pose2Tests: XCTestCase {
       x[0] * x[1]
     }
     for _ in 0..<10 {
-      let lhs = Pose2.random()
-      let rhs = Pose2.random()
+      let lhs = Pose2(randomWithCovariance: eye(rowCount: 3))
+      let rhs = Pose2(randomWithCovariance: eye(rowCount: 3))
       let expected = Tensor(
         concatenating: [SwiftFusion.inverse(rhs).adjointMatrix, eye(rowCount: 3)],
         alongAxis: 1

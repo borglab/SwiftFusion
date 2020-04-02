@@ -176,10 +176,11 @@ extension Pose2 {
     self.init(Point2(x, y), Rot2(theta))
   }
 
-  /// Creates a `Pose2` uniformly at random in the box [-10, 10] x [-10, 10] with
-  /// rotation uniformly at random within [0, 2pi).
-  public static func random() -> Pose2 {
-    Pose2(Double.random(in: -10...10), Double.random(in: -10...10), Double.random(in: 0..<(2 * .pi)))
+  public init(randomWithCovariance covariance: Tensor<Double>) {
+    self.init(0, 0, 0)
+    let r = matmul(cholesky(covariance), Tensor<Double>(randomNormal: [3, 1])).scalars
+    let tv = Pose2.TangentVector(r[0], r[1], r[2])
+    self.move(along: tv)
   }
 }
 
