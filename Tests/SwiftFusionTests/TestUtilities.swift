@@ -1,14 +1,8 @@
 import TensorFlow
 import XCTest
 
-extension Tensor {
-  init<T: KeyPathIterable>(matrixRows: [T]) {
-    self.init(matrixRows.map { row in
-      Tensor(row.recursivelyAllKeyPaths(to: Scalar.self).map { row[keyPath: $0] })
-    })
-  }
-}
-
+/// Asserts that `x` and `y` have the same shape and that their values have absolute difference
+/// less than `accuracy`.
 func assertEqual<T: TensorFlowFloatingPoint>(
   _ x: Tensor<T>, _ y: Tensor<T>, accuracy: T, file: StaticString = #file, line: UInt = #line
 ) {

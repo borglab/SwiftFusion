@@ -3,22 +3,6 @@ import XCTest
 
 import SwiftFusion
 
-func randomPose2() -> Pose2 {
-  Pose2(Double.random(in: -10...10), Double.random(in: -10...10), Double.random(in: 0...(2 * .pi)))
-}
-
-func eye3x3() -> Tensor<Double> {
-  Tensor<Double>([
-    [1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1]
-  ])
-}
-
-func adjointMatrix(_ x: Pose2) -> Tensor<Double> {
-  Tensor(matrixRows: Pose2.tangentStandardBasis.map { x.adjoint($0) }).transposed()
-}
-
 final class Pose2Tests: XCTestCase {
   /// test between for trivial values
   func testBetweenIdentitiesTrivial() {
@@ -48,10 +32,10 @@ final class Pose2Tests: XCTestCase {
 
   /// test the simplest gradient descent on Pose2
   func testBetweenDerivatives() {
-    var pT1 = Pose2(Rot2(0), Point2(1, 0)), pT2 = Pose2(Rot2(1), Point2(1, 1))
+    var pT1 = Pose2(Point2(1, 0), Rot2(0)), pT2 = Pose2(Point2(1, 1), Rot2(1))
 
     for _ in 0..<100 {
-      var (_, 𝛁loss) = valueWithGradient(at: pT1) { pT1 -> Double in
+      let (_, 𝛁loss) = valueWithGradient(at: pT1) { pT1 -> Double in
         var loss: Double = 0
         let ŷ = between(pT1, pT2)
         let error = ŷ.rot.theta * ŷ.rot.theta + ŷ.t.x * ŷ.t.x + ŷ.t.y * ŷ.t.y
@@ -61,10 +45,7 @@ final class Pose2Tests: XCTestCase {
       }
 
       // print("𝛁loss", 𝛁loss)
-      𝛁loss.rot = -𝛁loss.rot
-      𝛁loss.t.x = -𝛁loss.t.x
-      𝛁loss.t.y = -𝛁loss.t.y
-      pT1.move(along: 𝛁loss)
+      pT1.move(along: 𝛁loss.scaled(by: -1))
     }
 
     print("DONE.")
@@ -89,11 +70,11 @@ final class Pose2Tests: XCTestCase {
     }
 
     // Initial estimate for poses
-    let p1T0 = Pose2(Rot2(0.2), Point2(0.5, 0.0))
-    let p2T0 = Pose2(Rot2(-0.2), Point2(2.3, 0.1))
-    let p3T0 = Pose2(Rot2(pi / 2), Point2(4.1, 0.1))
-    let p4T0 = Pose2(Rot2(pi), Point2(4.0, 2.0))
-    let p5T0 = Pose2(Rot2(-pi / 2), Point2(2.1, 2.1))
+    let p1T0 = Pose2(Point2(0.5, 0.0), Rot2(0.2))
+    let p2T0 = Pose2(Point2(2.3, 0.1), Rot2(-0.2))
+    let p3T0 = Pose2(Point2(4.1, 0.1), Rot2(pi / 2))
+    let p4T0 = Pose2(Point2(4.0, 2.0), Rot2(pi))
+    let p5T0 = Pose2(Point2(2.1, 2.1), Rot2(-pi / 2))
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
@@ -140,24 +121,26 @@ final class Pose2Tests: XCTestCase {
     XCTAssertEqual(p5T1.t.magnitude, 0.0, accuracy: 1e-2)
   }
 
+  /// Tests that the derivative of the identity function is correct at a few random points.
   func testDerivativeIdentity() {
     func identity(_ x: Pose2) -> Pose2 {
-      Pose2(x.rot, x.t)
+      Pose2(x.t, x.rot)
     }
     for _ in 0..<10 {
-      let expected = eye3x3()
+      let expected: Tensor<Double> = eye(rowCount: 3)
       assertEqual(
-        Tensor<Double>(matrixRows: jacobian(of: identity, at: randomPose2())),
+        Tensor<Double>(matrixRows: jacobian(of: identity, at: Pose2.random())),
         expected,
         accuracy: 1e-10
       )
     }
   }
 
+  /// Test that the derivative of the group inverse operation is correct at a few random points.
   func testDerivativeInverse() {
     for _ in 0..<10 {
-      let pose = randomPose2()
-      let expected = -adjointMatrix(pose)
+      let pose = Pose2.random()
+      let expected = -pose.adjointMatrix
       assertEqual(
         Tensor<Double>(matrixRows: jacobian(of: SwiftFusion.inverse, at: pose)),
         expected,
@@ -166,15 +149,16 @@ final class Pose2Tests: XCTestCase {
     }
   }
 
+  /// Test the the derivative of the group operations is correct at a few random points.
   func testDerivativeMultiplication() {
     func multiply(_ x: [Pose2]) -> Pose2 {
       x[0] * x[1]
     }
     for _ in 0..<10 {
-      let lhs = randomPose2()
-      let rhs = randomPose2()
+      let lhs = Pose2.random()
+      let rhs = Pose2.random()
       let expected = Tensor(
-        concatenating: [adjointMatrix(SwiftFusion.inverse(rhs)), eye3x3()],
+        concatenating: [SwiftFusion.inverse(rhs).adjointMatrix, eye(rowCount: 3)],
         alongAxis: 1
       )
       assertEqual(
@@ -194,11 +178,11 @@ final class Pose2Tests: XCTestCase {
     }
 
     // Initial estimate for poses
-    let p1T0 = Pose2(Rot2(0.2), Point2(0.5, 0.0))
-    let p2T0 = Pose2(Rot2(-0.2), Point2(2.3, 0.1))
-    let p3T0 = Pose2(Rot2(pi / 2), Point2(4.1, 0.1))
-    let p4T0 = Pose2(Rot2(pi), Point2(4.0, 2.0))
-    let p5T0 = Pose2(Rot2(-pi / 2), Point2(2.1, 2.1))
+    let p1T0 = Pose2(Point2(0.5, 0.0), Rot2(0.2))
+    let p2T0 = Pose2(Point2(2.3, 0.1), Rot2(-0.2))
+    let p3T0 = Pose2(Point2(4.1, 0.1), Rot2(pi / 2))
+    let p4T0 = Pose2(Point2(4.0, 2.0), Rot2(pi))
+    let p5T0 = Pose2(Point2(2.1, 2.1), Rot2(-pi / 2))
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
