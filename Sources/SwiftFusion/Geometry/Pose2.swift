@@ -95,7 +95,8 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
     // Explanation of this calculation:
     //
     // `t` is the inverse of `init`, followed by a projection to the translation component. So we
-    // can get the matrix for the pullback of `t` by inverting then taking the relevant columns.
+    // can get the matrix for the pullback of `t` by inverting the matrix for the pullback of
+    // `init` and then taking the relevant columns.
     //
     // The inverse is:
     //   ( r^-1 0 )
