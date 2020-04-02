@@ -1,0 +1,84 @@
+import TensorFlow
+
+% dims = [1, 2, 3]
+% for dim in dims:
+% coordinates = ['x', 'y', 'z'][0:dim]
+
+/// An element of R^${dim}.
+public struct Vector${dim}:
+  AdditiveArithmetic, Differentiable, ElementaryFunctions, KeyPathIterable, TangentStandardBasis
+{
+  % for coordinate in coordinates:
+  @differentiable public var ${coordinate}: Double
+  % end
+
+  @differentiable
+  public init(${', '.join(['_ %s: Double' % c for c in coordinates])}) {
+    % for (index, coordinate) in enumerate(coordinates):
+    self.${coordinate} = ${coordinate}
+    % end
+  }
+}
+
+/// Normed vector space methods.
+extension Vector${dim}: VectorProtocol {
+  public typealias VectorSpaceScalar = Double
+
+  @differentiable
+  public var magnitude: Double {
+    var squaredMagnitude: Double = 0
+    % for coordinate in coordinates:
+    squaredMagnitude = squaredMagnitude + ${coordinate} * ${coordinate}
+    % end
+    return squaredMagnitude.squareRoot()
+  }
+
+  @differentiable
+  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
+    var result = Self.zero
+    % for coordinate in coordinates:
+    result.${coordinate} = lhs.${coordinate} + rhs.${coordinate}
+    % end
+    return result
+  }
+
+  @differentiable
+  public static func - (_ lhs: Self, _ rhs: Self) -> Self {
+    var result = Self.zero
+    % for coordinate in coordinates:
+    result.${coordinate} = lhs.${coordinate} - rhs.${coordinate}
+    % end
+    return result
+  }
+
+  @differentiable
+  public static prefix func - (_ v: Self) -> Self {
+    var result = Self.zero
+    % for coordinate in coordinates:
+    result.${coordinate} = -v.${coordinate}
+    % end
+    return result
+  }
+}
+
+/// Conversion to/from tensor.
+extension Vector${dim} {
+  /// A `Tensor` with shape `[${dim}]` whose elements are the elements of `self`.
+  @differentiable
+  public var tensor: Tensor<Double> {
+    Tensor([${', '.join(coordinates)}])
+  }
+
+  /// Creates a `Vector${dim}` with the same elements as `tensor`.
+  ///
+  /// Precondition: `tensor` must have shape `[${dim}]`.
+  @differentiable
+  public init(_ tensor: Tensor<Double>) {
+    precondition(tensor.shape == [${dim}])
+    % for (index, coordinate) in enumerate(coordinates):
+    self.${coordinate} = tensor[${index}].scalarized()
+    % end
+  }
+}
+
+% end

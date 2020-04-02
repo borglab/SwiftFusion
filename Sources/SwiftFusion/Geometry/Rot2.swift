@@ -39,8 +39,8 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
 
   @usableFromInline
   @derivative(of: c)
-  func _vjpCos() -> (value: Double, pullback: (Double.TangentVector) -> Rot2.TangentVector) {
-    (c_, { v in -v * self.s_ })
+  func _vjpCos() -> (value: Double, pullback: (Double) -> TangentVector) {
+    (c_, { v in Vector1(-v * self.s_) })
   }
 
   @differentiable
@@ -50,8 +50,8 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
 
   @usableFromInline
   @derivative(of: s)
-  func _vjpSin() -> (value: Double, pullback: (Double.TangentVector) -> Rot2.TangentVector) {
-    (s_, { v in v * self.c_ })
+  func _vjpSin() -> (value: Double, pullback: (Double) -> TangentVector) {
+    (s_, { v in Vector1(v * self.c_) })
   }
 
   // Construct from angle theta.
@@ -65,7 +65,7 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
   @derivative(of: init)
   static func _vjpInit(_ theta: Double) -> (value: Self, pullback: (TangentVector) -> Double) {
     return (Rot2(theta), { v in
-      v
+      v.x
     })
   }
 
@@ -74,15 +74,15 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
     self.init(atan2wrap(s, c))
   }
 
-  public typealias TangentVector = Double
+  public typealias TangentVector = Vector1
 
   public mutating func move(along direction: TangentVector) {
-    let r = Rot2(direction) * self
+    let r = Rot2(direction.x) * self
     (c_, s_) = (r.c_, r.s_)
   }
 
   public var zeroTangentVector: TangentVector {
-    Double.zero
+    TangentVector.zero
   }
 
   @differentiable
@@ -92,15 +92,15 @@ public struct Rot2: Equatable, Differentiable, KeyPathIterable {
 
   @usableFromInline
   @derivative(of: theta)
-  func _vjpTheta() -> (value: Double, pullback: (Double.TangentVector) -> Rot2.TangentVector) {
+  func _vjpTheta() -> (value: Double, pullback: (Double) -> TangentVector) {
     return (theta, { v in
-      v
+      Vector1(v)
     })
   }
 }
 
 extension Rot2: TangentStandardBasis {
-  public static var tangentStandardBasis: [Double] { [1.0] }
+  public static var tangentStandardBasis: [Vector1] { [Vector1(1)] }
 }
 
 infix operator *: MultiplicationPrecedence
@@ -118,28 +118,16 @@ public extension Rot2 {
       s: lhs.s * rhs.c + lhs.c * rhs.s)
   }
 
-  /// Vector Jacobian Product of product of Rot2
-  /// lhs/rhs are the arguments of the function you want to evaluate gradient on
-  /// @returns a function that maps from df/dw_n+1 to df/dw_n
-  /// vjp stands for Vector Jacobian Product (see below)
-  @inlinable
-  @derivative(of: *)
-  static func _vjpMultiply(lhs: Rot2, rhs: Rot2) -> (value: Rot2, pullback: (Double) -> (Double, Double)) {
-    (lhs * rhs, { v in (v, v) })
+  /// Returns the result of acting `self` on `v`.
+  @differentiable
+  func rotated(_ v: Vector2) -> Vector2 {
+    Vector2(c * v.x - s * v.y, s * v.x + c * v.y)
   }
 
-  // Action on a point
-  // Differentiation is automatic as constructor is differentiable and arguments are linear.
+  /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
-  func rotate(_ p: Point2) -> Point2 {
-    Point2(c * p.x + -s * p.y, s * p.x + c * p.y)
-  }
-
-  // Action of inverse on a point
-  // Differentiation is automatic as constructor is differentiable and arguments are linear.
-  @differentiable
-  func unrotate(_ p: Point2) -> Point2 {
-    Point2(c * p.x + s * p.y, -s * p.x + c * p.y)
+  func unrotated(_ v: Vector2) -> Vector2 {
+    Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
 }
 
@@ -171,6 +159,6 @@ struct Between: Differentiable {
 }
 
 @differentiable
-func * (r: Rot2, p: Point2) -> Point2 {
-  r.rotate(p)
+func * (r: Rot2, p: Vector2) -> Vector2 {
+  r.rotated(p)
 }

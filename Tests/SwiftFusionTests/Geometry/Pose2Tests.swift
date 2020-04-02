@@ -30,7 +30,7 @@ final class Pose2Tests: XCTestCase {
 
   /// test the simplest gradient descent on Pose2
   func testBetweenDerivatives() {
-    var pT1 = Pose2(Rot2(0), Point2(1, 0)), pT2 = Pose2(Rot2(1), Point2(1, 1))
+    var pT1 = Pose2(Rot2(0), Vector2(1, 0)), pT2 = Pose2(Rot2(1), Vector2(1, 1))
 
     for _ in 0..<100 {
       var (_, 𝛁loss) = valueWithGradient(at: pT1) { pT1 -> Double in
@@ -44,8 +44,7 @@ final class Pose2Tests: XCTestCase {
 
       // print("𝛁loss", 𝛁loss)
       𝛁loss.rot_ = -𝛁loss.rot_
-      𝛁loss.t_.x = -𝛁loss.t_.x
-      𝛁loss.t_.y = -𝛁loss.t_.y
+      𝛁loss.t_ = -𝛁loss.t_
       pT1.move(along: 𝛁loss)
     }
 
@@ -71,11 +70,11 @@ final class Pose2Tests: XCTestCase {
     }
 
     // Initial estimate for poses
-    let p1T0 = Pose2(Rot2(0.2), Point2(0.5, 0.0))
-    let p2T0 = Pose2(Rot2(-0.2), Point2(2.3, 0.1))
-    let p3T0 = Pose2(Rot2(pi / 2), Point2(4.1, 0.1))
-    let p4T0 = Pose2(Rot2(pi), Point2(4.0, 2.0))
-    let p5T0 = Pose2(Rot2(-pi / 2), Point2(2.1, 2.1))
+    let p1T0 = Pose2(Rot2(0.2), Vector2(0.5, 0.0))
+    let p2T0 = Pose2(Rot2(-0.2), Vector2(2.3, 0.1))
+    let p3T0 = Pose2(Rot2(pi / 2), Vector2(4.1, 0.1))
+    let p4T0 = Pose2(Rot2(pi), Vector2(4.0, 2.0))
+    let p5T0 = Pose2(Rot2(-pi / 2), Vector2(2.1, 2.1))
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
@@ -131,11 +130,11 @@ final class Pose2Tests: XCTestCase {
     }
 
     // Initial estimate for poses
-    let p1T0 = Pose2(Rot2(0.2), Point2(0.5, 0.0))
-    let p2T0 = Pose2(Rot2(-0.2), Point2(2.3, 0.1))
-    let p3T0 = Pose2(Rot2(pi / 2), Point2(4.1, 0.1))
-    let p4T0 = Pose2(Rot2(pi), Point2(4.0, 2.0))
-    let p5T0 = Pose2(Rot2(-pi / 2), Point2(2.1, 2.1))
+    let p1T0 = Pose2(Rot2(0.2), Vector2(0.5, 0.0))
+    let p2T0 = Pose2(Rot2(-0.2), Vector2(2.3, 0.1))
+    let p3T0 = Pose2(Rot2(pi / 2), Vector2(4.1, 0.1))
+    let p4T0 = Pose2(Rot2(pi), Vector2(4.0, 2.0))
+    let p5T0 = Pose2(Rot2(-pi / 2), Vector2(2.1, 2.1))
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 

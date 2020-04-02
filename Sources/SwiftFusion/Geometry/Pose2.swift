@@ -1,17 +1,17 @@
 /// Pose2 class is the new Swift type for the SE(2) manifold of 2D Euclidean
 /// Poses
 public struct Pose2: Equatable, Differentiable, KeyPathIterable, TangentStandardBasis {
-  public var t_: Point2
+  public var t_: Vector2
   public var rot_: Rot2
 
   @differentiable
   public init(_ x: Double, _ y: Double, _ theta: Double) {
-    t_ = Point2(x, y)
+    t_ = Vector2(x, y)
     rot_ = Rot2(theta)
   }
 
   @differentiable
-  public init(_ r: Rot2, _ t: Point2) {
+  public init(_ r: Rot2, _ t: Vector2) {
     t_ = t
     rot_ = r
   }
@@ -28,7 +28,7 @@ public struct Pose2: Equatable, Differentiable, KeyPathIterable, TangentStandard
 
 @differentiable
 public func inverse(_ p: Pose2) -> Pose2 {
-  Pose2(inverse(p.rot_), p.rot_.unrotate(-p.t_))
+  Pose2(inverse(p.rot_), p.rot_.unrotated(-p.t_))
 }
 
 /// Calculate relative pose 1T2 between two poses wT1 and wT2

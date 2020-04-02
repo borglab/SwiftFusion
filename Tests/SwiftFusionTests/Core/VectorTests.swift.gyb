@@ -1,0 +1,124 @@
+import Foundation
+import TensorFlow
+import XCTest
+
+import SwiftFusion
+
+% import math
+% dims = [1, 2, 3]
+
+class VectorTests: XCTestCase {
+  static var allTests = [
+    % for dim in dims:
+    ("testVector${dim}Init", testVector${dim}Init),
+    ("testVector${dim}Equality", testVector${dim}Equality),
+    ("testVector${dim}Magnitude", testVector${dim}Magnitude),
+    ("testVector${dim}Add", testVector${dim}Add),
+    ("testVector${dim}Subtract", testVector${dim}Subtract),
+    ("testVector${dim}ScalarMultiply", testVector${dim}ScalarMultiply),
+    ("testVector${dim}Negate", testVector${dim}Negate),
+    ("testVector${dim}TangentVector", testVector${dim}TangentVector),
+    ("testVector${dim}Move", testVector${dim}Move),
+    ("testVector${dim}TensorInit", testVector${dim}TensorInit),
+    ("testVector${dim}TensorExtract", testVector${dim}TensorExtract)${',' if dim < dims[-1] else ''}
+    % end
+  ]
+
+  % for dim in dims:
+  % coordinates = ['x', 'y', 'z'][0:dim]
+  % values1 = range(1, dim + 1)
+  % values2 = range(dim + 1, 2 * dim + 1)
+
+  /// Test that initializing a vector from coordinate values works.
+  func testVector${dim}Init() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    % for (index, coordinate) in enumerate(coordinates):
+    XCTAssertEqual(vector1.${coordinate}, ${values1[index]})
+    % end
+  }
+
+  /// Test that vector magnitude works.
+  func testVector${dim}Magnitude() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    XCTAssertEqual(vector1.magnitude, ${math.sqrt(sum([x * x for x in values1]))}, accuracy: 1e-6)
+  }
+
+  /// Test that vector `==` works.
+  func testVector${dim}Equality() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
+    XCTAssertTrue(vector1 == vector1)
+    XCTAssertFalse(vector1 == vector2)
+  }
+
+  /// Test that vector addition works.
+  func testVector${dim}Add() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
+    let sum = vector1 + vector2
+    % for (index, coordinate) in enumerate(coordinates):
+    XCTAssertEqual(sum.${coordinate}, ${values1[index] + values2[index]})
+    % end
+  }
+
+  /// Test that vector subtraction works.
+  func testVector${dim}Subtract() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
+    let difference = vector1 - vector2
+    % for (index, coordinate) in enumerate(coordinates):
+    XCTAssertEqual(difference.${coordinate}, ${values1[index] - values2[index]})
+    % end
+  }
+
+  /// Test that vector scalar multiplication works.
+  func testVector${dim}ScalarMultiply() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let scaled = vector1.scaled(by: 2)
+    % for (index, coordinate) in enumerate(coordinates):
+    XCTAssertEqual(scaled.${coordinate}, ${2 * values1[index]})
+    % end
+  }
+
+  /// Test that vector negation works.
+  func testVector${dim}Negate() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let negated = -vector1
+    % for (index, coordinate) in enumerate(coordinates):
+    XCTAssertEqual(negated.${coordinate}, ${-values1[index]})
+    % end
+  }
+
+  /// Tests that `Vector${dim}.TangentVector == Vector${dim}`.
+  func testVector${dim}TangentVector() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let _: Vector${dim}.TangentVector = vector1
+  }
+
+  /// Tests that the move (exponential map) operation works on vectors.
+  func testVector${dim}Move() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
+    var moved = vector1
+    moved.move(along: vector2)
+    % for (index, coordinate) in enumerate(coordinates):
+    XCTAssertEqual(moved.${coordinate}, ${values1[index] + values2[index]})
+    % end
+  }
+
+  /// Tests that we can initialize a vector from a tensor.
+  func testVector${dim}TensorInit() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let tensor1 = Tensor<Double>([${', '.join([str(v) for v in values1])}])
+    XCTAssertEqual(Vector${dim}(tensor1), vector1)
+  }
+
+  /// Tests that we can extract a tensor from a vector.
+  func testVector${dim}TensorExtract() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let tensor1 = Tensor<Double>([${', '.join([str(v) for v in values1])}])
+    XCTAssertEqual(vector1.tensor, tensor1)
+  }
+
+  % end
+}

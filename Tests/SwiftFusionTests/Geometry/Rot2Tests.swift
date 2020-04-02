@@ -38,8 +38,8 @@ final class Rot2Tests: XCTestCase {
       between(R1, R).theta
     }
 
-    XCTAssertEqual(𝛁actual1, -1.0)
-    XCTAssertEqual(𝛁actual2, 1.0)
+    XCTAssertEqual(𝛁actual1, Vector1(-1.0))
+    XCTAssertEqual(𝛁actual2, Vector1(1.0))
   }
 
   // Check gradient descent
