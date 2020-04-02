@@ -6,49 +6,8 @@ import SwiftFusion
 
 class JacobianTests: XCTestCase {
   static var allTests = [
-    ("testJacobianPose2Identity", testJacobianPose2Identity),
-    ("testJacobianPose2Trivial", testJacobianPose2Trivial),
+    ("testJacobian2D", testJacobian2D)
   ]
-
-  /// tests a simple identity Jacobian for Pose2
-  func testJacobianPose2Identity() {
-    let wT1 = Pose2(1, 0, 3.1415926 / 2.0), wT2 = Pose2(1, 0, 3.1415926 / 2.0)
-    let pts: [Pose2] = [wT1, wT2]
-
-    let f: @differentiable(_ pts: [Pose2]) -> Double = { (_ pts: [Pose2]) -> Double in
-      let d = between(pts[0], pts[1])
-
-      return d.rot.theta * d.rot.theta + d.t.x * d.t.x + d.t.y * d.t.y
-    }
-
-    let j = jacobian(of: f, at: pts)
-    // print("J(f) = \(j[0].base as AnyObject)")
-    for item in j[0] {
-      XCTAssertEqual(item, Pose2.TangentVector.zero)
-    }
-  }
-
-  func testJacobianPose2Trivial() {
-    // Values taken from GTSAM `testPose2.cpp`
-    let wT1 = Pose2(1, 2, .pi/2.0), wT2 = Pose2(-1, 4, .pi)
-    let pts: [Pose2] = [wT1, wT2]
-
-    let f: @differentiable(_ pts: [Pose2]) -> Pose2 = { (_ pts: [Pose2]) -> Pose2 in
-      let d = between(pts[0], pts[1])
-
-      return d
-    }
-
-    let j = jacobian(of: f, at: pts)
-
-    let expected = Tensor<Double>([
-      [0.0, -1.0, -2.0, 1.0, 0.0, 0.0],
-      [1.0,  0.0, -2.0, 0.0, 1.0, 0.0],
-      [0.0,  0.0, -1.0, 0.0, 0.0, 1.0]
-    ])
-
-    assertEqual(Tensor<Double>(matrixRows: j), expected, accuracy: 1e-10)
-}
 
   /// tests the Jacobian of a 2D function
   func testJacobian2D() {
