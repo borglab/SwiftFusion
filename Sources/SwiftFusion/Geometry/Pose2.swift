@@ -47,7 +47,7 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
     rotStorage = r
   }
 
-  /// The pullback of `init` satisfiying convention (2) described above.
+  /// The derivative of `init` satisfiying convention (2) described above.
   @derivative(of: init(_:_:))
   @usableFromInline
   static func vjpInit(_ t: Point2, _ r: Rot2)
@@ -88,7 +88,7 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
     })
   }
 
-  /// The pullback of `t` satisfiying convention (2) described above.
+  /// The derivative of `t` satisfiying convention (2) described above.
   @derivative(of: t)
   @usableFromInline
   func vjpT() -> (value: Point2, pullback: (Point2.TangentVector) -> TangentVector) {
@@ -112,7 +112,7 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
     })
   }
 
-  /// The pullback of `t` satisfiying convention (2) described above.
+  /// The derivative of `t` satisfiying convention (2) described above.
   @derivative(of: rot)
   @usableFromInline
   func vjpRot() -> (value: Rot2, pullback: (Rot2.TangentVector) -> TangentVector) {
