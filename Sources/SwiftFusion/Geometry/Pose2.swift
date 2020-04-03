@@ -28,7 +28,7 @@ public struct Pose2: Equatable, Differentiable, KeyPathIterable, TangentStandard
 
 @differentiable
 public func inverse(_ p: Pose2) -> Pose2 {
-  Pose2(inverse(p.rot_), p.rot_.unrotated(-p.t_))
+  Pose2(inverse(p.rot_), p.rot_.unrotate(-p.t_))
 }
 
 /// Calculate relative pose 1T2 between two poses wT1 and wT2

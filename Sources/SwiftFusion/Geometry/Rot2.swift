@@ -120,13 +120,13 @@ public extension Rot2 {
 
   /// Returns the result of acting `self` on `v`.
   @differentiable
-  func rotated(_ v: Vector2) -> Vector2 {
+  func rotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x - s * v.y, s * v.x + c * v.y)
   }
 
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
-  func unrotated(_ v: Vector2) -> Vector2 {
+  func unrotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
 }
@@ -160,5 +160,5 @@ struct Between: Differentiable {
 
 @differentiable
 func * (r: Rot2, p: Vector2) -> Vector2 {
-  r.rotated(p)
+  r.rotate(p)
 }

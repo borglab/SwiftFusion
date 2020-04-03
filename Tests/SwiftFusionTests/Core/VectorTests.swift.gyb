@@ -12,11 +12,14 @@ class VectorTests: XCTestCase {
     % for dim in dims:
     ("testVector${dim}Init", testVector${dim}Init),
     ("testVector${dim}Equality", testVector${dim}Equality),
-    ("testVector${dim}Magnitude", testVector${dim}Magnitude),
+    ("testVector${dim}Norm", testVector${dim}Norm),
+    ("testVector${dim}SquaredNorm", testVector${dim}SquaredNorm),
     ("testVector${dim}Add", testVector${dim}Add),
     ("testVector${dim}Subtract", testVector${dim}Subtract),
     ("testVector${dim}ScalarMultiply", testVector${dim}ScalarMultiply),
     ("testVector${dim}Negate", testVector${dim}Negate),
+    ("testVector${dim}Squared", testVector${dim}Squared),
+    ("testVector${dim}Sum", testVector${dim}Sum),
     ("testVector${dim}TangentVector", testVector${dim}TangentVector),
     ("testVector${dim}Move", testVector${dim}Move),
     ("testVector${dim}TensorInit", testVector${dim}TensorInit),
@@ -37,10 +40,16 @@ class VectorTests: XCTestCase {
     % end
   }
 
-  /// Test that vector magnitude works.
-  func testVector${dim}Magnitude() {
+  /// Test that vector norm works.
+  func testVector${dim}Norm() {
     let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    XCTAssertEqual(vector1.magnitude, ${math.sqrt(sum([x * x for x in values1]))}, accuracy: 1e-6)
+    XCTAssertEqual(vector1.norm, ${math.sqrt(sum([x * x for x in values1]))}, accuracy: 1e-6)
+  }
+
+  /// Test that vector squared norm works.
+  func testVector${dim}SquaredNorm() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    XCTAssertEqual(vector1.squaredNorm, ${sum([x * x for x in values1])}, accuracy: 1e-6)
   }
 
   /// Test that vector `==` works.
@@ -87,6 +96,21 @@ class VectorTests: XCTestCase {
     % for (index, coordinate) in enumerate(coordinates):
     XCTAssertEqual(negated.${coordinate}, ${-values1[index]})
     % end
+  }
+
+  /// Test that vector squaring works.
+  func testVector${dim}Squared() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    let squared = vector1.squared()
+    % for (index, coordinate) in enumerate(coordinates):
+    XCTAssertEqual(squared.${coordinate}, ${values1[index] * values1[index]})
+    % end
+  }
+
+  /// Test that vector sum works.
+  func testVector${dim}Sum() {
+    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+    XCTAssertEqual(vector1.sum(), ${sum(values1)})
   }
 
   /// Tests that `Vector${dim}.TangentVector == Vector${dim}`.

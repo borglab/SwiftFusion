@@ -4,9 +4,8 @@ import TensorFlow
 % for dim in dims:
 % coordinates = ['x', 'y', 'z'][0:dim]
 
-/// An element of R^${dim}.
-public struct Vector${dim}:
-  AdditiveArithmetic, Differentiable, ElementaryFunctions, KeyPathIterable, TangentStandardBasis
+/// An element of R^${dim}, with Euclidean norm.
+public struct Vector${dim}: Differentiable, KeyPathIterable, TangentStandardBasis
 {
   % for coordinate in coordinates:
   @differentiable public var ${coordinate}: Double
@@ -21,17 +20,16 @@ public struct Vector${dim}:
 }
 
 /// Normed vector space methods.
-extension Vector${dim}: VectorProtocol {
+extension Vector${dim}: AdditiveArithmetic, VectorProtocol {
   public typealias VectorSpaceScalar = Double
 
+  /// Euclidean norm of `self`.
   @differentiable
-  public var magnitude: Double {
-    var squaredMagnitude: Double = 0
-    % for coordinate in coordinates:
-    squaredMagnitude = squaredMagnitude + ${coordinate} * ${coordinate}
-    % end
-    return squaredMagnitude.squareRoot()
-  }
+  public var norm: Double { squaredNorm.squareRoot() }
+
+  /// Square of the Euclidean norm of `self`.
+  @differentiable
+  public var squaredNorm: Double { self.squared().sum() }
 
   @differentiable
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
@@ -56,6 +54,27 @@ extension Vector${dim}: VectorProtocol {
     var result = Self.zero
     % for coordinate in coordinates:
     result.${coordinate} = -v.${coordinate}
+    % end
+    return result
+  }
+}
+
+/// Other arithmetic on the vector elements.
+extension Vector${dim}: ElementaryFunctions {
+  /// Sum of the elements of `self`.
+  public func sum() -> Double {
+    var result: Double = 0
+    % for coordinate in coordinates:
+    result = result + ${coordinate}
+    % end
+    return result
+  }
+
+  /// Vector whose elements are squares of the elements of `self`.
+  public func squared() -> Self {
+    var result = Self.zero
+    % for coordinate in coordinates:
+    result.${coordinate} = ${coordinate} * ${coordinate}
     % end
     return result
   }

@@ -118,7 +118,7 @@ final class Pose2Tests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t_.magnitude, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t_.norm, 0.0, accuracy: 1e-2)
   }
 
   /// test convergence for a simple Pose2SLAM
@@ -180,7 +180,7 @@ final class Pose2Tests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t_.magnitude, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t_.norm, 0.0, accuracy: 1e-2)
   }
 
   static var allTests = [
