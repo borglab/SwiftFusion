@@ -2,16 +2,25 @@ import TensorFlow
 
 /// SE(2) Lie group of 2D Euclidean Poses.
 ///
-/// We adopt the conventions in [1] and [2] for the tangent space of this manifold and for
-/// derivatives of functions to/from this manifold. In particular:
+/// We adopt the following conventions for the tangent space of this manifold and the derivatives
+/// of functions to/from this manifold:
 ///
-///   1. The tangent space at every point is the Lie algebra so(2).
+///   1. The tangent space at every point is R^3, interpreted as "twist coordinates", with the
+///      first component specifying the rotation and the next two coordinates specifying the
+///      translation.
 ///   2. For Lie groups `G`, `H`, with algebras `g`, `h`, the differential of any differentiable
 ///      function `f : G -> H` at `a \in G` is the linear map `df_a : g -> h` such that
-///        f(a * exp(eps)) ~= f(a) * exp(df_a(eps))
-///      where `eps` is a "small" element of `g`. (And the pullback is the dual map of `df_a`).
+///        f(a * exp(hat(eps))) ~= f(a) * exp(df_a(hat(eps)))
+///      where:
+///        `eps` is a "small" element of `R^3`, and
+///        `hat` is the map from twist coordinates to se(2).
+///      The pullback of `f` at `a` is the dual map of `df_a`.
 ///
-/// (1) is accomplished simply by defining the `TangentVector` type of `Pose2` to be so(2).
+/// These conventions match the conventions for SE(2) in [1] and [2], except that we use the
+/// opposite order for the rotation and translation components.
+///
+/// (1) is accomplished by setting the `TangentVector` to `Vector3` and by defining the appropriate
+/// exponential map in the `move(along:)` method.
 ///
 /// (2) is accomplished for `Pose2` by defining differentials[3] satisfying (2) for three
 //  functions:
@@ -27,15 +36,15 @@ import TensorFlow
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
 public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
-  /// The pose's translation.
-  ///
-  /// This is the projection SE(2) -> R^2. (Note: not a group homomorphism!)
-  @differentiable public var t: Vector2 { tStorage }
-
   /// The pose's rotation.
   ///
   /// This is the projection SE(2) -> SO(2).
   @differentiable public var rot: Rot2 { rotStorage }
+
+  /// The pose's translation.
+  ///
+  /// This is the projection SE(2) -> R^2. (Note: not a group homomorphism!)
+  @differentiable public var t: Vector2 { tStorage }
 
   /// Creates a `Pose2` with rotation `r` and translation `t`.
   ///
@@ -55,43 +64,40 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   {
     // Explanation of this calculation:
     //
-    // We would like the differential of `init` at `(t, r)`, `dinit_(t, r)`, to satisfy:
-    //   init(t * exp(eps_t), r * exp(eps_r)) ~= init(t, r) * exp(dinit_(t, r)(eps_t, eps_r))
-    // where `eps_t`, `eps_r` are "small" elements of R^2 and so(2) respectively.
+    // We would like the differential of `init` at `(r, t)`, `dinit_(r, t)`, to satisfy:
+    //   init(r * exp(hat(w)), t * exp(hat(v))) ~= init(r, t) * exp(hat(dinit_(r, t)(w, v)))
+    // where `w`, `v` are "small" elements of R^1 and R^2 respectively.
     //
-    // Multiplying on the left by `init(t, r)^-1` gives
-    //   exp(dinit_(t, r)(eps_t, eps_r))
-    //     = init(t, r)^-1 * init(t * exp(eps_t), r * exp(eps_r))
-    //     = init(r^-1 * (-t), inverse(r)) * init(t * exp(eps_t), r * exp(eps_r))
-    //     = init(r^-1 * exp(eps_t), exp(eps_r))
+    // Using `t * exp(hat(v)) == t + v` simplifies the equation to:
+    //   init(r * exp(hat(w)), t + v) ~= init(r, t) * exp(hat(dinit_(r, t)(w, v)))
     //
-    // Since `eps_t`, `eps_r` are small, we can take logs of both sides to get
-    //   dinit_(t, r)(eps_t, eps_r) = (r^-1 * eps_t, eps_r)
+    // Multiplying on the left by `init(r, t)^-1 == init(r^t, r^t * (-t))` gives
+    //   exp(hat(dinit_(r, t)(w, v)))
+    //     = init(r^t, r^t * (-t)) * init(r * exp(hat(w)), t + v)
+    //     = init(exp(hat(w)), r^t * v)
+    //
+    // Since `w`, `v` are small, we can take logs of both sides to get
+    //   dinit_(t, r)(w, v) = (w, r^t * v)
     //
     // Or in matrix notation:
-    //   dinit_(t, r)(eps_t, eps_r) =  ( r^-1  0 ) ( eps_t )
-    //                                 ( 0     1 ) ( eps_r )
+    //   dinit_(t, r)(w, v) =  ( 1    0 ) ( w )
+    //                         ( 0  r^t ) ( v )
     //
     // We actually need the pullback rather than the differential, so that's the transpose:
-    //   pbinit_(t, r)(eps_t, eps_r) =  ( r 0 ) ( eps_t )
-    //                                  ( 0 1 ) ( eps_r )
+    //   pbinit_(t, r)(w, v) =  ( 1 0 ) ( w )
+    //                          ( 0 r ) ( v )
     //
     // The pullback here implements the linear map corresponding to that matrix.
-    (Pose2(r, t), { eps in
-      (
-        Vector1(eps.omega),
-        Vector2(
-          r.c * eps.vx - r.s * eps.vy,
-          r.s * eps.vx + r.c * eps.vy
-        )
-      )
+    (Pose2(r, t), {
+      let (w, v) = Self.decomposed(tangentVector: $0)
+      return (w, r.rotate(v))
     })
   }
 
   /// The derivative of `t` satisfiying convention (2) described above.
   @derivative(of: t)
   @usableFromInline
-  func vjpT() -> (value: Vector2, pullback: (Vector2) -> TangentVector) {
+  func vjpT() -> (value: Vector2, pullback: (Vector2) -> Vector3) {
     // Explanation of this calculation:
     //
     // `t` is the inverse of `init`, followed by a projection to the translation component. So we
@@ -99,61 +105,45 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
     // `init` and then taking the relevant columns.
     //
     // The inverse is:
-    //   ( r^-1 0 )
-    //   ( 0    1 )
+    //   ( 1    0 )
+    //   ( 0  r^t )
     //
-    // The below implements the linear transformation represented by the first column of this matrix.
-    return (t, { v in
-      TangentVector(
-        vx: rot.c * v.x + rot.s * v.y,
-        vy: -rot.s * v.x + rot.c * v.y,
-        omega: .zero
-      )
-    })
+    // The pullback here implements the linear transformation represented by the first column of
+    // this matrix.
+    return (t, { Self.tangentVector(w: Vector1.zero, v: rot.unrotate($0)) } )
   }
 
-  /// The derivative of `t` satisfiying convention (2) described above.
+  /// The derivative of `rot` satisfiying convention (2) described above.
   @derivative(of: rot)
   @usableFromInline
-  func vjpRot() -> (value: Rot2, pullback: (Rot2.TangentVector) -> TangentVector) {
+  func vjpRot() -> (value: Rot2, pullback: (Vector1) -> Vector3) {
     // This pullback is similar to the pullback in `vjpT`, but for the second column of the
     // matrix. See the comment in `vjpT` for more information.
-    return (rot, { TangentVector(vx: 0, vy: 0, omega: $0.x) })
+    return (rot, { Self.tangentVector(w: $0, v: Vector2.zero) })
   }
 
-  /// The Lie algebra se(2).
-  public struct TangentVector:
-    Differentiable, AdditiveArithmetic, KeyPathIterable, VectorProtocol, ElementaryFunctions
-  {
-    public typealias VectorSpaceScalar = Double
+  /// Twist coordinates, with the first component for rotation and the remaining components for
+  /// translation.
+  ///
+  /// See the documentation comment on the declaration of `Pose2` for more information.
+  public typealias TangentVector = Vector3
 
-    /// The x translation component in the basis defined in section 4.1 of
-    /// https://github.com/borglab/gtsam/blob/develop/doc/LieGroups.pdf.
-    public var vx: Double
-
-    /// The y translation component in the basis defined in section 4.1 of
-    /// https://github.com/borglab/gtsam/blob/develop/doc/LieGroups.pdf.
-    public var vy: Double
-
-    /// The rotation component in the basis defined in section 4.1 of
-    /// https://github.com/borglab/gtsam/blob/develop/doc/LieGroups.pdf.
-    public var omega: Double
-
-    public init(_ vx: Double, _ vy: Double, _ omega: Double) {
-      self.vx = vx
-      self.vy = vy
-      self.omega = omega
-    }
+  /// Creates a tangent vector given rotation (`w`) and translation (`v`) components.
+  public static func tangentVector(w: Vector1, v: Vector2) -> Vector3 {
+    Vector3(w.x, v.x, v.y)
   }
 
-  /// Moves `self` by `exp(direction)`.
-  public mutating func move(along direction: TangentVector) {
+  /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.
+  public static func decomposed(tangentVector: Vector3) -> (w: Vector1, v: Vector2) {
+    (Vector1(tangentVector.x), Vector2(tangentVector.y, tangentVector.z))
+  }
+
+  /// Moves `self` by `exp(hat(direction))`.
+  public mutating func move(along direction: Vector3) {
     // TODO: This should be the real exponential map.
-    self.tStorage.move(along: Vector2(
-      rot.c * direction.vx - rot.s * direction.vy,
-      rot.s * direction.vx + rot.c * direction.vy
-    ))
-    self.rotStorage.move(along: Vector1(direction.omega))
+    let (w, v) = Self.decomposed(tangentVector: direction)
+    self.tStorage.move(along: rot.rotate(v))
+    self.rotStorage.move(along: w)
   }
 
   /// Storage for the pose's translation.
@@ -193,18 +183,17 @@ extension Pose2 {
     Pose2(a.rot * b.rot, a.t + a.rot * b.t)
   }
 
-  /// The adjoint representation of `self`, as a linear map.
-  public func adjoint(_ v: TangentVector) -> TangentVector {
-    TangentVector(
-      rot.c * v.vx - rot.s * v.vy + t.y * v.omega,
-      rot.s * v.vx + rot.c * v.vy - t.x * v.omega,
-      v.omega
-    )
+  /// The Adjoint group action of `self` on the tangent space, as a linear map.
+  public var groupAdjoint: (Vector3) -> Vector3 {
+    {
+      let (w, v) = Self.decomposed(tangentVector: $0)
+      return Self.tangentVector(w: w, v: rot.rotate(v) - t.perp().scaled(by: w.x))
+    }
   }
 
-  /// The adjoint representation of `self`, as a matrix.
-  public var adjointMatrix: Tensor<Double> {
-    Tensor(matrixRows: Pose2.tangentStandardBasis.map { adjoint($0) }).transposed()
+  /// The Adjoint group action of `self` on the tangent space, as a linear map.
+  public var groupAdjointMatrix: Tensor<Double> {
+    Tensor(matrixRows: Pose2.tangentStandardBasis.map { groupAdjoint($0) }).transposed()
   }
 }
 

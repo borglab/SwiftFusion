@@ -141,7 +141,7 @@ final class Pose2Tests: XCTestCase {
   func testDerivativeInverse() {
     for _ in 0..<10 {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
-      let expected = -pose.adjointMatrix
+      let expected = -pose.groupAdjointMatrix
       assertEqual(
         Tensor<Double>(matrixRows: jacobian(of: SwiftFusion.inverse, at: pose)),
         expected,
@@ -159,7 +159,7 @@ final class Pose2Tests: XCTestCase {
       let lhs = Pose2(randomWithCovariance: eye(rowCount: 3))
       let rhs = Pose2(randomWithCovariance: eye(rowCount: 3))
       let expected = Tensor(
-        concatenating: [SwiftFusion.inverse(rhs).adjointMatrix, eye(rowCount: 3)],
+        concatenating: [SwiftFusion.inverse(rhs).groupAdjointMatrix, eye(rowCount: 3)],
         alongAxis: 1
       )
       assertEqual(
@@ -202,10 +202,13 @@ final class Pose2Tests: XCTestCase {
 
     let j = jacobian(of: f, at: pts)
 
+    // Note that these numbers are a permutation of the corresponding numbers from GTSAM because
+    // the SwiftFusion convention for tangent vector is (omega, v) while the GTSAM convention is
+    // (v, omega).
     let expected = Tensor<Double>([
-      [0.0, -1.0, -2.0, 1.0, 0.0, 0.0],
-      [1.0,  0.0, -2.0, 0.0, 1.0, 0.0],
-      [0.0,  0.0, -1.0, 0.0, 0.0, 1.0]
+      [-1.0, 0.0,  0.0, 1.0, 0.0, 0.0],
+      [-2.0, 0.0, -1.0, 0.0, 1.0, 0.0],
+      [-2.0, 1.0,  0.0, 0.0, 0.0, 1.0]
     ])
 
     assertEqual(Tensor<Double>(matrixRows: j), expected, accuracy: 1e-10)
