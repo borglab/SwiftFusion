@@ -30,4 +30,5 @@ do
 EOF
 
   "$GYB" "$GENERATED_FILE.gyb" >> "$GENERATED_FILE"
+  sed -i'' "s|###sourceLocation(file: \"$(pwd)/|###sourceLocation(file: \"|" "$GENERATED_FILE"
 done
