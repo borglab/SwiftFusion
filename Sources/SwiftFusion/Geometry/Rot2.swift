@@ -129,6 +129,12 @@ public extension Rot2 {
   func unrotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
+  
+  // inverse rotation, differentiation is automatic because Rot2 constructor has derivative
+  @differentiable
+  public func inverse() -> Rot2 {
+    Rot2(c: self.c, s: -self.s)
+  }
 }
 
 extension Rot2: CustomDebugStringConvertible {
@@ -137,16 +143,10 @@ extension Rot2: CustomDebugStringConvertible {
   }
 }
 
-// inverse rotation, differentiation is automatic because Rot2 constructor has derivative
-@differentiable
-public func inverse(_ r: Rot2) -> Rot2 {
-  Rot2(c: r.c, s: -r.s)
-}
-
 /// Calculate relative rotation between two rotations R1 and R2
 @differentiable
 public func between(_ R1: Rot2, _ R2: Rot2) -> Rot2 {
-  inverse(R1) * R2
+  R1.inverse() * R2
 }
 
 struct Between: Differentiable {

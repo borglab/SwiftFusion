@@ -196,18 +196,19 @@ extension Pose2 {
   public var groupAdjointMatrix: Tensor<Double> {
     Tensor(stacking: Pose2.tangentStandardBasis.map { groupAdjoint($0).tensor }).transposed()
   }
+
+  /// Group inverse.
+  @differentiable
+  public func inverse() -> Pose2 {
+    Pose2(self.rot.inverse(), self.rot.unrotate(-self.t))
+  }
+
 }
 
 extension Pose2: CustomStringConvertible {
   public var description: String {
     "Pose2(rot: \(rot), t: \(t))"
   }
-}
-
-/// Group inverse.
-@differentiable
-public func inverse(_ p: Pose2) -> Pose2 {
-  Pose2(inverse(p.rot), p.rot.unrotate(-p.t))
 }
 
 extension Pose2: Equatable {
@@ -219,5 +220,5 @@ extension Pose2: Equatable {
 /// Calculate relative pose 1T2 between two poses wT1 and wT2
 @differentiable
 public func between(_ wT1: Pose2, _ wT2: Pose2) -> Pose2 {
-  inverse(wT1) * wT2
+  wT1.inverse() * wT2
 }

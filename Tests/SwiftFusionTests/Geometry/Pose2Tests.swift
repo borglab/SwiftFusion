@@ -144,7 +144,7 @@ final class Pose2Tests: XCTestCase {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
       let expected = -pose.groupAdjointMatrix
       assertEqual(
-        Tensor<Double>(stacking: jacobian(of: SwiftFusion.inverse, at: pose).map { $0.tensor }),
+        Tensor<Double>(stacking: jacobian(of: { $0.inverse() }, at: pose).map { $0.tensor }),
         expected,
         accuracy: 1e-10
       )
@@ -156,7 +156,7 @@ final class Pose2Tests: XCTestCase {
     for _ in 0..<10 {
       let lhs = Pose2(randomWithCovariance: eye(rowCount: 3))
       let rhs = Pose2(randomWithCovariance: eye(rowCount: 3))
-      let expectedWrtLhs = SwiftFusion.inverse(rhs).groupAdjointMatrix
+      let expectedWrtLhs = rhs.inverse().groupAdjointMatrix
       let expectedWrtRhs: Tensor<Double> = eye(rowCount: 3)
       assertEqual(
         Tensor<Double>(stacking: jacobian(of: { $0 * rhs }, at: lhs).map { $0.tensor }),
