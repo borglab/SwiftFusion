@@ -30,7 +30,7 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   /// The pose's translation.
   ///
   /// This is the projection SE(2) -> R^2. (Note: not a group homomorphism!)
-  @differentiable public var t: Point2 { tStorage }
+  @differentiable public var t: Vector2 { tStorage }
 
   /// The pose's rotation.
   ///
@@ -42,7 +42,7 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   /// This is the bijection SO(2) x R^2 -> SE(2), where "x" means direct product of groups. (Note:
   /// not a group homomorphism!)
   @differentiable
-  public init(_ t: Point2, _ r: Rot2) {
+  public init(_ r: Rot2, _ t: Vector2) {
     tStorage = t
     rotStorage = r
   }
@@ -50,8 +50,8 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   /// The derivative of `init` satisfiying convention (2) described above.
   @derivative(of: init(_:_:))
   @usableFromInline
-  static func vjpInit(_ t: Point2, _ r: Rot2)
-    -> (value: Pose2, pullback: (TangentVector) -> (Point2.TangentVector, Rot2.TangentVector))
+  static func vjpInit(_ r: Rot2, _ t: Vector2)
+    -> (value: Pose2, pullback: (TangentVector) -> (Rot2.TangentVector, Vector2))
   {
     // Explanation of this calculation:
     //
@@ -77,13 +77,13 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
     //                                  ( 0 1 ) ( eps_r )
     //
     // The pullback here implements the linear map corresponding to that matrix.
-    (Pose2(t, r), { eps in
+    (Pose2(r, t), { eps in
       (
-        Point2.TangentVector(
-          x: r.c * eps.vx - r.s * eps.vy,
-          y: r.s * eps.vx + r.c * eps.vy
-        ),
-        eps.omega
+        Vector1(eps.omega),
+        Vector2(
+          r.c * eps.vx - r.s * eps.vy,
+          r.s * eps.vx + r.c * eps.vy
+        )
       )
     })
   }
@@ -91,7 +91,7 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   /// The derivative of `t` satisfiying convention (2) described above.
   @derivative(of: t)
   @usableFromInline
-  func vjpT() -> (value: Point2, pullback: (Point2.TangentVector) -> TangentVector) {
+  func vjpT() -> (value: Vector2, pullback: (Vector2) -> TangentVector) {
     // Explanation of this calculation:
     //
     // `t` is the inverse of `init`, followed by a projection to the translation component. So we
@@ -118,7 +118,7 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   func vjpRot() -> (value: Rot2, pullback: (Rot2.TangentVector) -> TangentVector) {
     // This pullback is similar to the pullback in `vjpT`, but for the second column of the
     // matrix. See the comment in `vjpT` for more information.
-    return (rot, { TangentVector(vx: 0, vy: 0, omega: $0) })
+    return (rot, { TangentVector(vx: 0, vy: 0, omega: $0.x) })
   }
 
   /// The Lie algebra se(2).
@@ -149,18 +149,18 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   /// Moves `self` by `exp(direction)`.
   public mutating func move(along direction: TangentVector) {
     // TODO: This should be the real exponential map.
-    self.tStorage.move(along: Point2.TangentVector(
-      x: rot.c * direction.vx - rot.s * direction.vy,
-      y: rot.s * direction.vx + rot.c * direction.vy
+    self.tStorage.move(along: Vector2(
+      rot.c * direction.vx - rot.s * direction.vy,
+      rot.s * direction.vx + rot.c * direction.vy
     ))
-    self.rotStorage.move(along: direction.omega)
+    self.rotStorage.move(along: Vector1(direction.omega))
   }
 
   /// Storage for the pose's translation.
   ///
   /// This is private so that we can define an accessor with a custom derivative (Swift AD does not
   /// currently support custom derivatives on stored properties).
-  private var tStorage: Point2
+  private var tStorage: Vector2
 
   /// Storage for the pose's rotation.
   ///
@@ -174,7 +174,7 @@ extension Pose2 {
   /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
   @differentiable
   public init(_ x: Double, _ y: Double, _ theta: Double) {
-    self.init(Point2(x, y), Rot2(theta))
+    self.init(Rot2(theta), Vector2(x, y))
   }
 
   public init(randomWithCovariance covariance: Tensor<Double>) {
@@ -190,7 +190,7 @@ extension Pose2 {
   /// Group operation.
   @differentiable
   public static func * (a: Pose2, b: Pose2) -> Pose2 {
-    Pose2(a.t + a.rot * b.t, a.rot * b.rot)
+    Pose2(a.rot * b.rot, a.t + a.rot * b.t)
   }
 
   /// The adjoint representation of `self`, as a linear map.
@@ -211,7 +211,7 @@ extension Pose2 {
 /// Group inverse.
 @differentiable
 public func inverse(_ p: Pose2) -> Pose2 {
-  Pose2(p.rot.unrotate(-p.t), inverse(p.rot))
+  Pose2(inverse(p.rot), p.rot.unrotate(-p.t))
 }
 
 extension Pose2: Equatable {

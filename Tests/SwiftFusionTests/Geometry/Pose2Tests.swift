@@ -32,7 +32,7 @@ final class Pose2Tests: XCTestCase {
 
   /// test the simplest gradient descent on Pose2
   func testBetweenDerivatives() {
-    var pT1 = Pose2(Point2(1, 0), Rot2(0)), pT2 = Pose2(Point2(1, 1), Rot2(1))
+    var pT1 = Pose2(Rot2(0), Vector2(1, 0)), pT2 = Pose2(Rot2(1), Vector2(1, 1))
 
     for _ in 0..<100 {
       let (_, 𝛁loss) = valueWithGradient(at: pT1) { pT1 -> Double in
@@ -70,11 +70,11 @@ final class Pose2Tests: XCTestCase {
     }
 
     // Initial estimate for poses
-    let p1T0 = Pose2(Point2(0.5, 0.0), Rot2(0.2))
-    let p2T0 = Pose2(Point2(2.3, 0.1), Rot2(-0.2))
-    let p3T0 = Pose2(Point2(4.1, 0.1), Rot2(pi / 2))
-    let p4T0 = Pose2(Point2(4.0, 2.0), Rot2(pi))
-    let p5T0 = Pose2(Point2(2.1, 2.1), Rot2(-pi / 2))
+    let p1T0 = Pose2(Rot2(0.2), Vector2(0.5, 0.0))
+    let p2T0 = Pose2(Rot2(-0.2), Vector2(2.3, 0.1))
+    let p3T0 = Pose2(Rot2(pi / 2), Vector2(4.1, 0.1))
+    let p4T0 = Pose2(Rot2(pi), Vector2(4.0, 2.0))
+    let p5T0 = Pose2(Rot2(-pi / 2), Vector2(2.1, 2.1))
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
@@ -118,13 +118,13 @@ final class Pose2Tests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t.magnitude, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
 
   /// Tests that the derivative of the identity function is correct at a few random points.
   func testDerivativeIdentity() {
     func identity(_ x: Pose2) -> Pose2 {
-      Pose2(x.t, x.rot)
+      Pose2(x.rot, x.t)
     }
     for _ in 0..<10 {
       let expected: Tensor<Double> = eye(rowCount: 3)
@@ -220,11 +220,11 @@ final class Pose2Tests: XCTestCase {
     }
 
     // Initial estimate for poses
-    let p1T0 = Pose2(Point2(0.5, 0.0), Rot2(0.2))
-    let p2T0 = Pose2(Point2(2.3, 0.1), Rot2(-0.2))
-    let p3T0 = Pose2(Point2(4.1, 0.1), Rot2(pi / 2))
-    let p4T0 = Pose2(Point2(4.0, 2.0), Rot2(pi))
-    let p5T0 = Pose2(Point2(2.1, 2.1), Rot2(-pi / 2))
+    let p1T0 = Pose2(Rot2(0.2), Vector2(0.5, 0.0))
+    let p2T0 = Pose2(Rot2(-0.2), Vector2(2.3, 0.1))
+    let p3T0 = Pose2(Rot2(pi / 2), Vector2(4.1, 0.1))
+    let p4T0 = Pose2(Rot2(pi), Vector2(4.0, 2.0))
+    let p5T0 = Pose2(Rot2(-pi / 2), Vector2(2.1, 2.1))
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
@@ -270,7 +270,7 @@ final class Pose2Tests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t.magnitude, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
 
   static var allTests = [
