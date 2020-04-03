@@ -187,13 +187,14 @@ extension Pose2 {
   public var groupAdjoint: (Vector3) -> Vector3 {
     {
       let (w, v) = Self.decomposed(tangentVector: $0)
-      return Self.tangentVector(w: w, v: rot.rotate(v) - t.perp().scaled(by: w.x))
+      let tPerp = Vector2(-t.y, t.x)
+      return Self.tangentVector(w: w, v: rot.rotate(v) - tPerp.scaled(by: w.x))
     }
   }
 
-  /// The Adjoint group action of `self` on the tangent space, as a linear map.
+  /// The Adjoint group action of `self` on the tangent space, as a matrix.
   public var groupAdjointMatrix: Tensor<Double> {
-    Tensor(matrixRows: Pose2.tangentStandardBasis.map { groupAdjoint($0) }).transposed()
+    Tensor(stacking: Pose2.tangentStandardBasis.map { groupAdjoint($0).tensor }).transposed()
   }
 }
 

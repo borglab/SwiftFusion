@@ -129,8 +129,9 @@ final class Pose2Tests: XCTestCase {
     for _ in 0..<10 {
       let expected: Tensor<Double> = eye(rowCount: 3)
       assertEqual(
-        Tensor<Double>(
-          matrixRows: jacobian(of: identity, at: Pose2(randomWithCovariance: eye(rowCount: 3)))),
+        Tensor<Double>(stacking: jacobian(
+          of: identity,
+          at: Pose2(randomWithCovariance: eye(rowCount: 3))).map { $0.tensor }),
         expected,
         accuracy: 1e-10
       )
@@ -143,7 +144,7 @@ final class Pose2Tests: XCTestCase {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
       let expected = -pose.groupAdjointMatrix
       assertEqual(
-        Tensor<Double>(matrixRows: jacobian(of: SwiftFusion.inverse, at: pose)),
+        Tensor<Double>(stacking: jacobian(of: SwiftFusion.inverse, at: pose).map { $0.tensor }),
         expected,
         accuracy: 1e-10
       )
@@ -152,19 +153,19 @@ final class Pose2Tests: XCTestCase {
 
   /// Test the the derivative of the group operations is correct at a few random points.
   func testDerivativeMultiplication() {
-    func multiply(_ x: [Pose2]) -> Pose2 {
-      x[0] * x[1]
-    }
     for _ in 0..<10 {
       let lhs = Pose2(randomWithCovariance: eye(rowCount: 3))
       let rhs = Pose2(randomWithCovariance: eye(rowCount: 3))
-      let expected = Tensor(
-        concatenating: [SwiftFusion.inverse(rhs).groupAdjointMatrix, eye(rowCount: 3)],
-        alongAxis: 1
+      let expectedWrtLhs = SwiftFusion.inverse(rhs).groupAdjointMatrix
+      let expectedWrtRhs: Tensor<Double> = eye(rowCount: 3)
+      assertEqual(
+        Tensor<Double>(stacking: jacobian(of: { $0 * rhs }, at: lhs).map { $0.tensor }),
+        expectedWrtLhs,
+        accuracy: 1e-10
       )
       assertEqual(
-        Tensor<Double>(matrixRows: jacobian(of: multiply, at: [lhs, rhs])),
-        expected,
+        Tensor<Double>(stacking: jacobian(of: { lhs * $0 }, at: rhs).map { $0.tensor }),
+        expectedWrtRhs,
         accuracy: 1e-10
       )
     }
@@ -192,26 +193,31 @@ final class Pose2Tests: XCTestCase {
   func testJacobianPose2Trivial() {
     // Values taken from GTSAM `testPose2.cpp`
     let wT1 = Pose2(1, 2, .pi/2.0), wT2 = Pose2(-1, 4, .pi)
-    let pts: [Pose2] = [wT1, wT2]
-
-    let f: @differentiable(_ pts: [Pose2]) -> Pose2 = { (_ pts: [Pose2]) -> Pose2 in
-      let d = between(pts[0], pts[1])
-
-      return d
-    }
-
-    let j = jacobian(of: f, at: pts)
 
     // Note that these numbers are a permutation of the corresponding numbers from GTSAM because
     // the SwiftFusion convention for tangent vector is (omega, v) while the GTSAM convention is
     // (v, omega).
-    let expected = Tensor<Double>([
-      [-1.0, 0.0,  0.0, 1.0, 0.0, 0.0],
-      [-2.0, 0.0, -1.0, 0.0, 1.0, 0.0],
-      [-2.0, 1.0,  0.0, 0.0, 0.0, 1.0]
+    let expectedWrtLhs = Tensor<Double>([
+      [-1.0, 0.0,  0.0],
+      [-2.0, 0.0, -1.0],
+      [-2.0, 1.0,  0.0]
+    ])
+    let expectedWrtRhs = Tensor<Double>([
+      [1.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0],
+      [0.0, 0.0, 1.0]
     ])
 
-    assertEqual(Tensor<Double>(matrixRows: j), expected, accuracy: 1e-10)
+    assertEqual(
+      Tensor<Double>(stacking: jacobian(of: { between($0, wT2) }, at: wT1).map { $0.tensor }),
+      expectedWrtLhs,
+      accuracy: 1e-10
+    )
+    assertEqual(
+      Tensor<Double>(stacking: jacobian(of: { between(wT1, $0) }, at: wT2).map { $0.tensor }),
+      expectedWrtRhs,
+      accuracy: 1e-10
+    )
   }
 
   /// test convergence for a simple Pose2SLAM
