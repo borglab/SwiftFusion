@@ -198,6 +198,12 @@ extension Pose2 {
   }
 }
 
+extension Pose2: CustomStringConvertible {
+  public var description: String {
+    "Pose2(rot: \(rot), t: \(t))"
+  }
+}
+
 /// Group inverse.
 @differentiable
 public func inverse(_ p: Pose2) -> Pose2 {
