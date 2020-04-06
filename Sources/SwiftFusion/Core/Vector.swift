@@ -83,7 +83,7 @@ extension Vector1: ElementaryFunctions {
 }
 
 /// Conversion to/from tensor.
-extension Vector1 {
+extension Vector1: TensorConvertible {
   /// A `Tensor` with shape `[1]` whose elements are the elements of `self`.
   @differentiable
   public var tensor: Tensor<Double> {
@@ -100,6 +100,8 @@ extension Vector1 {
     self.x = tensor[0].scalarized()
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
   }
+
+  public static var dimension: Int { 1 }
 }
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
@@ -195,7 +197,7 @@ extension Vector2: ElementaryFunctions {
 }
 
 /// Conversion to/from tensor.
-extension Vector2 {
+extension Vector2: TensorConvertible {
   /// A `Tensor` with shape `[2]` whose elements are the elements of `self`.
   @differentiable
   public var tensor: Tensor<Double> {
@@ -214,6 +216,8 @@ extension Vector2 {
     self.y = tensor[1].scalarized()
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
   }
+
+  public static var dimension: Int { 2 }
 }
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
@@ -323,7 +327,7 @@ extension Vector3: ElementaryFunctions {
 }
 
 /// Conversion to/from tensor.
-extension Vector3 {
+extension Vector3: TensorConvertible {
   /// A `Tensor` with shape `[3]` whose elements are the elements of `self`.
   @differentiable
   public var tensor: Tensor<Double> {
@@ -344,5 +348,7 @@ extension Vector3 {
     self.z = tensor[2].scalarized()
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
   }
+
+  public static var dimension: Int { 3 }
 }
 

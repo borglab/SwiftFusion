@@ -81,7 +81,7 @@ extension Vector${dim}: ElementaryFunctions {
 }
 
 /// Conversion to/from tensor.
-extension Vector${dim} {
+extension Vector${dim}: TensorConvertible {
   /// A `Tensor` with shape `[${dim}]` whose elements are the elements of `self`.
   @differentiable
   public var tensor: Tensor<Double> {
@@ -98,6 +98,8 @@ extension Vector${dim} {
     self.${coordinate} = tensor[${index}].scalarized()
     % end
   }
+
+  public static var dimension: Int { ${dim} }
 }
 
 % end
