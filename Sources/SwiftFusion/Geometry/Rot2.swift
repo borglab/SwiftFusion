@@ -132,7 +132,7 @@ public extension Rot2 {
   
   // inverse rotation, differentiation is automatic because Rot2 constructor has derivative
   @differentiable
-  public func inverse() -> Rot2 {
+  func inverse() -> Rot2 {
     Rot2(c: self.c, s: -self.s)
   }
 }
@@ -147,15 +147,6 @@ extension Rot2: CustomDebugStringConvertible {
 @differentiable
 public func between(_ R1: Rot2, _ R2: Rot2) -> Rot2 {
   R1.inverse() * R2
-}
-
-struct Between: Differentiable {
-  var a: Rot2 = Rot2(0)
-
-  @differentiable
-  func callAsFunction(_ b: Rot2) -> Rot2 {
-    between(a, b)
-  }
 }
 
 @differentiable
