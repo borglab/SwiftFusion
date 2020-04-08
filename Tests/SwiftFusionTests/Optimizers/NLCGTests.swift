@@ -1,7 +1,7 @@
 import SwiftFusion
 import XCTest
 
-final class CGLSTests: XCTestCase {
+final class NLCGTests: XCTestCase {
   /// TODO(fan): Change this to a proper noise model
   @differentiable
   func e_pose2(_ ŷ: Pose2) -> Double {
@@ -10,7 +10,7 @@ final class CGLSTests: XCTestCase {
   }
 
   /// test convergence for a simple Pose2SLAM
-  func testPose2SLAMWithCGLS() {
+  func testPose2SLAMWithNLCG() {
     let pi = 3.1415926
 
     let dumpjson = { (p: Pose2) -> String in
@@ -26,7 +26,7 @@ final class CGLSTests: XCTestCase {
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
-    let optimizer = CGLS(for: map)
+    let optimizer = NLCG(for: map)
     
     let loss: @differentiable (map) -> Double = { map -> Double in
       var loss: Double = 0
@@ -60,6 +60,6 @@ final class CGLSTests: XCTestCase {
   }
 
   static var allTests = [
-    ("testPose2SLAMWithSGD", testPose2SLAMWithCGLS),
+    ("testPose2SLAMWithSGD", testPose2SLAMWithNLCG),
   ]
 }
