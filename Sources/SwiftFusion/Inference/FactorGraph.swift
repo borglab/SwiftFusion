@@ -21,11 +21,12 @@ import TensorFlow
 /// the way they are stored does not matter here.
 ///
 public protocol FactorGraph {
-  
+  associatedtype KeysType: IteratorProtocol
+  associatedtype FactorsType: IteratorProtocol
   /// TODO(fan): Is this right?
   /// Or, do we need this at all? I think this would help to register keys to descriptions and
   /// help debugging and serialization, but I am not sure.
-  var keys: IteratorProtocol { get }
+  var keys: KeysType { get }
   
-  var factors: IteratorProtocol { get }
+  var factors: FactorsType { get }
 }

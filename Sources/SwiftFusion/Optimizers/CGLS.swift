@@ -37,7 +37,7 @@ public class CGLS<Model: Differentiable>
     // a_0 = argmin(f(x_0+a*dx_0))
     
     var x_1 = x_0
-    x_1.move(dx_0.scaled(by: a_0))
+    x_1.move(along: dx_0.scaled(by: a_0))
     
     var x_n = x_1
     var dx_n_1 = dx_0
