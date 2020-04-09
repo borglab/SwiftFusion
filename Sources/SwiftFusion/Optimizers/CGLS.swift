@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/// Non-Linear Conjugate Gradient (NLCG) optimizer.
+/// Conjugate Gradient Least Squares (CGLS) optimizer.
 ///
-/// An optimizer that implements NLCG second order optimizer
+/// An optimizer that implements CGLS second order optimizer
 
-public class NLCG<Model: Differentiable>
+public class CGLS<Model: Differentiable>
   where Model.TangentVector: TangentStandardBasis & VectorProtocol & ElementaryFunctions,
   Model.TangentVector.VectorSpaceScalar == Double {
   public typealias Model = Model
@@ -38,7 +38,7 @@ public class NLCG<Model: Differentiable>
     // a_0 = argmin(f(x_0+a*dx_0))
     
     var x_1 = x_0
-    x_1.move(along: dx_0.scaled(by: a_0))
+    x_1.move(dx_0.scaled(by: a_0))
     
     var x_n = x_1
     var dx_n_1 = dx_0
