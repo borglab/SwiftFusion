@@ -13,9 +13,10 @@
 // limitations under the License.
 import TensorFlow
 
-public struct GaussianFactorGraph: FactorGraph {
-  public typealias KeysType = Array<Int>
+public protocol Value {
   
-  public typealias FactorsType = Array<JacobianFactor>
-  
+}
+
+public struct Values {
+  var _values: Dictionary<Int, Value>
 }

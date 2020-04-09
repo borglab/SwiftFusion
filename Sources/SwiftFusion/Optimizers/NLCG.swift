@@ -57,7 +57,7 @@ public class NLCG<Model: Differentiable>
       // let a = argmin(f(x_n + a * s))
       let a = 1.0
       
-      x_n = x_n + s.scaled(by: a)
+      x_n.move(along: s.scaled(by: a))
     }
     
     model.move(along: A_T)

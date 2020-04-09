@@ -51,9 +51,9 @@ final class CGLSTests: XCTestCase {
     poses.insert(4, p5T0)
     
     for _ in 0..<500 {
-      linear_graph = graph.linearize(at: poses)
+      let gfg = graph.linearize(at: poses)
       
-      let optimizer = CGLS(for: linear_graph)
+      let optimizer = CGLS(for: gfg)
       
       let tangent = optimizer.optimize()
       
