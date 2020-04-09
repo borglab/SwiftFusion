@@ -33,7 +33,7 @@ import TensorFlow
 public protocol JacobianFactor: LinearFactor {
   typealias Output = Tensor<ScalarType>
   
-  /// Comparable to
+  /// Comparable to the `*` operator in GTSAM
   @differentiable
   static func * (lhs: JacobianFactor, rhs: Self.Input) -> Self.Output
 }

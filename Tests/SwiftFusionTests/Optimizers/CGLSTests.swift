@@ -53,11 +53,12 @@ final class CGLSTests: XCTestCase {
     for _ in 0..<500 {
       let gfg = graph.linearize(at: poses)
       
-      let optimizer = CGLS(for: gfg)
+      let optimizer = CGLS()
       
-      let tangent = optimizer.optimize()
+      let new_pose = optimizer.optimize(gfg: gfg, initial: poses)
       
-      poses.move(tangent.scaled(-1.0))
+      // poses.move(tangent.scaled(-1.0))
+      pose = new_pose
     }
 
     let p5T1 = between(poses[4], poses[0])

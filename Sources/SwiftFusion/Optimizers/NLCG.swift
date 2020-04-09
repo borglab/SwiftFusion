@@ -48,6 +48,7 @@ public class NLCG<Model: Differentiable>
       let dx = gradient(at: x_n, in: f)
       
       // Fletcher-Reeves
+      // TODO: `.dot` needs to be implemented by iterating over keyPath
       let beta = dx.dot(dx) / dx_n_1.dot(dx_n_1)
       
       // s_n = \delta x_n + \beta_n s_{n-1}

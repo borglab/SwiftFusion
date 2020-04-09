@@ -14,19 +14,13 @@
 /// Conjugate Gradient Least Squares (CGLS) optimizer.
 ///
 /// An optimizer that implements CGLS second order optimizer
-public class CGLS<Model: Differentiable>
-  where Model.TangentVector: TangentStandardBasis & VectorProtocol & ElementaryFunctions,
-  Model.TangentVector.VectorSpaceScalar == Double {
-  public typealias Model = Model
+public class CGLS {
   /// The set of steps taken.
   public var step: Int = 0
 
-  public init(
-    for _: __shared Model) {
-    
-  }
+  public init() {}
 
-  public func optimize(loss f: @differentiable (Model) -> Model.TangentVector.VectorSpaceScalar, model x_in: inout Model) {
+  public func optimize(gfg: GaussianFactorGraph, initial: Values) {
     step += 1
     
     let x_0 = x_in

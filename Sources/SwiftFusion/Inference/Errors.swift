@@ -13,11 +13,9 @@
 // limitations under the License.
 import TensorFlow
 
-public struct GaussianFactorGraph: FactorGraph {
-  public typealias KeysType = Array<Int>
-  
-  public typealias FactorsType = Array<JacobianFactor>
-  
-  @differentiable
-  static func * (lhs: GaussianFactorGraph, rhs: Values) -> Errors
+/// Should be VectorN, but now just tensor
+typealias Error = Tensor<Double>
+
+public struct Errors {
+  var _errors: Dictionary<Int, Error>
 }
