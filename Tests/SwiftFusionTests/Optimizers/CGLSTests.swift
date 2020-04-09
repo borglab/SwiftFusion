@@ -24,39 +24,44 @@ final class CGLSTests: XCTestCase {
     let p4T0 = Pose2(Rot2(pi), Vector2(4.0, 2.0))
     let p5T0 = Pose2(Rot2(-pi / 2), Vector2(2.1, 2.1))
 
-    var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
-
-    let optimizer = CGLS(for: map)
+    var graph = NonlinearFactorGraph()
+    var poses = Values()
     
-    let loss: @differentiable (map) -> Double = { map -> Double in
-      var loss: Double = 0
-
-      // Odometry measurements
-      let p2T1 = between(between(map[1], map[0]), Pose2(2.0, 0.0, 0.0))
-      let p3T2 = between(between(map[2], map[1]), Pose2(2.0, 0.0, pi / 2))
-      let p4T3 = between(between(map[3], map[2]), Pose2(2.0, 0.0, pi / 2))
-      let p5T4 = between(between(map[4], map[3]), Pose2(2.0, 0.0, pi / 2))
-
-      // Sum through the errors
-      let error = self.e_pose2(p2T1) + self.e_pose2(p3T2) + self.e_pose2(p4T3) + self.e_pose2(p5T4)
-      loss = loss + (error / 3)
-
-      return loss
-    }
+    // Odometry measurements
+    let p2T1 = BetweenFactor(1, 0, Pose2(2.0, 0.0, 0.0))
+    let p3T2 = BetweenFactor(2, 1 Pose2(2.0, 0.0, pi / 2))
+    let p4T3 = BetweenFactor(3, 2, Pose2(2.0, 0.0, pi / 2))
+    let p5T4 = BetweenFactor(4, 3, Pose2(2.0, 0.0, pi / 2))
     
-    optimizer.optimize(loss: loss, model: map)
-    // print("]")
-
-    print("map = [")
-    for v in map.indices {
-      print("\(dumpjson(map[v]))\({ () -> String in if v == map.indices.endIndex - 1 { return "" } else { return "," } }())")
+    let loop_constraint =
+      BetweenFactor(4, 0, Pose2(0.0, 0.0, pi / 2), NoiseModel.Gaussian(0.001))
+    
+    graph.insert(p2T1)
+    graph.insert(p3T2)
+    graph.insert(p4T3)
+    graph.insert(p5T4)
+    graph.insert(loop_constraint)
+    
+    poses.insert(0, p1T0)
+    poses.insert(1, p2T0)
+    poses.insert(2, p3T0)
+    poses.insert(3, p4T0)
+    poses.insert(4, p5T0)
+    
+    for _ in 0..<500 {
+      linear_graph = graph.linearize(at: poses)
+      
+      let optimizer = CGLS(for: linear_graph)
+      
+      let tangent = optimizer.optimize()
+      
+      poses.move(tangent.scaled(-1.0))
     }
-    print("]")
 
-    let p5T1 = between(map[4], map[0])
+    let p5T1 = between(poses[4], poses[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t_.norm, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
 
   static var allTests = [

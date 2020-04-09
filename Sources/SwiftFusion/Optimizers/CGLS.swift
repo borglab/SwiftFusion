@@ -14,7 +14,6 @@
 /// Conjugate Gradient Least Squares (CGLS) optimizer.
 ///
 /// An optimizer that implements CGLS second order optimizer
-
 public class CGLS<Model: Differentiable>
   where Model.TangentVector: TangentStandardBasis & VectorProtocol & ElementaryFunctions,
   Model.TangentVector.VectorSpaceScalar == Double {
