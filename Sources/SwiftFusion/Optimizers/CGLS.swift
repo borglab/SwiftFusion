@@ -18,32 +18,36 @@ public class CGLS {
   /// The set of steps taken.
   public var step: Int = 0
 
+  /// Constructor (Probably not necessary)
   public init() {}
 
+  /// Optimize the Gaussian Factor Graph with a initial estimate
+  /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
+  /// Page 289, Algorithm 7.4.1
   public func optimize(gfg: GaussianFactorGraph, initial: Values) {
     step += 1
     
-    let b_0 = gfg.b
+    let b = gfg.b
     let A = gfg.A
-    var x = initial
-    var r = b - A*x
-    var p = A.T * r
+    
+    var x = initial // x(0)
+    var r = b - A*x // r(0) = b - A * x(0)
+    var p = A.T * r // p(0) = s(0) = A^T * r(0)
     var s = p
-    var gamma = s.norm
+    var gamma = s.norm // γ(0) = ||s(0)||^2
     
     while true {
-      let q = A * p
-      let alpha = gamma / q.norm
-      x = x + alpha * p
-      r = r - alpha * q
-      s = A.T * r
+      let q = A * p // q(k) = A * p(k)
+      let alpha = gamma / q.norm // α(k) = γ(k)/||q(k)||^2
+      x = x + alpha * p // x(k+1) = x(k) + α(k) * p(k)
+      r = r - alpha * q // r(k+1) = r(k) - α(k) * q(k)
+      s = A.T * r // s(k+1) = A.T * r(k+1)
       
-      let gamma_next = s.norm
-      let beta = gamma_next/gamma
+      let gamma_next = s.norm // γ(k+1) = ||s(k+1)||^2
+      let beta = gamma_next/gamma // β(k) = γ(k+1)/γ(k)
       gamma = gamma_next
-      p = s + beta * p
+      p = s + beta * p // p(k+1) = s(k+1) + β(k) * p(k)
     }
     
-    model.move(along: A_T)
   }
 }
