@@ -23,22 +23,25 @@ public class CGLS {
   public func optimize(gfg: GaussianFactorGraph, initial: Values) {
     step += 1
     
-    let 
+    let b_0 = gfg.b
+    let A = gfg.A
+    var x = initial
+    var r = b - A*x
+    var p = A.T * r
+    var s = p
+    var gamma = s.norm
     
     while true {
-      let dx = gradient(at: x_n, in: f)
+      let q = A * p
+      let alpha = gamma / q.norm
+      x = x + alpha * p
+      r = r - alpha * q
+      s = A.T * r
       
-      // Fletcher-Reeves
-      let beta = dx.dot(dx) / dx_n_1.dot(dx_n_1)
-      
-      // s_n = \delta x_n + \beta_n s_{n-1}
-      s = dx + beta * s
-      
-      // Line search
-      // let a = argmin(f(x_n + a * s))
-      let a = 1.0
-      
-      x_n = x_n + s.scaled(by: a)
+      let gamma_next = s.norm
+      let beta = gamma_next/gamma
+      gamma = gamma_next
+      p = s + beta * p
     }
     
     model.move(along: A_T)
