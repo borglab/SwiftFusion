@@ -30,7 +30,13 @@ import TensorFlow
 /// `GaussianFactorGraph`, so it becomes a question whether we should do the same?
 /// I am considering making `JacobianLikeFactor` a protocol and make `JacobianFactor`
 /// and `HessianFactor` conform to this protocol instead.
-public protocol JacobianFactor: LinearFactor {
+public struct JacobianFactor: LinearFactor {
+  public func error(_ input: Input) -> ScalarType {
+    ScalarType.zero
+  }
+  
+  public var keys: Array<Int>
+  
   typealias Output = Tensor<ScalarType>
   
   /// Comparable to the `*` operator in GTSAM

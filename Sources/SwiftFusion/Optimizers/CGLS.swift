@@ -23,19 +23,7 @@ public class CGLS {
   public func optimize(gfg: GaussianFactorGraph, initial: Values) {
     step += 1
     
-    let x_0 = x_in
-    
-    let dx_0 = gradient(at: x_0, in: f)
-    
-    let a_0 = 1.0
-    // a_0 = argmin(f(x_0+a*dx_0))
-    
-    var x_1 = x_0
-    x_1.move(along: dx_0.scaled(by: a_0))
-    
-    var x_n = x_1
-    var dx_n_1 = dx_0
-    var s = dx_0
+    let 
     
     while true {
       let dx = gradient(at: x_n, in: f)
