@@ -13,16 +13,18 @@
 // limitations under the License.
 import TensorFlow
 
-//public protocol Value {
+/// Calculates the difference between two `Pose2` instances
+///
+//public struct BetweenFactor: NonlinearFactor {
+//  public func error(_ input: Input) -> ScalarType {
+//    ScalarType.zero
+//  }
+//
+//  public var keys: Array<Int>
 //  
+//  typealias Output = Tensor<ScalarType>
+//  
+//  /// Comparable to the `*` operator in GTSAM
+////  @differentiable
+////  static func * (lhs: JacobianFactor, rhs: Self.Input) -> Self.Output
 //}
-
-public struct VectorValues {
-  typealias ScalarType = Double
-  var _values: [Tensor<ScalarType>]
-  var _indices: Dictionary<Int, Int>
-  
-  subscript(key: Int) -> Tensor<ScalarType> {
-    _values[_indices[key]!]
-  }
-}

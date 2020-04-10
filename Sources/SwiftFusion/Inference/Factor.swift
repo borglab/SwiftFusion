@@ -32,9 +32,30 @@ public protocol LinearFactor: Factor {
   
   /// TODO: `Dictionary` still does not conform to `Differentiable`
   /// Tracking issue: https://bugs.swift.org/browse/TF-899
-  typealias Input = Dictionary<Int, Tensor<ScalarType>>
+//  typealias Input = Dictionary<UInt, Tensor<ScalarType>>
   
   /// Returns the `error` of the factor.
-  @differentiable(wrt: input)
-  func error(_ input: Input) -> ScalarType
+  @differentiable(wrt: values)
+  func error(_ indices: [Int], values: Tensor<ScalarType>) -> ScalarType
 }
+
+/// A protocol for nonlinear factors.
+///
+/// Input is a `Values` collection, and the output is the scalar
+/// error value. Note here that the Tensor shapes are not checked.
+///
+/// Interpretation
+/// ================
+/// `Input`: the input values as key-value pairs
+///
+//public protocol NonlinearFactor: Factor {
+//  typealias ScalarType = Double
+//  
+//  /// TODO: `Dictionary` still does not conform to `Differentiable`
+//  /// Tracking issue: https://bugs.swift.org/browse/TF-899
+//  typealias Input = Values
+//  
+//  /// Returns the `error` of the factor.
+//  @differentiable(wrt: input)
+//  func error(_ input: Input) -> ScalarType
+//}

@@ -22,7 +22,7 @@ import TensorFlow
 ///
 public protocol FactorGraph {
   // TODO: find a better protocol
-  associatedtype KeysType : Collection where KeysType.Element : UnsignedInteger
+  associatedtype KeysType : Collection where KeysType.Element : SignedInteger
   associatedtype FactorsType : Collection where FactorsType.Element: Factor
   /// TODO(fan): Is this right?
   /// Or, do we need this at all? I think this would help to register keys to descriptions and

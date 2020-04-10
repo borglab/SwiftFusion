@@ -24,14 +24,14 @@ public class CGLS {
   /// Optimize the Gaussian Factor Graph with a initial estimate
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
-  public func optimize(gfg: GaussianFactorGraph, initial: Values) {
+  public func optimize(gfg: GaussianFactorGraph, initial: VectorValues) {
     step += 1
     
     let b = gfg.b
     let A = gfg.A
     
     var x = initial // x(0)
-    var r = b - A*x // r(0) = b - A * x(0)
+    var r = b - A * x // r(0) = b - A * x(0)
     var p = A.T * r // p(0) = s(0) = A^T * r(0)
     var s = p
     var gamma = s.norm // γ(0) = ||s(0)||^2

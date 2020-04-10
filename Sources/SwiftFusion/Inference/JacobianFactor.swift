@@ -31,15 +31,17 @@ import TensorFlow
 /// I am considering making `JacobianLikeFactor` a protocol and make `JacobianFactor`
 /// and `HessianFactor` conform to this protocol instead.
 public struct JacobianFactor: LinearFactor {
-  public func error(_ input: Input) -> ScalarType {
+
+  @differentiable(wrt: values)
+  public func error(_ indices: [Int], values: Tensor<ScalarType>) -> ScalarType {
     ScalarType.zero
   }
   
   public var keys: Array<Int>
   
   typealias Output = Tensor<ScalarType>
-  
-  /// Comparable to the `*` operator in GTSAM
-  @differentiable
-  static func * (lhs: JacobianFactor, rhs: Self.Input) -> Self.Output
+//  
+//  /// Comparable to the `*` operator in GTSAM
+//  @differentiable
+//  static func * (lhs: JacobianFactor, rhs: Self.Input) -> Self.Output
 }

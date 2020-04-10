@@ -14,13 +14,26 @@
 import TensorFlow
 
 public struct GaussianFactorGraph: FactorGraph {
-  public typealias KeysType = Array<UInt>
+  public typealias KeysType = Array<Int>
   
   public typealias FactorsType = Array<JacobianFactor>
   
   public var keys: KeysType
   public var factors: FactorsType
   
-  @differentiable
-  static func * (lhs: GaussianFactorGraph, rhs: Values) -> Errors
+  public var A: Tensor<Double> {
+    get {
+      Tensor<Double>([[1, 0], [0, 1]])
+    }
+  }
+  
+  public var b: Tensor<Double> {
+    get {
+      Tensor<Double>([[0.0], [0.0]])
+    }
+  }
+  
+  static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
+    
+  }
 }

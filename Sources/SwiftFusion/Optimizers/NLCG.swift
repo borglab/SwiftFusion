@@ -16,7 +16,7 @@
 /// An optimizer that implements NLCG second order optimizer
 
 public class NLCG<Model: Differentiable>
-  where Model.TangentVector: TangentStandardBasis & VectorProtocol & ElementaryFunctions,
+  where Model.TangentVector: TangentStandardBasis & VectorProtocol & ElementaryFunctions & KeyPathIterable,
   Model.TangentVector.VectorSpaceScalar == Double {
   public typealias Model = Model
   /// The set of steps taken.
@@ -27,6 +27,10 @@ public class NLCG<Model: Differentiable>
     
   }
 
+  func dot<T: Differentiable>(_ for: T, _ a: T.TangentVector, _ b: T.TangentVector) -> Double where T.TangentVector: KeyPathIterable {
+    a.recursivelyAllWritableKeyPaths(to: Double.self).map { a[keyPath: $0] * b[keyPath: $0] }.reduce(0.0, {$0 + $1})
+  }
+  
   public func optimize(loss f: @differentiable (Model) -> Model.TangentVector.VectorSpaceScalar, model x_in: inout Model) {
     step += 1
     
@@ -49,18 +53,18 @@ public class NLCG<Model: Differentiable>
       
       // Fletcher-Reeves
       // TODO: `.dot` needs to be implemented by iterating over keyPath
-      let beta = dx.dot(dx) / dx_n_1.dot(dx_n_1)
+      let beta: Double = dot(x_in, dx, dx) / dot(x_in, dx_n_1, dx_n_1)
       
       // s_n = \delta x_n + \beta_n s_{n-1}
-      s = dx + beta * s
+      s = dx + s.scaled(by: beta)
       
       // Line search
       // let a = argmin(f(x_n + a * s))
       let a = 1.0
       
       x_n.move(along: s.scaled(by: a))
+      dx_n_1 = dx
     }
     
-    model.move(along: A_T)
   }
 }
