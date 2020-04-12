@@ -62,10 +62,24 @@ public class NLCG<Model: Differentiable>
       // s_n = \delta x_n + \beta_n s_{n-1}
       s = dx + s.scaled(by: beta)
       
+      debugPrint("dx = ", dx)
+      debugPrint("s = ", s)
+      debugPrint("x_n = ", x_n)
       // Line search
       // let a = argmin(f(x_n + a * s))
-      let a = 1.0
+      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
+        var x = x_n
+        x.move(along: s.scaled(by: a))
+        return f(x)
+      }
+      var a = 1.0
       
+      let sgd = SGD(for: a)
+      for _ in 0..<100 {
+        let 𝛁loss = gradient(at: a, in: f_a)
+        sgd.update(&a, along: 𝛁loss)
+      }
+
       x_n.move(along: s.scaled(by: a))
       dx_n_1 = dx
       step += 1

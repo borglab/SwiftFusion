@@ -28,7 +28,7 @@ final class NLCGTests: XCTestCase {
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
-    let optimizer = NLCG(for: map)
+    let optimizer = NLCG(for: map, max_iteration: 2)
     
     let loss: @differentiable (_ map: Array<Pose2>) -> Double = { map -> Double in
       var loss: Double = 0
