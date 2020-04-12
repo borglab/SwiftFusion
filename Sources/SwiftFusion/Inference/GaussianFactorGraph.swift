@@ -13,6 +13,8 @@
 // limitations under the License.
 import TensorFlow
 
+/// A factor graph for linear problems
+/// Factors are the Jacobians between the corresponding variables and measurements
 public struct GaussianFactorGraph: FactorGraph {
   public typealias KeysType = Array<Int>
   
@@ -21,12 +23,6 @@ public struct GaussianFactorGraph: FactorGraph {
   public var keys: KeysType
   public var factors: FactorsType
   
-  public var A: Tensor<Double> {
-    get {
-      Tensor<Double>([[1, 0], [0, 1]])
-    }
-  }
-  
   public var b: Tensor<Double> {
     get {
       Tensor<Double>([[0.0], [0.0]])
@@ -34,6 +30,6 @@ public struct GaussianFactorGraph: FactorGraph {
   }
   
   static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
-    
+    Array(lhs.factors.map { $0 * rhs })
   }
 }

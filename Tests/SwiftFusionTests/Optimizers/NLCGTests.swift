@@ -30,7 +30,7 @@ final class NLCGTests: XCTestCase {
 
     let optimizer = NLCG(for: map)
     
-    let loss: @differentiable (map) -> Double = { map -> Double in
+    let loss: @differentiable (_ map: Array<Pose2>) -> Double = { map -> Double in
       var loss: Double = 0
 
       // Odometry measurements
@@ -46,7 +46,7 @@ final class NLCGTests: XCTestCase {
       return loss
     }
     
-    optimizer.optimize(loss: loss, model: map)
+    optimizer.optimize(loss: loss, model: &map)
     // print("]")
 
     print("map = [")
@@ -58,7 +58,7 @@ final class NLCGTests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t_.norm, 0.0, accuracy: 1e-2)
   }
 
   static var allTests = [

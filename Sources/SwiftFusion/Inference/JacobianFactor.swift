@@ -36,12 +36,18 @@ public struct JacobianFactor: LinearFactor {
   public func error(_ indices: [Int], values: Tensor<ScalarType>) -> ScalarType {
     ScalarType.zero
   }
-  
+  public var dimension: Int {
+    get {
+      jacobians.map { $0.shape.dimensions[0] }.reduce(0, { $0 + $1 })
+    }
+  }
   public var keys: Array<Int>
-  
-  typealias Output = Tensor<ScalarType>
-//  
-//  /// Comparable to the `*` operator in GTSAM
-//  @differentiable
-//  static func * (lhs: JacobianFactor, rhs: Self.Input) -> Self.Output
+  public var jacobians: Array<Tensor<Double>>
+  public var b: Tensor<Double>
+  typealias Output = Error
+
+  /// Comparable to the `*` operator in GTSAM
+  static func * (lhs: JacobianFactor, rhs: VectorValues) -> Self.Output {
+    lhs.keys.indices.map { lhs.jacobians[$0] * rhs[$0] }.reduce(Tensor<Double>(repeating: 0.0, shape: TensorShape([lhs.dimension, 1])), { $0 + $1 })
+  }
 }

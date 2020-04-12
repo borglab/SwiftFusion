@@ -25,3 +25,19 @@ extension Differentiable where TangentVector: KeyPathIterable {
     return vectors
   }
 }
+
+extension Array where Element: Differentiable {
+  public static var tangentStandardBasis: [TangentVector] {
+    var vectors: [TangentVector] = []
+    for kp in TangentVector.zero.recursivelyAllWritableKeyPaths(to: Double.self) {
+      var vector = TangentVector.zero
+      vector[keyPath: kp] = 1.0
+      vectors.append(vector)
+    }
+    return vectors
+  }
+}
+
+extension Array: TangentStandardBasis where Element: Differentiable {
+  
+}

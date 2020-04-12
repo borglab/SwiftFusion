@@ -15,9 +15,7 @@ import TensorFlow
 
 /// The type of error vector returned by the Factor
 /// Should be VectorN, but now just tensor as we do not have fixed size Tensors
-typealias Error = Tensor<Double>
+public typealias Error = Tensor<Double>
 
 /// Collection of all errors returned by a Factor Graph
-public struct Errors {
-  var _errors: Dictionary<Int, Error>
-}
+public typealias Errors = Array<Error>

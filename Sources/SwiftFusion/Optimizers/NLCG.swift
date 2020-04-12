@@ -16,15 +16,19 @@
 /// An optimizer that implements NLCG second order optimizer
 
 public class NLCG<Model: Differentiable>
-  where Model.TangentVector: TangentStandardBasis & VectorProtocol & ElementaryFunctions & KeyPathIterable,
+  where Model.TangentVector: VectorProtocol & ElementaryFunctions & KeyPathIterable,
   Model.TangentVector.VectorSpaceScalar == Double {
   public typealias Model = Model
   /// The set of steps taken.
   public var step: Int = 0
-
+  public var precision: Double = 1e-10
+  public var max_iteration: Int = 400
+  
   public init(
-    for _: __shared Model) {
+    for _: __shared Model, precision p: Double = 1e-10, max_iteration maxiter: Int = 400) {
     
+    precision = p
+    max_iteration = maxiter
   }
 
   func dot<T: Differentiable>(_ for: T, _ a: T.TangentVector, _ b: T.TangentVector) -> Double where T.TangentVector: KeyPathIterable {
@@ -32,7 +36,7 @@ public class NLCG<Model: Differentiable>
   }
   
   public func optimize(loss f: @differentiable (Model) -> Model.TangentVector.VectorSpaceScalar, model x_in: inout Model) {
-    step += 1
+    step = 0
     
     let x_0 = x_in
     
@@ -48,7 +52,7 @@ public class NLCG<Model: Differentiable>
     var dx_n_1 = dx_0
     var s = dx_0
     
-    while true {
+    while step < max_iteration {
       let dx = gradient(at: x_n, in: f)
       
       // Fletcher-Reeves
@@ -64,6 +68,7 @@ public class NLCG<Model: Differentiable>
       
       x_n.move(along: s.scaled(by: a))
       dx_n_1 = dx
+      step += 1
     }
     
   }

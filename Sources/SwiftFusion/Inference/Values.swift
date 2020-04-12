@@ -22,6 +22,8 @@ public struct VectorValues {
   var _values: [Tensor<ScalarType>]
   var _indices: Dictionary<Int, Int>
   
+  /// The subscript operator, with some indirection
+  /// Should be replaced after Dictionary is in
   subscript(key: Int) -> Tensor<ScalarType> {
     _values[_indices[key]!]
   }
