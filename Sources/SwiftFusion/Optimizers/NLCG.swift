@@ -35,7 +35,7 @@ public class NLCG<Model: Differentiable>
     a.recursivelyAllWritableKeyPaths(to: Double.self).map { a[keyPath: $0] * b[keyPath: $0] }.reduce(0.0, {$0 + $1})
   }
   
-  public func optimize(loss f: @differentiable (Model) -> Model.TangentVector.VectorSpaceScalar, model x_in: inout Model) {
+  public func optimize(loss f: @differentiable @escaping (Model) -> Model.TangentVector.VectorSpaceScalar, model x_in: inout Model) {
     step = 0
     
     let x_0 = x_in
@@ -62,15 +62,18 @@ public class NLCG<Model: Differentiable>
       // s_n = \delta x_n + \beta_n s_{n-1}
       s = dx + s.scaled(by: beta)
       
-      debugPrint("dx = ", dx)
-      debugPrint("s = ", s)
-      debugPrint("x_n = ", x_n)
+//      debugPrint("dx = ", dx)
+//      debugPrint("s = ", s)
+//      debugPrint("x_n = ", x_n)
       // Line search
       // let a = argmin(f(x_n + a * s))
       let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
         var x = x_n
-        x.move(along: s.scaled(by: a))
-        return f(x)
+        let x_1 = x.withDerivative({ (dx: inout Model.TangentVector.TangentVector ) in
+          dx = s.scaled(by: a)
+          x.move(along: s.scaled(by: a))
+        })
+        return f(x_1)
       }
       var a = 1.0
       
@@ -79,7 +82,9 @@ public class NLCG<Model: Differentiable>
         let 𝛁loss = gradient(at: a, in: f_a)
         sgd.update(&a, along: 𝛁loss)
       }
-
+      print("current_los = \(f(x_n))")
+      print("current_min = \(f_a(a))")
+      
       x_n.move(along: s.scaled(by: a))
       dx_n_1 = dx
       step += 1
