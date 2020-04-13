@@ -8,7 +8,7 @@ final class CGLSTests: XCTestCase {
   @differentiable
   func e_pose2(_ ŷ: Pose2) -> Double {
     // Squared error with Gaussian variance as weights
-    0.1 * ŷ.rot_.theta * ŷ.rot_.theta + 0.3 * ŷ.t_.x * ŷ.t_.x + 0.3 * ŷ.t_.y * ŷ.t_.y
+    0.1 * ŷ.rot.theta * ŷ.rot.theta + 0.3 * ŷ.t.x * ŷ.t.x + 0.3 * ŷ.t.y * ŷ.t.y
   }
 
   /// test convergence for a simple Pose2SLAM

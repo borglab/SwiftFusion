@@ -8,7 +8,7 @@ final class NLCGTests: XCTestCase {
   @differentiable
   func e_pose2(_ ŷ: Pose2) -> Double {
     // Squared error with Gaussian variance as weights
-    0.1 * ŷ.rot_.theta * ŷ.rot_.theta + 0.3 * ŷ.t_.x * ŷ.t_.x + 0.3 * ŷ.t_.y * ŷ.t_.y
+    0.1 * ŷ.rot.theta * ŷ.rot.theta + 0.3 * ŷ.t.x * ŷ.t.x + 0.3 * ŷ.t.y * ŷ.t.y
   }
 
   /// test convergence for a simple Pose2SLAM
@@ -16,7 +16,7 @@ final class NLCGTests: XCTestCase {
     let pi = 3.1415926
 
     let dumpjson = { (p: Pose2) -> String in
-      "[ \(p.t_.x), \(p.t_.y), \(p.rot_.theta)]"
+      "[ \(p.t.x), \(p.t.y), \(p.rot.theta)]"
     }
 
     // Initial estimate for poses
@@ -28,7 +28,7 @@ final class NLCGTests: XCTestCase {
 
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
-    let optimizer = NLCG(for: map, max_iteration: 90)
+    let optimizer = NLCG(for: map, max_iteration: 140)
     
     let loss: @differentiable (_ map: Array<Pose2>) -> Double = { map -> Double in
       var loss: Double = 0
@@ -58,7 +58,7 @@ final class NLCGTests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t_.norm, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
 
   static var allTests = [
