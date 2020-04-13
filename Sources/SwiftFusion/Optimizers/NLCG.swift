@@ -15,7 +15,7 @@
 ///
 /// An optimizer that implements NLCG second order optimizer
 
-public class NLCG<Model: Differentiable>
+public class NLCG<Model: Differentiable & KeyPathIterable>
   where Model.TangentVector: VectorProtocol & ElementaryFunctions & KeyPathIterable,
   Model.TangentVector.VectorSpaceScalar == Double {
   public typealias Model = Model
@@ -62,33 +62,48 @@ public class NLCG<Model: Differentiable>
       // s_n = \delta x_n + \beta_n s_{n-1}
       s = dx + s.scaled(by: beta)
       
-//      debugPrint("dx = ", dx)
-//      debugPrint("s = ", s)
-//      debugPrint("x_n = ", x_n)
       // Line search
       // let a = argmin(f(x_n + a * s))
-      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
-        var x = x_n
-        let x_1 = x.withDerivative({ (dx: inout Model.TangentVector.TangentVector ) in
-          dx = s.scaled(by: a)
-          x.move(along: s.scaled(by: a))
-        })
-        return f(x_1)
-      }
-      var a = 1.0
       
-      let sgd = SGD(for: a)
-      for _ in 0..<100 {
-        let 𝛁loss = gradient(at: a, in: f_a)
-        sgd.update(&a, along: 𝛁loss)
+      // TODO(fan): Replace this with a *proper* line search :-(
+      var a = 0.0
+      
+      var min = 1.0e20
+      for i in -100..<100 {
+        let a_n = 0.01 * Double(i)
+        var x = x_n
+        x.move(along: (s.scaled(by: a_n)).withDerivative({ $0.scale(by: a_n) }))
+        
+        let f_n = f(x)
+
+        // print("a = \(a_n), current_los = \(f_n)")
+        if min > f_n {
+          min = f_n
+          a = a_n
+        }
       }
+//      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
+//        var x = x_n
+//        x.move(along: (s.scaled(by: a)).withDerivative({ $0.scale(by: a) }))
+//
+//        return f(x)
+//      }
+//      var a = 1.0
+//
+//      let sgd = SGD(for: a)
+//      for _ in 0..<100 {
+//        let 𝛁loss = gradient(at: a, in: f_a)
+//        sgd.update(&a, along: 𝛁loss)
+//      }
       print("current_los = \(f(x_n))")
-      print("current_min = \(f_a(a))")
+      print("current_min = \(min)")
       
       x_n.move(along: s.scaled(by: a))
       dx_n_1 = dx
       step += 1
     }
     
+    // Finally, assign back to the value passed in
+    x_in = x_n
   }
 }

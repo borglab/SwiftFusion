@@ -46,6 +46,7 @@ public struct JacobianFactor: LinearFactor {
   public var b: Tensor<Double>
   typealias Output = Error
 
+  /// Calculate `J*x`
   /// Comparable to the `*` operator in GTSAM
   static func * (lhs: JacobianFactor, rhs: VectorValues) -> Self.Output {
     lhs.keys.indices.map { lhs.jacobians[$0] * rhs[$0] }.reduce(Tensor<Double>(repeating: 0.0, shape: TensorShape([lhs.dimension, 1])), { $0 + $1 })
