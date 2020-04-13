@@ -23,6 +23,13 @@ import TensorFlow
 /// `Input`: the input values as key-value pairs
 /// `Errors`: the vector `J * x`, where `J` is `m*n` and `x` is `n*1` and returns a m vector
 ///
+/// In block form, it looks like the following:
+/// ```
+///                 x1
+/// [ J1 J2 J3 ] *  x2 = [ J1*x1 J2*x2 J3*x3 ]
+///                 x3
+/// ```
+///
 /// Explanation
 /// ================
 /// TODO:
@@ -48,7 +55,44 @@ public struct JacobianFactor: LinearFactor {
 
   /// Calculate `J*x`
   /// Comparable to the `*` operator in GTSAM
+  /// In block form, it looks like the following:
+  /// ```
+  ///                 x1
+  /// [ J1 J2 J3 ] *  x2 = [ J1*x1 J2*x2 J3*x3 ]
+  ///                 x3
+  /// ```
   static func * (lhs: JacobianFactor, rhs: VectorValues) -> Self.Output {
-    lhs.keys.indices.map { lhs.jacobians[$0] * rhs[$0] }.reduce(Tensor<Double>(repeating: 0.0, shape: TensorShape([lhs.dimension, 1])), { $0 + $1 })
+    lhs.keys.indices.map { matmul(lhs.jacobians[$0], rhs[$0]) }.reduce(Tensor<Double>(repeating: 0.0, shape: TensorShape([lhs.dimension, 1])), { $0 + $1 })
+  }
+  
+  /// Calculate `J^T * e`
+  /// `J^T` is `n*m` and e is `m*1`
+  /// In block form, it looks like the following:
+  /// ```
+  /// J1^T          J1Te
+  /// J2^T  *  e =  J2Te
+  /// J3^T          J3Te
+  /// ```
+  /// However, there exists the possibility that one Value is used multiple times
+  /// At that time we need to add the corresponding blocks
+  func atx (_ J: JacobianFactor, _ e: Self.Output) -> VectorValues {
+    var result = VectorValues(_values: [], _indices: Dictionary())
+    
+    // No noise model yet
+    // if (model_) model_->whitenInPlace(E);
+    
+    // Just iterate over all A matrices and insert Ai^e into VectorValues
+    for pos in 0..<keys.count {
+      let j = keys[pos]
+      
+      // To avoid another malloc if key exists, we explicitly check
+      if let ind = result._indices[j] {
+        result._values[ind] += matmul(jacobians[pos].transposed(), e)
+      } else {
+        result._indices[j] = result._values.count
+        result._values.append(matmul(jacobians[pos].transposed(),e));
+      }
+    }
+    return result
   }
 }

@@ -27,4 +27,9 @@ public struct VectorValues {
   subscript(key: Int) -> Tensor<ScalarType> {
     _values[_indices[key]!]
   }
+  
+  /// L2 norm of the VectorValues
+  var norm: Double {
+    self._values.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
+  }
 }

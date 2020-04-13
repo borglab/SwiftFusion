@@ -19,3 +19,17 @@ public typealias Error = Tensor<Double>
 
 /// Collection of all errors returned by a Factor Graph
 public typealias Errors = Array<Error>
+
+extension Array where Element == Error {
+  public static func - (_ a: Self, _ b: Self) -> Self {
+    var result = a
+    let _ = result.indices.map { result[$0] = a[$0] + b[$0] }
+    return result
+  }
+  
+  public var norm: Double {
+    get {
+      self.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
+    }
+  }
+}

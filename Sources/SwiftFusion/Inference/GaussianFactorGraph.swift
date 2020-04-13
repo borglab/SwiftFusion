@@ -23,13 +23,17 @@ public struct GaussianFactorGraph: FactorGraph {
   public var keys: KeysType
   public var factors: FactorsType
   
-  public var b: Tensor<Double> {
-    get {
-      Tensor<Double>([[0.0], [0.0]])
-    }
-  }
+  public var b: Errors
   
+  /// This calculates `A*x`, where x is the collection of key-values
+  /// Note A is a
   static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
     Array(lhs.factors.map { $0 * rhs })
+  }
+  
+  /// This calculates `A^T * r`, where r is the residual (error)
+  func atr(r: Errors) -> VectorValues {
+    // Array(
+    fatalError()
   }
 }

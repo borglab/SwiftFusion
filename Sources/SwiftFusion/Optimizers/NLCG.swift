@@ -82,6 +82,8 @@ public class NLCG<Model: Differentiable & KeyPathIterable>
           a = a_n
         }
       }
+//      /// This is an attempt to *chain* optimizers to do the line search which failed
+//      /// it appears to be hard to differentiate on operations on the tangent vectors
 //      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
 //        var x = x_n
 //        x.move(along: (s.scaled(by: a)).withDerivative({ $0.scale(by: a) }))
