@@ -21,6 +21,8 @@ public typealias Error = Tensor<Double>
 public typealias Errors = Array<Error>
 
 /// Extending Array for Error type
+/// This simplifies the implementation for `Errors`, albeit in a less self-contained manner
+/// TODO: change this to a concrete `struct Errors` and implement all the protocols
 extension Array where Element == Error {
   public static func - (_ a: Self, _ b: Self) -> Self {
     var result = a

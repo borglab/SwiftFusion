@@ -24,7 +24,11 @@ public struct GaussianFactorGraph: FactorGraph {
   public var keys: KeysType = []
   public var factors: FactorsType = []
   
-  public var b: Errors = []
+  public var b: Errors {
+    get {
+      factors.map { $0.b }
+    }
+  }
   
   /// Default initializer
   public init() { }

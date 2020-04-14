@@ -45,7 +45,7 @@ public struct JacobianFactor: LinearFactor {
   }
   public var dimension: Int {
     get {
-      jacobians.map { $0.shape.dimensions[0] }.reduce(0, { $0 + $1 })
+      jacobians[0].shape.dimensions[0]
     }
   }
   public var keys: Array<Int> = []
@@ -68,7 +68,11 @@ public struct JacobianFactor: LinearFactor {
   ///                 x3
   /// ```
   static func * (lhs: JacobianFactor, rhs: VectorValues) -> Self.Output {
-    lhs.keys.indices.map { matmul(lhs.jacobians[$0], rhs[$0]) }.reduce(Tensor<Double>(repeating: 0.0, shape: TensorShape([lhs.dimension, 1])), { $0 + $1 })
+    var arr: Array<Tensor<Double>> = []
+    for i in lhs.keys.indices {
+      arr.append(matmul(lhs.jacobians[i], rhs[lhs.keys[i]]))
+    }
+    return arr.reduce(Tensor<Double>(repeating: 0.0, shape: TensorShape([lhs.dimension, 1])), { $0 + $1 })
   }
   
   /// Calculate `J^T * e`

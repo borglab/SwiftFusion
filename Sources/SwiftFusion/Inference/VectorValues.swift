@@ -13,23 +13,25 @@
 // limitations under the License.
 import TensorFlow
 
-//public protocol Value {
-//  
-//}
-
-public struct VectorValues {
+/// The class that holds Key-Vector pairs.
+public struct VectorValues: KeyPathIterable {
   public typealias ScalarType = Double
   var _values: [Tensor<ScalarType>] = []
   
   /// Dictionary from Key to index
   var _indices: Dictionary<Int, Int> = [:]
   
+  public var indices: Dictionary<Int, Int> {
+    get {
+      _indices
+    }
+  }
   /// Default initializer
   public init() { }
   
   /// The subscript operator, with some indirection
   /// Should be replaced after Dictionary is in
-  subscript(key: Int) -> Tensor<ScalarType> {
+  public subscript(key: Int) -> Tensor<ScalarType> {
     _values[_indices[key]!]
   }
   
