@@ -21,9 +21,9 @@ public struct VectorValues: KeyPathIterable {
   /// Dictionary from Key to index
   var _indices: Dictionary<Int, Int> = [:]
   
-  public var indices: Dictionary<Int, Int> {
+  public var keys: Dictionary<Int, Int>.Keys {
     get {
-      _indices
+      _indices.keys
     }
   }
   /// Default initializer
