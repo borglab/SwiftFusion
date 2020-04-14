@@ -37,6 +37,8 @@ func assertAllKeyPathEqual<T: KeyPathIterable>(
   }
 }
 
+/// Create a `Tensor<Double>` with shape (2, 1)
+/// TODO: replace with the `Vector2` Marc prototyped
 public func Vector2_t(_ x: Double, _ y: Double) -> Tensor<Double> {
   let t = Tensor<Double>(shape: [2, 1], scalars: [x, y])
   return t
