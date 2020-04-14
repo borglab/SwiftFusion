@@ -89,14 +89,13 @@ public struct JacobianFactor: LinearFactor {
     
     // Just iterate over all A matrices and insert Ai^e into VectorValues
     for pos in 0..<keys.count {
-      let j = keys[pos]
+      let k = keys[pos]
       
-      // To avoid another malloc if key exists, we explicitly check
-      if let ind = result._indices[j] {
+      // TODO(fan): add a proper method for searching key
+      if let ind = result._indices[k] {
         result._values[ind] += matmul(jacobians[pos].transposed(), r)
       } else {
-        result._indices[j] = result._values.count
-        result._values.append(matmul(jacobians[pos].transposed(), r));
+        result.insert(k, matmul(jacobians[pos].transposed(), r))
       }
     }
     return result

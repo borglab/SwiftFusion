@@ -17,9 +17,11 @@ import TensorFlow
 //  
 //}
 
-public struct VectorValues: Equatable {
+public struct VectorValues {
   public typealias ScalarType = Double
   var _values: [Tensor<ScalarType>] = []
+  
+  /// Dictionary from Key to index
   var _indices: Dictionary<Int, Int> = [:]
   
   /// Default initializer
@@ -36,10 +38,10 @@ public struct VectorValues: Equatable {
     self._values.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
   }
   
-  public mutating func insert(_ ind: Int, _ val: Tensor<Self.ScalarType>) {
-    assert(_indices[ind] == nil)
+  public mutating func insert(_ key: Int, _ val: Tensor<Self.ScalarType>) {
+    assert(_indices[key] == nil)
     
-    self._indices[ind] = self._values.count
+    self._indices[key] = self._values.count
     self._values.append(val)
   }
   
@@ -55,8 +57,7 @@ public struct VectorValues: Equatable {
       if let i_l = lhs._indices[k] {
         result._values[i_l] += rhs._values[i_r]
       } else {
-        result._indices[k] = result._values.count
-        result._values.append(rhs._values[i_r])
+        result.insert(k, rhs._values[i_r])
       }
     }
     return result
@@ -66,5 +67,27 @@ public struct VectorValues: Equatable {
     var result = rhs
     let _ = result._values.indices.map { result._values[$0] *= lhs }
     return result
+  }
+}
+
+extension VectorValues: CustomStringConvertible {
+  public var description: String {
+    "VectorValues(\n\(_indices.map { "Key: \($0), J: \(_values[$1])\n"}.reduce("", { $0 + $1 }) )"
+  }
+}
+
+extension VectorValues: Equatable {
+  public static func == (lhs: VectorValues, rhs: VectorValues) -> Bool {
+    if lhs._indices.keys != rhs._indices.keys {
+      return false
+    }
+    
+    for k in lhs._indices.keys {
+      if lhs._values[lhs._indices[k]!] != rhs._values[rhs._indices[k]!] {
+        return false
+      }
+    }
+    
+    return true
   }
 }

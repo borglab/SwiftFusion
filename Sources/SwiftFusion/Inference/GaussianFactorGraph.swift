@@ -43,6 +43,8 @@ public struct GaussianFactorGraph: FactorGraph {
     var vv = VectorValues()
     for i in r.indices {
       let JTr = factors[i].atr(r[i])
+      
+      print("JTr = \(JTr)")
       vv = vv + JTr
     }
     
