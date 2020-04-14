@@ -11,10 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 /// Non-Linear Conjugate Gradient (NLCG) optimizer.
 ///
 /// An optimizer that implements NLCG second order optimizer
-
+/// It is generic over all differentiable models that is `KeyPathIterable`
+/// This loosely follows `Nocedal06book_numericalOptimization`, page 121
 public class NLCG<Model: Differentiable & KeyPathIterable>
   where Model.TangentVector: VectorProtocol & ElementaryFunctions & KeyPathIterable,
 Model.TangentVector.VectorSpaceScalar == Double {
@@ -97,7 +99,7 @@ Model.TangentVector.VectorSpaceScalar == Double {
       //        let 𝛁loss = gradient(at: a, in: f_a)
       //        sgd.update(&a, along: 𝛁loss)
       //      }
-      print("current_los = \(f(x_n))")
+      print("current_loss = \(f(x_n))")
       print("current_min = \(min)")
       
       x_n.move(along: s.scaled(by: a))
