@@ -5,7 +5,7 @@ import XCTest
 final class GaussianFactorGraphTests: XCTestCase {  
   /// test ATr
   func testTransposeMultiplication() {
-    let A = createSimpleGaussianFactorGraph();
+    let A = SimpleGaussianFactorGraph.create()
 
     var e = Errors()
     e += [Vector2_t(0.0, 0.0)]
@@ -24,7 +24,7 @@ final class GaussianFactorGraphTests: XCTestCase {
   
   /// test Ax
   func testMultiplication() {
-    let A = createSimpleGaussianFactorGraph();
+    let A = SimpleGaussianFactorGraph.create()
 
     var expected = Errors()
     expected += [Vector2_t(-1.0, -1.0)]
@@ -32,7 +32,7 @@ final class GaussianFactorGraphTests: XCTestCase {
     expected += [Vector2_t(0.0, 1.0)]
     expected += [Vector2_t(-1.0, 1.5)]
 
-    let x = createCorrectDelta()
+    let x = SimpleGaussianFactorGraph.correctDelta()
 
     let actual = A * x
     XCTAssertEqual(expected, actual)

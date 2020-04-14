@@ -7,13 +7,13 @@ import XCTest
 final class CGLSTests: XCTestCase {  
   /// test convergence for a simple gaussian factor graph
   func testCGLSSolver() {
-    let gfg = createSimpleGaussianFactorGraph()
+    let gfg = SimpleGaussianFactorGraph.create()
     
     let optimizer = CGLS(precision: 0.01, max_iteration: 10)
-    var x: VectorValues = createZeroDelta()
+    var x: VectorValues = SimpleGaussianFactorGraph.zeroDelta()
     optimizer.optimize(gfg: gfg, initial: &x)
     
-    let expected = createCorrectDelta()
+    let expected = SimpleGaussianFactorGraph.correctDelta()
     
     for (k, _) in x.indices {
       assertEqual(x[k], expected[k], accuracy: 1e-6)
