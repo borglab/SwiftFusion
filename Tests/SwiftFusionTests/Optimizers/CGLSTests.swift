@@ -4,12 +4,7 @@ import SwiftFusion
 import TensorFlow
 import XCTest
 
-final class CGLSTests: XCTestCase {
-  func Vector2_t(_ x: Double, _ y: Double) -> Tensor<Double> {
-    let t = Tensor<Double>(shape: [2, 1], scalars: [x, y])
-    return t
-  }
-  
+final class CGLSTests: XCTestCase {  
   /// test convergence for a simple gaussian factor graph
   func testCGLSSolver() {
     let gfg = createSimpleGaussianFactorGraph()
