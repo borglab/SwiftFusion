@@ -99,8 +99,6 @@ Model.TangentVector.VectorSpaceScalar == Double {
       //        let 𝛁loss = gradient(at: a, in: f_a)
       //        sgd.update(&a, along: 𝛁loss)
       //      }
-      print("current_loss = \(f(x_n))")
-      print("current_min = \(min)")
       
       x_n.move(along: s.scaled(by: a))
       dx_n_1 = dx
