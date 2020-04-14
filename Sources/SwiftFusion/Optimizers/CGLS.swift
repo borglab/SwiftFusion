@@ -40,7 +40,7 @@ public class CGLS {
     var x: VectorValues = initial // x(0), the initial value
     var r: Errors = b - gfg * x // r(0) = b - A * x(0), the residual
     var p = gfg.atr(r) // p(0) = s(0) = A^T * r(0), residual in value space
-    var s = p
+    var s = p // residual of normal equations
     var gamma = s.norm // γ(0) = ||s(0)||^2
     
     while step < max_iteration {
