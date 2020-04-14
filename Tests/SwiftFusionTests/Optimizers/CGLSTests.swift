@@ -19,9 +19,7 @@ final class CGLSTests: XCTestCase {
     optimizer.optimize(gfg: gfg, initial: &x)
     
     let expected = createCorrectDelta()
-    // Test condition: P_5 should be identical to P_1 (close loop)
-    // assertEqual(x[0], createCorrectDelta()[0], accuracy: 0.1)
-    print("final x = \(x), correct = \(expected)")
+    
     for (k, _) in x.indices {
       assertEqual(x[k], expected[k], accuracy: 1e-6)
     }

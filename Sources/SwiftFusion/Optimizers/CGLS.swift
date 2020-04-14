@@ -37,19 +37,13 @@ public class CGLS {
     
     let b = gfg.b
     
-    var x: VectorValues = initial // x(0)
-    print("x = \(x)")
-    print("gfg * x = \(gfg * x)")
-    var r: Errors = b - gfg * x // r(0) = b - A * x(0)
-    print("r = \(r)")
-    var p = gfg.atr(r) // p(0) = s(0) = A^T * r(0)
-    print("p = \(p)")
+    var x: VectorValues = initial // x(0), the initial value
+    var r: Errors = b - gfg * x // r(0) = b - A * x(0), the residual
+    var p = gfg.atr(r) // p(0) = s(0) = A^T * r(0), residual in value space
     var s = p
     var gamma = s.norm // γ(0) = ||s(0)||^2
     
     while step < max_iteration {
-      print(gfg)
-      print(p)
       let q = gfg * p // q(k) = A * p(k)
       let alpha: Double = gamma / q.norm // α(k) = γ(k)/||q(k)||^2
       x = x + (alpha * p) // x(k+1) = x(k) + α(k) * p(k)
