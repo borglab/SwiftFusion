@@ -132,7 +132,7 @@ public extension Rot2 {
   
   // inverse rotation, differentiation is automatic because Rot2 constructor has derivative
   @differentiable
-  public func inverse() -> Rot2 {
+  func inverse() -> Rot2 {
     Rot2(c: self.c, s: -self.s)
   }
 }

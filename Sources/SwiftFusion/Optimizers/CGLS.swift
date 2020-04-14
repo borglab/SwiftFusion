@@ -31,7 +31,7 @@ public class CGLS {
     
     let b = gfg.b
     
-    var x = initial // x(0)
+    var x: VectorValues = initial // x(0)
     var r: Errors = b - gfg * x // r(0) = b - A * x(0)
     var p = gfg.atr(r: r) // p(0) = s(0) = A^T * r(0)
     var s = p
@@ -39,13 +39,13 @@ public class CGLS {
     
     while true {
       let q = gfg * p // q(k) = A * p(k)
-      let alpha = gamma / q.norm // α(k) = γ(k)/||q(k)||^2
-      x = x + alpha * p // x(k+1) = x(k) + α(k) * p(k)
-      r = r - alpha * q // r(k+1) = r(k) - α(k) * q(k)
+      let alpha: Double = gamma / q.norm // α(k) = γ(k)/||q(k)||^2
+      x = x + (alpha * p) // x(k+1) = x(k) + α(k) * p(k)
+      r = r + (-alpha) * q // r(k+1) = r(k) - α(k) * q(k)
       s = gfg.atr(r: r) // s(k+1) = A.T * r(k+1)
       
       let gamma_next = s.norm // γ(k+1) = ||s(k+1)||^2
-      let beta = gamma_next/gamma // β(k) = γ(k+1)/γ(k)
+      let beta: Double = gamma_next/gamma // β(k) = γ(k+1)/γ(k)
       gamma = gamma_next
       p = s + beta * p // p(k+1) = s(k+1) + β(k) * p(k)
     }

@@ -16,7 +16,7 @@ final class CGLSTests: XCTestCase {
     let pi = 3.1415926
 
     let dumpjson = { (p: Pose2) -> String in
-      "[ \(p.t_.x), \(p.t_.y), \(p.rot_.theta)]"
+      "[ \(p.t.x), \(p.t.y), \(p.rot.theta)]"
     }
 
     // Initial estimate for poses

@@ -32,4 +32,22 @@ extension Array where Element == Error {
       self.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
     }
   }
+  
+  static func + (_ lhs: Self, _ rhs: Double) -> Self {
+    var result = lhs
+    let _ = result.indices.map { result[$0] += rhs }
+    return result
+  }
+  
+  static func + (_ lhs: Self, _ rhs: Self) -> Self {
+    var result = lhs
+    let _ = result.indices.map { result[$0] += rhs[$0] }
+    return result
+  }
+  
+  static func * (_ lhs: Double, _ rhs: Self) -> Self {
+    var result = rhs
+    let _ = result.indices.map { result[$0] *= lhs }
+    return result
+  }
 }

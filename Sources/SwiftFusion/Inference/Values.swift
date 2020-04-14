@@ -32,4 +32,29 @@ public struct VectorValues {
   var norm: Double {
     self._values.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
   }
+  
+  static func + (_ lhs: Self, _ rhs: Self.ScalarType) -> Self {
+    var result = lhs
+    let _ = result._values.indices.map { result._values[$0] += rhs }
+    return result
+  }
+  
+  static func + (_ lhs: Self, _ rhs: Self) -> Self {
+    var result = lhs
+    for (k, i_r) in rhs._indices {
+      if let i_l = lhs._indices[k] {
+        result._values[i_l] += rhs._values[i_r]
+      } else {
+        result._indices[k] = result._values.count
+        result._values.append(rhs._values[i_r])
+      }
+    }
+    return result
+  }
+  
+  static func * (_ lhs: Self.ScalarType, _ rhs: Self) -> Self {
+    var result = rhs
+    let _ = result._values.indices.map { result._values[$0] *= lhs }
+    return result
+  }
 }
