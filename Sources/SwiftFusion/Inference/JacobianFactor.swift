@@ -38,7 +38,7 @@ import TensorFlow
 /// I am considering making `JacobianLikeFactor` a protocol and make `JacobianFactor`
 /// and `HessianFactor` conform to this protocol instead.
 public struct JacobianFactor: LinearFactor {
-
+  
   @differentiable(wrt: values)
   public func error(_ indices: [Int], values: Tensor<ScalarType>) -> ScalarType {
     ScalarType.zero

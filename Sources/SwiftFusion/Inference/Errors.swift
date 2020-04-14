@@ -20,6 +20,7 @@ public typealias Error = Tensor<Double>
 /// Collection of all errors returned by a Factor Graph
 public typealias Errors = Array<Error>
 
+/// Extending Array for Error type
 extension Array where Element == Error {
   public static func - (_ a: Self, _ b: Self) -> Self {
     var result = a
@@ -27,24 +28,28 @@ extension Array where Element == Error {
     return result
   }
   
+  /// Calculates the L2 norm
   public var norm: Double {
     get {
       self.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
     }
   }
   
+  /// Errors + scalar
   static func + (_ lhs: Self, _ rhs: Double) -> Self {
     var result = lhs
     let _ = result.indices.map { result[$0] += rhs }
     return result
   }
   
+  /// Errors + Errors
   static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = lhs
     let _ = result.indices.map { result[$0] += rhs[$0] }
     return result
   }
   
+  /// scalar * Errors
   static func * (_ lhs: Double, _ rhs: Self) -> Self {
     var result = rhs
     let _ = result.indices.map { result[$0] *= lhs }

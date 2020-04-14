@@ -17,7 +17,7 @@
 
 public class NLCG<Model: Differentiable & KeyPathIterable>
   where Model.TangentVector: VectorProtocol & ElementaryFunctions & KeyPathIterable,
-  Model.TangentVector.VectorSpaceScalar == Double {
+Model.TangentVector.VectorSpaceScalar == Double {
   public typealias Model = Model
   /// The set of steps taken.
   public var step: Int = 0
@@ -30,7 +30,7 @@ public class NLCG<Model: Differentiable & KeyPathIterable>
     precision = p
     max_iteration = maxiter
   }
-
+  
   func dot<T: Differentiable>(_ for: T, _ a: T.TangentVector, _ b: T.TangentVector) -> Double where T.TangentVector: KeyPathIterable {
     a.recursivelyAllWritableKeyPaths(to: Double.self).map { a[keyPath: $0] * b[keyPath: $0] }.reduce(0.0, {$0 + $1})
   }
@@ -75,28 +75,28 @@ public class NLCG<Model: Differentiable & KeyPathIterable>
         x.move(along: (s.scaled(by: a_n)).withDerivative({ $0.scale(by: a_n) }))
         
         let f_n = f(x)
-
+        
         // print("a = \(a_n), current_los = \(f_n)")
         if min > f_n {
           min = f_n
           a = a_n
         }
       }
-//      /// This is an attempt to *chain* optimizers to do the line search which failed
-//      /// it appears to be hard to differentiate on operations on the tangent vectors
-//      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
-//        var x = x_n
-//        x.move(along: (s.scaled(by: a)).withDerivative({ $0.scale(by: a) }))
-//
-//        return f(x)
-//      }
-//      var a = 1.0
-//
-//      let sgd = SGD(for: a)
-//      for _ in 0..<100 {
-//        let 𝛁loss = gradient(at: a, in: f_a)
-//        sgd.update(&a, along: 𝛁loss)
-//      }
+      //      /// This is an attempt to *chain* optimizers to do the line search which failed
+      //      /// it appears to be hard to differentiate on operations on the tangent vectors
+      //      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
+      //        var x = x_n
+      //        x.move(along: (s.scaled(by: a)).withDerivative({ $0.scale(by: a) }))
+      //
+      //        return f(x)
+      //      }
+      //      var a = 1.0
+      //
+      //      let sgd = SGD(for: a)
+      //      for _ in 0..<100 {
+      //        let 𝛁loss = gradient(at: a, in: f_a)
+      //        sgd.update(&a, along: 𝛁loss)
+      //      }
       print("current_los = \(f(x_n))")
       print("current_min = \(min)")
       

@@ -15,6 +15,7 @@ import TensorFlow
 
 /// A factor graph for linear problems
 /// Factors are the Jacobians between the corresponding variables and measurements
+/// TODO(fan): Add noise model
 public struct GaussianFactorGraph: FactorGraph {
   public typealias KeysType = Array<Int>
   
@@ -34,6 +35,7 @@ public struct GaussianFactorGraph: FactorGraph {
     Array(lhs.factors.map { $0 * rhs })
   }
   
+  /// Convenience operator for adding factor
   public static func += (lhs: inout Self, rhs: JacobianFactor) {
     lhs.factors.append(rhs)
   }

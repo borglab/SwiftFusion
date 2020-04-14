@@ -38,6 +38,7 @@ public struct VectorValues {
     self._values.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
   }
   
+  /// Insert a key value pair
   public mutating func insert(_ key: Int, _ val: Tensor<Self.ScalarType>) {
     assert(_indices[key] == nil)
     
@@ -45,12 +46,14 @@ public struct VectorValues {
     self._values.append(val)
   }
   
+  /// VectorValues + Scalar
   static func + (_ lhs: Self, _ rhs: Self.ScalarType) -> Self {
     var result = lhs
     let _ = result._values.indices.map { result._values[$0] += rhs }
     return result
   }
   
+  /// VectorValues + VectorValues
   static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = lhs
     for (k, i_r) in rhs._indices {
@@ -63,6 +66,7 @@ public struct VectorValues {
     return result
   }
   
+  /// Scalar * VectorValues
   static func * (_ lhs: Self.ScalarType, _ rhs: Self) -> Self {
     var result = rhs
     let _ = result._values.indices.map { result._values[$0] *= lhs }
@@ -77,6 +81,7 @@ extension VectorValues: CustomStringConvertible {
 }
 
 extension VectorValues: Equatable {
+  /// Order-aware comparison
   public static func == (lhs: VectorValues, rhs: VectorValues) -> Bool {
     if lhs._indices.keys != rhs._indices.keys {
       return false

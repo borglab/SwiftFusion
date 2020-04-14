@@ -19,10 +19,10 @@ import TensorFlow
 public class CGLS {
   /// The set of steps taken.
   public var step: Int = 0
-
+  
   /// Constructor (Probably not necessary)
   public init() {}
-
+  
   /// Optimize the Gaussian Factor Graph with a initial estimate
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
