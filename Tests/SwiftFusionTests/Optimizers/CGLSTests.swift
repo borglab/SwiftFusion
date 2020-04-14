@@ -9,7 +9,7 @@ final class CGLSTests: XCTestCase {
   func testCGLSSolver() {
     let gfg = SimpleGaussianFactorGraph.create()
     
-    let optimizer = CGLS(precision: 0.01, max_iteration: 10)
+    let optimizer = CGLS(precision: 1e-7, max_iteration: 10)
     var x: VectorValues = SimpleGaussianFactorGraph.zeroDelta()
     optimizer.optimize(gfg: gfg, initial: &x)
     

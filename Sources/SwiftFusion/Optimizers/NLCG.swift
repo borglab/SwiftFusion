@@ -99,8 +99,15 @@ Model.TangentVector.VectorSpaceScalar == Double {
       //        let 𝛁loss = gradient(at: a, in: f_a)
       //        sgd.update(&a, along: 𝛁loss)
       //      }
+      let delta = s.scaled(by: a)
       
-      x_n.move(along: s.scaled(by: a))
+      x_n.move(along: delta) // update the estimate
+      
+      // Exit when delta is too small
+      if dot(x_n, delta, delta) < precision {
+        break
+      }
+      
       dx_n_1 = dx
       step += 1
     }

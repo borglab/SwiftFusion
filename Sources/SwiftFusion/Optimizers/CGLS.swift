@@ -55,6 +55,9 @@ public class CGLS {
       gamma = gamma_next
       p = s + beta * p // p(k+1) = s(k+1) + β(k) * p(k)
       
+      if (alpha * p).norm < precision {
+        break
+      }
       step += 1
     }
     
