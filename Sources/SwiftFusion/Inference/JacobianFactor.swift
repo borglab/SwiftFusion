@@ -48,11 +48,17 @@ public struct JacobianFactor: LinearFactor {
       jacobians.map { $0.shape.dimensions[0] }.reduce(0, { $0 + $1 })
     }
   }
-  public var keys: Array<Int>
-  public var jacobians: Array<Tensor<Double>>
-  public var b: Tensor<Double>
-  typealias Output = Error
-
+  public var keys: Array<Int> = []
+  public var jacobians: Array<Tensor<Double>> = []
+  public var b: Tensor<Double> = eye(rowCount: 0)
+  public typealias Output = Error
+  
+  public init (_ key: [Int], _ A: [Tensor<Double>], _ b: Tensor<Double>) {
+    keys = key
+    jacobians = A
+    self.b = b
+  }
+  
   /// Calculate `J*x`
   /// Comparable to the `*` operator in GTSAM
   /// In block form, it looks like the following:
@@ -75,8 +81,8 @@ public struct JacobianFactor: LinearFactor {
   /// ```
   /// However, there exists the possibility that one Value is used multiple times
   /// At that time we need to add the corresponding blocks
-  func atx (_ J: JacobianFactor, _ e: Self.Output) -> VectorValues {
-    var result = VectorValues(_values: [], _indices: Dictionary())
+  public func atr (_ r: Self.Output) -> VectorValues {
+    var result = VectorValues()
     
     // No noise model yet
     // if (model_) model_->whitenInPlace(E);
@@ -87,10 +93,10 @@ public struct JacobianFactor: LinearFactor {
       
       // To avoid another malloc if key exists, we explicitly check
       if let ind = result._indices[j] {
-        result._values[ind] += matmul(jacobians[pos].transposed(), e)
+        result._values[ind] += matmul(jacobians[pos].transposed(), r)
       } else {
         result._indices[j] = result._values.count
-        result._values.append(matmul(jacobians[pos].transposed(),e));
+        result._values.append(matmul(jacobians[pos].transposed(), r));
       }
     }
     return result

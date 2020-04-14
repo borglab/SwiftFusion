@@ -17,10 +17,13 @@ import TensorFlow
 //  
 //}
 
-public struct VectorValues {
-  typealias ScalarType = Double
-  var _values: [Tensor<ScalarType>]
-  var _indices: Dictionary<Int, Int>
+public struct VectorValues: Equatable {
+  public typealias ScalarType = Double
+  var _values: [Tensor<ScalarType>] = []
+  var _indices: Dictionary<Int, Int> = [:]
+  
+  /// Default initializer
+  public init() { }
   
   /// The subscript operator, with some indirection
   /// Should be replaced after Dictionary is in
@@ -31,6 +34,13 @@ public struct VectorValues {
   /// L2 norm of the VectorValues
   var norm: Double {
     self._values.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
+  }
+  
+  public mutating func insert(_ ind: Int, _ val: Tensor<Self.ScalarType>) {
+    assert(_indices[ind] == nil)
+    
+    self._indices[ind] = self._values.count
+    self._values.append(val)
   }
   
   static func + (_ lhs: Self, _ rhs: Self.ScalarType) -> Self {

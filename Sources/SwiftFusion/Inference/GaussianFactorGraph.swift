@@ -20,20 +20,32 @@ public struct GaussianFactorGraph: FactorGraph {
   
   public typealias FactorsType = Array<JacobianFactor>
   
-  public var keys: KeysType
-  public var factors: FactorsType
+  public var keys: KeysType = []
+  public var factors: FactorsType = []
   
-  public var b: Errors
+  public var b: Errors = []
+  
+  /// Default initializer
+  public init() { }
   
   /// This calculates `A*x`, where x is the collection of key-values
   /// Note A is a
-  static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
+  public static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
     Array(lhs.factors.map { $0 * rhs })
   }
   
+  public static func += (lhs: inout Self, rhs: JacobianFactor) {
+    lhs.factors.append(rhs)
+  }
+  
   /// This calculates `A^T * r`, where r is the residual (error)
-  func atr(r: Errors) -> VectorValues {
-    // Array(
-    fatalError()
+  public func atr(_ r: Errors) -> VectorValues {
+    var vv = VectorValues()
+    for i in r.indices {
+      let JTr = factors[i].atr(r[i])
+      vv = vv + JTr
+    }
+    
+    return vv
   }
 }
