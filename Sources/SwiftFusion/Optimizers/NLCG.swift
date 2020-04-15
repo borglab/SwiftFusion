@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import TensorFlow
 
 /// Non-Linear Conjugate Gradient (NLCG) optimizer.
 ///
@@ -33,10 +34,63 @@ Model.TangentVector.VectorSpaceScalar == Double {
     max_iteration = maxiter
   }
   
+  /// dot product
+  /// TODO: this needs to be moved to Core
   func dot<T: Differentiable>(_ for: T, _ a: T.TangentVector, _ b: T.TangentVector) -> Double where T.TangentVector: KeyPathIterable {
     a.recursivelyAllWritableKeyPaths(to: Double.self).map { a[keyPath: $0] * b[keyPath: $0] }.reduce(0.0, {$0 + $1})
   }
   
+  func lineSearch(f: @differentiable @escaping (Model) -> Model.TangentVector.VectorSpaceScalar,
+                  currentValues: Model, gradient: Model.TangentVector) -> Double {
+    /* normalize it such that it becomes a unit vector */
+    let g = sqrt(dot(currentValues, gradient, gradient))
+
+    // perform the golden section search algorithm to decide the the optimal step size
+    // detail refer to http://en.wikipedia.org/wiki/Golden_section_search
+    let phi = 0.5 * (1.0 + sqrt(5.0)), resphi = 2.0 - phi, tau = 1e-5
+    
+    var minStep = -1.0 / g, maxStep = 0.0, newStep = minStep + (maxStep - minStep) / (phi + 1.0);
+
+    var newValues = currentValues
+    newValues.move(along: gradient.scaled(by: newStep))
+    var newError = f(newValues);
+
+    while (true) {
+      let flag: Bool = (maxStep - newStep > newStep - minStep) ? true : false;
+      let testStep =
+          flag ? newStep + resphi * (maxStep - newStep) :
+              newStep - resphi * (newStep - minStep);
+
+      if ((maxStep - minStep) < tau * (abs(testStep) + abs(newStep))) {
+        return 0.5 * (minStep + maxStep);
+      }
+
+      var testValues = currentValues
+      testValues.move(along: gradient.scaled(by: testStep))
+      let testError = f(testValues)
+
+      // update the working range
+      if (testError >= newError) {
+        if (flag) {
+          maxStep = testStep
+        } else {
+          minStep = testStep
+        }
+      } else {
+        if (flag) {
+          minStep = newStep;
+          newStep = testStep;
+          newError = testError;
+        } else {
+          maxStep = newStep;
+          newStep = testStep;
+          newError = testError;
+        }
+      }
+    }
+  }
+  
+  /// Optimize with an initial estimate `model`
   public func optimize(loss f: @differentiable @escaping (Model) -> Model.TangentVector.VectorSpaceScalar, model x_in: inout Model) {
     step = 0
     
@@ -68,22 +122,7 @@ Model.TangentVector.VectorSpaceScalar == Double {
       // let a = argmin(f(x_n + a * s))
       
       // TODO(fan): Replace this with a *proper* line search :-(
-      var a = 0.0
-      
-      var min = 1.0e20
-      for i in -100..<100 {
-        let a_n = 0.01 * Double(i)
-        var x = x_n
-        x.move(along: (s.scaled(by: a_n)).withDerivative({ $0.scale(by: a_n) }))
-        
-        let f_n = f(x)
-        
-        // print("a = \(a_n), current_los = \(f_n)")
-        if min > f_n {
-          min = f_n
-          a = a_n
-        }
-      }
+      let a = lineSearch(f: f, currentValues: x_n, gradient: s)
       //      /// This is an attempt to *chain* optimizers to do the line search which failed
       //      /// it appears to be hard to differentiate on operations on the tangent vectors
       //      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in

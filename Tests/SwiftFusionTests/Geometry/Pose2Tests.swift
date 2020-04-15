@@ -240,7 +240,7 @@ final class Pose2Tests: XCTestCase {
     let optimizer = SGD(for: map, learningRate: 1.2)
 
     // print("map_history = [")
-    for _ in 0..<500 {
+    for _ in 0..<400 {
       let (_, 𝛁loss) = valueWithGradient(at: map) { map -> Double in
         var loss: Double = 0
 
