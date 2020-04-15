@@ -119,25 +119,8 @@ Model.TangentVector.VectorSpaceScalar == Double {
       s = dx + s.scaled(by: beta)
       
       // Line search
-      // let a = argmin(f(x_n + a * s))
-      
-      // TODO(fan): Replace this with a *proper* line search :-(
       let a = lineSearch(f: f, currentValues: x_n, gradient: s)
-      //      /// This is an attempt to *chain* optimizers to do the line search which failed
-      //      /// it appears to be hard to differentiate on operations on the tangent vectors
-      //      let f_a: @differentiable (_ a: Double) -> Model.TangentVector.VectorSpaceScalar = { a in
-      //        var x = x_n
-      //        x.move(along: (s.scaled(by: a)).withDerivative({ $0.scale(by: a) }))
-      //
-      //        return f(x)
-      //      }
-      //      var a = 1.0
-      //
-      //      let sgd = SGD(for: a)
-      //      for _ in 0..<100 {
-      //        let 𝛁loss = gradient(at: a, in: f_a)
-      //        sgd.update(&a, along: 𝛁loss)
-      //      }
+
       let delta = s.scaled(by: a)
       
       x_n.move(along: delta) // update the estimate
