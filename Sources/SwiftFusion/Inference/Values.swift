@@ -13,7 +13,7 @@
 // limitations under the License.
 import TensorFlow
 
-/// The class that holds Key-Vector pairs.
+/// The class that holds Key-Value pairs.
 public struct Values: Differentiable & KeyPathIterable {
   public typealias ScalarType = Double
   var _values: [AnyDifferentiable] = []
@@ -46,16 +46,16 @@ public struct Values: Differentiable & KeyPathIterable {
   }
   
 }
-//
-//extension Values: CustomStringConvertible {
-//  public var description: String {
-//    "Values(\n\(_indices.map { "Key: \($0), J: \(_values[$1])\n"}.reduce("", { $0 + $1 }) )"
-//  }
-//}
-//
+
+extension Values: CustomStringConvertible {
+  public var description: String {
+    "Values(\n\(_indices.map { "Key: \($0), J: \(_values[$1])\n"}.reduce("", { $0 + $1 }) )"
+  }
+}
+
 //extension Values: Equatable {
 //  /// Order-aware comparison
-//  public static func == (lhs: VectorValues, rhs: VectorValues) -> Bool {
+//  public static func == (lhs: Values, rhs: Values) -> Bool {
 //    if lhs._indices.keys != rhs._indices.keys {
 //      return false
 //    }
