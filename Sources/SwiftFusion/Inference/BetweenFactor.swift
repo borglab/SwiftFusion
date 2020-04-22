@@ -83,6 +83,7 @@ public struct BetweenFactor: NonlinearFactor {
     let j1 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[keys[0]]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
     let j2 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[keys[1]]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
     
+    // TODO: remove this negative sign
     return JacobianFactor(keys, [j1, j2], -errorVector(values).tensor.reshaped(to: [3, 1]))
   }
 }
