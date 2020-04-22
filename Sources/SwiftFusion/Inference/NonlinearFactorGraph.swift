@@ -13,8 +13,7 @@
 // limitations under the License.
 import TensorFlow
 
-/// A factor graph for linear problems
-/// Factors are the Jacobians between the corresponding variables and measurements
+/// A factor graph for nonlinear problems
 /// TODO(fan): Add noise model
 public struct NonlinearFactorGraph: FactorGraph {
   public typealias KeysType = Array<Int>
