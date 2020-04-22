@@ -46,9 +46,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     fg += AnyNonlinearFactor(BetweenFactor(2, 1, Pose2(2.0, 0.0, .pi / 2)))
     fg += AnyNonlinearFactor(BetweenFactor(3, 2, Pose2(2.0, 0.0, .pi / 2)))
     fg += AnyNonlinearFactor(BetweenFactor(4, 3, Pose2(2.0, 0.0, .pi / 2)))
-//    fg += AnyNonlinearFactor(BetweenFactor(4, 0, Pose2(0.0, 0.0, 0)))
-    
-    // fg += AnyNonlinearFactor(PriorFactor(0, Pose2(0.0, 0.0, 0.0)))
+    fg += AnyNonlinearFactor(PriorFactor(0, Pose2(0.0, 0.0, 0.0)))
     
     var val = Values()
     
@@ -56,7 +54,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
       val.insert(i, AnyDifferentiable(map[i]))
     }
     
-    for _ in 0..<50 {
+    for _ in 0..<5 {
       let gfg = fg.linearize(val)
       
       let optimizer = CGLS(precision: 1e-6, max_iteration: 500)

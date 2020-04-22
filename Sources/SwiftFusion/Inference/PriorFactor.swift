@@ -64,6 +64,7 @@ public struct PriorFactor: NonlinearFactor {
     
     let j1 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[0].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
     
-    return JacobianFactor(keys, [j1], errorVector(values).tensor.reshaped(to: [3, 1]))
+    print(j1)
+    return JacobianFactor(keys, [j1], -errorVector(values).tensor.reshaped(to: [3, 1]))
   }
 }
