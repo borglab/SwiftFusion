@@ -39,10 +39,11 @@ import TensorFlow
 /// and `HessianFactor` conform to this protocol instead.
 public struct JacobianFactor: LinearFactor {
   
-  @differentiable(wrt: values)
-  public func error(_ indices: [Int], values: Tensor<ScalarType>) -> ScalarType {
+  // TODO(fan): correct this and add a unit test
+  public func error(_ values: VectorValues) -> ScalarType {
     ScalarType.zero
   }
+  
   public var dimension: Int {
     get {
       jacobians[0].shape.dimensions[0]
