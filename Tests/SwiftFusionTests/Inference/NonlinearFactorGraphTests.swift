@@ -16,16 +16,14 @@ final class NonlinearFactorGraphTests: XCTestCase {
     val.insert(1, AnyDifferentiable(Pose2(1.0, 1.0, .pi)))
     
     let gfg = fg.linearize(val)
-    print("fg = \(fg)")
-    print("fg_l = \(gfg)")
-    print("bf1 = \(bf1)")
-    print("bf1_l = \(bf1.linearize(val))")
     
     var vv = VectorValues()
     
     vv.insert(0, Tensor<Double>(shape:[3, 1], scalars: [1.0, 1.0, 0.0]))
     vv.insert(1, Tensor<Double>(shape:[3, 1], scalars: [1.0, 1.0, 3.14]))
-    print("gfg(x) = \(gfg*vv)")
-    print(bf1.linearize(val).jacobians[0].shape)
+    
+    let expected = Tensor<Double>(shape:[3, 1], scalars: [0.0, 0.0, -3.14])
+    
+    assertEqual((gfg * vv)[0], expected, accuracy: 1e-9)
   }
 }
