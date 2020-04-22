@@ -54,7 +54,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
       val.insert(i, AnyDifferentiable(map[i]))
     }
     
-    for _ in 0..<5 {
+    for _ in 0..<2 {
       let gfg = fg.linearize(val)
       
       let optimizer = CGLS(precision: 1e-6, max_iteration: 500)
@@ -67,13 +67,10 @@ final class NonlinearFactorGraphTests: XCTestCase {
       
       optimizer.optimize(gfg: gfg, initial: &dx)
       
-//      print("dx = \(dx)")
       for i in 0..<5 {
         var p = val[i].baseAs(Pose2.self)
-//        print("p = \(p), dp = \(dx[i])")
         p.move(along: Vector3(dx[i].reshaped(toShape: [3])))
         val[i] = AnyDifferentiable(p)
-        print("p'[\(i)] = \(val[i])")
       }
     }
     
