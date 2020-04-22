@@ -34,9 +34,13 @@ public struct GaussianFactorGraph: FactorGraph {
   public init() { }
   
   /// This calculates `A*x`, where x is the collection of key-values
-  /// Note A is a
   public static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
     Array(lhs.factors.map { $0 * rhs })
+  }
+  
+  /// This calculates `b - A*x`, where x is the collection of key-values
+  public func residual (_ val: VectorValues) -> Errors {
+    Array(self.factors.map { $0.b - $0 * val })
   }
   
   /// Convenience operator for adding factor

@@ -19,11 +19,13 @@ final class NonlinearFactorGraphTests: XCTestCase {
     
     var vv = VectorValues()
     
-    vv.insert(0, Tensor<Double>(shape:[3, 1], scalars: [1.0, 1.0, 0.0]))
-    vv.insert(1, Tensor<Double>(shape:[3, 1], scalars: [1.0, 1.0, 3.14]))
+    vv.insert(0, Tensor<Double>(shape:[3, 1], scalars: [0.0, 0.0, 0.0]))
+    vv.insert(1, Tensor<Double>(shape:[3, 1], scalars: [0.0, 0.0, 0.0]))
     
-    let expected = Tensor<Double>(shape:[3, 1], scalars: [0.0, 0.0, -3.14])
+    let expected = Tensor<Double>(shape:[3, 1], scalars: [.pi, 0.0, 0.0])
     
-    assertEqual((gfg * vv)[0], expected, accuracy: 1e-9)
+    print("gfg = \(gfg)")
+    print("error = \((gfg*vv).norm)")
+    assertEqual((gfg.residual(vv))[0], expected, accuracy: 1e-6)
   }
 }

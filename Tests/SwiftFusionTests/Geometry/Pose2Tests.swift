@@ -30,6 +30,45 @@ final class Pose2Tests: XCTestCase {
     XCTAssertEqual(actual, expected)
   }
 
+  /// test the simplest compose (multiplication)
+  func testCompose() {
+    let pose1 = Pose2(Rot2(.pi/4.0), Vector2(sqrt(0.5), sqrt(0.5)))
+    let pose2 = Pose2(Rot2(.pi/2.0), Vector2(0.0, 2.0))
+
+    let actual = pose1 * pose2
+
+    let expected = Pose2(Rot2(3.0 * .pi/4.0), Vector2(-sqrt(0.5), 3.0*sqrt(0.5)))
+    
+    let _ = expected.recursivelyAllKeyPaths(to: Double.self).map {
+      XCTAssertEqual(expected[keyPath: $0], actual[keyPath: $0], accuracy: 1e-9)
+    }
+  }
+  
+  /// test the simplest compose (multiplication)
+  func testInverse() {
+    let gTl = Pose2(Rot2(.pi/2.0), Vector2(1.0, 2.0))
+
+    let actual = gTl.inverse()
+
+    let expected = Pose2(Rot2(-.pi/2.0), Vector2(-2, 1.0))
+    
+    let _ = expected.recursivelyAllKeyPaths(to: Double.self).map {
+      XCTAssertEqual(expected[keyPath: $0], actual[keyPath: $0], accuracy: 1e-9)
+    }
+  }
+  
+  /// test the between function against GTSAM
+  func testBetween() {
+    let p1 = Pose2(1.23, 2.30, 0.2)
+    let odo = Pose2(0.53, 0.39, 0.15)
+    let p2 = p1 * odo
+    
+    let expected = between(p1, p2)
+    let _ = expected.recursivelyAllKeyPaths(to: Double.self).map {
+      XCTAssertEqual(expected[keyPath: $0], odo[keyPath: $0], accuracy: 1e-9)
+    }
+  }
+  
   /// test the simplest gradient descent on Pose2
   func testBetweenDerivatives() {
     var pT1 = Pose2(Rot2(0), Vector2(1, 0)), pT2 = Pose2(Rot2(1), Vector2(1, 1))

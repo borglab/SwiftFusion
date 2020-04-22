@@ -59,14 +59,20 @@ public struct BetweenFactor: NonlinearFactor {
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let error = (values[keys[1]].baseAs(Pose2.self) * values[keys[0]].baseAs(Pose2.self).inverse()) * difference.inverse()
+    let error = between(
+      between(values[keys[1]].baseAs(Pose2.self), values[keys[0]].baseAs(Pose2.self)),
+        difference
+    )
     
     return error.t.norm + error.rot.theta * error.rot.theta
   }
   
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> Vector3 {
-    let error = (values[keys[1]].baseAs(Pose2.self) * values[keys[0]].baseAs(Pose2.self).inverse()) * difference.inverse()
+    let error = between(
+      between(values[keys[1]].baseAs(Pose2.self), values[keys[0]].baseAs(Pose2.self)),
+      difference
+    )
     
     return Vector3(error.rot.theta, error.t.x, error.t.y)
   }
