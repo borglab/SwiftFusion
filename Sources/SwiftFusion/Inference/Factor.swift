@@ -47,7 +47,7 @@ public protocol LinearFactor: Factor {
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public protocol NonlinearFactor: Differentiable & Factor {
+public protocol NonlinearFactor: Factor {
   typealias ScalarType = Double
   
   /// TODO: `Dictionary` still does not conform to `Differentiable`
