@@ -34,7 +34,12 @@ public struct Values: Differentiable & KeyPathIterable {
   /// Should be replaced after Dictionary is in
   @differentiable
   public subscript(key: Int) -> AnyDifferentiable {
-    _values[_indices[key]!]
+    get {
+      _values[_indices[key]!]
+    }
+    set(newVal) {
+      _values[_indices[key]!] = newVal
+    }
   }
   
   /// Insert a key value pair

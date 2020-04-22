@@ -38,9 +38,9 @@ public struct GaussianFactorGraph: FactorGraph {
     Array(lhs.factors.map { $0 * rhs })
   }
   
-  /// This calculates `b - A*x`, where x is the collection of key-values
+  /// This calculates `A*x - b`, where x is the collection of key-values
   public func residual (_ val: VectorValues) -> Errors {
-    Array(self.factors.map { $0.b - $0 * val })
+    Array(self.factors.map { $0 * val - $0.b })
   }
   
   /// Convenience operator for adding factor
@@ -54,7 +54,6 @@ public struct GaussianFactorGraph: FactorGraph {
     for i in r.indices {
       let JTr = factors[i].atr(r[i])
       
-      print("JTr = \(JTr)")
       vv = vv + JTr
     }
     
