@@ -6,11 +6,11 @@ public struct Rot2: Manifold, Equatable, KeyPathIterable {
 
   // MARK: - Manifold conformance
 
-  public var whatToNameTheCoordinate: Rot2GlobalCoordinate
-  public init(whatToNameTheCoordinate: Rot2GlobalCoordinate) { self.whatToNameTheCoordinate = whatToNameTheCoordinate }
+  public var coordinateStorage: Rot2Coordinate
+  public init(coordinateStorage: Rot2Coordinate) { self.coordinateStorage = coordinateStorage }
 
-  public mutating func move(along direction: GlobalCoordinate.LocalCoordinate) {
-    whatToNameTheCoordinate = whatToNameTheCoordinate.global(direction)
+  public mutating func move(along direction: Coordinate.LocalCoordinate) {
+    coordinateStorage = coordinateStorage.global(direction)
   }
 
   // MARK: - Convenience initializers and computed properties
@@ -18,7 +18,7 @@ public struct Rot2: Manifold, Equatable, KeyPathIterable {
   // Construct from theta.
   @differentiable
   public init(_ theta: Double) {
-    self.init(coordinate: Rot2GlobalCoordinate(c: cos(theta), s: sin(theta)))
+    self.init(coordinate: Rot2Coordinate(c: cos(theta), s: sin(theta)))
   }
 
   @differentiable
@@ -98,11 +98,11 @@ func * (r: Rot2, p: Vector2) -> Vector2 {
 
 // MARK: - Global coordinate system
 
-public struct Rot2GlobalCoordinate: Equatable, KeyPathIterable {
+public struct Rot2Coordinate: Equatable, KeyPathIterable {
   public var c, s: Double
 }
 
-public extension Rot2GlobalCoordinate {
+public extension Rot2Coordinate {
   @differentiable
   init(_ theta: Double) {
     self.c = cos(theta)
@@ -115,26 +115,26 @@ public extension Rot2GlobalCoordinate {
   }
 }
 
-public extension Rot2GlobalCoordinate {
+public extension Rot2Coordinate {
   /// Product of two rotations.
   @differentiable
-  static func * (lhs: Rot2GlobalCoordinate, rhs: Rot2GlobalCoordinate) -> Rot2GlobalCoordinate {
-    Rot2GlobalCoordinate(
+  static func * (lhs: Rot2Coordinate, rhs: Rot2Coordinate) -> Rot2Coordinate {
+    Rot2Coordinate(
       c: lhs.c * rhs.c - lhs.s * rhs.s,
       s: lhs.s * rhs.c + lhs.c * rhs.s)
   }
 
   /// Inverse of the rotation.
   @differentiable
-  func inverse() -> Rot2GlobalCoordinate {
-    Rot2GlobalCoordinate(c: self.c, s: -self.s)
+  func inverse() -> Rot2Coordinate {
+    Rot2Coordinate(c: self.c, s: -self.s)
   }
 }
 
-extension Rot2GlobalCoordinate: ManifoldGlobalCoordinate {
+extension Rot2Coordinate: ManifoldCoordinate {
   @differentiable(wrt: local)
   public func global(_ local: Vector1) -> Self {
-    Rot2GlobalCoordinate(local.x) * self
+    Rot2Coordinate(local.x) * self
   }
 
   @differentiable(wrt: global)
