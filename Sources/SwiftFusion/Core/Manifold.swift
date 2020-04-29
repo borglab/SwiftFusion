@@ -1,4 +1,8 @@
 /// A coordinate in a differentiable manifold's global coordinate system.
+///
+/// Includes a coordinate chart [1] between `Self` and `R^n`, centered at `self`.
+///
+/// [1] https://en.wikipedia.org/wiki/Topological_manifold#Coordinate_charts
 public protocol ManifoldCoordinate: Differentiable {
   /// The local coordinate system used in the chart.
   ///
