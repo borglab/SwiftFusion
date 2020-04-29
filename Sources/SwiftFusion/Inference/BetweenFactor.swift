@@ -23,13 +23,21 @@ import TensorFlow
 /// `Input`: the input values as key-value pairs
 ///
 public struct BetweenFactor: NonlinearFactor {
+  
+  var key1: Int
+  var key2: Int
   @noDerivative
-  public var keys: Array<Int> = []
+  public var keys: Array<Int> {
+    get {
+      [key1, key2]
+    }
+  }
   public var difference: Pose2
   public typealias Output = Error
   
   public init (_ key1: Int, _ key2: Int, _ difference: Pose2) {
-    keys = [key1, key2]
+    self.key1 = key1
+    self.key2 = key2
     self.difference = difference
   }
   typealias ScalarType = Double
@@ -60,7 +68,7 @@ public struct BetweenFactor: NonlinearFactor {
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
     let error = between(
-      between(values[keys[1]].baseAs(Pose2.self), values[keys[0]].baseAs(Pose2.self)),
+      between(values[key2].baseAs(Pose2.self), values[key1].baseAs(Pose2.self)),
         difference
     )
     
@@ -70,7 +78,7 @@ public struct BetweenFactor: NonlinearFactor {
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> Vector3 {
     let error = between(
-      between(values[keys[1]].baseAs(Pose2.self), values[keys[0]].baseAs(Pose2.self)),
+      between(values[key2].baseAs(Pose2.self), values[key1].baseAs(Pose2.self)),
       difference
     )
     
@@ -80,8 +88,8 @@ public struct BetweenFactor: NonlinearFactor {
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
     
-    let j1 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[keys[0]]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
-    let j2 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[keys[1]]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
+    let j1 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[key1]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
+    let j2 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[key2]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
     
     // TODO: remove this negative sign
     return JacobianFactor(keys, [j1, j2], -errorVector(values).tensor.reshaped(to: [3, 1]))

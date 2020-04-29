@@ -9,7 +9,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     
     let bf1 = BetweenFactor(0, 1, Pose2(0.0,0.0, 0.0))
     
-    fg += AnyNonlinearFactor(bf1)
+    fg += bf1
     
     var val = Values()
     val.insert(0, AnyDifferentiable(Pose2(1.0, 1.0, 0.0)))
@@ -42,11 +42,11 @@ final class NonlinearFactorGraphTests: XCTestCase {
 
     var fg = NonlinearFactorGraph()
     
-    fg += AnyNonlinearFactor(BetweenFactor(1, 0, Pose2(2.0, 0.0, .pi / 2)))
-    fg += AnyNonlinearFactor(BetweenFactor(2, 1, Pose2(2.0, 0.0, .pi / 2)))
-    fg += AnyNonlinearFactor(BetweenFactor(3, 2, Pose2(2.0, 0.0, .pi / 2)))
-    fg += AnyNonlinearFactor(BetweenFactor(4, 3, Pose2(2.0, 0.0, .pi / 2)))
-    fg += AnyNonlinearFactor(PriorFactor(0, Pose2(0.0, 0.0, 0.0)))
+    fg += BetweenFactor(1, 0, Pose2(2.0, 0.0, .pi / 2))
+    fg += BetweenFactor(2, 1, Pose2(2.0, 0.0, .pi / 2))
+    fg += BetweenFactor(3, 2, Pose2(2.0, 0.0, .pi / 2))
+    fg += BetweenFactor(4, 3, Pose2(2.0, 0.0, .pi / 2))
+    fg += PriorFactor(0, Pose2(0.0, 0.0, 0.0))
     
     var val = Values()
     

@@ -15,10 +15,10 @@ import TensorFlow
 
 /// A factor graph for nonlinear problems
 /// TODO(fan): Add noise model
-public struct NonlinearFactorGraph: FactorGraph {
+public struct NonlinearFactorGraph {
   public typealias KeysType = Array<Int>
   
-  public typealias FactorsType = Array<AnyNonlinearFactor>
+  public typealias FactorsType = Array<NonlinearFactor>
   
   public var keys: KeysType = []
   public var factors: FactorsType = []
@@ -27,7 +27,7 @@ public struct NonlinearFactorGraph: FactorGraph {
   public init() { }
   
   /// Convenience operator for adding factor
-  public static func += (lhs: inout Self, rhs: AnyNonlinearFactor) {
+  public static func += (lhs: inout Self, rhs: NonlinearFactor) {
     lhs.factors.append(rhs)
   }
   

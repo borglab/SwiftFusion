@@ -16,7 +16,7 @@ import TensorFlow
 /// A factor graph for linear problems
 /// Factors are the Jacobians between the corresponding variables and measurements
 /// TODO(fan): Add noise model
-public struct GaussianFactorGraph: FactorGraph {
+public struct GaussianFactorGraph {
   public typealias KeysType = Array<Int>
   
   public typealias FactorsType = Array<JacobianFactor>
