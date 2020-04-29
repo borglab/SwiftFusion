@@ -27,7 +27,8 @@ final class Pose2Tests: XCTestCase {
     let actual = between(wT1, wT2)
     // dump(expected, name: "expected");
     // dump(actual, name: "actual");
-    XCTAssertEqual(actual, expected)
+    XCTAssertEqual(actual.rot.theta, expected.rot.theta, accuracy: 1e-6)
+    XCTAssertEqual(actual.t, expected.t)
   }
 
   /// test the simplest gradient descent on Pose2
