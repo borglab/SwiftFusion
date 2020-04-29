@@ -9,7 +9,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// The global coordinate corresponding to `local` in the chart centered around `self`.
   ///
   /// Satisfies the following properties:
-  /// - `global(LocalCoordinate.zero) == coordinate`
+  /// - `global(LocalCoordinate.zero) == self`
   /// - There exists an open set `B` around `LocalCoordinate.zero` such that
   ///   `local(global(b)) == b` for all `b \in B`.
   @differentiable(wrt: local)
@@ -18,7 +18,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// The local coordinate corresponding to `global` in the chart centered around `self`.
   ///
   /// Satisfies the following properties:
-  /// - `local(coordinate) == LocalCoordinate.zero`
+  /// - `local(self) == LocalCoordinate.zero`
   /// - There exists an open set `B` around `self` such that `local(global(b)) == b` for all
   ///   `b \in B`.
   @differentiable(wrt: global)
