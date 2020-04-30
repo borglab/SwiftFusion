@@ -98,8 +98,8 @@ Model.TangentVector.VectorSpaceScalar == Double {
     
     let dx_0 = gradient(at: x_0, in: f)
     
-    let a_0 = 1.0
     // a_0 = argmin(f(x_0+a*dx_0))
+    let a_0 = lineSearch(f: f, currentValues: x_0, gradient: dx_0)
     
     var x_1 = x_0
     x_1.move(along: dx_0.scaled(by: a_0))
