@@ -35,16 +35,15 @@ import TensorFlow
 /// [2]: https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
-public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
-  /// The pose's rotation.
-  ///
-  /// This is the projection SE(2) -> SO(2).
-  @differentiable public var rot: Rot2 { rotStorage }
+public struct Pose2: Manifold, Equatable, TangentStandardBasis, KeyPathIterable {
+  // MARK: - Manifold conformance
 
-  /// The pose's translation.
-  ///
-  /// This is the projection SE(2) -> R^2. (Note: not a group homomorphism!)
-  @differentiable public var t: Vector2 { tStorage }
+  public var coordinateStorage: Pose2Coordinate
+  public init(coordinateStorage: Pose2Coordinate) { self.coordinateStorage = coordinateStorage }
+
+  public mutating func move(along direction: Coordinate.LocalCoordinate) {
+    coordinateStorage = coordinateStorage.global(direction)
+  }
 
   /// Creates a `Pose2` with rotation `r` and translation `t`.
   ///
@@ -52,15 +51,94 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   /// not a group homomorphism!)
   @differentiable
   public init(_ r: Rot2, _ t: Vector2) {
-    tStorage = t
-    rotStorage = r
+    self.init(coordinate: Pose2Coordinate(r, t))
+  }
+  
+  // MARK: Convenience Attributes
+  
+  @differentiable public var t: Vector2 { coordinate.t }
+  
+  @differentiable public var rot: Rot2 { coordinate.rot }
+  
+  /// Twist coordinates, with the first component for rotation and the remaining components for
+  /// translation.
+  ///
+  /// See the documentation comment on the declaration of `Pose2` for more information.
+  public typealias TangentVector = Vector3
+
+  /// Product of two rotations.
+  @differentiable
+  public static func * (lhs: Pose2, rhs: Pose2) -> Pose2 {
+    Pose2(coordinate: lhs.coordinate * rhs.coordinate)
+  }
+  
+  @differentiable
+  public func inverse() -> Pose2 {
+    Pose2(coordinate: coordinate.inverse())
+  }
+}
+
+// MARK: Convenience initializers
+extension Pose2 {
+  /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
+  @differentiable
+  public init(_ x: Double, _ y: Double, _ theta: Double) {
+    self.init(Rot2(theta), Vector2(x, y))
   }
 
+  public init(randomWithCovariance covariance: Tensor<Double>) {
+    self.init(0, 0, 0)
+    let r = matmul(cholesky(covariance), Tensor<Double>(randomNormal: [3, 1])).scalars
+    let tv = Pose2.TangentVector(r[0], r[1], r[2])
+    self.move(along: tv)
+  }
+}
+
+// MARK: - Global Coordinate System
+
+public struct Pose2Coordinate: Equatable, KeyPathIterable {
+  var tStorage: Vector2
+  var rotStorage: Rot2
+  
+  @differentiable
+  public var t: Vector2 { tStorage }
+  
+  @differentiable
+  public var rot: Rot2 { rotStorage }
+  
+  /// Twist coordinates, with the first component for rotation and the remaining components for
+  /// translation.
+  ///
+  /// See the documentation comment on the declaration of `Pose2` for more information.
+  public typealias TangentVector = Vector3
+}
+
+public extension Pose2Coordinate {
+  @differentiable
+  init(_ rot: Rot2, _ t: Vector2) {
+    self.tStorage = t
+    self.rotStorage = rot
+  }
+
+  /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.
+  static func decomposed(tangentVector: Vector3) -> (w: Vector1, v: Vector2) {
+    (Vector1(tangentVector.x), Vector2(tangentVector.y, tangentVector.z))
+  }
+  
+  /// Creates a tangent vector given rotation (`w`) and translation (`v`) components.
+  static func tangentVector(w: Vector1, v: Vector2) -> Vector3 {
+    Vector3(w.x, v.x, v.y)
+  }
+}
+
+// MARK: Custom Derivatives
+
+extension Pose2Coordinate {
   /// The derivative of `init` satisfiying convention (2) described above.
-  @derivative(of: init(_:_:))
+  @derivative(of: Pose2Coordinate.init(_:_:))
   @usableFromInline
   static func vjpInit(_ r: Rot2, _ t: Vector2)
-    -> (value: Pose2, pullback: (TangentVector) -> (Rot2.TangentVector, Vector2))
+    -> (value: Pose2Coordinate, pullback: (TangentVector) -> (Rot2.TangentVector, Vector2))
   {
     // Explanation of this calculation:
     //
@@ -88,14 +166,14 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
     //                          ( 0 r ) ( v )
     //
     // The pullback here implements the linear map corresponding to that matrix.
-    (Pose2(r, t), {
+    (Pose2Coordinate(r, t), {
       let (w, v) = Self.decomposed(tangentVector: $0)
       return (w, r.rotate(v))
     })
   }
 
   /// The derivative of `t` satisfiying convention (2) described above.
-  @derivative(of: t)
+  @derivative(of: Pose2Coordinate.t)
   @usableFromInline
   func vjpT() -> (value: Vector2, pullback: (Vector2) -> Vector3) {
     // Explanation of this calculation:
@@ -114,81 +192,66 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   }
 
   /// The derivative of `rot` satisfiying convention (2) described above.
-  @derivative(of: rot)
+  @derivative(of: Pose2Coordinate.rot)
   @usableFromInline
   func vjpRot() -> (value: Rot2, pullback: (Vector1) -> Vector3) {
     // This pullback is similar to the pullback in `vjpT`, but for the second column of the
     // matrix. See the comment in `vjpT` for more information.
     return (rot, { Self.tangentVector(w: $0, v: Vector2.zero) })
   }
+}
 
-  /// Twist coordinates, with the first component for rotation and the remaining components for
-  /// translation.
-  ///
-  /// See the documentation comment on the declaration of `Pose2` for more information.
-  public typealias TangentVector = Vector3
-
-  /// Creates a tangent vector given rotation (`w`) and translation (`v`) components.
-  public static func tangentVector(w: Vector1, v: Vector2) -> Vector3 {
-    Vector3(w.x, v.x, v.y)
+// MARK: Coordinate Operators
+public extension Pose2Coordinate {
+  /// Product of two rotations.
+  @differentiable
+  static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
+    Pose2Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
   }
 
-  /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.
-  public static func decomposed(tangentVector: Vector3) -> (w: Vector1, v: Vector2) {
-    (Vector1(tangentVector.x), Vector2(tangentVector.y, tangentVector.z))
+  /// Inverse of the rotation.
+  @differentiable
+  func inverse() -> Pose2Coordinate {
+    Pose2Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
   }
+}
 
-  /// Moves `self` by `exp(hat(direction))`.
+extension Pose2Coordinate: ManifoldCoordinate {
   public mutating func move(along direction: Vector3) {
-    // TODO: This should be the real exponential map.
     let (w, v) = Self.decomposed(tangentVector: direction)
     self.tStorage.move(along: rot.rotate(v))
     self.rotStorage.move(along: w)
   }
-
-  /// Storage for the pose's translation.
-  ///
-  /// This is private so that we can define an accessor with a custom derivative (Swift AD does not
-  /// currently support custom derivatives on stored properties).
-  private var tStorage: Vector2
-
-  /// Storage for the pose's rotation.
-  ///
-  /// This is private so that we can define an accessor with a custom derivative (Swift AD does not
-  /// currently support custom derivatives on stored properties).
-  private var rotStorage: Rot2
-}
-
-/// Convenience initializers.
-extension Pose2 {
-  /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
-  @differentiable
-  public init(_ x: Double, _ y: Double, _ theta: Double) {
-    self.init(Rot2(theta), Vector2(x, y))
+  
+  /// p * Exp(q)
+  @differentiable(wrt: local)
+  public func global(_ local: Vector3) -> Self {
+    self * Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
   }
-
-  public init(randomWithCovariance covariance: Tensor<Double>) {
-    self.init(0, 0, 0)
-    let r = matmul(cholesky(covariance), Tensor<Double>(randomNormal: [3, 1])).scalars
-    let tv = Pose2.TangentVector(r[0], r[1], r[2])
-    self.move(along: tv)
+  
+  /// Log(p^{-1} * q)
+  ///
+  /// Explanation
+  /// ====================
+  /// `global_p(local_p(q)) = q`
+  /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
+  /// QED
+  ///
+  @differentiable(wrt: global)
+  public func local(_ global: Self) -> Vector3 {
+    let d = self.inverse() * global
+    return Vector3(d.rot.theta, d.t.x, d.t.y)
   }
 }
 
 /// Methods related to the Lie group structure.
 extension Pose2 {
-  /// Group operation.
-  @differentiable
-  public static func * (a: Pose2, b: Pose2) -> Pose2 {
-    Pose2(a.rot * b.rot, a.t + a.rot * b.t)
-  }
-
   /// The Adjoint group action of `self` on the tangent space, as a linear map.
   public var groupAdjoint: (Vector3) -> Vector3 {
     {
-      let (w, v) = Self.decomposed(tangentVector: $0)
-      let tPerp = Vector2(-t.y, t.x)
-      return Self.tangentVector(w: w, v: rot.rotate(v) - tPerp.scaled(by: w.x))
+      let (w, v) = Pose2Coordinate.decomposed(tangentVector: $0)
+      let tPerp = Vector2(-coordinate.t.y, coordinate.t.x)
+      return Pose2Coordinate.tangentVector(w: w, v: coordinate.rot.rotate(v) - tPerp.scaled(by: w.x))
     }
   }
 
@@ -196,24 +259,11 @@ extension Pose2 {
   public var groupAdjointMatrix: Tensor<Double> {
     Tensor(stacking: Pose2.tangentStandardBasis.map { groupAdjoint($0).tensor }).transposed()
   }
-
-  /// Group inverse.
-  @differentiable
-  public func inverse() -> Pose2 {
-    Pose2(self.rot.inverse(), self.rot.unrotate(-self.t))
-  }
-
 }
 
 extension Pose2: CustomStringConvertible {
   public var description: String {
-    "Pose2(rot: \(rot), t: \(t))"
-  }
-}
-
-extension Pose2: Equatable {
-  public static func == (lhs: Pose2, rhs: Pose2) -> Bool {
-    (lhs.t, lhs.rot) == (rhs.t, rhs.rot)
+    "Pose2(rot: \(coordinate.rot), t: \(coordinate.t))"
   }
 }
 

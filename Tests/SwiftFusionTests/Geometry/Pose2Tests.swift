@@ -123,6 +123,25 @@ final class Pose2Tests: XCTestCase {
   }
 
   /// Tests that the derivative of the identity function is correct at a few random points.
+  func testManifoldIdentity() {
+    for _ in 0..<10 {
+      let p = Pose2(randomWithCovariance: eye(rowCount: 3))
+      let q = Pose2(randomWithCovariance: eye(rowCount: 3))
+      let actual: Pose2 = Pose2(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
+      XCTAssertEqual(
+        q.rot.theta,
+        actual.rot.theta,
+        accuracy: 1e-10
+      )
+      XCTAssertEqual(
+        q.t.x,
+        actual.t.x,
+        accuracy: 1e-10
+      )
+    }
+  }
+  
+  /// Tests that the derivative of the identity function is correct at a few random points.
   func testDerivativeIdentity() {
     func identity(_ x: Pose2) -> Pose2 {
       Pose2(x.rot, x.t)
