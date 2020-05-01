@@ -152,7 +152,7 @@ extension Pose2Coordinate: ManifoldCoordinate {
   /// ====================
   /// `global_p(local_p(q)) = q`
   /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
-  /// QED
+  /// This invariant will be tested in the tests.
   ///
   @differentiable(wrt: global)
   public func local(_ global: Self) -> Vector3 {
