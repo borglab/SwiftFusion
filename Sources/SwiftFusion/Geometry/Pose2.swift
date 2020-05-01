@@ -60,12 +60,6 @@ public struct Pose2: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
   
   @differentiable public var rot: Rot2 { coordinate.rot }
   
-  /// Twist coordinates, with the first component for rotation and the remaining components for
-  /// translation.
-  ///
-  /// See the documentation comment on the declaration of `Pose2` for more information.
-  public typealias TangentVector = Vector3
-
   /// Product of two rotations.
   @differentiable
   public static func * (lhs: Pose2, rhs: Pose2) -> Pose2 {
@@ -97,27 +91,15 @@ extension Pose2 {
 // MARK: - Global Coordinate System
 
 public struct Pose2Coordinate: Equatable, KeyPathIterable {
-  var tStorage: Vector2
-  var rotStorage: Rot2
-  
-  @differentiable
-  public var t: Vector2 { tStorage }
-  
-  @differentiable
-  public var rot: Rot2 { rotStorage }
-  
-  /// Twist coordinates, with the first component for rotation and the remaining components for
-  /// translation.
-  ///
-  /// See the documentation comment on the declaration of `Pose2` for more information.
-  public typealias TangentVector = Vector3
+  var t: Vector2
+  var rot: Rot2
 }
 
 public extension Pose2Coordinate {
   @differentiable
   init(_ rot: Rot2, _ t: Vector2) {
-    self.tStorage = t
-    self.rotStorage = rot
+    self.t = t
+    self.rot = rot
   }
 
   /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.
@@ -128,76 +110,6 @@ public extension Pose2Coordinate {
   /// Creates a tangent vector given rotation (`w`) and translation (`v`) components.
   static func tangentVector(w: Vector1, v: Vector2) -> Vector3 {
     Vector3(w.x, v.x, v.y)
-  }
-}
-
-// MARK: Custom Derivatives
-
-extension Pose2Coordinate {
-  /// The derivative of `init` satisfiying convention (2) described above.
-  @derivative(of: Pose2Coordinate.init(_:_:))
-  @usableFromInline
-  static func vjpInit(_ r: Rot2, _ t: Vector2)
-    -> (value: Pose2Coordinate, pullback: (TangentVector) -> (Rot2.TangentVector, Vector2))
-  {
-    // Explanation of this calculation:
-    //
-    // We would like the differential of `init` at `(r, t)`, `dinit_(r, t)`, to satisfy:
-    //   init(r * exp(hat(w)), t * exp(hat(v))) ~= init(r, t) * exp(hat(dinit_(r, t)(w, v)))
-    // where `w`, `v` are "small" elements of R^1 and R^2 respectively.
-    //
-    // Using `t * exp(hat(v)) == t + v` simplifies the equation to:
-    //   init(r * exp(hat(w)), t + v) ~= init(r, t) * exp(hat(dinit_(r, t)(w, v)))
-    //
-    // Multiplying on the left by `init(r, t)^-1 == init(r^t, r^t * (-t))` gives
-    //   exp(hat(dinit_(r, t)(w, v)))
-    //     = init(r^t, r^t * (-t)) * init(r * exp(hat(w)), t + v)
-    //     = init(exp(hat(w)), r^t * v)
-    //
-    // Since `w`, `v` are small, we can take logs of both sides to get
-    //   dinit_(t, r)(w, v) = (w, r^t * v)
-    //
-    // Or in matrix notation:
-    //   dinit_(t, r)(w, v) =  ( 1    0 ) ( w )
-    //                         ( 0  r^t ) ( v )
-    //
-    // We actually need the pullback rather than the differential, so that's the transpose:
-    //   pbinit_(t, r)(w, v) =  ( 1 0 ) ( w )
-    //                          ( 0 r ) ( v )
-    //
-    // The pullback here implements the linear map corresponding to that matrix.
-    (Pose2Coordinate(r, t), {
-      let (w, v) = Self.decomposed(tangentVector: $0)
-      return (w, r.rotate(v))
-    })
-  }
-
-  /// The derivative of `t` satisfiying convention (2) described above.
-  @derivative(of: Pose2Coordinate.t)
-  @usableFromInline
-  func vjpT() -> (value: Vector2, pullback: (Vector2) -> Vector3) {
-    // Explanation of this calculation:
-    //
-    // `t` is the inverse of `init`, followed by a projection to the translation component. So we
-    // can get the matrix for the pullback of `t` by inverting the matrix for the pullback of
-    // `init` and then taking the relevant columns.
-    //
-    // The inverse is:
-    //   ( 1    0 )
-    //   ( 0  r^t )
-    //
-    // The pullback here implements the linear transformation represented by the first column of
-    // this matrix.
-    return (t, { Self.tangentVector(w: Vector1.zero, v: rot.unrotate($0)) } )
-  }
-
-  /// The derivative of `rot` satisfiying convention (2) described above.
-  @derivative(of: Pose2Coordinate.rot)
-  @usableFromInline
-  func vjpRot() -> (value: Rot2, pullback: (Vector1) -> Vector3) {
-    // This pullback is similar to the pullback in `vjpT`, but for the second column of the
-    // matrix. See the comment in `vjpT` for more information.
-    return (rot, { Self.tangentVector(w: $0, v: Vector2.zero) })
   }
 }
 
@@ -217,16 +129,21 @@ public extension Pose2Coordinate {
 }
 
 extension Pose2Coordinate: ManifoldCoordinate {
-  public mutating func move(along direction: Vector3) {
-    let (w, v) = Self.decomposed(tangentVector: direction)
-    self.tStorage.move(along: rot.rotate(v))
-    self.rotStorage.move(along: w)
-  }
-  
   /// p * Exp(q)
   @differentiable(wrt: local)
   public func global(_ local: Vector3) -> Self {
-    self * Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
+    // self * Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
+    let v = Vector2(local.y,local.z)
+    let w = local.x
+    if (abs(w) < 1e-10) {
+      return self * Pose2Coordinate(Rot2(w), v)
+    } else {
+      let R = Rot2(w)
+      let v_ortho = Rot2(.pi/2) * v // points towards rot center
+      let t_0 = (v_ortho - R.rotate(v_ortho))
+      let t = Vector2(t_0.x / w, t_0.y / w)
+      return self * Pose2Coordinate(R, t)
+    }
   }
   
   /// Log(p^{-1} * q)
@@ -239,8 +156,20 @@ extension Pose2Coordinate: ManifoldCoordinate {
   ///
   @differentiable(wrt: global)
   public func local(_ global: Self) -> Vector3 {
-    let d = self.inverse() * global
-    return Vector3(d.rot.theta, d.t.x, d.t.y)
+    let p = self.inverse() * global
+//    return Vector3(d.rot.theta, d.t.x, d.t.y)
+    let R = p.rot
+    let t = p.t
+    let w = R.theta
+    if (abs(w) < 1e-10) {
+      return Vector3(w, t.x, t.y);
+    } else {
+      let c_1 = R.c-1.0, s = R.s
+      let det = c_1*c_1 + s*s
+      let p = Rot2(.pi/2) * (R.unrotate(t) - t)
+      let v = Vector2((w / det) * p.x, (w / det) * p.y)
+      return Vector3(w, v.x, v.y)
+    }
   }
 }
 
