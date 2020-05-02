@@ -2,6 +2,7 @@
 import TensorFlow
 
 extension Vector3 {
+  @differentiable
   static func * (_ s:Double, _ vector:Vector3) -> Vector3 {
     Vector3(s * vector.x, s * vector.y, s * vector.z)
   }
@@ -28,6 +29,7 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
               r31, r32, r33))
   }
   
+  @differentiable
   public static func fromTangent(_ vector: Vector3) -> Self {
     var actual = Rot3()
     actual.move(along: vector)
@@ -36,6 +38,36 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   
   public init() {
     self.init(coordinateStorage: Matrix3Coordinate(eye(rowCount: 3)))
+  }
+  
+  /// Product of two rotations.
+  @differentiable(wrt: (lhs, rhs))
+  public static func * (lhs: Rot3, rhs: Rot3) -> Rot3 {
+    Rot3(coordinate: lhs.coordinate * rhs.coordinate)
+  }
+  
+  /// Returns the result of acting `self` on `v`.
+  @differentiable
+  func rotate(_ v: Vector3) -> Vector3 {
+    Vector3(matmul(coordinate.R, v.tensor.reshaped(to: [3, 1])))
+  }
+  
+  /// Returns the result of acting the inverse of `self` on `v`.
+  @differentiable
+  func unrotate(_ v: Vector3) -> Vector3 {
+    Vector3(matmul(coordinate.R.transposed(), v.tensor.reshaped(to: [3, 1])))
+  }
+  
+  /// Inverse of the rotation.
+  @differentiable
+  func inverse() -> Rot3 {
+    Rot3(coordinate: coordinate.inverse())
+  }
+  
+  /// Returns the result of acting `self` on `v`.
+  @differentiable
+  static func * (r: Rot3, p: Vector3) -> Vector3 {
+    r.rotate(p)
   }
 }
 
@@ -58,6 +90,12 @@ public extension Matrix3Coordinate {
   @differentiable(wrt: (lhs, rhs))
   static func * (lhs: Matrix3Coordinate, rhs: Matrix3Coordinate) -> Matrix3Coordinate {
     Matrix3Coordinate(matmul(lhs.R, rhs.R))
+  }
+  
+  /// Inverse of the rotation.
+  @differentiable
+  func inverse() -> Matrix3Coordinate {
+    Matrix3Coordinate(R.transposed())
   }
 }
 
