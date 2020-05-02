@@ -115,7 +115,7 @@ public extension Pose2Coordinate {
 
 // MARK: Coordinate Operators
 public extension Pose2Coordinate {
-  /// Product of two rotations.
+  /// Product of two transforms
   @differentiable
   static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
     Pose2Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
