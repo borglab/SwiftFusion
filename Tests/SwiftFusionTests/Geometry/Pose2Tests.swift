@@ -128,21 +128,7 @@ final class Pose2Tests: XCTestCase {
       let p = Pose2(randomWithCovariance: eye(rowCount: 3))
       let q = Pose2(randomWithCovariance: eye(rowCount: 3))
       let actual: Pose2 = Pose2(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
-      XCTAssertEqual(
-        q.rot.theta,
-        actual.rot.theta,
-        accuracy: 1e-10
-      )
-      XCTAssertEqual(
-        q.t.x,
-        actual.t.x,
-        accuracy: 1e-10
-      )
-      XCTAssertEqual(
-        q.t.y,
-        actual.t.y,
-        accuracy: 1e-10
-      )
+      assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
     }
   }
   
