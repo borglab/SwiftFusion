@@ -23,7 +23,7 @@ final class Rot3Tests: XCTestCase {
 
   /// Tests that the manifold invariant holds for Rot3
   func testManifoldIdentity() {
-    for _ in 0..<10 {
+    for _ in 0..<30 {
       let p = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
       let q = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
@@ -40,6 +40,13 @@ final class Rot3Tests: XCTestCase {
       let actual: Rot3 = Rot3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
     }
+    
+    for i in -5..<5 {
+      let p = Rot3.fromTangent(Vector3(0, 0, Double(2*i - 1) * .pi))
+      let q = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
+      let actual: Rot3 = Rot3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
+      assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
+    }
   }
   
   /// Tests that the manifold invariant holds for Rot3
@@ -47,6 +54,24 @@ final class Rot3Tests: XCTestCase {
     for _ in 0..<10 {
       let p = Rot3.fromTangent(Vector3(1e-10 * Tensor<Double>(randomNormal: [3])))
       let q = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
+      let actual: Rot3 = Rot3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
+      assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
+    }
+  }
+  
+  /// Tests that the manifold invariant holds for Rot3
+  /// (-1+2n) * pi
+  func testManifoldIdentitySpecial3() {
+    for i in -5..<5 {
+      let p = Rot3.fromTangent(Vector3(Double(2*i - 1) * .pi, 0, 0))
+      let q = Rot3.fromTangent(Vector3(0, 0, 0))
+      let actual: Rot3 = Rot3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
+      assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
+    }
+    
+    for i in -5..<5 {
+      let p = Rot3.fromTangent(Vector3(0, 0, Double(2*i - 1) * .pi))
+      let q = Rot3.fromTangent(Vector3(0, 0, 0))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
     }

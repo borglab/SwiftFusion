@@ -4,6 +4,16 @@ public struct Vector6: Differentiable, VectorProtocol, KeyPathIterable, TangentS
   var w: Vector3
   var v: Vector3
 }
+
+extension Vector6 {
+  public init(_ tensor: Tensor<Double>) {
+    precondition(tensor.shape == [6])
+    
+    w = Vector3(tensor[0..<3])
+    v = Vector3(tensor[3..<6])
+  }
+}
+
 /// SE(3) Lie group of 3D Euclidean Poses.
 public struct Pose3: Manifold, Equatable, TangentStandardBasis, KeyPathIterable {
   // MARK: - Manifold conformance
@@ -39,6 +49,12 @@ public struct Pose3: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
   public func inverse() -> Pose3 {
     Pose3(coordinate: coordinate.inverse())
   }
+  
+  @differentiable
+  public static func fromTangent(_ vector: Vector6) -> Self {
+    return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).global(vector))
+  }
+  
 }
 
 // MARK: - Global Coordinate System
@@ -98,6 +114,15 @@ extension Vector3 {
   }
 }
 
+@differentiable
+public func skew_symmetric_v(_ v: Vector3) -> Tensor<Double> {
+  Tensor<Double>(shape: [3, 3], scalars: [
+        0, -v.z, v.y,
+        v.z, 0, -v.x,
+        -v.y, v.x, 0]
+    )
+}
+
 extension Pose3Coordinate: ManifoldCoordinate {
   /// p * Exp(q)
   @differentiable(wrt: local)
@@ -112,9 +137,9 @@ extension Pose3Coordinate: ManifoldCoordinate {
         let t_parallel = dot(omega, v) * omega // translation parallel to axis
         let omega_cross_v = omega.cross(v); // points towards axis
         let t = 1 / theta2 * (omega_cross_v - R * omega_cross_v + t_parallel)
-        return Pose3Coordinate(R, t)
+        return self * Pose3Coordinate(R, t)
     } else {
-        return Pose3Coordinate(R, v)
+        return self * Pose3Coordinate(R, v)
     }
   }
   
@@ -128,7 +153,25 @@ extension Pose3Coordinate: ManifoldCoordinate {
   ///
   @differentiable(wrt: global)
   public func local(_ global: Self) -> Vector6 {
-    Vector6(w: Vector3(0,0,0), v: Vector3(0,0,0))
+    let relative = self.inverse() * global
+    print("rel = \(relative)")
+    let w = Rot3().coordinate.local(relative.rot.coordinate)
+    let T = relative.t
+    let t = w.norm
+    print("w = \(w)")
+    print("t = \(w.norm)")
+    if t < 1e-10 {
+      return Vector6(w: w, v: T)
+    } else {
+      let W = skew_symmetric_v((1 / t) * w);
+      // Formula from Agrawal06iros, equation (14)
+      // simplified with Mathematica, and multiplying in T to avoid matrix math
+      let Tan = tan(0.5 * t)
+      let WT = matmul(W, T.tensor.reshaped(to: [3, 1]))
+      let u = T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
+      precondition(u.shape == [3, 1])
+      return Vector6(w: w, v: Vector3(u.reshaped(to: [3])))
+    }
   }
 }
 

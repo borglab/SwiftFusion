@@ -80,7 +80,7 @@ final class Pose2Tests: XCTestCase {
     var map = [p1T0, p2T0, p3T0, p4T0, p5T0]
 
     // print("map_history = [")
-    for _ in 0..<1500 {
+    for _ in 0..<400 {
       let (_, 𝛁loss) = valueWithGradient(at: map) { map -> Double in
         var loss: Double = 0
 
@@ -119,7 +119,7 @@ final class Pose2Tests: XCTestCase {
     let p5T1 = between(map[4], map[0])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
-    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-1)
   }
 
   /// Tests that the manifold invariant holds for Pose2

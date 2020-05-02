@@ -47,13 +47,13 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   /// Returns the result of acting `self` on `v`.
   @differentiable
   func rotate(_ v: Vector3) -> Vector3 {
-    Vector3(matmul(coordinate.R, v.tensor.reshaped(to: [3, 1])))
+    Vector3(matmul(coordinate.R, v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
   }
   
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
   func unrotate(_ v: Vector3) -> Vector3 {
-    Vector3(matmul(coordinate.R.transposed(), v.tensor.reshaped(to: [3, 1])))
+    Vector3(matmul(coordinate.R.transposed(), v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
   }
   
   /// Inverse of the rotation.
@@ -137,15 +137,16 @@ extension Matrix3Coordinate: ManifoldCoordinate {
 
   @differentiable(wrt: global)
   public func local(_ global: Matrix3Coordinate) -> Vector3 {
-    let (R11, R12, R13) = (R[0, 0].scalar!, R[0, 1].scalar!, R[0, 2].scalar!)
-    let (R21, R22, R23) = (R[1, 0].scalar!, R[1, 1].scalar!, R[1, 2].scalar!)
-    let (R31, R32, R33) = (R[2, 0].scalar!, R[2, 1].scalar!, R[2, 2].scalar!)
+    let relative = self.inverse() * global
+    let R = relative.R
+    let (R11, R12, R13) = (R[0, 0].scalars[0], R[0, 1].scalars[0], R[0, 2].scalars[0])
+    let (R21, R22, R23) = (R[1, 0].scalars[0], R[1, 1].scalars[0], R[1, 2].scalars[0])
+    let (R31, R32, R33) = (R[2, 0].scalars[0], R[2, 1].scalars[0], R[2, 2].scalars[0])
 
-    let tr = R.diagonalPart().sum().scalar!
+    let tr = R.diagonalPart().sum().scalars[0]
 
     var omega: Vector3
     
-    print("trace = \(tr)")
     if abs(tr + 1.0) < 1e-10 {
       if abs(R33 + 1.0) > 1e-10 {
         omega = (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
