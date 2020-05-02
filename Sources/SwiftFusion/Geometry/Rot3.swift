@@ -8,6 +8,7 @@ extension Vector3 {
   }
 }
 
+/// SO(3) group of 3D Rotations
 public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   public typealias TangentVector = Vector3
   // MARK: - Manifold conformance
@@ -29,6 +30,7 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
               r31, r32, r33))
   }
   
+  /// Create Manifold object from element of the tangent (Expmap)
   @differentiable
   public static func fromTangent(_ vector: Vector3) -> Self {
     return Rot3(coordinate: Rot3().coordinate.global(vector))

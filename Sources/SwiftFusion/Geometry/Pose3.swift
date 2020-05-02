@@ -1,5 +1,6 @@
 import TensorFlow
 
+/// TODO: Should be merged to Vector.swift
 public struct Vector6: Differentiable, VectorProtocol, KeyPathIterable, TangentStandardBasis {
   var w: Vector3
   var v: Vector3
@@ -45,11 +46,13 @@ public struct Pose3: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
     Pose3(coordinate: lhs.coordinate * rhs.coordinate)
   }
   
+  /// Inversion
   @differentiable
   public func inverse() -> Pose3 {
     Pose3(coordinate: coordinate.inverse())
   }
   
+  /// Create from an element in tangent space (Expmap)
   @differentiable
   public static func fromTangent(_ vector: Vector6) -> Self {
     return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).global(vector))
