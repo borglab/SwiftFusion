@@ -31,13 +31,11 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   
   @differentiable
   public static func fromTangent(_ vector: Vector3) -> Self {
-    var actual = Rot3()
-    actual.move(along: vector)
-    return actual
+    return Rot3(coordinate: Rot3().coordinate.global(vector))
   }
   
   public init() {
-    self.init(coordinateStorage: Matrix3Coordinate(eye(rowCount: 3)))
+    self.init(coordinate: Matrix3Coordinate(eye(rowCount: 3)))
   }
   
   /// Product of two rotations.
