@@ -1,121 +1,60 @@
 import TensorFlow
 
-// We need a special version of atan2 that provides a derivative.
-@differentiable
-func atan2wrap(_ s: Double, _ c: Double) -> Double {
-  atan2(s, c)
-}
-
-// Implement derivative of atan2wrap.
-// d atan2(s,c)/s = c / (s^2+c^2)
-// d atan2(s,c)/s = -s / (s^2+c^2)
-// TODO(frank): make use of fact that s^2 + c^2 = 1
-@derivative(of: atan2wrap)
-func _vjpAtan2wrap(_ s: Double, _ c: Double) -> (value: Double, pullback: (Double) -> (Double, Double)) {
-  let theta = atan2(s, c)
-  let normSquared = c * c + s * s
-  return (theta, { v in (v * c / normSquared, -v * s / normSquared) })
-}
-
-// @derivative(of: bar)
-// public func _(_ x: Float) -> (value: Float, differential: (Float) -> Float) {
-//   (x, { dx in dx })
-// }
-
 /// Rot2 class is the Swift type for the SO(2) manifold of 2D Rotations around
 /// the origin.
-public struct Rot2: Equatable, Differentiable, KeyPathIterable {
-  // TODO: think about the situations where need exact value instead of
-  // equivalent classes
-  // var theta_ : Double;
+public struct Rot2: Manifold, Equatable, KeyPathIterable {
 
-  /// Cosine and Sine of the rotation angle
-  private var c_, s_: Double
+  // MARK: - Manifold conformance
 
-  @differentiable
-  public var c: Double {
-    c_
+  public var coordinateStorage: Rot2Coordinate
+  public init(coordinateStorage: Rot2Coordinate) { self.coordinateStorage = coordinateStorage }
+
+  public mutating func move(along direction: Coordinate.LocalCoordinate) {
+    coordinateStorage = coordinateStorage.global(direction)
   }
 
-  @usableFromInline
-  @derivative(of: c)
-  func _vjpCos() -> (value: Double, pullback: (Double) -> TangentVector) {
-    (c_, { v in Vector1(-v * self.s_) })
-  }
+  // MARK: - Convenience initializers and computed properties
 
-  @differentiable
-  public var s: Double {
-    s_
-  }
-
-  @usableFromInline
-  @derivative(of: s)
-  func _vjpSin() -> (value: Double, pullback: (Double) -> TangentVector) {
-    (s_, { v in Vector1(v * self.c_) })
-  }
-
-  // Construct from angle theta.
+  // Construct from theta.
   @differentiable
   public init(_ theta: Double) {
-    c_ = cos(theta)
-    s_ = sin(theta)
+    self.init(coordinate: Rot2Coordinate(c: cos(theta), s: sin(theta)))
   }
 
-  @usableFromInline
-  @derivative(of: init)
-  static func _vjpInit(_ theta: Double) -> (value: Self, pullback: (TangentVector) -> Double) {
-    return (Rot2(theta), { v in
-      v.x
-    })
-  }
+  @differentiable
+  public var theta: Double { coordinate.theta }
 
-  // Construct from cosine and sine values directly.
+  /// Construct from cosine and sine values directly.
+  @differentiable
   public init(c: Double, s: Double) {
     self.init(atan2wrap(s, c))
   }
 
-  public typealias TangentVector = Vector1
-
-  public mutating func move(along direction: TangentVector) {
-    let r = Rot2(direction.x) * self
-    (c_, s_) = (r.c_, r.s_)
-  }
-
-  public var zeroTangentVector: TangentVector {
-    TangentVector.zero
-  }
-
+  /// Cosine value.
   @differentiable
-  public var theta: Double {
-    atan2wrap(s_, c_)
-  }
+  public var c: Double { coordinate.c }
 
-  @usableFromInline
-  @derivative(of: theta)
-  func _vjpTheta() -> (value: Double, pullback: (Double) -> TangentVector) {
-    return (theta, { v in
-      Vector1(v)
-    })
-  }
+  /// Sine value.
+  @differentiable
+  public var s: Double { coordinate.s }
+
 }
 
 extension Rot2: TangentStandardBasis {
   public static var tangentStandardBasis: [Vector1] { [Vector1(1)] }
 }
 
-infix operator *: MultiplicationPrecedence
-public extension Rot2 {
-  static func == (lhs: Rot2, rhs: Rot2) -> Bool {
-    (lhs.c, lhs.s) == (rhs.c, rhs.s)
+extension Rot2: CustomDebugStringConvertible {
+  public var debugDescription: String {
+    "Rot2(theta: \(theta))"
   }
+}
 
-  /// This is the product of two 2D rotations.
-  /// @differentiable is an attribute marker of differentiablity.
+extension Rot2 {
+  /// Product of two rotations.
   @differentiable
   static func * (lhs: Rot2, rhs: Rot2) -> Rot2 {
-    Rot2(
-      c: lhs.c * rhs.c - lhs.s * rhs.s,
-      s: lhs.s * rhs.c + lhs.c * rhs.s)
+    Rot2(coordinate: lhs.coordinate * rhs.coordinate)
   }
 
   /// Returns the result of acting `self` on `v`.
@@ -129,17 +68,11 @@ public extension Rot2 {
   func unrotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
-  
-  // inverse rotation, differentiation is automatic because Rot2 constructor has derivative
+
+  /// Inverse of the rotation.
   @differentiable
   func inverse() -> Rot2 {
-    Rot2(c: self.c, s: -self.s)
-  }
-}
-
-extension Rot2: CustomDebugStringConvertible {
-  public var debugDescription: String {
-    "Rot2(theta: \(theta))"
+    Rot2(coordinate: coordinate.inverse())
   }
 }
 
@@ -149,16 +82,73 @@ public func between(_ R1: Rot2, _ R2: Rot2) -> Rot2 {
   R1.inverse() * R2
 }
 
-struct Between: Differentiable {
-  var a: Rot2 = Rot2(0)
-
-  @differentiable
-  func callAsFunction(_ b: Rot2) -> Rot2 {
-    between(a, b)
-  }
-}
-
 @differentiable
 func * (r: Rot2, p: Vector2) -> Vector2 {
   r.rotate(p)
+}
+
+// MARK: - Global coordinate system
+
+public struct Rot2Coordinate: Equatable, KeyPathIterable {
+  public var c, s: Double
+}
+
+public extension Rot2Coordinate {
+  @differentiable
+  init(_ theta: Double) {
+    self.c = cos(theta)
+    self.s = sin(theta)
+  }
+
+  @differentiable
+  var theta: Double {
+    atan2wrap(s, c)
+  }
+}
+
+public extension Rot2Coordinate {
+  /// Product of two rotations.
+  @differentiable
+  static func * (lhs: Rot2Coordinate, rhs: Rot2Coordinate) -> Rot2Coordinate {
+    Rot2Coordinate(
+      c: lhs.c * rhs.c - lhs.s * rhs.s,
+      s: lhs.s * rhs.c + lhs.c * rhs.s)
+  }
+
+  /// Inverse of the rotation.
+  @differentiable
+  func inverse() -> Rot2Coordinate {
+    Rot2Coordinate(c: self.c, s: -self.s)
+  }
+}
+
+extension Rot2Coordinate: ManifoldCoordinate {
+  @differentiable(wrt: local)
+  public func global(_ local: Vector1) -> Self {
+    self * Rot2Coordinate(local.x)
+  }
+
+  @differentiable(wrt: global)
+  public func local(_ global: Self) -> Vector1 {
+    Vector1((self.inverse() * global).theta)
+  }
+}
+
+// MARK: - Helper functions
+
+// We need a special version of atan2 that provides a derivative.
+@differentiable
+fileprivate func atan2wrap(_ s: Double, _ c: Double) -> Double {
+  atan2(s, c)
+}
+
+// Implement derivative of atan2wrap.
+// d atan2(s,c)/s = c / (s^2+c^2)
+// d atan2(s,c)/s = -s / (s^2+c^2)
+// TODO(frank): make use of fact that s^2 + c^2 = 1
+@derivative(of: atan2wrap)
+fileprivate func _vjpAtan2wrap(_ s: Double, _ c: Double) -> (value: Double, pullback: (Double) -> (Double, Double)) {
+  let theta = atan2(s, c)
+  let normSquared = c * c + s * s
+  return (theta, { v in (v * c / normSquared, -v * s / normSquared) })
 }
