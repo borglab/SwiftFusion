@@ -1,32 +1,41 @@
-/// A coordinate in a differentiable manifold's global coordinate system.
+/// A point on a differentiable manifold with a `retract` map centered around `self`.
 ///
-/// Includes a coordinate chart [1] between `Self` and `R^n`, centered at `self`.
-///
-/// [1] https://en.wikipedia.org/wiki/Topological_manifold#Coordinate_charts
+/// This protocol helps you define manifolds with custom tangent vectors. Instructions:
+/// 1. Define a type `C: ManifoldCoordinate`, without specifying a `TangentVector`. (Swift
+///    generates a `TangentVector` automatically, usually not the `TangentVector` that you want for
+///    your manifold).
+/// 2. Define `C.LocalCoordinate` to be the `TangentVector` type that you want for your manifold,
+///    and define `C.retract` and `C.localCoordinate` to be the retraction and inverse retration
+///    for this `TangentVector`.
+/// 3. Define a type `M: Manifold` that wraps `C`. The `Manifold` protocol automatically gives `M`
+///    the desired `TangentVector`.
+/// See "SwiftFusion/doc/DifferentiableManifoldRecipe.md" for more detailed instructions.
 public protocol ManifoldCoordinate: Differentiable {
-  /// The local coordinate system used in the chart.
+  /// The local coordinate type of the manifold.
   ///
-  /// Isomorphic to `R^n`, where `n` is the dimension of the manifold.
+  /// This is the `TangentVector` of the `Manifold` wrapper type.
+  ///
+  /// Note that this is not the same type as `Self.TangentVector`.
   associatedtype LocalCoordinate: AdditiveArithmetic & Differentiable & VectorProtocol
     where LocalCoordinate.TangentVector == LocalCoordinate
 
-  /// The global coordinate corresponding to `local` in the chart centered around `self`.
+  /// Diffeomorphism between a neigborhood of `Localcoordinate.zero` and `Self`.
   ///
   /// Satisfies the following properties:
-  /// - `global(LocalCoordinate.zero) == self`
+  /// - `retract(LocalCoordinate.zero) == self`
   /// - There exists an open set `B` around `LocalCoordinate.zero` such that
-  ///   `local(global(b)) == b` for all `b \in B`.
+  ///   `localCoordinate(retract(b)) == b` for all `b \in B`.
   @differentiable(wrt: local)
-  func global(_ local: LocalCoordinate) -> Self
+  func retract(_ local: LocalCoordinate) -> Self
 
-  /// The local coordinate corresponding to `global` in the chart centered around `self`.
+  /// Inverse of `retract`.
   ///
   /// Satisfies the following properties:
-  /// - `local(self) == LocalCoordinate.zero`
-  /// - There exists an open set `B` around `self` such that `local(global(b)) == b` for all
+  /// - `localCoordinate(self) == LocalCoordinate.zero`
+  /// - There exists an open set `B` around `self` such that `localCoordinate(retract(b)) == b` for all
   ///   `b \in B`.
   @differentiable(wrt: global)
-  func local(_ global: Self) -> LocalCoordinate
+  func localCoordinate(_ global: Self) -> LocalCoordinate
 }
 
 /// A point on a differentiable manifold.
@@ -37,13 +46,20 @@ public protocol Manifold: Differentiable {
 
   /// The coordinate of `self`.
   ///
-  /// Note: This is not differentiable, and therefore clients should use `coordinate` instead.
+  /// Note: The distinction between `coordinateStorage` and `coordinate` is a workaround until we
+  /// can define default derivatives for protocol requirements (TF-982). Until then, implementers
+  /// of this protocol must define `coordinateStorage`, and clients of this protocol must access
+  /// coordinate`. This allows us to define default derivatives for `coordinate` that translate
+  /// between the `ManifoldCoordinate` tangent space and the `Manifold` tangent space.
   var coordinateStorage: Coordinate { get set }
 
   /// Creates a manifold point with coordinate `coordinateStorage`.
   ///
-  /// Note: This is not differentiable, and therefore clients should use `init(coordinate:)`
-  /// instead.
+  /// Note: The distinction between `init(coordinateStorage:)` and `init(coordinate:)` is a workaround until we
+  /// can define default derivatives for protocol requirements (TF-982). Until then, implementers
+  /// of this protocol must define `init(coordinateStorage:)`, and clients of this protocol must access
+  /// init(coordinate:)`. This allows us to define default derivatives for `init(coordinate:)` that translate
+  /// between the `ManifoldCoordinate` tangent space and the `Manifold` tangent space.
   init(coordinateStorage: Coordinate)
 }
 
@@ -63,17 +79,20 @@ extension Manifold {
     //
     // Let `f: Manifold -> Coordinate` be `f(x) = x.coordinateStorage`.
     //
-    // `D_x(f)` (the derivative of `f` at `x`) is a linear approximation of how changes in local
+    // `differential(at: x, in: f)` is a linear approximation of how changes in local
     // coordinates around `x` lead to changes in global coordinates around `x.coordinateStorage`.
     //
-    // `x.coordinateStorage.global: LocalCoordinate -> Coordinate` defines _exactly_ how local
-    // coordinates at `x` map to global coordinates.
+    // `x.coordinateStorage.retract: LocalCoordinate -> Coordinate` defines _exactly_ how local
+    // coordinates around zero map to global coordinates around `x`.
     //
-    // Therefore, `D_x(f)` is the derivative of `x.coordinateStorage.global`.
+    // Therefore, `differential(at: x, in: f) = differential(at: zero, in: x.coordinateStorage.retract)`.
+    //
+    // The pullback is the dual map of the differential, so taking duals of both sides gives:
+    //   `pullback(at: x, in: f) = pullback(at: zero, in: x.coordinateStorage.retract)`.
 
     return (
       value: coordinateStorage,
-      pullback(at: Coordinate.LocalCoordinate.zero) { self.coordinateStorage.global($0) }
+      pullback(at: Coordinate.LocalCoordinate.zero) { self.coordinateStorage.retract($0) }
     )
   }
 
@@ -97,14 +116,29 @@ extension Manifold {
     // coordinates around `x` lead to changes in local coordinates around
     // `Self(coordinateStorage: x)`.
     //
-    // `x.coordinateStorage.local: Coordinate -> LocalCoordinate` defines _exactly_ how global
+    // `x.coordinateStorage.localCoordinate: Coordinate -> LocalCoordinate` defines _exactly_ how global
     // coordinates around `x` map to local coordinates.
     //
-    // Therefore, `D_x(g)` is the derivative of `x.coordinateStorage.local`.
+    // Therefore, `D_x(g)` is the derivative of `x.coordinateStorage.localCoordinate`.
+
+    // Explanation of this pullback:
+    //
+    // Let `g: Coordinate -> Manifold` be `g(x) = Self(coordinateStorage: x)`.
+    //
+    // `differential(at: x, in: g)` is a linear approximation of how changes in global
+    // coordinates around `x` lead to changes in local coordinates around `Self(coordinateStorage: x)`.
+    //
+    // `x.coordinateStorage.localCoordinate: Coordinate -> LocalCoordinate` defines _exactly_ how global
+    // coordinates around `x` map to local coordinates.
+    //
+    // Therefore, `differential(at: x, in: g) = differential(at: zero, in: x.coordinateStorage.localCoordinate)`.
+    //
+    // The pullback is the dual map of the differential, so taking duals of both sides gives:
+    //   `pullback(at: x, in: g) = pullback(at: zero, in: x.coordinateStorage.localCoordinate)`.
 
     return (
       value: Self(coordinateStorage: coordinate),
-      pullback: pullback(at: coordinate) { coordinate.local($0) }
+      pullback: pullback(at: coordinate) { coordinate.localCoordinate($0) }
     )
   }
 }

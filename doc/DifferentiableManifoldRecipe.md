@@ -54,11 +54,11 @@ The coordinate `struct` you chose in step 1 should conform to the
 public protocol ManifoldCoordinate: Differentiable {
   /// The global coordinate corresponding to `local` in the chart centered around `self`.
   @differentiable(wrt: local)
-  func global(_ local: LocalCoordinate) -> Self
+  func retract(_ local: LocalCoordinate) -> Self
 
   /// The local coordinate corresponding to `global` in the chart centered around `self`.
   @differentiable(wrt: global)
-  func local(_ global: Self) -> LocalCoordinate
+  func localCoordinate(_ global: Self) -> LocalCoordinate
 }
 ```
 
@@ -79,7 +79,7 @@ sets the stored coordinate. Add this method to the struct:
 
 ```swift
 public mutating func move(along direction: Coordinate.LocalCoordinate) {
-  coordinateStorage = coordinateStorage.global(direction)
+  coordinateStorage = coordinateStorage.retract(direction)
 }
 ```
 
@@ -100,7 +100,7 @@ struct Rot2: Manifold {
   }
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
-    coordinateStorage = coordinateStorage.global(direction)
+    coordinateStorage = coordinateStorage.retract(direction)
   }
 }
 ```

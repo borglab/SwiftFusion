@@ -8,7 +8,7 @@ final class Pose3Tests: XCTestCase {
     for _ in 0..<10 {
       let p = Pose3.fromTangent(Vector6(Tensor<Double>(randomNormal: [6])))
       let q = Pose3.fromTangent(Vector6(Tensor<Double>(randomNormal: [6])))
-      let actual: Pose3 = Pose3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
+      let actual: Pose3 = Pose3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
     }
   }
@@ -33,7 +33,7 @@ final class Pose3Tests: XCTestCase {
     let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
     let t12 = Vector6(Tensor<Double>(repeating: 0.1, shape: [6]))
     let t1 = Pose3(R, P)
-    let t2 = Pose3(coordinate: t1.coordinate.global(t12))
-    assertAllKeyPathEqual(t1.coordinate.local(t2.coordinate), t12, accuracy: 1e-5)
+    let t2 = Pose3(coordinate: t1.coordinate.retract(t12))
+    assertAllKeyPathEqual(t1.coordinate.localCoordinate(t2.coordinate), t12, accuracy: 1e-5)
   }
 }

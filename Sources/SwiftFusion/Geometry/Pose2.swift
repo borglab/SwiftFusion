@@ -42,7 +42,7 @@ public struct Pose2: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
   public init(coordinateStorage: Pose2Coordinate) { self.coordinateStorage = coordinateStorage }
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
-    coordinateStorage = coordinateStorage.global(direction)
+    coordinateStorage = coordinateStorage.retract(direction)
   }
 
   /// Creates a `Pose2` with rotation `r` and translation `t`.
@@ -131,7 +131,7 @@ public extension Pose2Coordinate {
 extension Pose2Coordinate: ManifoldCoordinate {
   /// p * Exp(q)
   @differentiable(wrt: local)
-  public func global(_ local: Vector3) -> Self {
+  public func retract(_ local: Vector3) -> Self {
     // self * Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
     let v = Vector2(local.y,local.z)
     let w = local.x
@@ -155,7 +155,7 @@ extension Pose2Coordinate: ManifoldCoordinate {
   /// This invariant will be tested in the tests.
   ///
   @differentiable(wrt: global)
-  public func local(_ global: Self) -> Vector3 {
+  public func localCoordinate(_ global: Self) -> Vector3 {
     let p = self.inverse() * global
 //    return Vector3(d.rot.theta, d.t.x, d.t.y)
     let R = p.rot

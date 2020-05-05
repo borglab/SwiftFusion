@@ -23,7 +23,7 @@ public struct Pose3: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
   public init(coordinateStorage: Pose3Coordinate) { self.coordinateStorage = coordinateStorage }
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
-    coordinateStorage = coordinateStorage.global(direction)
+    coordinateStorage = coordinateStorage.retract(direction)
   }
 
   /// Creates a `Pose3` with rotation `r` and translation `t`.
@@ -55,7 +55,7 @@ public struct Pose3: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
   /// Create from an element in tangent space (Expmap)
   @differentiable
   public static func fromTangent(_ vector: Vector6) -> Self {
-    return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).global(vector))
+    return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).retract(vector))
   }
   
 }
@@ -129,7 +129,7 @@ public func skew_symmetric_v(_ v: Vector3) -> Tensor<Double> {
 extension Pose3Coordinate: ManifoldCoordinate {
   /// p * Exp(q)
   @differentiable(wrt: local)
-  public func global(_ local: Vector6) -> Self {
+  public func retract(_ local: Vector6) -> Self {
     // get angular velocity omega and translational velocity v from twist xi
     let (omega, v) = (local.w, local.v)
     
@@ -155,10 +155,10 @@ extension Pose3Coordinate: ManifoldCoordinate {
   /// This invariant will be tested in the tests.
   ///
   @differentiable(wrt: global)
-  public func local(_ global: Self) -> Vector6 {
+  public func localCoordinate(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
     print("rel = \(relative)")
-    let w = Rot3().coordinate.local(relative.rot.coordinate)
+    let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     let T = relative.t
     let t = w.norm
     print("w = \(w)")

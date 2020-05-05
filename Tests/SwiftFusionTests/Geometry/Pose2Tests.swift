@@ -127,7 +127,7 @@ final class Pose2Tests: XCTestCase {
     for _ in 0..<10 {
       let p = Pose2(randomWithCovariance: eye(rowCount: 3))
       let q = Pose2(randomWithCovariance: eye(rowCount: 3))
-      let actual: Pose2 = Pose2(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
+      let actual: Pose2 = Pose2(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
     }
   }
@@ -136,7 +136,7 @@ final class Pose2Tests: XCTestCase {
   func testManifoldExpmap1() {
     let pose = Pose2(Rot2(.pi/2), Vector2(1, 2));
     let expected = Pose2(1.00811, 2.01528, 2.5608);
-    let actual = Pose2(coordinate: pose.coordinate.global(Vector3(0.99, 0.01, -0.015)))
+    let actual = Pose2(coordinate: pose.coordinate.retract(Vector3(0.99, 0.01, -0.015)))
     XCTAssertEqual(
       expected.rot.theta,
       actual.rot.theta,
@@ -164,7 +164,7 @@ final class Pose2Tests: XCTestCase {
 //    let expected = eye(rowCount: 3) + A + A2 + A3 + A4;
 //
 //    let v = Vector3(0.99, 0.01, -0.015);
-//    let pose = Pose2(coordinate: Pose2(0, 0, 0).coordinate.global(v))
+//    let pose = Pose2(coordinate: Pose2(0, 0, 0).coordinate.retract(v))
 //    let actual = pose.groupAdjointMatrix
     // assertEqual(actual, expected, accuracy: 1e-5)
     // TODO: This is also commented out in GTSAM, why?
@@ -173,7 +173,7 @@ final class Pose2Tests: XCTestCase {
   /// Tests that the Pose2 Expmap
   func testManifoldExpmap0d() {
     let expected = Pose2(0, 0, 0);
-    let actual = Pose2(coordinate: Pose2(0, 0, 0).coordinate.global(Vector3(2 * .pi, 0, 2 * .pi)))
+    let actual = Pose2(coordinate: Pose2(0, 0, 0).coordinate.retract(Vector3(2 * .pi, 0, 2 * .pi)))
     XCTAssertEqual(
       expected.rot.theta,
       actual.rot.theta,

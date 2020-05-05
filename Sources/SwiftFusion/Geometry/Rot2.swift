@@ -10,7 +10,7 @@ public struct Rot2: Manifold, Equatable, KeyPathIterable {
   public init(coordinateStorage: Rot2Coordinate) { self.coordinateStorage = coordinateStorage }
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
-    coordinateStorage = coordinateStorage.global(direction)
+    coordinateStorage = coordinateStorage.retract(direction)
   }
 
   // MARK: - Convenience initializers and computed properties
@@ -124,12 +124,12 @@ public extension Rot2Coordinate {
 
 extension Rot2Coordinate: ManifoldCoordinate {
   @differentiable(wrt: local)
-  public func global(_ local: Vector1) -> Self {
+  public func retract(_ local: Vector1) -> Self {
     self * Rot2Coordinate(local.x)
   }
 
   @differentiable(wrt: global)
-  public func local(_ global: Self) -> Vector1 {
+  public func localCoordinate(_ global: Self) -> Vector1 {
     Vector1((self.inverse() * global).theta)
   }
 }
