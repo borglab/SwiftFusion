@@ -20,8 +20,7 @@ final class G2OReaderTests: XCTestCase {
   /// Tests loading a simple g2o file using G2OReader.
   func testLoadSimple() {
     var dataset = G2OArray()
-    try! dataset.read(
-      fromG2O: URL(fileURLWithPath: "Tests/SwiftFusionTests/Dataset/Data/simple.g2o"))
+    try! dataset.read(fromG2O: dataDirectory.appendingPathComponent("simple.g2o"))
     let expectedDataset = G2OArray(
       initialGuesses: [
         G2OArray.InitialGuess(index: 0, pose: Pose2(0.1, 0.2, 0.3)),
@@ -38,8 +37,7 @@ final class G2OReaderTests: XCTestCase {
   func testLoadNotExist() {
     var dataset = G2OArray()
     XCTAssertThrowsError(
-      try dataset.read(
-        fromG2O: URL(fileURLWithPath: "Tests/SwiftFusionTests/Dataset/Data/notexist.g2o"))
+      try dataset.read(fromG2O: dataDirectory.appendingPathComponent("notexist.g2o"))
     )
   }
 
@@ -47,10 +45,12 @@ final class G2OReaderTests: XCTestCase {
   func testLoadMalformed() {
     var dataset = G2OArray()
     XCTAssertThrowsError(
-      try dataset.read(
-        fromG2O: URL(fileURLWithPath: "Tests/SwiftFusionTests/Dataset/Data/malformed.g2o"))
+      try dataset.read(fromG2O: dataDirectory.appendingPathComponent("malformed.g2o"))
     )
   }
+
+  /// Data directory for these tests.
+  let dataDirectory = URL.sourceFileDirectory().appendingPathComponent("Data")
 
   static var allTests = [
     ("testLoadSimple", testLoadSimple),

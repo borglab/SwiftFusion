@@ -83,3 +83,10 @@ public final class SimpleGaussianFactorGraph {
     return c
   }
 }
+
+extension URL {
+  /// Creates a URL for the directory containing the caller's source file.
+  static func sourceFileDirectory(file: String = #file) -> URL {
+    return URL(fileURLWithPath: file).deletingLastPathComponent()
+  }
+}
