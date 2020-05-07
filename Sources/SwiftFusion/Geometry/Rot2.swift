@@ -149,15 +149,6 @@ public func between(_ R1: Rot2, _ R2: Rot2) -> Rot2 {
   R1.inverse() * R2
 }
 
-struct Between: Differentiable {
-  var a: Rot2 = Rot2(0)
-
-  @differentiable
-  func callAsFunction(_ b: Rot2) -> Rot2 {
-    between(a, b)
-  }
-}
-
 @differentiable
 func * (r: Rot2, p: Vector2) -> Vector2 {
   r.rotate(p)
