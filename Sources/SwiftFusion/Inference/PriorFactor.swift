@@ -41,16 +41,16 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor {
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let error = values[keys[0]].baseAs(T.self).local(difference)
+    let error = difference.differentiableLocal(values[keys[0]].baseAs(T.self))
     
-    let residual = error.tensor.squared().sum().scalars[0]
+    let residual = error.differentiableTensor.squared().sum().scalars[0]
     return residual
   }
   
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
     let val = values[keys[0]].baseAs(T.self)
-    let error = val.local(difference)
+    let error = difference.differentiableLocal(val)
     
     return error
   }
