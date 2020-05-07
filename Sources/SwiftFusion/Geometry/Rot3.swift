@@ -69,6 +69,11 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   static func * (r: Rot3, p: Vector3) -> Vector3 {
     r.rotate(p)
   }
+  
+  @differentiable
+  public func local(_ global: Rot3) -> Vector3 {
+    coordinate.local(global.coordinate)
+  }
 }
 
 public struct Matrix3Coordinate: Equatable, KeyPathIterable {

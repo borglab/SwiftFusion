@@ -35,7 +35,7 @@ import TensorFlow
 /// [2]: https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
-public struct Pose2: Manifold, Equatable, TangentStandardBasis, KeyPathIterable {
+public struct Pose2: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
   // MARK: - Manifold conformance
 
   public var coordinateStorage: Pose2Coordinate
@@ -69,6 +69,11 @@ public struct Pose2: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
   @differentiable
   public func inverse() -> Pose2 {
     Pose2(coordinate: coordinate.inverse())
+  }
+  
+  @differentiable
+  public func local(_ global: Self) -> Self.Coordinate.LocalCoordinate {
+    coordinate.local(global.coordinate)
   }
 }
 
@@ -196,8 +201,3 @@ extension Pose2: CustomStringConvertible {
   }
 }
 
-/// Calculate relative pose 1T2 between two poses wT1 and wT2
-@differentiable
-public func between(_ wT1: Pose2, _ wT2: Pose2) -> Pose2 {
-  wT1.inverse() * wT2
-}

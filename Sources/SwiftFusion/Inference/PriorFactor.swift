@@ -22,13 +22,13 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct PriorFactor: NonlinearFactor {
+public struct PriorFactor<T: LieGroup>: NonlinearFactor {
   @noDerivative
   public var keys: Array<Int> = []
-  public var difference: Pose2
+  public var difference: T
   public typealias Output = Error
   
-  public init (_ key: Int, _ difference: Pose2) {
+  public init (_ key: Int, _ difference: T) {
     keys = [key]
     self.difference = difference
   }
@@ -41,28 +41,27 @@ public struct PriorFactor: NonlinearFactor {
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let error = between(
-      values[keys[0]].baseAs(Pose2.self),
-      difference
-    )
+    let error = values[keys[0]].baseAs(T.self).local(difference)
     
-    return error.t.norm + error.rot.theta * error.rot.theta
+    let residual = error.tensor.squared().sum().scalars[0]
+    return residual
   }
   
   @differentiable(wrt: values)
-  public func errorVector(_ values: Values) -> Vector3 {
-    let error = between(
-      values[keys[0]].baseAs(Pose2.self),
-      difference
-    )
+  public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
+    let val = values[keys[0]].baseAs(T.self)
+    let error = val.local(difference)
     
-    return Vector3(error.rot.theta, error.t.x, error.t.y)
+    return error
   }
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
     
-    let j1 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[0].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
+    let j1 = Tensor<Double>(stacking: (0..<j.count).map { i in
+      (j[i]._values[0].base as! T.TangentVector).tensor.reshaped(to: TensorShape([3]))
+      
+    })
     
     return JacobianFactor(keys, [j1], -errorVector(values).tensor.reshaped(to: [3, 1]))
   }

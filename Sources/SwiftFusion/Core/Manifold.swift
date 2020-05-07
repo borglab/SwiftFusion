@@ -7,7 +7,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// The local coordinate system used in the chart.
   ///
   /// Isomorphic to `R^n`, where `n` is the dimension of the manifold.
-  associatedtype LocalCoordinate: AdditiveArithmetic & Differentiable & VectorProtocol
+  associatedtype LocalCoordinate: AdditiveArithmetic & Differentiable & VectorProtocol & TensorConvertible & TangentStandardBasis
     where LocalCoordinate.TangentVector == LocalCoordinate
 
   /// The global coordinate corresponding to `local` in the chart centered around `self`.

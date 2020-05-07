@@ -15,8 +15,15 @@ extension Vector6 {
   }
 }
 
+extension Vector6: TensorConvertible {
+  @differentiable
+  public var tensor: Tensor<Double> {
+    Tensor<Double>(concatenating: [w.tensor, v.tensor])
+  }
+}
+
 /// SE(3) Lie group of 3D Euclidean Poses.
-public struct Pose3: Manifold, Equatable, TangentStandardBasis, KeyPathIterable {
+public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
   // MARK: - Manifold conformance
 
   public var coordinateStorage: Pose3Coordinate
@@ -58,6 +65,10 @@ public struct Pose3: Manifold, Equatable, TangentStandardBasis, KeyPathIterable 
     return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).global(vector))
   }
   
+  @differentiable
+  public func local(_ global: Self) -> Self.Coordinate.LocalCoordinate {
+    coordinate.local(global.coordinate)
+  }
 }
 
 // MARK: - Global Coordinate System
