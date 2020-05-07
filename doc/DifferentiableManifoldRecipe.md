@@ -64,7 +64,7 @@ public protocol ManifoldCoordinate: Differentiable {
 
 (See the code for more detailed requirements and documentation).
 
-The imlpementations of `global` and `local` determine how the manifold's global
+The implementations of `global` and `local` determine how the manifold's global
 and local coordinates are related, and they therefore determine the behavior of
 the manifold's tangent vectors during differentiation.
 
@@ -84,7 +84,7 @@ public mutating func move(along direction: Coordinate.LocalCoordinate) {
 ```
 
 Finally, conform the struct to `Manifold`. This automatically adds a `var
-coordinate` property that lets to access the point's coordinates and a
+coordinate` property that lets you access the point's coordinates and a
 `init(coordinate:)` initializer that lets you create a new point with the given
 coordinates. You should always use these methods rather than the
 `coordinateStorage` methods when writing functions that use the manifold.
@@ -115,7 +115,9 @@ specified. For example:
 extension Rot2 {
   @differentiable
   var theta: Float {
-    atan2(coordinate.s, coordinate.c)
+    // atan2 in the stdlib does not have the derivative implementation
+    // so we need to use a wrapped version that does
+    atan2wrap(coordinate.s, coordinate.c)
   }
 }
 
