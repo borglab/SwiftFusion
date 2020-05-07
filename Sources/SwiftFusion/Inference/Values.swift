@@ -29,6 +29,11 @@ public struct Values: Differentiable & KeyPathIterable {
   }
   /// Default initializer
   public init() { }
+
+  /// Returns the number of variables.
+  public var count: Int {
+    return _values.count
+  }
   
   /// The subscript operator, with some indirection
   /// Should be replaced after Dictionary is in

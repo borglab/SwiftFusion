@@ -46,4 +46,9 @@ public struct NonlinearFactorGraph {
     
     return gfg
   }
+
+  /// Returns the total error at `values`.
+  public func error(_ values: Values) -> Double {
+    return factors.map { $0.error(values) }.reduce(0, +)
+  }
 }

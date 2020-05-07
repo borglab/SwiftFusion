@@ -11,6 +11,9 @@ let package = Package(
     .library(
       name: "SwiftFusion",
       targets: ["SwiftFusion"]),
+    .executable(
+      name: "Pose2SLAMG2O",
+      targets: ["Pose2SLAMG2O"])
   ],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
@@ -22,6 +25,10 @@ let package = Package(
     .target(
       name: "SwiftFusion",
       dependencies: []),
+    .target(
+      name: "Pose2SLAMG2O",
+      dependencies: ["SwiftFusion"],
+      path: "Examples/Pose2SLAMG2O"),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: ["SwiftFusion"]),
