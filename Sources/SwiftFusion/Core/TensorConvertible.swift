@@ -7,6 +7,14 @@ public protocol TensorConvertible: Differentiable {
   }
 }
 
+// TODO(TF-1234): Remove this extension. It is a workaround.
+extension TensorConvertible {
+  /// Use this instead of "tensor" to worok around TF-1234.
+  @differentiable var differentiableTensor: Tensor<Double> {
+    return tensor
+  }
+}
+
 extension Vector1: TensorConvertible {
   
 }
