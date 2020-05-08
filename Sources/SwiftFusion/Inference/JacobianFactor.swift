@@ -98,9 +98,9 @@ public struct JacobianFactor: LinearFactor {
       
       // TODO(fan): add a proper method for searching key
       if let ind = result._indices[k] {
-        result._values[ind] += matmul(jacobians[pos].transposed(), r)
+        result._values[ind] += matmul(jacobians[pos], transposed: true, r)
       } else {
-        result.insert(k, matmul(jacobians[pos].transposed(), r))
+        result.insert(k, matmul(jacobians[pos], transposed: true, r))
       }
     }
     return result
