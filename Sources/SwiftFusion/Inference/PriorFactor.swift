@@ -59,10 +59,11 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor {
     let j = jacobian(of: self.errorVector, at: values)
     
     let j1 = Tensor<Double>(stacking: (0..<j.count).map { i in
-      (j[i]._values[0].base as! T.TangentVector).tensor.reshaped(to: TensorShape([3]))
+      (j[i]._values[0].base as! T.TangentVector).tensor.flattened()
       
     })
     
-    return JacobianFactor(keys, [j1], -errorVector(values).tensor.reshaped(to: [3, 1]))
+    let err_tensor = -errorVector(values).tensor
+    return JacobianFactor(keys, [j1], err_tensor.reshaped(to: [err_tensor.shape[0], 1]))
   }
 }

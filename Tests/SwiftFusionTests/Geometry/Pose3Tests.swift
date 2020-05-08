@@ -36,4 +36,86 @@ final class Pose3Tests: XCTestCase {
     let t2 = Pose3(coordinate: t1.coordinate.global(t12))
     assertAllKeyPathEqual(t1.coordinate.local(t2.coordinate), t12, accuracy: 1e-5)
   }
+  
+  /// circlePose3 generates a set of poses in a circle. This function
+  /// returns those poses inside a gtsam.Values object, with sequential
+  /// keys starting from 0. An optional character may be provided, which
+  /// will be stored in the msb of each key (i.e. gtsam.Symbol).
+
+  /// We use aerospace/navlab convention, X forward, Y right, Z down
+  /// First pose will be at (R,0,0)
+  /// ^y   ^ X
+  /// |    |
+  /// z-->xZ--> Y  (z pointing towards viewer, Z pointing away from viewer)
+  /// Vehicle at p0 is looking towards y axis (X-axis points towards world y)
+  func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> Values {
+    var values = Values()
+    var theta = 0.0
+    let dtheta = 2.0 * .pi / Double(numPoses)
+    let gRo = Rot3(0, 1, 0, 1, 0, 0, 0, 0, -1)
+    for i in 0..<numPoses {
+      let key = 0 + i
+      let gti = Vector3(radius * cos(theta), radius * sin(theta), 0)
+      let oRi = Rot3.fromTangent(Vector3(0, 0, -theta))  // negative yaw goes counterclockwise, with Z down !
+      let gTi = Pose3(gRo * oRi, gti)
+      values.insert(key, AnyDifferentiable(gTi))
+      theta = theta + dtheta
+    }
+    return values
+  }
+  
+  func testGtsamPose3SLAMExample() {
+    // Create a hexagon of poses
+    let hexagon = circlePose3(numPoses: 6, radius: 1.0)
+    let p0 = hexagon[0].baseAs(Pose3.self)
+    let p1 = hexagon[1].baseAs(Pose3.self)
+
+    // create a Pose graph with one equality constraint and one measurement
+    var fg = NonlinearFactorGraph()
+    fg += PriorFactor(0, p0)
+    let delta = between(p0, p1)
+
+    fg += BetweenFactor(0, 1, delta)
+    fg += BetweenFactor(1, 2, delta)
+    fg += BetweenFactor(2, 3, delta)
+    fg += BetweenFactor(3, 4, delta)
+    fg += BetweenFactor(4, 5, delta)
+    fg += BetweenFactor(5, 0, delta)
+
+    // Create initial config
+    var val = Values()
+    let s = 0.02
+    val.insert(0, AnyDifferentiable(p0))
+    val.insert(1, AnyDifferentiable(hexagon[1].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(2, AnyDifferentiable(hexagon[2].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(3, AnyDifferentiable(hexagon[3].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(4, AnyDifferentiable(hexagon[4].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(5, AnyDifferentiable(hexagon[5].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+
+    // optimize
+    for _ in 0..<15 {
+      let gfg = fg.linearize(val)
+      
+      let optimizer = CGLS(precision: 1e-6, max_iteration: 500)
+      
+      var dx = VectorValues()
+      
+      for i in 0..<6 {
+        dx.insert(i, Tensor<Double>(shape: [6, 1], scalars: [0, 0, 0, 0, 0, 0]))
+      }
+      
+      optimizer.optimize(gfg: gfg, initial: &dx)
+      
+      print("error = \(gfg.residual(dx).norm)")
+      
+      for i in 0..<6 {
+        var p = val[i].baseAs(Pose3.self)
+        p.move(along: Vector6(dx[i].reshaped(toShape: [6])))
+        val[i] = AnyDifferentiable(p)
+      }
+    }
+
+    let pose_1 = val[1].baseAs(Pose3.self)
+    assertAllKeyPathEqual(pose_1, p1, accuracy: 1e-4)
+  }
 }

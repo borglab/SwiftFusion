@@ -66,6 +66,11 @@ public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
   }
   
   @differentiable
+  public func global(_ local: Vector6) -> Self {
+    Self(coordinate: coordinate.global(local))
+  }
+  
+  @differentiable
   public func local(_ global: Self) -> Self.Coordinate.LocalCoordinate {
     coordinate.local(global.coordinate)
   }
@@ -168,12 +173,9 @@ extension Pose3Coordinate: ManifoldCoordinate {
   @differentiable(wrt: global)
   public func local(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
-    print("rel = \(relative)")
     let w = Rot3().coordinate.local(relative.rot.coordinate)
     let T = relative.t
     let t = w.norm
-    print("w = \(w)")
-    print("t = \(w.norm)")
     if t < 1e-10 {
       return Vector6(w: w, v: T)
     } else {
