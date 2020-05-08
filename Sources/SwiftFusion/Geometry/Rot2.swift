@@ -80,12 +80,6 @@ extension Rot2 {
   }
 }
 
-/// Calculate relative rotation between two rotations R1 and R2
-@differentiable
-public func between(_ R1: Rot2, _ R2: Rot2) -> Rot2 {
-  R1.inverse() * R2
-}
-
 @differentiable
 func * (r: Rot2, p: Vector2) -> Vector2 {
   r.rotate(p)

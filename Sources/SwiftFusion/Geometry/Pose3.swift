@@ -194,9 +194,3 @@ extension Pose3: CustomStringConvertible {
     "Pose3(rot: \(coordinate.rot), t: \(coordinate.t))"
   }
 }
-
-/// Calculate relative pose 1T2 between two poses wT1 and wT2
-@differentiable
-public func between(_ wT1: Pose3, _ wT2: Pose3) -> Pose3 {
-  wT1.inverse() * wT2
-}

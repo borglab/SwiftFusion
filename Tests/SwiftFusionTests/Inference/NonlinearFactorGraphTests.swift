@@ -54,7 +54,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
       val.insert(i, AnyDifferentiable(map[i]))
     }
     
-    for _ in 0..<2 {
+    for _ in 0..<3 {
       let gfg = fg.linearize(val)
       
       let optimizer = CGLS(precision: 1e-6, max_iteration: 500)

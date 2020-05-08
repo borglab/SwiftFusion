@@ -32,3 +32,9 @@ extension LieGroup {
     return local(global)
   }
 }
+
+/// Calculate relative pose 1T2 between two poses wT1 and wT2
+@differentiable(wrt: (wT1, wT2))
+public func between<T: LieGroup & Differentiable>(_ wT1: T, _ wT2: T) -> T {
+  wT1.inverse() * wT2
+}
