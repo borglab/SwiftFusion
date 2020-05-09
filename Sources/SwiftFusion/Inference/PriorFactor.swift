@@ -36,33 +36,28 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor {
   
   /// TODO: `Dictionary` still does not conform to `Differentiable`
   /// Tracking issue: https://bugs.swift.org/browse/TF-899
-//  typealias Input = Dictionary<UInt, Tensor<ScalarType>>
+  // typealias Input = Dictionary<UInt, Tensor<ScalarType>>
 
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let error = difference.differentiableLocal(values[keys[0]].baseAs(T.self))
-    
-    let residual = error.differentiableTensor.squared().sum().scalars[0]
+    let error = difference.local(values[keys[0]].baseAs(T.self))
+    let residual = error.tensor.squared().sum().scalars[0]
     return residual
   }
   
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
     let val = values[keys[0]].baseAs(T.self)
-    let error = difference.differentiableLocal(val)
-    
+    let error = difference.local(val)
     return error
   }
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
-    
     let j1 = Tensor<Double>(stacking: (0..<j.count).map { i in
       (j[i]._values[0].base as! T.TangentVector).tensor.flattened()
-      
     })
-    
     let err_tensor = -errorVector(values).tensor
     return JacobianFactor(keys, [j1], err_tensor.reshaped(to: [err_tensor.shape[0], 1]))
   }

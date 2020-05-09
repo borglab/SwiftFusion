@@ -67,16 +67,16 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let actual = T.differentiableMultiply(values[key1].baseAs(T.self).differentiableInverse(), values[key2].baseAs(T.self))
-    let error = difference.differentiableLocal(actual)
+    let actual = values[key1].baseAs(T.self).inverse() * values[key2].baseAs(T.self)
+    let error = difference.local(actual)
     
-    return error.differentiableTensor.squared().sum().scalars[0]
+    return error.tensor.squared().sum().scalars[0]
   }
   
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
-    let error = difference.differentiableLocal(
-      T.differentiableMultiply(values[key1].baseAs(T.self).differentiableInverse(), values[key2].baseAs(T.self))
+    let error = difference.local(
+      values[key1].baseAs(T.self).inverse() * values[key2].baseAs(T.self)
     )
     
     return error
