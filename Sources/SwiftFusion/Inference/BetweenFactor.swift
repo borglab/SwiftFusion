@@ -87,11 +87,11 @@ public struct BetweenFactor: NonlinearFactor {
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
-    
-    let j1 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[key1]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
-    let j2 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[values._indices[key2]!].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
-    
+
+    let j1 = Matrix(stacking: (0..<3).map { i in (j[i]._values[values._indices[key1]!].base as! Pose2.TangentVector).vector } )
+    let j2 = Matrix(stacking: (0..<3).map { i in (j[i]._values[values._indices[key2]!].base as! Pose2.TangentVector).vector } )
+
     // TODO: remove this negative sign
-    return JacobianFactor(keys, [j1, j2], -errorVector(values).tensor.reshaped(to: [3, 1]))
+    return JacobianFactor(keys, [j1, j2], errorVector(values).vector.scaled(by: -1))
   }
 }

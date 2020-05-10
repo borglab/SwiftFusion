@@ -7,7 +7,7 @@ import SwiftFusion
 % import math
 % dims = [1, 2, 3]
 
-class VectorTests: XCTestCase {
+class VectorNTests: XCTestCase {
   static var allTests = [
     % for dim in dims:
     ("testVector${dim}Init", testVector${dim}Init),
@@ -22,6 +22,8 @@ class VectorTests: XCTestCase {
     ("testVector${dim}Sum", testVector${dim}Sum),
     ("testVector${dim}TangentVector", testVector${dim}TangentVector),
     ("testVector${dim}Move", testVector${dim}Move),
+    ("testVector${dim}ConvertToVector", testVector${dim}ConvertToVector),
+    ("testVector${dim}ConvertFromVector", testVector${dim}ConvertFromVector),
     ("testVector${dim}TensorInit", testVector${dim}TensorInit),
     ("testVector${dim}TensorExtract", testVector${dim}TensorExtract)${',' if dim < dims[-1] else ''}
     % end
@@ -128,6 +130,22 @@ class VectorTests: XCTestCase {
     % for (index, coordinate) in enumerate(coordinates):
     XCTAssertEqual(moved.${coordinate}, ${values1[index] + values2[index]})
     % end
+  }
+
+  /// Tests that conversion to `Vector` works.
+  func testVector${dim}ConvertToVector() {
+    XCTAssertEqual(
+      Vector${dim}(${', '.join([str(v) for v in values1])}).vector,
+      Vector([${', '.join([str(v) for v in values1])}])
+    )
+  }
+
+  /// Tests that conversion from `Vector` works.
+  func testVector${dim}ConvertFromVector() {
+    XCTAssertEqual(
+      Vector${dim}(Vector([${', '.join([str(v) for v in values1])}])),
+      Vector${dim}(${', '.join([str(v) for v in values1])})
+    )
   }
 
   /// Tests that we can initialize a vector from a tensor.

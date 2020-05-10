@@ -66,15 +66,15 @@ func main() {
   print("Initial error: \(problem.graph.error(val))")
   for _ in 0..<10 {
     let gfg = problem.graph.linearize(val)
-    let optimizer = CGLS(precision: 1e-6, max_iteration: 20)
+    let optimizer = CGLS(precision: 1e-6, max_iteration: 200)
     var dx = VectorValues()
     for i in 0..<val.count {
-      dx.insert(i, Tensor<Double>(shape: [3, 1], scalars: [0, 0, 0]))
+      dx.insert(i, Vector(zeros: 3))
     }
     optimizer.optimize(gfg: gfg, initial: &dx)
     for i in 0..<val.count {
       var p = val[i].baseAs(Pose2.self)
-      p.move(along: Vector3(dx[i].reshaped(toShape: [3])))
+      p.move(along: Vector3(dx[i]))
       val[i] = AnyDifferentiable(p)
     }
     print("Current error: \(problem.graph.error(val))")

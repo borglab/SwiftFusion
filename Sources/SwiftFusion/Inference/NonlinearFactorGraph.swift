@@ -34,16 +34,9 @@ public struct NonlinearFactorGraph {
   /// linearize the nonlinear factor graph to a linear factor graph
   public func linearize(_ values: Values) -> GaussianFactorGraph {
     var gfg = GaussianFactorGraph()
-    
     for i in factors {
-      let linearized = i.linearize(values)
-      
-      // Assertion for the shape of Jacobian
-      assert(linearized.jacobians.map { $0.shape.count == 2 }.reduce(true, { $0 && $1 }))
-      
-      gfg += linearized
+      gfg += i.linearize(values)
     }
-    
     return gfg
   }
 
