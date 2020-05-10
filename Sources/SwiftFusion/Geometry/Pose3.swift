@@ -205,7 +205,6 @@ extension Pose3Coordinate: ManifoldCoordinate {
     let WT = matmul(W, T.tensor.reshaped(to: [3, 1]))
     let u = T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
     precondition(u.shape == [3, 1])
-    // Work around SR-12776 by suppressing the derivative from this branch of control flow.
     return Vector6(w: w, v: Vector3(u.reshaped(to: [3])))
   }
 
