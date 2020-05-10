@@ -42,7 +42,7 @@ public struct PriorFactor: NonlinearFactor {
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
     let error = between(
-      values[keys[0]].baseAs(Pose2.self),
+      values[keys[0], as: Pose2.self],
       difference
     )
     
@@ -52,7 +52,7 @@ public struct PriorFactor: NonlinearFactor {
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> Vector3 {
     let error = between(
-      values[keys[0]].baseAs(Pose2.self),
+      values[keys[0], as: Pose2.self],
       difference
     )
     
@@ -60,8 +60,6 @@ public struct PriorFactor: NonlinearFactor {
   }
   
   public func linearize(_ values: Values) -> JacobianFactor {
-    let j = jacobian(of: self.errorVector, at: values)
-    let j1 = Matrix(stacking: (0..<3).map { i in (j[i]._values[values._indices[keys[0]]!].base as! Pose2.TangentVector).vector } )
-    return JacobianFactor(keys, [j1], errorVector(values).vector.scaled(by: -1))
+    return JacobianFactor(of: self.errorVector, at: values)
   }
 }
