@@ -22,7 +22,9 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct BetweenFactor<T: LieGroup>: NonlinearFactor where T.Coordinate.LocalCoordinate: VectorConvertible {
+public struct BetweenFactor<T: LieGroup>: NonlinearFactor
+  where T.TangentVector: VectorConvertible, T.TangentVector == T.Coordinate.LocalCoordinate
+{
   
   var key1: Int
   var key2: Int
@@ -67,7 +69,7 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor where T.Coordinate.Loc
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let actual = values[key1].baseAs(T.self).inverse() * values[key2].baseAs(T.self)
+    let actual = values[key1, as: T.self].inverse() * values[key2, as: T.self]
     let error = difference.localCoordinate(actual)
     // TODO: It would be faster to call `error.squaredNorm` because then we don't have to pay
     // the cost of a conversion to `Vector`. To do this, we need a protocol
@@ -78,19 +80,13 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor where T.Coordinate.Loc
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
     let error = difference.localCoordinate(
-      values[key1].baseAs(T.self).inverse() * values[key2].baseAs(T.self)
+      values[key1, as: T.self].inverse() * values[key2, as: T.self]
     )
     
     return error
   }
   
   public func linearize(_ values: Values) -> JacobianFactor {
-    let j = jacobian(of: self.errorVector, at: values)
-
-    let j1 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[key1]!].base as! T.Coordinate.LocalCoordinate).vector } )
-    let j2 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[key2]!].base as! T.Coordinate.LocalCoordinate).vector } )
-
-    // TODO: remove this negative sign
-    return JacobianFactor(keys, [j1, j2], errorVector(values).vector.scaled(by: -1))
+    return JacobianFactor(of: self.errorVector, at: values)
   }
 }

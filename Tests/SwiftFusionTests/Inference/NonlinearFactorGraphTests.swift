@@ -12,8 +12,8 @@ final class NonlinearFactorGraphTests: XCTestCase {
     fg += bf1
     
     var val = Values()
-    val.insert(0, AnyDifferentiable(Pose2(1.0, 1.0, 0.0)))
-    val.insert(1, AnyDifferentiable(Pose2(1.0, 1.0, .pi)))
+    val.insert(0, Pose2(1.0, 1.0, 0.0))
+    val.insert(1, Pose2(1.0, 1.0, .pi))
     
     let gfg = fg.linearize(val)
     
@@ -51,7 +51,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     var val = Values()
     
     for i in 0..<5 {
-      val.insert(i, AnyDifferentiable(map[i]))
+      val.insert(i, map[i])
     }
     
     for _ in 0..<3 {
@@ -67,11 +67,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
       
       optimizer.optimize(gfg: gfg, initial: &dx)
       
-      for i in 0..<5 {
-        var p = val[i].baseAs(Pose2.self)
-        p.move(along: Vector3(dx[i]))
-        val[i] = AnyDifferentiable(p)
-      }
+      val.move(along: dx)
     }
     
     let dumpjson = { (p: Pose2) -> String in
@@ -84,14 +80,14 @@ final class NonlinearFactorGraphTests: XCTestCase {
     }
     print("]")
     
-    let map_final = (0..<5).map { val[$0].baseAs(Pose2.self) }
+    let map_final = (0..<5).map { val[$0, as: Pose2.self] }
     print("map = [")
     for v in map_final.indices {
       print("\(dumpjson(map_final[v]))\({ () -> String in if v == map_final.indices.endIndex - 1 { return "" } else { return "," } }())")
     }
     print("]")
     
-    let p5T1 = between(val[4].baseAs(Pose2.self), val[0].baseAs(Pose2.self))
+    let p5T1 = between(val[4, as: Pose2.self], val[0, as: Pose2.self])
 
     // Test condition: P_5 should be identical to P_1 (close loop)
     XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)

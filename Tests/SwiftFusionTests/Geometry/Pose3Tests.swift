@@ -45,7 +45,7 @@ final class Pose3Tests: XCTestCase {
     let prior_factor = PriorFactor(0, t1)
     
     var vals = Values()
-    vals.insert(0, AnyDifferentiable(t1)) // should be identity matrix
+    vals.insert(0, t1) // should be identity matrix
     // Change this to t2, still zero in upper left block
     
     let actual = prior_factor.linearize(vals).jacobians[0]
@@ -74,7 +74,7 @@ final class Pose3Tests: XCTestCase {
       let gti = Vector3(radius * cos(theta), radius * sin(theta), 0)
       let oRi = Rot3.fromTangent(Vector3(0, 0, -theta))  // negative yaw goes counterclockwise, with Z down !
       let gTi = Pose3(gRo * oRi, gti)
-      values.insert(key, AnyDifferentiable(gTi))
+      values.insert(key, gTi)
       theta = theta + dtheta
     }
     return values
@@ -83,8 +83,8 @@ final class Pose3Tests: XCTestCase {
   func testGtsamPose3SLAMExample() {
     // Create a hexagon of poses
     let hexagon = circlePose3(numPoses: 6, radius: 1.0)
-    let p0 = hexagon[0].baseAs(Pose3.self)
-    let p1 = hexagon[1].baseAs(Pose3.self)
+    let p0 = hexagon[0, as: Pose3.self]
+    let p1 = hexagon[1, as: Pose3.self]
     
     // create a Pose graph with one equality constraint and one measurement
     var fg = NonlinearFactorGraph()
@@ -101,12 +101,12 @@ final class Pose3Tests: XCTestCase {
     // Create initial config
     var val = Values()
     let s = 0.10
-    val.insert(0, AnyDifferentiable(p0))
-    val.insert(1, AnyDifferentiable(hexagon[1].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(2, AnyDifferentiable(hexagon[2].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(3, AnyDifferentiable(hexagon[3].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(4, AnyDifferentiable(hexagon[4].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(5, AnyDifferentiable(hexagon[5].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(0, p0)
+    val.insert(1, hexagon[1, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    val.insert(2, hexagon[2, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    val.insert(3, hexagon[3, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    val.insert(4, hexagon[4, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    val.insert(5, hexagon[5, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
 
     // optimize
     for _ in 0..<16 {
@@ -122,15 +122,10 @@ final class Pose3Tests: XCTestCase {
       
       optimizer.optimize(gfg: gfg, initial: &dx)
       
-      
-      for i in 0..<6 {
-        var p = val[i].baseAs(Pose3.self)
-        p.move(along: Vector6(dx[i]))
-        val[i] = AnyDifferentiable(p)
-      }
+      val.move(along: dx)
     }
 
-    let pose_1 = val[1].baseAs(Pose3.self)
+    let pose_1 = val[1, as: Pose3.self]
     assertAllKeyPathEqual(pose_1, p1, accuracy: 1e-2)
   }
 }

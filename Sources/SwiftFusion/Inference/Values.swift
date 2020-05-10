@@ -34,25 +34,64 @@ public struct Values: Differentiable & KeyPathIterable {
   public var count: Int {
     return _values.count
   }
-  
-  /// The subscript operator, with some indirection
-  /// Should be replaced after Dictionary is in
-  @differentiable
-  public subscript(key: Int) -> AnyDifferentiable {
-    get {
-      _values[_indices[key]!]
-    }
-    set(newVal) {
-      _values[_indices[key]!] = newVal
+
+  /// MARK: - Differentiable conformance and related properties and helpers.
+
+  /// The product space of the tangent spaces of all the values.
+  public typealias TangentVector = VectorValues
+
+  /// `makeTangentVector[i]` produces a type-erased tangent vector for `values[i]`.
+  private var makeTangentVector: [(Vector) -> AnyDerivative] = []
+
+  public mutating func move(along direction: VectorValues) {
+    for key in direction.keys {
+      let index = self._indices[key]!
+      self._values[index].move(along: makeTangentVector[index](direction[key]))
     }
   }
   
+  /// MARK: - Value manipulation methods.
+
+  /// Access the value at `key`, with type `type`.
+  ///
+  /// Precondition: The value actually has type `type`.
+  @differentiable
+  public subscript<T: Differentiable>(key: Int, as type: T.Type) -> T
+    where T.TangentVector: VectorConvertible
+  {
+    get {
+      return _values[_indices[key]!].baseAs(type)
+    }
+    set(newValue) {
+      _values[_indices[key]!] = AnyDifferentiable(newValue)
+    }
+  }
+
+  @derivative(of: subscript)
+  @usableFromInline
+  func vjpSubscript<T: Differentiable>(key: Int, as type: T.Type)
+    -> (value: T, pullback: (T.TangentVector) -> VectorValues)
+    where T.TangentVector: VectorConvertible
+  {
+    return (
+      self._values[self._indices[key]!].baseAs(type),
+      { (t: T.TangentVector) in
+        var vectorValues = VectorValues()
+        vectorValues.insert(key, t.vector)
+        return vectorValues
+      }
+    )
+  }
+
   /// Insert a key value pair
-  public mutating func insert(_ key: Int, _ val: AnyDifferentiable) {
+  public mutating func insert<T: Differentiable>(_ key: Int, _ val: T)
+    where T.TangentVector: VectorConvertible
+  {
     assert(_indices[key] == nil)
     
     self._indices[key] = self._values.count
-    self._values.append(val)
+    self._values.append(AnyDifferentiable(val))
+    self.makeTangentVector.append({ AnyDerivative(T.TangentVector($0)) })
   }
   
 }

@@ -36,7 +36,7 @@ struct G2OFactorGraph: G2OReader {
   var graph: NonlinearFactorGraph = NonlinearFactorGraph()
 
   public mutating func addInitialGuess(index: Int, pose: Pose2) {
-    initialGuess.insert(index, AnyDifferentiable(pose))
+    initialGuess.insert(index, pose)
   }
 
   public mutating func addMeasurement(frameIndex: Int, measuredIndex: Int, pose: Pose2) {
@@ -72,11 +72,7 @@ func main() {
       dx.insert(i, Vector(zeros: 3))
     }
     optimizer.optimize(gfg: gfg, initial: &dx)
-    for i in 0..<val.count {
-      var p = val[i].baseAs(Pose2.self)
-      p.move(along: Vector3(dx[i]))
-      val[i] = AnyDifferentiable(p)
-    }
+    val.move(along: dx)
     print("Current error: \(problem.graph.error(val))")
   }
   print("Final error: \(problem.graph.error(val))")
