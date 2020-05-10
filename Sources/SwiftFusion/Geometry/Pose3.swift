@@ -169,26 +169,46 @@ extension Pose3Coordinate: ManifoldCoordinate {
   /// `global_p(local_p(q)) = q`
   /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
   /// This invariant will be tested in the tests.
-  ///
   @differentiable(wrt: global)
   public func local(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
     let w = Rot3().coordinate.local(relative.rot.coordinate)
-    let T = relative.t
-    let t = w.norm
-    if t < 1e-10 {
-      return Vector6(w: w, v: T)
+    // TODO(SR-12776): The `localSmallRot` and `localBigRot` helpers work around this bug. Once it
+    // is fixed, we can inline them.
+    if w.norm < 1e-10 {
+      return localSmallRot(global)
     } else {
-      let W = skew_symmetric_v((1 / t) * w);
-      // Formula from Agrawal06iros, equation (14)
-      // simplified with Mathematica, and multiplying in T to avoid matrix math
-      let Tan = tan(0.5 * t)
-      let WT = matmul(W, T.tensor.reshaped(to: [3, 1]))
-      let u = T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
-      precondition(u.shape == [3, 1])
-      return Vector6(w: w, v: Vector3(u.reshaped(to: [3])))
+      return localBigRot(global)
     }
   }
+
+  /// Implements `local` in the small rotation case.
+  @differentiable(wrt: global)
+  private func localSmallRot(_ global: Self) -> Vector6 {
+    let relative = self.inverse() * global
+    let w = Rot3().coordinate.local(relative.rot.coordinate)
+    let T = relative.t
+    return Vector6(w: w, v: T)
+  }
+
+  /// Implements `local` in the non-small rotation case.
+  @differentiable(wrt: global)
+  private func localBigRot(_ global: Self) -> Vector6 {
+    let relative = self.inverse() * global
+    let w = Rot3().coordinate.local(relative.rot.coordinate)
+    let T = relative.t
+    let t = w.norm
+    let W = skew_symmetric_v((1 / t) * w);
+    // Formula from Agrawal06iros, equation (14)
+    // simplified with Mathematica, and multiplying in T to avoid matrix math
+    let Tan = tan(0.5 * t)
+    let WT = matmul(W, T.tensor.reshaped(to: [3, 1]))
+    let u = T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
+    precondition(u.shape == [3, 1])
+    // Work around SR-12776 by suppressing the derivative from this branch of control flow.
+    return Vector6(w: w, v: Vector3(u.reshaped(to: [3])))
+  }
+
 }
 
 extension Pose3: CustomStringConvertible {
