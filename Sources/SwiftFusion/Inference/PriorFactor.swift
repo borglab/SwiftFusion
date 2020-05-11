@@ -57,7 +57,7 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor where T.TangentVector: V
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
-    let j1 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[keys[0]]!].base as! Pose2.TangentVector).vector } )
+    let j1 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[keys[0]]!].base as! T.TangentVector).vector } )
     return JacobianFactor(keys, [j1], errorVector(values).vector.scaled(by: -1))
   }
 }
