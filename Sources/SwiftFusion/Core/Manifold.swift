@@ -16,8 +16,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// This is the `TangentVector` of the `Manifold` wrapper type.
   ///
   /// Note that this is not the same type as `Self.TangentVector`.
-  associatedtype LocalCoordinate: AdditiveArithmetic & Differentiable & VectorProtocol
-    where LocalCoordinate.TangentVector == LocalCoordinate
+  associatedtype LocalCoordinate: EuclideanVectorSpace
 
   /// Diffeomorphism between a neigborhood of `Localcoordinate.zero` and `Self`.
   ///
@@ -42,7 +41,6 @@ public protocol ManifoldCoordinate: Differentiable {
 public protocol Manifold: Differentiable {
   /// The manifold's global coordinate system.
   associatedtype Coordinate: ManifoldCoordinate
-      where Coordinate.LocalCoordinate == Self.TangentVector
 
   /// The coordinate of `self`.
   ///
@@ -63,26 +61,35 @@ public protocol Manifold: Differentiable {
   init(coordinateStorage: Coordinate)
 }
 
-extension Manifold {
+/// Methods for converting between manifolds and their coordinates.
+///
+/// To enable these, you must explicitly write
+//    public typealias TangentVector = <local coordinate type>
+/// in your manifold type.
+extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
   /// The coordinate of `self`.
   @differentiable
-  public var coordinate: Coordinate { coordinateStorage }
+  public var coordinate: Coordinate {
+    return coordinateStorage
+  }
 
   /// A custom derivative of `coordinate` that converts from the global coordinate system's
   /// tangent vector to the local coordinate system's tangent vector, so that all functions on this
   /// manifold using `coordinate` have derivatives involving local coordinates.
   @derivative(of: coordinate)
   @usableFromInline
-  func vjpCoordinate() -> (value: Coordinate, pullback: (Coordinate.TangentVector) -> TangentVector) {
+  func vjpCoordinate()
+    -> (value: Coordinate, pullback: (Coordinate.TangentVector) -> TangentVector)
+  {
 
     // Explanation of this pullback:
     //
     // Let `f: Manifold -> Coordinate` be `f(x) = x.coordinateStorage`.
     //
-    // `differential(at: x, in: f)` is a linear approximation of how changes in local
-    // coordinates around `x` lead to changes in global coordinates around `x.coordinateStorage`.
+    // `differential(at: x, in: f)` is a linear approximation of how changes in tangent vectors
+    // around `x` lead to changes in global coordinates around `x.coordinateStorage`.
     //
-    // `x.coordinateStorage.retract: LocalCoordinate -> Coordinate` defines _exactly_ how local
+    // `x.coordinateStorage.retract: TangentVector -> Coordinate` defines _exactly_ how local
     // coordinates around zero map to global coordinates around `x`.
     //
     // Therefore, `differential(at: x, in: f) = differential(at: zero, in: x.coordinateStorage.retract)`.
@@ -106,18 +113,20 @@ extension Manifold {
   /// local coordinates.
   @derivative(of: init(coordinate:))
   @usableFromInline
-  static func vjpInit(coordinate: Coordinate) -> (value: Self, pullback: (TangentVector) -> Coordinate.TangentVector) {
+  static func vjpInit(coordinate: Coordinate)
+    -> (value: Self, pullback: (TangentVector) -> Coordinate.TangentVector)
+  {
 
     // Explanation of this pullback:
     //
     // Let `g: Coordinate -> Manifold` be `g(x) = Self(coordinateStorage: x)`.
     //
     // `D_x(g)` (the derivative of `g` at `x`) is a linear approximation of how changes in global
-    // coordinates around `x` lead to changes in local coordinates around
+    // coordinates around `x` lead to changes in tangent vectors around
     // `Self(coordinateStorage: x)`.
     //
-    // `x.coordinateStorage.localCoordinate: Coordinate -> LocalCoordinate` defines _exactly_ how global
-    // coordinates around `x` map to local coordinates.
+    // `x.coordinateStorage.localCoordinate: Coordinate -> TangentVector` defines _exactly_ how global
+    // coordinates around `x` map to tangent vectors.
     //
     // Therefore, `D_x(g)` is the derivative of `x.coordinateStorage.localCoordinate`.
 

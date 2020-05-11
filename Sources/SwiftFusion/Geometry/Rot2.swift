@@ -6,10 +6,13 @@ public struct Rot2: Manifold, Equatable, KeyPathIterable {
 
   // MARK: - Manifold conformance
 
+  public typealias Coordinate = Rot2Coordinate
+  public typealias TangentVector = Vector1
+
   public var coordinateStorage: Rot2Coordinate
   public init(coordinateStorage: Rot2Coordinate) { self.coordinateStorage = coordinateStorage }
 
-  public mutating func move(along direction: Coordinate.LocalCoordinate) {
+  public mutating func move(along direction: TangentVector) {
     coordinateStorage = coordinateStorage.retract(direction)
   }
 
@@ -123,6 +126,8 @@ public extension Rot2Coordinate {
 }
 
 extension Rot2Coordinate: ManifoldCoordinate {
+  public typealias LocalCoordinate = Vector1
+
   @differentiable(wrt: local)
   public func retract(_ local: Vector1) -> Self {
     self * Rot2Coordinate(local.x)
