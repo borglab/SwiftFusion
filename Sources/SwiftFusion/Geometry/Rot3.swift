@@ -60,7 +60,7 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   
   /// Inverse of the rotation.
   @differentiable
-  func inverse() -> Rot3 {
+  public func inverse() -> Rot3 {
     Rot3(coordinate: coordinate.inverse())
   }
   
@@ -152,32 +152,28 @@ extension Matrix3Coordinate: ManifoldCoordinate {
 
     let tr = R.diagonalPart().sum().scalars[0]
 
-    var omega: Vector3
-    
     if abs(tr + 1.0) < 1e-10 {
       if abs(R33 + 1.0) > 1e-10 {
-        omega = (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
+        return (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
       } else if abs(R22 + 1.0) > 1e-10 {
-        omega = (.pi / sqrtWrap(2.0 + 2.0 * R22)) * Vector3(R12, 1.0 + R22, R32)
+        return (.pi / sqrtWrap(2.0 + 2.0 * R22)) * Vector3(R12, 1.0 + R22, R32)
       } else {
         // if(abs(R.r1_.x()+1.0) > 1e-10)  This is implicit
-        omega = (.pi / sqrtWrap(2.0 + 2.0 * R11)) * Vector3(1.0 + R11, R21, R31)
+        return (.pi / sqrtWrap(2.0 + 2.0 * R11)) * Vector3(1.0 + R11, R21, R31)
       }
     } else {
-      var magnitude: Double
-
       let tr_3 = tr - 3.0; // always negative
       if tr_3 < -1e-7 {
         let theta = acos((tr - 1.0) / 2.0)
-        magnitude = theta / (2.0 * sin(theta))
+        let magnitude = theta / (2.0 * sin(theta))
+        return magnitude * Vector3(R32 - R23, R13 - R31, R21 - R12)
       } else {
         // when theta near 0, +-2pi, +-4pi, etc. (trace near 3.0)
         // use Taylor expansion: theta \approx 1/2-(t-3)/12 + O((t-3)^2)
-        magnitude = 0.5 - tr_3 * tr_3 / 12.0;
+        let magnitude = (0.5 - tr_3 * tr_3 / 12.0)
+        return magnitude * Vector3(R32 - R23, R13 - R31, R21 - R12)
       }
-      omega = magnitude * Vector3(R32 - R23, R13 - R31, R21 - R12);
     }
-    return omega
   }
 
   /// Construct from Tensor
