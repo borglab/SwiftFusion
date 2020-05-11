@@ -22,7 +22,7 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
+public struct BetweenFactor<T: LieGroup>: NonlinearFactor where T.TangentVector: VectorConvertible {
   
   var key1: Int
   var key2: Int
@@ -70,7 +70,7 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
     let actual = values[key1].baseAs(T.self).inverse() * values[key2].baseAs(T.self)
     let error = difference.local(actual)
     
-    return error.tensor.squared().sum().scalars[0]
+    return error.vector.squared().sum()
   }
   
   @differentiable(wrt: values)

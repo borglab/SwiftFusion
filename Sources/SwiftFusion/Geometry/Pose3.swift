@@ -22,6 +22,19 @@ extension Vector6: TensorConvertible {
   }
 }
 
+extension Vector6: VectorConvertible {
+  public init(_ vector: Vector) {
+    precondition(vector.dimension == 6)
+    
+    w = Vector3(vector.scalars[0], vector.scalars[1], vector.scalars[2])
+    v = Vector3(vector.scalars[3], vector.scalars[4], vector.scalars[5])
+  }
+  
+  public var vector: Vector {
+    Vector([w.x, w.y, w.z, v.x, v.y, v.z])
+  }
+}
+
 /// SE(3) Lie group of 3D Euclidean Poses.
 public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
   // MARK: - Manifold conformance

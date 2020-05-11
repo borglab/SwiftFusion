@@ -22,7 +22,7 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct PriorFactor<T: LieGroup>: NonlinearFactor {
+public struct PriorFactor<T: LieGroup>: NonlinearFactor where T.TangentVector: VectorConvertible {
   @noDerivative
   public var keys: Array<Int> = []
   public var difference: T
@@ -42,7 +42,7 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor {
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
     let error = difference.local(values[keys[0]].baseAs(T.self))
-    let residual = error.tensor.squared().sum().scalars[0]
+    let residual = error.vector.squared().sum()
     return residual
   }
   
