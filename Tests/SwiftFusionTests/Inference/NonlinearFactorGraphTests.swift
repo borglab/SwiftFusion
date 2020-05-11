@@ -22,7 +22,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     vv.insert(0, Vector(zeros: 3))
     vv.insert(1, Vector(zeros: 3))
     
-    let expected = Tensor<Double>(shape:[3, 1], scalars: [.pi, 0.0, 0.0])
+    let expected = Tensor<Double>(shape:[3], scalars: [.pi, 0.0, 0.0])
     
     print("gfg = \(gfg)")
     print("error = \(gfg.residual(vv).norm)")
@@ -98,6 +98,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
   }
 
   static var allTests = [
+    ("testBasicOps", testBasicOps),
     ("testCGLSPose2SLAM", testCGLSPose2SLAM)
   ]
 
