@@ -1,76 +1,75 @@
+import Foundation
+import TensorFlow
 import XCTest
 
-import TensorFlow
 import SwiftFusion
 
 class MatrixTests: XCTestCase {
-    static var allTests = [
-        ("test_concat", testConcat),
-        ("test_log", test_log),
-        ("test_neg", test_neg),
-        ("test_squared", test_squared),
-    ]
+  static var allTests = [
+    ("testInitializers", testInitializers),
+    ("testSubscripts", testSubscripts),
+    ("testElementArithmetic", testElementArithmetic),
+    ("testMutations", testMutations),
+    ("testMatVec", testMatVec),
+  ]
 
-    //--------------------------------------------------------------------------
-    // testConcat
-    func testConcat() {
-        let t1 = Tensor(shape: [2, 3], scalars: (1...6).map { Double($0) })
-        let t2 = Tensor(shape: [2, 3], scalars: (7...12).map { Double($0) })
-        let c1 = t1.concatenated(with: t2)
-        let c1Expected = Tensor([
-            1,  2,  3,
-            4,  5,  6,
-            7,  8,  9,
-            10, 11, 12,
-        ])
-        
-        XCTAssert(c1.flattened() == c1Expected)
-        
-        let c2 = t1.concatenated(with: t2, alongAxis: 1)
-        let c2Expected = Tensor([
-            1, 2, 3,  7,  8,  9,
-            4, 5, 6, 10, 11, 12
-        ])
-        
-        XCTAssert(c2.flattened() == c2Expected)
-    }
+  /// Tests that the initializers work.
+  func testInitializers() {
+    let matrix1 = Matrix([1, 2, 3, 4, 5, 6], rowCount: 2, columnCount: 3)
+    XCTAssertEqual(matrix1.scalars, [1, 2, 3, 4, 5, 6])
+    XCTAssertEqual(matrix1.rowCount, 2)
+    XCTAssertEqual(matrix1.columnCount, 3)
 
-    //--------------------------------------------------------------------------
-    // test_log
-    func test_log() {
-        let range = 0..<6
-        let matrix = Tensor(shape: [3, 2], scalars: (range).map { Double($0) })
-        let values = log(matrix).flattened()
-        let expected = Tensor(range.map { Foundation.log(Double($0)) })
-        assertEqual(values, expected, accuracy: 1e-8)
-    }
-    
-    //--------------------------------------------------------------------------
-    // test_neg
-    func test_neg() {
-        let range = 0..<6
-        let matrix = Tensor(shape: [3, 2], scalars: (range).map { Double($0) })
-        let expected = Tensor(range.map { -Double($0) })
+    let matrix2 = Matrix(eye: 3)
+    XCTAssertEqual(matrix2.scalars, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+    XCTAssertEqual(matrix2.rowCount, 3)
+    XCTAssertEqual(matrix2.columnCount, 3)
 
-        let values = (-matrix).flattened()
-        assertEqual(values, expected, accuracy: 1e-8)
-    }
-    
-    //--------------------------------------------------------------------------
-    // test_squared
-    func test_squared() {
-        let matrix = Tensor(shape: [3, 2], scalars: ([0, -1, 2, -3, 4, 5]).map { Double($0) })
-        let values = matrix.squared().flattened()
-        let expected = Tensor((0...5).map { Double ($0 * $0) })
-        assertEqual(values, expected, accuracy: 1e-8)
-    }
-        
-    //--------------------------------------------------------------------------
-    // test_multiplication
-    func test_multiplication() {
-        let matrix = Tensor(shape: [3, 2], scalars: ([0, -1, 2, -3, 4, 5]).map { Double($0) })
-        let values = (matrix * matrix).flattened()
-        let expected = Tensor((0...5).map { Double($0 * $0) })
-        assertEqual(values, expected, accuracy: 1e-8)
-    }
+    let matrix3 = Matrix(stacking: [Vector([1, 2, 3]), Vector([4, 5, 6])])
+    XCTAssertEqual(matrix3.scalars, [1, 2, 3, 4, 5, 6])
+    XCTAssertEqual(matrix3.rowCount, 2)
+    XCTAssertEqual(matrix3.columnCount, 3)
+  }
+
+  /// Tests that the subscripts work.
+  func testSubscripts() {
+    let matrix1 = Matrix([1, 2, 3, 4, 5, 6], rowCount: 2, columnCount: 3)
+    XCTAssertEqual(matrix1[0, 0], 1)
+    XCTAssertEqual(matrix1[0, 1], 2)
+    XCTAssertEqual(matrix1[0, 2], 3)
+    XCTAssertEqual(matrix1[1, 0], 4)
+    XCTAssertEqual(matrix1[1, 1], 5)
+    XCTAssertEqual(matrix1[1, 2], 6)
+  }
+
+  /// Tests that the element arithmetic methods work.
+  func testElementArithmetic() {
+    let matrix1 = Matrix([1, 2, 3, 4, 5, 6], rowCount: 2, columnCount: 3)
+    XCTAssertEqual(2 * matrix1, Matrix([2, 4, 6, 8, 10, 12], rowCount: 2, columnCount: 3))
+    XCTAssertEqual(matrix1 * 2, Matrix([2, 4, 6, 8, 10, 12], rowCount: 2, columnCount: 3))
+  }
+
+  /// Test that the mutation methods work.
+  func testMutations() {
+    var matrix1 = Matrix([], rowCount: 0, columnCount: 2)
+    matrix1.append(row: Vector([1, 2]))
+    XCTAssertEqual(matrix1, Matrix([1, 2], rowCount: 1, columnCount: 2))
+    matrix1.append(row: Vector([3, 4]))
+    XCTAssertEqual(matrix1, Matrix([1, 2, 3, 4], rowCount: 2, columnCount: 2))
+  }
+
+  /// Test matrix-vector multiplication.
+  func testMatVec() {
+    let matrix1 = Matrix([1, 2, 3, 4, 5, 6], rowCount: 2, columnCount: 3)
+    let vector1 = Vector([10, 20, 30])
+    let vector2 = Vector([40, 50])
+    XCTAssertEqual(
+      matvec(matrix1, vector1),
+      Vector([140, 320])
+    )
+    XCTAssertEqual(
+      matvec(matrix1, transposed: true, vector2),
+      Vector([240, 330, 420])
+    )
+  }
 }

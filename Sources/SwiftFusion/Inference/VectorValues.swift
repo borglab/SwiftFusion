@@ -11,15 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import TensorFlow
 
 /// The class that holds Key-Vector pairs.
 public struct VectorValues: KeyPathIterable {
   public typealias ScalarType = Double
-  var _values: [Tensor<ScalarType>] = []
+  var _values: [Vector] = []
   
   /// Dictionary from Key to index
-  var _indices: Dictionary<Int, Int> = [:]
+  @noDerivative var _indices: Dictionary<Int, Int> = [:]
   
   public var keys: Dictionary<Int, Int>.Keys {
     get {
@@ -29,19 +28,33 @@ public struct VectorValues: KeyPathIterable {
   /// Default initializer
   public init() { }
   
-  /// The subscript operator, with some indirection
-  /// Should be replaced after Dictionary is in
-  public subscript(key: Int) -> Tensor<ScalarType> {
+  public subscript(key: Int) -> Vector {
     _values[_indices[key]!]
+  }
+
+  public subscript(key: Int, default defaultValue: Vector) -> Vector {
+    get {
+      if let index = _indices[key] {
+        return _values[index]
+      }
+      return defaultValue
+    }
+    set(newValue) {
+      if let index = _indices[key] {
+        _values[index] = newValue
+        return
+      }
+      insert(key, newValue)
+    }
   }
   
   /// L2 norm of the VectorValues
   var norm: Double {
-    self._values.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
+    self._values.map { $0.squared().sum() }.reduce(0.0, { $0 + $1 })
   }
   
   /// Insert a key value pair
-  public mutating func insert(_ key: Int, _ val: Tensor<Self.ScalarType>) {
+  public mutating func insert(_ key: Int, _ val: Vector) {
     assert(_indices[key] == nil)
     
     self._indices[key] = self._values.count
@@ -54,25 +67,48 @@ public struct VectorValues: KeyPathIterable {
     let _ = result._values.indices.map { result._values[$0] += rhs }
     return result
   }
-  
-  /// VectorValues + VectorValues
-  static func + (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = lhs
-    for (k, i_r) in rhs._indices {
-      if let i_l = lhs._indices[k] {
-        result._values[i_l] += rhs._values[i_r]
-      } else {
-        result.insert(k, rhs._values[i_r])
-      }
-    }
-    return result
-  }
-  
+
   /// Scalar * VectorValues
   static func * (_ lhs: Self.ScalarType, _ rhs: Self) -> Self {
     var result = rhs
     let _ = result._values.indices.map { result._values[$0] *= lhs }
     return result
+  }
+}
+
+extension VectorValues: Differentiable {
+  public typealias TangentVector = Self
+}
+
+extension VectorValues: AdditiveArithmetic {
+  public static func += (_ lhs: inout VectorValues, _ rhs: VectorValues) {
+    for key in rhs.keys {
+      let rhsVector = rhs[key]
+      lhs[key, default: Vector(zeros: rhsVector.dimension)] += rhsVector
+    }
+  }
+
+  public static func + (_ lhs: VectorValues, _ rhs: VectorValues) -> VectorValues {
+    var result = lhs
+    result += rhs
+    return result
+  }
+
+  public static func -= (_ lhs: inout VectorValues, _ rhs: VectorValues) {
+    for key in rhs.keys {
+      let rhsVector = rhs[key]
+      lhs[key, default: Vector(zeros: rhsVector.dimension)] -= rhsVector
+    }
+  }
+
+  public static func - (_ lhs: VectorValues, _ rhs: VectorValues) -> VectorValues {
+    var result = lhs
+    result -= rhs
+    return result
+  }
+
+  public static var zero: VectorValues {
+    return VectorValues()
   }
 }
 

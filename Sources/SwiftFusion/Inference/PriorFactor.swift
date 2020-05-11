@@ -61,9 +61,7 @@ public struct PriorFactor: NonlinearFactor {
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
-    
-    let j1 = Tensor<Double>(stacking: (0..<3).map { i in (j[i]._values[0].base as! Pose2.TangentVector).tensor.reshaped(to: TensorShape([3])) })
-    
-    return JacobianFactor(keys, [j1], -errorVector(values).tensor.reshaped(to: [3, 1]))
+    let j1 = Matrix(stacking: (0..<3).map { i in (j[i]._values[values._indices[keys[0]]!].base as! Pose2.TangentVector).vector } )
+    return JacobianFactor(keys, [j1], errorVector(values).vector.scaled(by: -1))
   }
 }

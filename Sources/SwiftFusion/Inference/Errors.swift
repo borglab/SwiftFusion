@@ -15,7 +15,7 @@ import TensorFlow
 
 /// The type of error vector returned by the Factor
 /// Should be VectorN, but now just tensor as we do not have fixed size Tensors
-public typealias Error = Tensor<Double>
+public typealias Error = Vector
 
 /// Collection of all errors returned by a Factor Graph
 public typealias Errors = Array<Error>
@@ -33,7 +33,7 @@ extension Array where Element == Error {
   /// Calculates the L2 norm
   public var norm: Double {
     get {
-      self.map { $0.squared().sum().scalar! }.reduce(0.0, { $0 + $1 })
+      self.map { $0.squared().sum() }.reduce(0.0, { $0 + $1 })
     }
   }
   
