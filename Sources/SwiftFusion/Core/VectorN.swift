@@ -84,14 +84,16 @@ extension Vector1: ElementaryFunctions {
 
 /// Conformance to `VectorConvertible`.
 extension Vector1: VectorConvertible {
+  @differentiable
   public init(_ vector: Vector) {
-    var index = vector.scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 88)
+    var index = withoutDerivative(at: vector.scalars.startIndex)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 89)
     self.x = vector.scalars[index]
-    index = vector.scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 91)
+    index = withoutDerivative(at: vector.scalars.index(after: index))
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 92)
   }
 
+  @differentiable
   public var vector: Vector {
     return Vector([x])
   }
@@ -111,9 +113,9 @@ extension Vector1 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [1])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 113)
-    self.x = tensor[0].scalarized()
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+    self.x = tensor[0].scalarized()
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 117)
   }
 }
 
@@ -211,17 +213,19 @@ extension Vector2: ElementaryFunctions {
 
 /// Conformance to `VectorConvertible`.
 extension Vector2: VectorConvertible {
+  @differentiable
   public init(_ vector: Vector) {
-    var index = vector.scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 88)
+    var index = withoutDerivative(at: vector.scalars.startIndex)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 89)
     self.x = vector.scalars[index]
-    index = vector.scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 88)
+    index = withoutDerivative(at: vector.scalars.index(after: index))
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 89)
     self.y = vector.scalars[index]
-    index = vector.scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 91)
+    index = withoutDerivative(at: vector.scalars.index(after: index))
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 92)
   }
 
+  @differentiable
   public var vector: Vector {
     return Vector([x, y])
   }
@@ -241,11 +245,11 @@ extension Vector2 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [2])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 113)
-    self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 113)
-    self.y = tensor[1].scalarized()
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+    self.x = tensor[0].scalarized()
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+    self.y = tensor[1].scalarized()
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 117)
   }
 }
 
@@ -357,20 +361,22 @@ extension Vector3: ElementaryFunctions {
 
 /// Conformance to `VectorConvertible`.
 extension Vector3: VectorConvertible {
+  @differentiable
   public init(_ vector: Vector) {
-    var index = vector.scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 88)
+    var index = withoutDerivative(at: vector.scalars.startIndex)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 89)
     self.x = vector.scalars[index]
-    index = vector.scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 88)
+    index = withoutDerivative(at: vector.scalars.index(after: index))
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 89)
     self.y = vector.scalars[index]
-    index = vector.scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 88)
+    index = withoutDerivative(at: vector.scalars.index(after: index))
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 89)
     self.z = vector.scalars[index]
-    index = vector.scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 91)
+    index = withoutDerivative(at: vector.scalars.index(after: index))
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 92)
   }
 
+  @differentiable
   public var vector: Vector {
     return Vector([x, y, z])
   }
@@ -390,13 +396,13 @@ extension Vector3 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [3])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 113)
-    self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 113)
-    self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 113)
-    self.z = tensor[2].scalarized()
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+    self.x = tensor[0].scalarized()
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+    self.y = tensor[1].scalarized()
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+    self.z = tensor[2].scalarized()
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 117)
   }
 }
 

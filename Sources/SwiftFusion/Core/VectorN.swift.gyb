@@ -82,14 +82,16 @@ extension Vector${dim}: ElementaryFunctions {
 
 /// Conformance to `VectorConvertible`.
 extension Vector${dim}: VectorConvertible {
+  @differentiable
   public init(_ vector: Vector) {
-    var index = vector.scalars.startIndex
+    var index = withoutDerivative(at: vector.scalars.startIndex)
     % for coordinate in coordinates:
     self.${coordinate} = vector.scalars[index]
-    index = vector.scalars.index(after: index)
+    index = withoutDerivative(at: vector.scalars.index(after: index))
     % end
   }
 
+  @differentiable
   public var vector: Vector {
     return Vector([${', '.join(coordinates)}])
   }

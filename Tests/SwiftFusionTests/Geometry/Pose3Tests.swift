@@ -50,7 +50,7 @@ final class Pose3Tests: XCTestCase {
     
     let actual = prior_factor.linearize(vals).jacobians[0]
     
-    assertEqual(actual, I, accuracy: 1e-8)
+    assertEqual(actual.tensor, I, accuracy: 1e-8)
   }
   
   /// circlePose3 generates a set of poses in a circle. This function
@@ -117,7 +117,7 @@ final class Pose3Tests: XCTestCase {
       var dx = VectorValues()
       
       for i in 0..<6 {
-        dx.insert(i, Tensor<Double>(shape: [6, 1], scalars: [0, 0, 0, 0, 0, 0]))
+        dx.insert(i, Vector(zeros: 6))
       }
       
       optimizer.optimize(gfg: gfg, initial: &dx)
@@ -125,7 +125,7 @@ final class Pose3Tests: XCTestCase {
       
       for i in 0..<6 {
         var p = val[i].baseAs(Pose3.self)
-        p.move(along: Vector6(dx[i].reshaped(toShape: [6])))
+        p.move(along: Vector6(dx[i]))
         val[i] = AnyDifferentiable(p)
       }
     }

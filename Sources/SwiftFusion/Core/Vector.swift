@@ -2,23 +2,52 @@ import TensorFlow
 
 /// A dynamically sized vector.
 public struct Vector: Equatable, Differentiable {
-  /// The scalars in the vector.
-  public var scalars: [Double]
-
   public typealias TangentVector = Self
+
+  /// The scalars in the vector.
+  @differentiable public var scalars: [Double] { return scalarsStorage }
+
+  /// Derivative for `scalars`.
+  // This is necessary because we have specified a custom `TangentVector`.
+  @derivative(of: scalars)
+  @usableFromInline
+  func vjpScalars()
+    -> (value: [Double], pullback: (Array<Double>.DifferentiableView) -> TangentVector)
+  {
+    return (scalars, { Vector($0.base) })
+  }
+
+  /// The storage for the scalars.
+  // This works around the fact that we cannot define custom derivatives for stored properties.
+  // TODO: Once we can define custom derivatives for stored properties, remove this.
+  internal var scalarsStorage: [Double]
 }
 
 /// Can be losslessly converted to and from a `Vector`.
-public protocol VectorConvertible {
+public protocol VectorConvertible: Differentiable {
+  @differentiable
   init(_ vector: Vector)
+
+  @differentiable
   var vector: Vector { get }
 }
 
 /// Initializers.
 extension Vector {
   /// Creates a vector with the given `scalars`.
+  @differentiable
   public init(_ scalars: [Double]) {
-    self.scalars = scalars
+    self.scalarsStorage = scalars
+  }
+
+  /// Derivative for `init`.
+  // This is necessary because we have specified a custom `TangentVector`.
+  @derivative(of: init(_:))
+  @usableFromInline
+  static func vjpInit(_ scalars: [Double])
+    -> (value: Vector, pullback: (TangentVector) -> Array<Double>.DifferentiableView)
+  {
+    return (Vector(scalars), { Array<Double>.DifferentiableView($0.scalars) })
   }
 
   /// Creates a zero vector of the given `dimension`.
@@ -30,7 +59,7 @@ extension Vector {
 /// Miscellaneous computed properties.
 extension Vector {
   public var dimension: Int {
-    return scalars.count
+    return scalarsStorage.count
   }
 }
 
@@ -38,12 +67,12 @@ extension Vector {
 extension Vector {
   /// Sum of the elements of `self`.
   public func sum() -> Double {
-    return scalars.reduce(0, +)
+    return scalarsStorage.reduce(0, +)
   }
 
   /// Vector whose elements are squares of the elements of `self`.
   public func squared() -> Self {
-    return Vector(scalars.map { $0 * $0 })
+    return Vector(scalarsStorage.map { $0 * $0 })
   }
 }
 
@@ -53,14 +82,28 @@ extension Vector {
   public var norm: Double { squaredNorm.squareRoot() }
 
   /// Square of the Euclidean norm of `self`.
+  @differentiable
   public var squaredNorm: Double { self.squared().sum() }
+
+  /// Derivative of `squaredNorm`.
+  // TODO: This is a custom derivative because derivatives of `map` and
+  // `reduce` are currently very slow. We can use the automatic derivative for this once
+  // https://github.com/apple/swift/pull/31704 is available.
+  @derivative(of: squaredNorm)
+  @usableFromInline
+  func vjpSquaredNorm() -> (value: Double, pullback: (Double) -> TangentVector) {
+    return (
+      value: squaredNorm,
+      pullback: { self.scaled(by: 2 * $0) }
+    )
+  }
 }
 
 /// AdditiveArithmetic conformance.
 extension Vector: AdditiveArithmetic {
   public static func += (_ lhs: inout Vector, _ rhs: Vector) {
-    for index in lhs.scalars.indices {
-      lhs.scalars[index] += rhs.scalars[index]
+    for index in lhs.scalarsStorage.indices {
+      lhs.scalarsStorage[index] += rhs.scalarsStorage[index]
     }
   }
 
@@ -71,8 +114,8 @@ extension Vector: AdditiveArithmetic {
   }
 
   public static func -= (_ lhs: inout Vector, _ rhs: Vector) {
-    for index in lhs.scalars.indices {
-      lhs.scalars[index] -= rhs.scalars[index]
+    for index in lhs.scalarsStorage.indices {
+      lhs.scalarsStorage[index] -= rhs.scalarsStorage[index]
     }
   }
 
@@ -97,8 +140,8 @@ extension Vector: VectorProtocol {
   public typealias VectorSpaceScalar = Double
 
   public mutating func add(_ x: Double) {
-    for index in scalars.indices {
-      scalars[index] += x
+    for index in scalarsStorage.indices {
+      scalarsStorage[index] += x
     }
   }
 
@@ -113,8 +156,8 @@ extension Vector: VectorProtocol {
   }
 
   public mutating func subtract(_ x: Double) {
-    for index in scalars.indices {
-      scalars[index] -= x
+    for index in scalarsStorage.indices {
+      scalarsStorage[index] -= x
     }
   }
 
@@ -129,8 +172,8 @@ extension Vector: VectorProtocol {
   }
 
   public mutating func scale(by scalar: Double) {
-    for index in scalars.indices {
-      scalars[index] *= scalar
+    for index in scalarsStorage.indices {
+      scalarsStorage[index] *= scalar
     }
   }
 
@@ -153,6 +196,6 @@ extension Vector: VectorProtocol {
 extension Vector {
   /// Returns this vector as a `Tensor<Double>`.
   public var tensor: Tensor<Double> {
-    return Tensor(shape: [scalars.count], scalars: scalars)
+    return Tensor(shape: [scalarsStorage.count], scalars: scalarsStorage)
   }
 }

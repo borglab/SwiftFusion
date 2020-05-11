@@ -90,13 +90,20 @@ extension Matrix {
   }
 }
 
+/// Conversion to tensor.
+extension Matrix {
+  public var tensor: Tensor<Double> {
+    return Tensor(shape: [rowCount, columnCount], scalars: scalars)
+  }
+}
+
 /// Returns the matrix-vector product of `lhs` and `rhs`.
 public func matvec(_ lhs: Matrix, transposed: Bool = false, _ rhs: Vector) -> Vector {
   precondition(rhs.dimension == (transposed ? lhs.rowCount : lhs.columnCount))
   var result = Vector(zeros: transposed ? lhs.columnCount : lhs.rowCount)
   for i in 0..<lhs.rowCount {
     for j in 0..<lhs.columnCount {
-      result.scalars[transposed ? j : i] += lhs[i, j] * rhs.scalars[transposed ? i : j]
+      result.scalarsStorage[transposed ? j : i] += lhs[i, j] * rhs.scalarsStorage[transposed ? i : j]
     }
   }
   return result

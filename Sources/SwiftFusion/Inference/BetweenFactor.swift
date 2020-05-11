@@ -69,8 +69,10 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor where T.TangentVector:
   public func error(_ values: Values) -> Double {
     let actual = values[key1].baseAs(T.self).inverse() * values[key2].baseAs(T.self)
     let error = difference.local(actual)
-    
-    return error.vector.squared().sum()
+    // TODO: It would be faster to call `error.squaredNorm` because then we don't have to pay
+    // the cost of a conversion to `Vector`. To do this, we need a protocol
+    // with a `squaredNorm` requirement.
+    return error.vector.squaredNorm
   }
   
   @differentiable(wrt: values)

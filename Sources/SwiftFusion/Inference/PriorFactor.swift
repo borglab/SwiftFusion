@@ -42,8 +42,10 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor where T.TangentVector: V
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
     let error = difference.local(values[keys[0]].baseAs(T.self))
-    let residual = error.vector.squared().sum()
-    return residual
+    // TODO: It would be faster to call `error.squaredNorm` because then we don't have to pay
+    // the cost of a conversion to `Vector`. To do this, we need a protocol
+    // with a `squaredNorm` requirement.
+    return error.vector.squaredNorm
   }
   
   @differentiable(wrt: values)

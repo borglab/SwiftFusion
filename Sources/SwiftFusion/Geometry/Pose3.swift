@@ -23,6 +23,7 @@ extension Vector6: TensorConvertible {
 }
 
 extension Vector6: VectorConvertible {
+  @differentiable
   public init(_ vector: Vector) {
     precondition(vector.dimension == 6)
     
@@ -30,6 +31,7 @@ extension Vector6: VectorConvertible {
     v = Vector3(vector.scalars[3], vector.scalars[4], vector.scalars[5])
   }
   
+  @differentiable
   public var vector: Vector {
     Vector([w.x, w.y, w.z, v.x, v.y, v.z])
   }
