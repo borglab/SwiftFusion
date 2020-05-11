@@ -5,7 +5,7 @@ import TensorFlow
 % coordinates = ['x', 'y', 'z'][0:dim]
 
 /// An element of R^${dim}, with Euclidean norm.
-public struct Vector${dim}: Differentiable, KeyPathIterable, TangentStandardBasis
+public struct Vector${dim}: EuclideanVectorSpace, KeyPathIterable, TangentStandardBasis
 {
   % for coordinate in coordinates:
   @differentiable public var ${coordinate}: Double

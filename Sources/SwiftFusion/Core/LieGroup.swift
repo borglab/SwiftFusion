@@ -9,7 +9,7 @@ public protocol LieGroup: Manifold {
   func inverse() -> Self
   
   @differentiable(wrt: global)
-  func local(_ global: Self) -> Self.Coordinate.LocalCoordinate
+  func localCoordinate(_ global: Self) -> Self.Coordinate.LocalCoordinate
 }
 
 /// Calculate relative pose 1T2 between two poses wT1 and wT2

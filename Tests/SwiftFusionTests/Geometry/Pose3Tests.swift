@@ -8,7 +8,7 @@ final class Pose3Tests: XCTestCase {
     for _ in 0..<10 {
       let p = Pose3.fromTangent(Vector6(Tensor<Double>(randomNormal: [6])))
       let q = Pose3.fromTangent(Vector6(Tensor<Double>(randomNormal: [6])))
-      let actual: Pose3 = Pose3(coordinate: p.coordinate.global(p.coordinate.local(q.coordinate)))
+      let actual: Pose3 = Pose3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
     }
   }
@@ -33,8 +33,8 @@ final class Pose3Tests: XCTestCase {
     let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
     let t12 = Vector6(Tensor<Double>(repeating: 0.1, shape: [6]))
     let t1 = Pose3(R, P)
-    let t2 = Pose3(coordinate: t1.coordinate.global(t12))
-    assertAllKeyPathEqual(t1.coordinate.local(t2.coordinate), t12, accuracy: 1e-5)
+    let t2 = Pose3(coordinate: t1.coordinate.retract(t12))
+    assertAllKeyPathEqual(t1.coordinate.localCoordinate(t2.coordinate), t12, accuracy: 1e-5)
   }
   
   func testPose3SimplePriorFactor() {
@@ -102,11 +102,11 @@ final class Pose3Tests: XCTestCase {
     var val = Values()
     let s = 0.10
     val.insert(0, AnyDifferentiable(p0))
-    val.insert(1, AnyDifferentiable(hexagon[1].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(2, AnyDifferentiable(hexagon[2].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(3, AnyDifferentiable(hexagon[3].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(4, AnyDifferentiable(hexagon[4].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
-    val.insert(5, AnyDifferentiable(hexagon[5].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(1, AnyDifferentiable(hexagon[1].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(2, AnyDifferentiable(hexagon[2].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(3, AnyDifferentiable(hexagon[3].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(4, AnyDifferentiable(hexagon[4].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
+    val.insert(5, AnyDifferentiable(hexagon[5].baseAs(Pose3.self).retract(Vector6(s * Tensor<Double>(randomNormal: [6])))))
 
     // optimize
     for _ in 0..<16 {

@@ -17,7 +17,7 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   public init(coordinateStorage: Matrix3Coordinate) { self.coordinateStorage = coordinateStorage }
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
-    coordinateStorage = coordinateStorage.global(direction)
+    coordinateStorage = coordinateStorage.retract(direction)
   }
 
   /// Construct from a rotation matrix, as doubles in *row-major* order
@@ -33,7 +33,7 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   /// Create Manifold object from element of the tangent (Expmap)
   @differentiable
   public static func fromTangent(_ vector: Vector3) -> Self {
-    return Rot3(coordinate: Rot3().coordinate.global(vector))
+    return Rot3(coordinate: Rot3().coordinate.retract(vector))
   }
   
   public init() {
@@ -71,13 +71,15 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
   }
   
   @differentiable
-  public func local(_ global: Rot3) -> Vector3 {
-    coordinate.local(global.coordinate)
+  public func localCoordinate(_ global: Rot3) -> Vector3 {
+    coordinate.localCoordinate(global.coordinate)
   }
 }
 
 public struct Matrix3Coordinate: Equatable, KeyPathIterable {
   public var R: Tensor<Double>
+  
+  public typealias LocalCoordinate = Vector3
 }
 
 public extension Matrix3Coordinate {
@@ -119,7 +121,7 @@ func _vjpSqrt(_ v: Double) -> (value: Double, pullback: (Double) -> Double) {
 extension Matrix3Coordinate: ManifoldCoordinate {
   /// Compose with the exponential map
   @differentiable(wrt: local)
-  public func global(_ local: Vector3) -> Matrix3Coordinate {
+  public func retract(_ local: Vector3) -> Matrix3Coordinate {
     let theta2 = local.squaredNorm
     let nearZero = theta2 <= .ulpOfOne
     let (wx, wy, wz) = (local.x, local.y, local.z)
@@ -143,7 +145,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
   }
 
   @differentiable(wrt: global)
-  public func local(_ global: Matrix3Coordinate) -> Vector3 {
+  public func localCoordinate(_ global: Matrix3Coordinate) -> Vector3 {
     let relative = self.inverse() * global
     let R = relative.R
     let (R11, R12, R13) = (R[0, 0].scalars[0], R[0, 1].scalars[0], R[0, 2].scalars[0])

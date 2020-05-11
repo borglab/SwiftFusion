@@ -6,11 +6,14 @@ public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
 
   // MARK: - Manifold conformance
 
+  public typealias Coordinate = Rot2Coordinate
+  public typealias TangentVector = Vector1
+
   public var coordinateStorage: Rot2Coordinate
   public init(coordinateStorage: Rot2Coordinate) { self.coordinateStorage = coordinateStorage }
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
-    coordinateStorage = coordinateStorage.global(direction)
+    coordinateStorage = coordinateStorage.retract(direction)
   }
 
   // MARK: - Convenience initializers and computed properties
@@ -39,8 +42,8 @@ public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
   public var s: Double { coordinate.s }
 
   @differentiable
-  public func local(_ global: Rot2) -> Vector1 {
-    coordinate.local(global.coordinate)
+  public func localCoordinate(_ global: Rot2) -> Vector1 {
+    coordinate.localCoordinate(global.coordinate)
   }
 }
 
@@ -121,13 +124,15 @@ public extension Rot2Coordinate {
 }
 
 extension Rot2Coordinate: ManifoldCoordinate {
+  public typealias LocalCoordinate = Vector1
+
   @differentiable(wrt: local)
-  public func global(_ local: Vector1) -> Self {
+  public func retract(_ local: Vector1) -> Self {
     self * Rot2Coordinate(local.x)
   }
 
   @differentiable(wrt: global)
-  public func local(_ global: Self) -> Vector1 {
+  public func localCoordinate(_ global: Self) -> Vector1 {
     Vector1((self.inverse() * global).theta)
   }
 }

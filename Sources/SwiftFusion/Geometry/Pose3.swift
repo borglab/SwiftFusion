@@ -1,7 +1,7 @@
 import TensorFlow
 
 /// TODO: Should be merged to Vector.swift
-public struct Vector6: Differentiable, VectorProtocol, KeyPathIterable, TangentStandardBasis {
+public struct Vector6: EuclideanVectorSpace, VectorProtocol, KeyPathIterable, TangentStandardBasis {
   var w: Vector3
   var v: Vector3
 }
@@ -41,11 +41,14 @@ extension Vector6: VectorConvertible {
 public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
   // MARK: - Manifold conformance
 
+  public typealias Coordinate = Pose3Coordinate
+  public typealias TangentVector = Vector6
+  
   public var coordinateStorage: Pose3Coordinate
   public init(coordinateStorage: Pose3Coordinate) { self.coordinateStorage = coordinateStorage }
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
-    coordinateStorage = coordinateStorage.global(direction)
+    coordinateStorage = coordinateStorage.retract(direction)
   }
 
   /// Creates a `Pose3` with rotation `r` and translation `t`.
@@ -77,17 +80,17 @@ public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
   /// Create from an element in tangent space (Expmap)
   @differentiable
   public static func fromTangent(_ vector: Vector6) -> Self {
-    return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).global(vector))
+    return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).retract(vector))
   }
   
   @differentiable
-  public func global(_ local: Vector6) -> Self {
-    Self(coordinate: coordinate.global(local))
+  public func retract(_ local: Vector6) -> Self {
+    Self(coordinate: coordinate.retract(local))
   }
   
   @differentiable
-  public func local(_ global: Self) -> Self.Coordinate.LocalCoordinate {
-    coordinate.local(global.coordinate)
+  public func localCoordinate(_ global: Self) -> Self.Coordinate.LocalCoordinate {
+    coordinate.localCoordinate(global.coordinate)
   }
 }
 
@@ -96,6 +99,8 @@ public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
 public struct Pose3Coordinate: Equatable, KeyPathIterable {
   var rot: Rot3
   var t: Vector3
+  
+  public typealias LocalCoordinate = Vector6
 }
 
 public extension Pose3Coordinate {
@@ -160,7 +165,7 @@ public func skew_symmetric_v(_ v: Vector3) -> Tensor<Double> {
 extension Pose3Coordinate: ManifoldCoordinate {
   /// p * Exp(q)
   @differentiable(wrt: local)
-  public func global(_ local: Vector6) -> Self {
+  public func retract(_ local: Vector6) -> Self {
     // get angular velocity omega and translational velocity v from twist xi
     let (omega, v) = (local.w, local.v)
     
@@ -185,9 +190,9 @@ extension Pose3Coordinate: ManifoldCoordinate {
   /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
   /// This invariant will be tested in the tests.
   @differentiable(wrt: global)
-  public func local(_ global: Self) -> Vector6 {
+  public func localCoordinate(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
-    let w = Rot3().coordinate.local(relative.rot.coordinate)
+    let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     // TODO(SR-12776): The `localSmallRot` and `localBigRot` helpers work around this bug. Once it
     // is fixed, we can inline them.
     if w.norm < 1e-10 {
@@ -201,7 +206,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
   @differentiable(wrt: global)
   private func localSmallRot(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
-    let w = Rot3().coordinate.local(relative.rot.coordinate)
+    let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     let T = relative.t
     return Vector6(w: w, v: T)
   }
@@ -210,7 +215,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
   @differentiable(wrt: global)
   private func localBigRot(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
-    let w = Rot3().coordinate.local(relative.rot.coordinate)
+    let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     let T = relative.t
     let t = w.norm
     let W = skew_symmetric_v((1 / t) * w);

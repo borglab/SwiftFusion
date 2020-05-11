@@ -7,7 +7,7 @@ import TensorFlow
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 6)
 
 /// An element of R^1, with Euclidean norm.
-public struct Vector1: Differentiable, KeyPathIterable, TangentStandardBasis
+public struct Vector1: EuclideanVectorSpace, KeyPathIterable, TangentStandardBasis
 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 11)
   @differentiable public var x: Double
@@ -122,7 +122,7 @@ extension Vector1 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 6)
 
 /// An element of R^2, with Euclidean norm.
-public struct Vector2: Differentiable, KeyPathIterable, TangentStandardBasis
+public struct Vector2: EuclideanVectorSpace, KeyPathIterable, TangentStandardBasis
 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 11)
   @differentiable public var x: Double
@@ -256,7 +256,7 @@ extension Vector2 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 6)
 
 /// An element of R^3, with Euclidean norm.
-public struct Vector3: Differentiable, KeyPathIterable, TangentStandardBasis
+public struct Vector3: EuclideanVectorSpace, KeyPathIterable, TangentStandardBasis
 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 11)
   @differentiable public var x: Double

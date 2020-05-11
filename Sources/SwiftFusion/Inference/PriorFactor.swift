@@ -22,7 +22,7 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct PriorFactor<T: LieGroup>: NonlinearFactor where T.TangentVector: VectorConvertible {
+public struct PriorFactor<T: LieGroup>: NonlinearFactor where T.Coordinate.LocalCoordinate: VectorConvertible {
   @noDerivative
   public var keys: Array<Int> = []
   public var difference: T
@@ -41,7 +41,7 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor where T.TangentVector: V
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let error = difference.local(values[keys[0]].baseAs(T.self))
+    let error = difference.localCoordinate(values[keys[0]].baseAs(T.self))
     // TODO: It would be faster to call `error.squaredNorm` because then we don't have to pay
     // the cost of a conversion to `Vector`. To do this, we need a protocol
     // with a `squaredNorm` requirement.
@@ -51,13 +51,13 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor where T.TangentVector: V
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
     let val = values[keys[0]].baseAs(T.self)
-    let error = difference.local(val)
+    let error = difference.localCoordinate(val)
     return error
   }
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
-    let j1 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[keys[0]]!].base as! T.TangentVector).vector } )
+    let j1 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[keys[0]]!].base as! T.Coordinate.LocalCoordinate).vector } )
     return JacobianFactor(keys, [j1], errorVector(values).vector.scaled(by: -1))
   }
 }
