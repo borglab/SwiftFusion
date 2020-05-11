@@ -79,15 +79,15 @@ public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
 // MARK: - Global Coordinate System
 
 public struct Pose3Coordinate: Equatable, KeyPathIterable {
-  var t: Vector3
   var rot: Rot3
+  var t: Vector3
 }
 
 public extension Pose3Coordinate {
   @differentiable
   init(_ rot: Rot3, _ t: Vector3) {
-    self.t = t
     self.rot = rot
+    self.t = t
   }
 
   /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.

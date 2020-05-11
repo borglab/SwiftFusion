@@ -37,6 +37,22 @@ final class Pose3Tests: XCTestCase {
     assertAllKeyPathEqual(t1.coordinate.local(t2.coordinate), t12, accuracy: 1e-5)
   }
   
+  func testPose3SimplePriorFactor() {
+    let P = Vector3(3.5,-8.2,4.2)
+    let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
+    let t1 = Pose3(R, P)
+    let I: Tensor<Double> = eye(rowCount: 6)
+    let prior_factor = PriorFactor(0, t1)
+    
+    var vals = Values()
+    vals.insert(0, AnyDifferentiable(t1)) // should be identity matrix
+    // Change this to t2, still zero in upper left block
+    
+    let actual = prior_factor.linearize(vals).jacobians[0]
+    
+    assertEqual(actual, I, accuracy: 1e-8)
+  }
+  
   /// circlePose3 generates a set of poses in a circle. This function
   /// returns those poses inside a gtsam.Values object, with sequential
   /// keys starting from 0. An optional character may be provided, which
@@ -69,7 +85,7 @@ final class Pose3Tests: XCTestCase {
     let hexagon = circlePose3(numPoses: 6, radius: 1.0)
     let p0 = hexagon[0].baseAs(Pose3.self)
     let p1 = hexagon[1].baseAs(Pose3.self)
-
+    
     // create a Pose graph with one equality constraint and one measurement
     var fg = NonlinearFactorGraph()
     fg += PriorFactor(0, p0)
@@ -84,7 +100,7 @@ final class Pose3Tests: XCTestCase {
 
     // Create initial config
     var val = Values()
-    let s = 0.02
+    let s = 0.10
     val.insert(0, AnyDifferentiable(p0))
     val.insert(1, AnyDifferentiable(hexagon[1].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
     val.insert(2, AnyDifferentiable(hexagon[2].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
@@ -93,7 +109,7 @@ final class Pose3Tests: XCTestCase {
     val.insert(5, AnyDifferentiable(hexagon[5].baseAs(Pose3.self).global(Vector6(s * Tensor<Double>(randomNormal: [6])))))
 
     // optimize
-    for _ in 0..<15 {
+    for _ in 0..<16 {
       let gfg = fg.linearize(val)
       
       let optimizer = CGLS(precision: 1e-6, max_iteration: 500)
@@ -106,7 +122,6 @@ final class Pose3Tests: XCTestCase {
       
       optimizer.optimize(gfg: gfg, initial: &dx)
       
-      print("error = \(gfg.residual(dx).norm)")
       
       for i in 0..<6 {
         var p = val[i].baseAs(Pose3.self)
@@ -116,6 +131,6 @@ final class Pose3Tests: XCTestCase {
     }
 
     let pose_1 = val[1].baseAs(Pose3.self)
-    assertAllKeyPathEqual(pose_1, p1, accuracy: 1e-4)
+    assertAllKeyPathEqual(pose_1, p1, accuracy: 1e-2)
   }
 }
