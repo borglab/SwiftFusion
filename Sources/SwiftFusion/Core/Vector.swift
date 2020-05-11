@@ -1,348 +1,158 @@
-// WARNING: This is a generated file. Do not edit it. Instead, edit the corresponding ".gyb" file.
-// See "generate.sh" in the root of this repository for instructions how to regenerate files.
-
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 1)
 import TensorFlow
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
+/// A dynamically sized vector.
+public struct Vector: Equatable, Differentiable {
+  /// The scalars in the vector.
+  public var scalars: [Double]
 
-/// An element of R^1, with Euclidean norm.
-public struct Vector1: Differentiable, KeyPathIterable, TangentStandardBasis
-{
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
-  @differentiable public var x: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 13)
+  public typealias TangentVector = Self
+}
 
-  @differentiable
-  public init(_ x: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 17)
-    self.x = x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 19)
+/// Can be losslessly converted to and from a `Vector`.
+public protocol VectorConvertible {
+  init(_ vector: Vector)
+  var vector: Vector { get }
+}
+
+/// Initializers.
+extension Vector {
+  /// Creates a vector with the given `scalars`.
+  public init(_ scalars: [Double]) {
+    self.scalars = scalars
+  }
+
+  /// Creates a zero vector of the given `dimension`.
+  public init(zeros dimension: Int) {
+    self.init(Array(repeating: 0, count: dimension))
   }
 }
 
-/// Normed vector space methods.
-extension Vector1: AdditiveArithmetic, VectorProtocol {
-  public typealias VectorSpaceScalar = Double
-
-  /// Euclidean norm of `self`.
-  @differentiable
-  public var norm: Double { squaredNorm.squareRoot() }
-
-  /// Square of the Euclidean norm of `self`.
-  @differentiable
-  public var squaredNorm: Double { self.squared().sum() }
-
-  @differentiable
-  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
-    result.x = lhs.x + rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 40)
-    return result
-  }
-
-  @differentiable
-  public static func - (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
-    result.x = lhs.x - rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 49)
-    return result
-  }
-
-  @differentiable
-  public static prefix func - (_ v: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
-    result.x = -v.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 58)
-    return result
+/// Miscellaneous computed properties.
+extension Vector {
+  public var dimension: Int {
+    return scalars.count
   }
 }
 
-/// Other arithmetic on the vector elements.
-extension Vector1: ElementaryFunctions {
+/// Arithmetic on elements.
+extension Vector {
   /// Sum of the elements of `self`.
   public func sum() -> Double {
-    var result: Double = 0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
-    result = result + x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 70)
-    return result
+    return scalars.reduce(0, +)
   }
 
   /// Vector whose elements are squares of the elements of `self`.
   public func squared() -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
-    result.x = x * x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 79)
-    return result
+    return Vector(scalars.map { $0 * $0 })
   }
 }
 
-/// Conversion to/from tensor.
-extension Vector1 {
-  /// A `Tensor` with shape `[1]` whose elements are the elements of `self`.
-  @differentiable
-  public var tensor: Tensor<Double> {
-    Tensor([x])
-  }
-
-  /// Creates a `Vector1` with the same elements as `tensor`.
-  ///
-  /// Precondition: `tensor` must have shape `[1]`.
-  @differentiable
-  public init(_ tensor: Tensor<Double>) {
-    precondition(tensor.shape == [1])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
-    self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
-  }
-}
-
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
-
-/// An element of R^2, with Euclidean norm.
-public struct Vector2: Differentiable, KeyPathIterable, TangentStandardBasis
-{
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
-  @differentiable public var x: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
-  @differentiable public var y: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 13)
-
-  @differentiable
-  public init(_ x: Double, _ y: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 17)
-    self.x = x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 17)
-    self.y = y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 19)
-  }
-}
-
-/// Normed vector space methods.
-extension Vector2: AdditiveArithmetic, VectorProtocol {
-  public typealias VectorSpaceScalar = Double
-
+/// Euclidean norms.
+extension Vector {
   /// Euclidean norm of `self`.
-  @differentiable
   public var norm: Double { squaredNorm.squareRoot() }
 
   /// Square of the Euclidean norm of `self`.
-  @differentiable
   public var squaredNorm: Double { self.squared().sum() }
-
-  @differentiable
-  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
-    result.x = lhs.x + rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
-    result.y = lhs.y + rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 40)
-    return result
-  }
-
-  @differentiable
-  public static func - (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
-    result.x = lhs.x - rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
-    result.y = lhs.y - rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 49)
-    return result
-  }
-
-  @differentiable
-  public static prefix func - (_ v: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
-    result.x = -v.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
-    result.y = -v.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 58)
-    return result
-  }
 }
 
-/// Other arithmetic on the vector elements.
-extension Vector2: ElementaryFunctions {
-  /// Sum of the elements of `self`.
-  public func sum() -> Double {
-    var result: Double = 0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
-    result = result + x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
-    result = result + y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 70)
+/// AdditiveArithmetic conformance.
+extension Vector: AdditiveArithmetic {
+  public static func += (_ lhs: inout Vector, _ rhs: Vector) {
+    for index in lhs.scalars.indices {
+      lhs.scalars[index] += rhs.scalars[index]
+    }
+  }
+
+  public static func + (_ lhs: Vector, _ rhs: Vector) -> Vector {
+    var result = lhs
+    result += rhs
     return result
   }
 
-  /// Vector whose elements are squares of the elements of `self`.
-  public func squared() -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
-    result.x = x * x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
-    result.y = y * y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 79)
+  public static func -= (_ lhs: inout Vector, _ rhs: Vector) {
+    for index in lhs.scalars.indices {
+      lhs.scalars[index] -= rhs.scalars[index]
+    }
+  }
+
+  public static func - (_ lhs: Vector, _ rhs: Vector) -> Vector {
+    var result = lhs
+    result -= rhs
     return result
   }
-}
 
-/// Conversion to/from tensor.
-extension Vector2 {
-  /// A `Tensor` with shape `[2]` whose elements are the elements of `self`.
-  @differentiable
-  public var tensor: Tensor<Double> {
-    Tensor([x, y])
-  }
-
-  /// Creates a `Vector2` with the same elements as `tensor`.
+  /// The zero vector.
   ///
-  /// Precondition: `tensor` must have shape `[2]`.
-  @differentiable
-  public init(_ tensor: Tensor<Double>) {
-    precondition(tensor.shape == [2])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
-    self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
-    self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
+  /// Note: "Zero" doesn't make very much sense as a static property on a dynamically sized vector
+  /// because we don't known the dimension of the zero. However, `AdditiveArithmetic` requires it,
+  /// so we implement it as reasonably as possible.
+  public static var zero: Vector {
+    return Vector([])
   }
 }
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
-
-/// An element of R^3, with Euclidean norm.
-public struct Vector3: Differentiable, KeyPathIterable, TangentStandardBasis
-{
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
-  @differentiable public var x: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
-  @differentiable public var y: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
-  @differentiable public var z: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 13)
-
-  @differentiable
-  public init(_ x: Double, _ y: Double, _ z: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 17)
-    self.x = x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 17)
-    self.y = y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 17)
-    self.z = z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 19)
-  }
-}
-
-/// Normed vector space methods.
-extension Vector3: AdditiveArithmetic, VectorProtocol {
+/// VectorProtocol conformance.
+extension Vector: VectorProtocol {
   public typealias VectorSpaceScalar = Double
 
-  /// Euclidean norm of `self`.
-  @differentiable
-  public var norm: Double { squaredNorm.squareRoot() }
+  public mutating func add(_ x: Double) {
+    for index in scalars.indices {
+      scalars[index] += x
+    }
+  }
 
-  /// Square of the Euclidean norm of `self`.
-  @differentiable
-  public var squaredNorm: Double { self.squared().sum() }
-
-  @differentiable
-  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
-    result.x = lhs.x + rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
-    result.y = lhs.y + rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
-    result.z = lhs.z + rhs.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 40)
+  public func adding(_ x: Double) -> Vector {
+    var result = self
+    result.add(x)
     return result
   }
 
-  @differentiable
-  public static func - (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
-    result.x = lhs.x - rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
-    result.y = lhs.y - rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
-    result.z = lhs.z - rhs.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 49)
+  public static func += (_ lhs: inout Vector, _ rhs: Double) {
+    lhs.add(rhs)
+  }
+
+  public mutating func subtract(_ x: Double) {
+    for index in scalars.indices {
+      scalars[index] -= x
+    }
+  }
+
+  public func subtracting(_ x: Double) -> Vector {
+    var result = self
+    result.subtract(x)
     return result
   }
 
-  @differentiable
-  public static prefix func - (_ v: Self) -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
-    result.x = -v.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
-    result.y = -v.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
-    result.z = -v.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 58)
-    return result
+  public static func -= (_ lhs: inout Vector, _ rhs: Double) {
+    lhs.subtract(rhs)
   }
-}
 
-/// Other arithmetic on the vector elements.
-extension Vector3: ElementaryFunctions {
-  /// Sum of the elements of `self`.
-  public func sum() -> Double {
-    var result: Double = 0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
-    result = result + x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
-    result = result + y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
-    result = result + z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 70)
+  public mutating func scale(by scalar: Double) {
+    for index in scalars.indices {
+      scalars[index] *= scalar
+    }
+  }
+
+  public func scaled(by scalar: Double) -> Vector {
+    var result = self
+    result.scale(by: scalar)
     return result
   }
 
-  /// Vector whose elements are squares of the elements of `self`.
-  public func squared() -> Self {
-    var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
-    result.x = x * x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
-    result.y = y * y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
-    result.z = z * z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 79)
-    return result
+  public static func *= (_ lhs: inout Vector, _ rhs: Double) {
+    lhs.scale(by: rhs)
+  }
+
+  public static func * (_ lhs: Double, _ rhs: Vector) -> Vector {
+    return rhs.scaled(by: lhs)
   }
 }
 
-/// Conversion to/from tensor.
-extension Vector3 {
-  /// A `Tensor` with shape `[3]` whose elements are the elements of `self`.
-  @differentiable
+/// Conversion to tensor.
+extension Vector {
+  /// Returns this vector as a `Tensor<Double>`.
   public var tensor: Tensor<Double> {
-    Tensor([x, y, z])
-  }
-
-  /// Creates a `Vector3` with the same elements as `tensor`.
-  ///
-  /// Precondition: `tensor` must have shape `[3]`.
-  @differentiable
-  public init(_ tensor: Tensor<Double>) {
-    precondition(tensor.shape == [3])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
-    self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
-    self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
-    self.z = tensor[2].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
+    return Tensor(shape: [scalars.count], scalars: scalars)
   }
 }
-

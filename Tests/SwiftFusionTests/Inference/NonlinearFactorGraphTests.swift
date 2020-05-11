@@ -19,14 +19,14 @@ final class NonlinearFactorGraphTests: XCTestCase {
     
     var vv = VectorValues()
     
-    vv.insert(0, Tensor<Double>(shape:[3, 1], scalars: [0.0, 0.0, 0.0]))
-    vv.insert(1, Tensor<Double>(shape:[3, 1], scalars: [0.0, 0.0, 0.0]))
+    vv.insert(0, Vector(zeros: 3))
+    vv.insert(1, Vector(zeros: 3))
     
-    let expected = Tensor<Double>(shape:[3, 1], scalars: [.pi, 0.0, 0.0])
+    let expected = Tensor<Double>(shape:[3], scalars: [.pi, 0.0, 0.0])
     
     print("gfg = \(gfg)")
     print("error = \(gfg.residual(vv).norm)")
-    assertEqual((gfg.residual(vv))[0], expected, accuracy: 1e-6)
+    assertEqual((gfg.residual(vv))[0].tensor, expected, accuracy: 1e-6)
   }
   
   /// test CGLS iterative solver
@@ -62,14 +62,14 @@ final class NonlinearFactorGraphTests: XCTestCase {
       var dx = VectorValues()
       
       for i in 0..<5 {
-        dx.insert(i, Tensor<Double>(shape: [3, 1], scalars: [0, 0, 0]))
+        dx.insert(i, Vector(zeros: 3))
       }
       
       optimizer.optimize(gfg: gfg, initial: &dx)
       
       for i in 0..<5 {
         var p = val[i].baseAs(Pose2.self)
-        p.move(along: Vector3(dx[i].reshaped(toShape: [3])))
+        p.move(along: Vector3(dx[i]))
         val[i] = AnyDifferentiable(p)
       }
     }
@@ -96,4 +96,10 @@ final class NonlinearFactorGraphTests: XCTestCase {
     // Test condition: P_5 should be identical to P_1 (close loop)
     XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
+
+  static var allTests = [
+    ("testBasicOps", testBasicOps),
+    ("testCGLSPose2SLAM", testCGLSPose2SLAM)
+  ]
+
 }

@@ -55,10 +55,7 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor {
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
-    let j1 = Tensor<Double>(stacking: (0..<j.count).map { i in
-      (j[i]._values[0].base as! T.TangentVector).tensor.flattened()
-    })
-    let err_tensor = -errorVector(values).tensor
-    return JacobianFactor(keys, [j1], err_tensor.reshaped(to: [err_tensor.shape[0], 1]))
+    let j1 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[keys[0]]!].base as! Pose2.TangentVector).vector } )
+    return JacobianFactor(keys, [j1], errorVector(values).vector.scaled(by: -1))
   }
 }

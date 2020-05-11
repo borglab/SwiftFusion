@@ -17,8 +17,8 @@ fi
 GYB="$SWIFT_BASE"/utils/gyb
 
 GENERATED_FILES=(
-  "Sources/SwiftFusion/Core/Vector.swift"
-  "Tests/SwiftFusionTests/Core/VectorTests.swift"
+  "Sources/SwiftFusion/Core/VectorN.swift"
+  "Tests/SwiftFusionTests/Core/VectorNTests.swift"
 )
 
 for GENERATED_FILE in "${GENERATED_FILES[@]}"

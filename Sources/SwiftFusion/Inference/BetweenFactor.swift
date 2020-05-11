@@ -84,12 +84,11 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
   
   public func linearize(_ values: Values) -> JacobianFactor {
     let j = jacobian(of: self.errorVector, at: values)
-    
-    let j1 = Tensor<Double>(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[key1]!].base as! T.TangentVector).tensor.flattened() })
-    let j2 = Tensor<Double>(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[key2]!].base as! T.TangentVector).tensor.flattened() })
-    
-    let err_tensor = -errorVector(values).tensor
+
+    let j1 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[key1]!].base as! Pose2.TangentVector).vector } )
+    let j2 = Matrix(stacking: (0..<j.count).map { i in (j[i]._values[values._indices[key2]!].base as! Pose2.TangentVector).vector } )
+
     // TODO: remove this negative sign
-    return JacobianFactor(keys, [j1, j2], err_tensor.reshaped(to: [err_tensor.shape[0], 1]))
+    return JacobianFactor(keys, [j1, j2], errorVector(values).vector.scaled(by: -1))
   }
 }
