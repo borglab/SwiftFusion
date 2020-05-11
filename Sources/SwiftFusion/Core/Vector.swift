@@ -7,7 +7,7 @@ import TensorFlow
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
 
 /// An element of R^1, with Euclidean norm.
-public struct Vector1: Differentiable, KeyPathIterable, TangentStandardBasis
+public struct Vector1: KeyPathIterable, TangentStandardBasis
 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
   @differentiable public var x: Double
@@ -21,9 +21,10 @@ public struct Vector1: Differentiable, KeyPathIterable, TangentStandardBasis
   }
 }
 
-/// Normed vector space methods.
-extension Vector1: AdditiveArithmetic, VectorProtocol {
+/// EuclideanVectorSpace conformance.
+extension Vector1: EuclideanVectorSpace {
   public typealias VectorSpaceScalar = Double
+  public typealias TangentVector = Self
 
   /// Euclidean norm of `self`.
   @differentiable
@@ -36,27 +37,27 @@ extension Vector1: AdditiveArithmetic, VectorProtocol {
   @differentiable
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 39)
     result.x = lhs.x + rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 40)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 41)
     return result
   }
 
   @differentiable
   public static func - (_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 48)
     result.x = lhs.x - rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 49)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 50)
     return result
   }
 
   @differentiable
   public static prefix func - (_ v: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 57)
     result.x = -v.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 58)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 59)
     return result
   }
 }
@@ -66,18 +67,18 @@ extension Vector1: ElementaryFunctions {
   /// Sum of the elements of `self`.
   public func sum() -> Double {
     var result: Double = 0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 69)
     result = result + x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 70)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 71)
     return result
   }
 
   /// Vector whose elements are squares of the elements of `self`.
   public func squared() -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 78)
     result.x = x * x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 79)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 80)
     return result
   }
 }
@@ -96,16 +97,16 @@ extension Vector1 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [1])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 99)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 101)
   }
 }
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
 
 /// An element of R^2, with Euclidean norm.
-public struct Vector2: Differentiable, KeyPathIterable, TangentStandardBasis
+public struct Vector2: KeyPathIterable, TangentStandardBasis
 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
   @differentiable public var x: Double
@@ -123,9 +124,10 @@ public struct Vector2: Differentiable, KeyPathIterable, TangentStandardBasis
   }
 }
 
-/// Normed vector space methods.
-extension Vector2: AdditiveArithmetic, VectorProtocol {
+/// EuclideanVectorSpace conformance.
+extension Vector2: EuclideanVectorSpace {
   public typealias VectorSpaceScalar = Double
+  public typealias TangentVector = Self
 
   /// Euclidean norm of `self`.
   @differentiable
@@ -138,33 +140,33 @@ extension Vector2: AdditiveArithmetic, VectorProtocol {
   @differentiable
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 39)
     result.x = lhs.x + rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 39)
     result.y = lhs.y + rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 40)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 41)
     return result
   }
 
   @differentiable
   public static func - (_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 48)
     result.x = lhs.x - rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 48)
     result.y = lhs.y - rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 49)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 50)
     return result
   }
 
   @differentiable
   public static prefix func - (_ v: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 57)
     result.x = -v.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 57)
     result.y = -v.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 58)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 59)
     return result
   }
 }
@@ -174,22 +176,22 @@ extension Vector2: ElementaryFunctions {
   /// Sum of the elements of `self`.
   public func sum() -> Double {
     var result: Double = 0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 69)
     result = result + x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 69)
     result = result + y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 70)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 71)
     return result
   }
 
   /// Vector whose elements are squares of the elements of `self`.
   public func squared() -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 78)
     result.x = x * x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 78)
     result.y = y * y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 79)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 80)
     return result
   }
 }
@@ -208,18 +210,18 @@ extension Vector2 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [2])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 99)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 99)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 101)
   }
 }
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 6)
 
 /// An element of R^3, with Euclidean norm.
-public struct Vector3: Differentiable, KeyPathIterable, TangentStandardBasis
+public struct Vector3: KeyPathIterable, TangentStandardBasis
 {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 11)
   @differentiable public var x: Double
@@ -241,9 +243,10 @@ public struct Vector3: Differentiable, KeyPathIterable, TangentStandardBasis
   }
 }
 
-/// Normed vector space methods.
-extension Vector3: AdditiveArithmetic, VectorProtocol {
+/// EuclideanVectorSpace conformance.
+extension Vector3: EuclideanVectorSpace {
   public typealias VectorSpaceScalar = Double
+  public typealias TangentVector = Self
 
   /// Euclidean norm of `self`.
   @differentiable
@@ -256,39 +259,39 @@ extension Vector3: AdditiveArithmetic, VectorProtocol {
   @differentiable
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 39)
     result.x = lhs.x + rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 39)
     result.y = lhs.y + rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 38)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 39)
     result.z = lhs.z + rhs.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 40)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 41)
     return result
   }
 
   @differentiable
   public static func - (_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 48)
     result.x = lhs.x - rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 48)
     result.y = lhs.y - rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 47)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 48)
     result.z = lhs.z - rhs.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 49)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 50)
     return result
   }
 
   @differentiable
   public static prefix func - (_ v: Self) -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 57)
     result.x = -v.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 57)
     result.y = -v.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 56)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 57)
     result.z = -v.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 58)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 59)
     return result
   }
 }
@@ -298,26 +301,26 @@ extension Vector3: ElementaryFunctions {
   /// Sum of the elements of `self`.
   public func sum() -> Double {
     var result: Double = 0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 69)
     result = result + x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 69)
     result = result + y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 68)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 69)
     result = result + z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 70)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 71)
     return result
   }
 
   /// Vector whose elements are squares of the elements of `self`.
   public func squared() -> Self {
     var result = Self.zero
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 78)
     result.x = x * x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 78)
     result.y = y * y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 77)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 78)
     result.z = z * z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 79)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 80)
     return result
   }
 }
@@ -336,13 +339,13 @@ extension Vector3 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [3])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 99)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 99)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 98)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 99)
     self.z = tensor[2].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 100)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/Vector.swift.gyb", line: 101)
   }
 }
 
