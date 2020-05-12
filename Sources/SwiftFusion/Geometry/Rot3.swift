@@ -92,6 +92,45 @@ public extension Matrix3Coordinate {
                                                r21, r22, r23,
                                                r31, r32, r33])
   }
+
+  /// Derivative of the above `init`.
+  // TODO: This is a workaround for the problem mentioned in
+  // https://github.com/apple/swift/pull/31723. When that fix is available, we can delete this
+  // method.
+  @derivative(of: init)
+  static func vjpInit(
+    _ r11 : Double, _ r12 : Double, _ r13 : Double,
+    _ r21 : Double, _ r22 : Double, _ r23 : Double,
+    _ r31 : Double, _ r32 : Double, _ r33 : Double
+  ) -> (
+    value: Matrix3Coordinate,
+    pullback: (TangentVector) -> (
+      Double, Double, Double,
+      Double, Double, Double,
+      Double, Double, Double
+    )
+  ) {
+    func pullback(_ v: TangentVector) -> (
+      Double, Double, Double,
+      Double, Double, Double,
+      Double, Double, Double
+    ) {
+      let s = v.R.scalars
+      return (
+        s[0], s[1], s[2],
+        s[3], s[4], s[5],
+        s[6], s[7], s[8]
+      )
+    }
+    return (
+      Matrix3Coordinate(
+        r11, r12, r13,
+        r21, r22, r23,
+        r31, r32, r33
+      ),
+      pullback
+    )
+  }
   
   /// Product of two rotations.
   @differentiable(wrt: (lhs, rhs))
