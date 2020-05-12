@@ -104,3 +104,40 @@ public struct JacobianFactor: LinearFactor {
     return result
   }
 }
+
+extension JacobianFactor {
+  /// Creates a `JacobianFactor` by linearizing the error function `f` at `p`.
+  public init<R: VectorConvertible & TangentStandardBasis>(
+    of f: @differentiable (Values) -> R,
+    at p: Values
+  ) {
+    // Compute the rows of the jacobian.
+    let (value, pb) = valueWithPullback(at: p, in: f)
+    let rows = R.tangentStandardBasis.map { pb($0) }
+
+    // Construct empty matrices with the correct shape.
+    assert(rows.count > 0)
+    var matrices = Dictionary<Int, Matrix>(uniqueKeysWithValues: rows[0].keys.map { key in
+      let row = rows[0][key]
+      var matrix = Matrix([], rowCount: 0, columnCount: row.dimension)
+      matrix.reserveCapacity(rows.count * row.dimension)
+      return (key, matrix)
+    })
+
+    // Fill in the matrix entries.
+    for row in rows {
+      for key in row.keys {
+        matrices[key]!.append(row: row[key])
+      }
+    }
+
+    // Return the jacobian factor with the matrices and value.
+    let orderedKeys = Array(matrices.keys)
+    self = JacobianFactor(
+      orderedKeys,
+      orderedKeys.map { matrices[$0]! },
+      // TODO: remove this negative sign
+      value.vector.scaled(by: -1)
+    )
+  }
+}
