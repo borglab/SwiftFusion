@@ -11,12 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import TensorFlow
-
 /// A `LinearFactor` that operates like `JacobianFactor` in GTSAM.
 ///
 /// Input is a dictionary of `Key` to `Tensor` pairs, and the output is the paired
-/// error vector. Note here that the Tensor shapes are not checked.
+/// error vector. Note here that the shapes are not checked.
 ///
 /// Interpretation
 /// ================
@@ -39,21 +37,22 @@ import TensorFlow
 /// and `HessianFactor` conform to this protocol instead.
 public struct JacobianFactor: LinearFactor {
   
-  @differentiable(wrt: values)
-  public func error(_ indices: [Int], values: Tensor<ScalarType>) -> ScalarType {
+  // TODO(fan): correct this and add a unit test
+  public func error(_ values: VectorValues) -> ScalarType {
     ScalarType.zero
   }
+  
   public var dimension: Int {
     get {
-      jacobians[0].shape.dimensions[0]
+      jacobians[0].rowCount
     }
   }
-  public var keys: Array<Int> = []
-  public var jacobians: Array<Tensor<Double>> = []
-  public var b: Tensor<Double> = eye(rowCount: 0)
+  public var keys: Array<Int>
+  public var jacobians: Array<Matrix>
+  public var b: Vector
   public typealias Output = Error
   
-  public init (_ key: [Int], _ A: [Tensor<Double>], _ b: Tensor<Double>) {
+  public init (_ key: [Int], _ A: [Matrix], _ b: Vector) {
     keys = key
     jacobians = A
     self.b = b
@@ -68,11 +67,11 @@ public struct JacobianFactor: LinearFactor {
   ///                 x3
   /// ```
   static func * (lhs: JacobianFactor, rhs: VectorValues) -> Self.Output {
-    var arr: Array<Tensor<Double>> = []
+    var result = Vector(zeros: lhs.dimension)
     for i in lhs.keys.indices {
-      arr.append(matmul(lhs.jacobians[i], rhs[lhs.keys[i]]))
+      result += matvec(lhs.jacobians[i], rhs[lhs.keys[i]])
     }
-    return arr.reduce(Tensor<Double>(repeating: 0.0, shape: TensorShape([lhs.dimension, 1])), { $0 + $1 })
+    return result
   }
   
   /// Calculate `J^T * e`
@@ -97,9 +96,9 @@ public struct JacobianFactor: LinearFactor {
       
       // TODO(fan): add a proper method for searching key
       if let ind = result._indices[k] {
-        result._values[ind] += matmul(jacobians[pos].transposed(), r)
+        result._values[ind] += matvec(jacobians[pos], transposed: true, r)
       } else {
-        result.insert(k, matmul(jacobians[pos].transposed(), r))
+        result.insert(k, matvec(jacobians[pos], transposed: true, r))
       }
     }
     return result

@@ -35,16 +35,15 @@ import TensorFlow
 /// [2]: https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
-public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
-  /// The pose's rotation.
-  ///
-  /// This is the projection SE(2) -> SO(2).
-  @differentiable public var rot: Rot2 { rotStorage }
+public struct Pose2: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
+  // MARK: - Manifold conformance
 
-  /// The pose's translation.
-  ///
-  /// This is the projection SE(2) -> R^2. (Note: not a group homomorphism!)
-  @differentiable public var t: Vector2 { tStorage }
+  public var coordinateStorage: Pose2Coordinate
+  public init(coordinateStorage: Pose2Coordinate) { self.coordinateStorage = coordinateStorage }
+
+  public mutating func move(along direction: Coordinate.LocalCoordinate) {
+    coordinateStorage = coordinateStorage.retract(direction)
+  }
 
   /// Creates a `Pose2` with rotation `r` and translation `t`.
   ///
@@ -52,114 +51,33 @@ public struct Pose2: Differentiable, TangentStandardBasis, KeyPathIterable {
   /// not a group homomorphism!)
   @differentiable
   public init(_ r: Rot2, _ t: Vector2) {
-    tStorage = t
-    rotStorage = r
+    self.init(coordinate: Pose2Coordinate(r, t))
   }
-
-  /// The derivative of `init` satisfiying convention (2) described above.
-  @derivative(of: init(_:_:))
-  @usableFromInline
-  static func vjpInit(_ r: Rot2, _ t: Vector2)
-    -> (value: Pose2, pullback: (TangentVector) -> (Rot2.TangentVector, Vector2))
-  {
-    // Explanation of this calculation:
-    //
-    // We would like the differential of `init` at `(r, t)`, `dinit_(r, t)`, to satisfy:
-    //   init(r * exp(hat(w)), t * exp(hat(v))) ~= init(r, t) * exp(hat(dinit_(r, t)(w, v)))
-    // where `w`, `v` are "small" elements of R^1 and R^2 respectively.
-    //
-    // Using `t * exp(hat(v)) == t + v` simplifies the equation to:
-    //   init(r * exp(hat(w)), t + v) ~= init(r, t) * exp(hat(dinit_(r, t)(w, v)))
-    //
-    // Multiplying on the left by `init(r, t)^-1 == init(r^t, r^t * (-t))` gives
-    //   exp(hat(dinit_(r, t)(w, v)))
-    //     = init(r^t, r^t * (-t)) * init(r * exp(hat(w)), t + v)
-    //     = init(exp(hat(w)), r^t * v)
-    //
-    // Since `w`, `v` are small, we can take logs of both sides to get
-    //   dinit_(t, r)(w, v) = (w, r^t * v)
-    //
-    // Or in matrix notation:
-    //   dinit_(t, r)(w, v) =  ( 1    0 ) ( w )
-    //                         ( 0  r^t ) ( v )
-    //
-    // We actually need the pullback rather than the differential, so that's the transpose:
-    //   pbinit_(t, r)(w, v) =  ( 1 0 ) ( w )
-    //                          ( 0 r ) ( v )
-    //
-    // The pullback here implements the linear map corresponding to that matrix.
-    (Pose2(r, t), {
-      let (w, v) = Self.decomposed(tangentVector: $0)
-      return (w, r.rotate(v))
-    })
+  
+  // MARK: Convenience Attributes
+  
+  @differentiable public var t: Vector2 { coordinate.t }
+  
+  @differentiable public var rot: Rot2 { coordinate.rot }
+  
+  /// Product of two rotations.
+  @differentiable
+  public static func * (lhs: Pose2, rhs: Pose2) -> Pose2 {
+    Pose2(coordinate: lhs.coordinate * rhs.coordinate)
   }
-
-  /// The derivative of `t` satisfiying convention (2) described above.
-  @derivative(of: t)
-  @usableFromInline
-  func vjpT() -> (value: Vector2, pullback: (Vector2) -> Vector3) {
-    // Explanation of this calculation:
-    //
-    // `t` is the inverse of `init`, followed by a projection to the translation component. So we
-    // can get the matrix for the pullback of `t` by inverting the matrix for the pullback of
-    // `init` and then taking the relevant columns.
-    //
-    // The inverse is:
-    //   ( 1    0 )
-    //   ( 0  r^t )
-    //
-    // The pullback here implements the linear transformation represented by the first column of
-    // this matrix.
-    return (t, { Self.tangentVector(w: Vector1.zero, v: rot.unrotate($0)) } )
+  
+  @differentiable
+  public func inverse() -> Pose2 {
+    Pose2(coordinate: coordinate.inverse())
   }
-
-  /// The derivative of `rot` satisfiying convention (2) described above.
-  @derivative(of: rot)
-  @usableFromInline
-  func vjpRot() -> (value: Rot2, pullback: (Vector1) -> Vector3) {
-    // This pullback is similar to the pullback in `vjpT`, but for the second column of the
-    // matrix. See the comment in `vjpT` for more information.
-    return (rot, { Self.tangentVector(w: $0, v: Vector2.zero) })
+  
+  @differentiable
+  public func localCoordinate(_ global: Self) -> Self.Coordinate.LocalCoordinate {
+    coordinate.localCoordinate(global.coordinate)
   }
-
-  /// Twist coordinates, with the first component for rotation and the remaining components for
-  /// translation.
-  ///
-  /// See the documentation comment on the declaration of `Pose2` for more information.
-  public typealias TangentVector = Vector3
-
-  /// Creates a tangent vector given rotation (`w`) and translation (`v`) components.
-  public static func tangentVector(w: Vector1, v: Vector2) -> Vector3 {
-    Vector3(w.x, v.x, v.y)
-  }
-
-  /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.
-  public static func decomposed(tangentVector: Vector3) -> (w: Vector1, v: Vector2) {
-    (Vector1(tangentVector.x), Vector2(tangentVector.y, tangentVector.z))
-  }
-
-  /// Moves `self` by `exp(hat(direction))`.
-  public mutating func move(along direction: Vector3) {
-    // TODO: This should be the real exponential map.
-    let (w, v) = Self.decomposed(tangentVector: direction)
-    self.tStorage.move(along: rot.rotate(v))
-    self.rotStorage.move(along: w)
-  }
-
-  /// Storage for the pose's translation.
-  ///
-  /// This is private so that we can define an accessor with a custom derivative (Swift AD does not
-  /// currently support custom derivatives on stored properties).
-  private var tStorage: Vector2
-
-  /// Storage for the pose's rotation.
-  ///
-  /// This is private so that we can define an accessor with a custom derivative (Swift AD does not
-  /// currently support custom derivatives on stored properties).
-  private var rotStorage: Rot2
 }
 
-/// Convenience initializers.
+// MARK: Convenience initializers
 extension Pose2 {
   /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
   @differentiable
@@ -175,20 +93,99 @@ extension Pose2 {
   }
 }
 
-/// Methods related to the Lie group structure.
-extension Pose2 {
-  /// Group operation.
+// MARK: - Global Coordinate System
+
+public struct Pose2Coordinate: Equatable, KeyPathIterable {
+  var t: Vector2
+  var rot: Rot2
+}
+
+public extension Pose2Coordinate {
   @differentiable
-  public static func * (a: Pose2, b: Pose2) -> Pose2 {
-    Pose2(a.rot * b.rot, a.t + a.rot * b.t)
+  init(_ rot: Rot2, _ t: Vector2) {
+    self.t = t
+    self.rot = rot
   }
 
+  /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.
+  static func decomposed(tangentVector: Vector3) -> (w: Vector1, v: Vector2) {
+    (Vector1(tangentVector.x), Vector2(tangentVector.y, tangentVector.z))
+  }
+  
+  /// Creates a tangent vector given rotation (`w`) and translation (`v`) components.
+  static func tangentVector(w: Vector1, v: Vector2) -> Vector3 {
+    Vector3(w.x, v.x, v.y)
+  }
+}
+
+// MARK: Coordinate Operators
+public extension Pose2Coordinate {
+  /// Product of two transforms
+  @differentiable
+  static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
+    Pose2Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
+  }
+
+  /// Inverse of the rotation.
+  @differentiable
+  func inverse() -> Pose2Coordinate {
+    Pose2Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
+  }
+}
+
+extension Pose2Coordinate: ManifoldCoordinate {
+  /// p * Exp(q)
+  @differentiable(wrt: local)
+  public func retract(_ local: Vector3) -> Self {
+    // self * Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
+    let v = Vector2(local.y,local.z)
+    let w = local.x
+    if (abs(w) < 1e-10) {
+      return self * Pose2Coordinate(Rot2(w), v)
+    } else {
+      let R = Rot2(w)
+      let v_ortho = Rot2(.pi/2) * v // points towards rot center
+      let t_0 = (v_ortho - R.rotate(v_ortho))
+      let t = Vector2(t_0.x / w, t_0.y / w)
+      return self * Pose2Coordinate(R, t)
+    }
+  }
+  
+  /// Log(p^{-1} * q)
+  ///
+  /// Explanation
+  /// ====================
+  /// `global_p(local_p(q)) = q`
+  /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
+  /// This invariant will be tested in the tests.
+  ///
+  @differentiable(wrt: global)
+  public func localCoordinate(_ global: Self) -> Vector3 {
+    let p = self.inverse() * global
+//    return Vector3(d.rot.theta, d.t.x, d.t.y)
+    let R = p.rot
+    let t = p.t
+    let w = R.theta
+    if (abs(w) < 1e-10) {
+      return Vector3(w, t.x, t.y);
+    } else {
+      let c_1 = R.c-1.0, s = R.s
+      let det = c_1*c_1 + s*s
+      let p = Rot2(.pi/2) * (R.unrotate(t) - t)
+      let v = Vector2((w / det) * p.x, (w / det) * p.y)
+      return Vector3(w, v.x, v.y)
+    }
+  }
+}
+
+/// Methods related to the Lie group structure.
+extension Pose2 {
   /// The Adjoint group action of `self` on the tangent space, as a linear map.
   public var groupAdjoint: (Vector3) -> Vector3 {
     {
-      let (w, v) = Self.decomposed(tangentVector: $0)
-      let tPerp = Vector2(-t.y, t.x)
-      return Self.tangentVector(w: w, v: rot.rotate(v) - tPerp.scaled(by: w.x))
+      let (w, v) = Pose2Coordinate.decomposed(tangentVector: $0)
+      let tPerp = Vector2(-coordinate.t.y, coordinate.t.x)
+      return Pose2Coordinate.tangentVector(w: w, v: coordinate.rot.rotate(v) - tPerp.scaled(by: w.x))
     }
   }
 
@@ -196,29 +193,11 @@ extension Pose2 {
   public var groupAdjointMatrix: Tensor<Double> {
     Tensor(stacking: Pose2.tangentStandardBasis.map { groupAdjoint($0).tensor }).transposed()
   }
-
-  /// Group inverse.
-  @differentiable
-  public func inverse() -> Pose2 {
-    Pose2(self.rot.inverse(), self.rot.unrotate(-self.t))
-  }
-
 }
 
 extension Pose2: CustomStringConvertible {
   public var description: String {
-    "Pose2(rot: \(rot), t: \(t))"
+    "Pose2(rot: \(coordinate.rot), t: \(coordinate.t))"
   }
 }
 
-extension Pose2: Equatable {
-  public static func == (lhs: Pose2, rhs: Pose2) -> Bool {
-    (lhs.t, lhs.rot) == (rhs.t, rhs.rot)
-  }
-}
-
-/// Calculate relative pose 1T2 between two poses wT1 and wT2
-@differentiable
-public func between(_ wT1: Pose2, _ wT2: Pose2) -> Pose2 {
-  wT1.inverse() * wT2
-}

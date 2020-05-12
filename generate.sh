@@ -6,6 +6,13 @@
 #   1. Clone https://github.com/apple/swift to any directory.
 #   2. Let `SWIFT_BASE` be the directory where you cloned it.
 #   3. Run `./generate $SWIFT_BASE`.
+set -e
+
+if [[ $(uname) = 'Darwin' ]]; then
+  SED="gsed"
+else
+  SED="sed"
+fi
 
 SWIFT_BASE="$1"
 if [ -z "$SWIFT_BASE" ]
@@ -17,8 +24,8 @@ fi
 GYB="$SWIFT_BASE"/utils/gyb
 
 GENERATED_FILES=(
-  "Sources/SwiftFusion/Core/Vector.swift"
-  "Tests/SwiftFusionTests/Core/VectorTests.swift"
+  "Sources/SwiftFusion/Core/VectorN.swift"
+  "Tests/SwiftFusionTests/Core/VectorNTests.swift"
 )
 
 for GENERATED_FILE in "${GENERATED_FILES[@]}"
@@ -30,5 +37,5 @@ do
 EOF
 
   "$GYB" "$GENERATED_FILE.gyb" >> "$GENERATED_FILE"
-  sed -i'' "s|###sourceLocation(file: \"$(pwd)/|###sourceLocation(file: \"|" "$GENERATED_FILE"
+  $SED -i'' "s|###sourceLocation(file: \"$(pwd)/|###sourceLocation(file: \"|" "$GENERATED_FILE"
 done
