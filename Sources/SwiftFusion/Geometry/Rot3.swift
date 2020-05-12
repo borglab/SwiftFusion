@@ -88,15 +88,14 @@ public extension Matrix3Coordinate {
   init(_ r11 : Double, _ r12 : Double, _ r13 : Double,
               _ r21 : Double, _ r22 : Double, _ r23 : Double,
               _ r31 : Double, _ r32 : Double, _ r33 : Double) {
-    R = Tensor<Double>(shape: [3,3], scalars: [r11, r12, r13,
-                                               r21, r22, r23,
-                                               r31, r32, r33])
+    R = matrixTensor(
+      r11, r12, r13,
+      r21, r22, r23,
+      r31, r32, r33
+    )
   }
 
   /// Derivative of the above `init`.
-  // TODO: This is a workaround for the problem mentioned in
-  // https://github.com/apple/swift/pull/31723. When that fix is available, we can delete this
-  // method.
   @derivative(of: init)
   static func vjpInit(
     _ r11 : Double, _ r12 : Double, _ r13 : Double,
@@ -164,7 +163,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     let theta2 = local.squaredNorm
     let nearZero = theta2 <= .ulpOfOne
     let (wx, wy, wz) = (local.x, local.y, local.z)
-    let W = Tensor<Double>(shape: [3, 3], scalars: [0.0, -wz, wy, wz, 0.0, -wx, -wy, wx, 0.0])
+    let W = matrixTensor(0.0, -wz, wy, wz, 0.0, -wx, -wy, wx, 0.0)
     let I_3x3: Tensor<Double> = eye(rowCount: 3)
     if !nearZero {
       let theta = sqrtWrap(theta2)
@@ -221,4 +220,57 @@ extension Matrix3Coordinate: ManifoldCoordinate {
   init(_ tensor: Tensor<Double>) {
     R = tensor
   }
+}
+
+/// Returns a matrix tensor containing the given scalars.
+// TODO: This is a workaround for the problem mentioned in
+// https://github.com/apple/swift/pull/31723. When that fix is available, we can delete the
+// custom derivative of this function, and inline the function into its callsites.
+@differentiable
+fileprivate func matrixTensor(
+  _ r11 : Double, _ r12 : Double, _ r13 : Double,
+  _ r21 : Double, _ r22 : Double, _ r23 : Double,
+  _ r31 : Double, _ r32 : Double, _ r33 : Double
+) -> Tensor<Double> {
+  return Tensor<Double>(shape: [3,3], scalars: [r11, r12, r13,
+                                                r21, r22, r23,
+                                                r31, r32, r33])
+}
+
+/// Derivative of `matrixTensor`.
+// This works around a problem with differentiating array literals:
+// https://github.com/apple/swift/pull/31723
+@derivative(of: matrixTensor)
+fileprivate func vjpMatrixTensor(
+  _ r11 : Double, _ r12 : Double, _ r13 : Double,
+  _ r21 : Double, _ r22 : Double, _ r23 : Double,
+  _ r31 : Double, _ r32 : Double, _ r33 : Double
+) -> (
+  value: Tensor<Double>,
+  pullback: (Tensor<Double>) -> (
+    Double, Double, Double,
+    Double, Double, Double,
+    Double, Double, Double
+  )
+) {
+  func pullback(_ v: Tensor<Double>) -> (
+    Double, Double, Double,
+    Double, Double, Double,
+    Double, Double, Double
+  ) {
+    let s = v.scalars
+    return (
+      s[0], s[1], s[2],
+      s[3], s[4], s[5],
+      s[6], s[7], s[8]
+    )
+  }
+  return (
+    matrixTensor(
+      r11, r12, r13,
+      r21, r22, r23,
+      r31, r32, r33
+    ),
+    pullback
+  )
 }
