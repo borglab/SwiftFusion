@@ -26,7 +26,7 @@ public struct GaussianFactorGraph {
   
   public var b: Errors {
     get {
-      factors.map { $0.b }
+      Errors(factors.map { $0.b })
     }
   }
   
@@ -35,12 +35,12 @@ public struct GaussianFactorGraph {
   
   /// This calculates `A*x`, where x is the collection of key-values
   public static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
-    Array(lhs.factors.map { $0 * rhs })
+    return Errors(lhs.factors.map { $0 * rhs })
   }
   
   /// This calculates `A*x - b`, where x is the collection of key-values
   public func residual (_ val: VectorValues) -> Errors {
-    Array(self.factors.map { $0 * val - $0.b })
+    return Errors(self.factors.map { $0 * val - $0.b })
   }
   
   /// Convenience operator for adding factor
@@ -51,12 +51,29 @@ public struct GaussianFactorGraph {
   /// This calculates `A^T * r`, where r is the residual (error)
   public func atr(_ r: Errors) -> VectorValues {
     var vv = VectorValues()
-    for i in r.indices {
-      let JTr = factors[i].atr(r[i])
+    for i in r.values.indices {
+      let JTr = factors[i].atr(r.values[i])
       
       vv = vv + JTr
     }
     
     return vv
+  }
+}
+
+extension GaussianFactorGraph: MatrixLinearLeastSquaresObjective {
+  public typealias Variables = VectorValues
+  public typealias Residuals = Errors
+
+  public var bias: Residuals {
+    return b
+  }
+
+  public func productA(times x: Variables) -> Residuals {
+    return self * x
+  }
+
+  public func productATranspose(times r: Residuals) -> Variables {
+    return self.atr(r)
   }
 }

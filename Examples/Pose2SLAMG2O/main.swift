@@ -71,7 +71,7 @@ func main() {
     for i in 0..<val.count {
       dx.insert(i, Vector(zeros: 3))
     }
-    optimizer.optimize(gfg: gfg, initial: &dx)
+    optimizer.optimize(objective: gfg, initial: &dx)
     val.move(along: dx)
     print("Current error: \(problem.graph.error(val))")
   }

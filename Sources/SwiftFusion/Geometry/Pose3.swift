@@ -4,6 +4,10 @@ import TensorFlow
 public struct Vector6: EuclideanVectorSpace, VectorProtocol, KeyPathIterable, TangentStandardBasis {
   var w: Vector3
   var v: Vector3
+
+  public var squaredNorm: Double {
+    return w.squaredNorm + v.squaredNorm
+  }
 }
 
 extension Vector6 {

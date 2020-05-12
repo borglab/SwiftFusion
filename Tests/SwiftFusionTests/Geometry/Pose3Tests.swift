@@ -120,7 +120,7 @@ final class Pose3Tests: XCTestCase {
         dx.insert(i, Vector(zeros: 6))
       }
       
-      optimizer.optimize(gfg: gfg, initial: &dx)
+      optimizer.optimize(objective: gfg, initial: &dx)
       
       val.move(along: dx)
     }

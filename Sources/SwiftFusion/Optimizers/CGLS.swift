@@ -32,30 +32,31 @@ public class CGLS {
   /// Optimize the Gaussian Factor Graph with a initial estimate
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
-  public func optimize(gfg: GaussianFactorGraph, initial: inout VectorValues) {
+  public func optimize<Objective: MatrixLinearLeastSquaresObjective>(
+    objective: Objective,
+    initial: inout Objective.Variables
+  ) {
     step += 1
-    
-    let b = gfg.b
-    
-    var x: VectorValues = initial // x(0), the initial value
-    var r: Errors = b - gfg * x // r(0) = b - A * x(0), the residual
-    var p = gfg.atr(r) // p(0) = s(0) = A^T * r(0), residual in value space
+
+    var x: Objective.Variables = initial // x(0), the initial value
+    var r: Objective.Residuals = objective.residuals(at: x) // r(0) = b - A * x(0), the residual
+    var p = objective.productATranspose(times: r) // p(0) = s(0) = A^T * r(0), residual in value space
     var s = p // residual of normal equations
-    var gamma = s.norm // γ(0) = ||s(0)||^2
+    var gamma = s.squaredNorm // γ(0) = ||s(0)||^2
     
     while step < max_iteration {
-      let q = gfg * p // q(k) = A * p(k)
-      let alpha: Double = gamma / q.norm // α(k) = γ(k)/||q(k)||^2
-      x = x + (alpha * p) // x(k+1) = x(k) + α(k) * p(k)
-      r = r + (-alpha) * q // r(k+1) = r(k) - α(k) * q(k)
-      s = gfg.atr(r) // s(k+1) = A.T * r(k+1)
+      let q = objective.productA(times: p) // q(k) = A * p(k)
+      let alpha: Double = gamma / q.squaredNorm // α(k) = γ(k)/||q(k)||^2
+      x = x + p.scaled(by: alpha) // x(k+1) = x(k) + α(k) * p(k)
+      r = r + q.scaled(by: -alpha) // r(k+1) = r(k) - α(k) * q(k)
+      s = objective.productATranspose(times: r) // s(k+1) = A.T * r(k+1)
       
-      let gamma_next = s.norm // γ(k+1) = ||s(k+1)||^2
+      let gamma_next = s.squaredNorm // γ(k+1) = ||s(k+1)||^2
       let beta: Double = gamma_next/gamma // β(k) = γ(k+1)/γ(k)
       gamma = gamma_next
-      p = s + beta * p // p(k+1) = s(k+1) + β(k) * p(k)
+      p = s + p.scaled(by: beta) // p(k+1) = s(k+1) + β(k) * p(k)
       
-      if (alpha * p).norm < precision {
+      if alpha * alpha * p.squaredNorm < precision {
         break
       }
       step += 1

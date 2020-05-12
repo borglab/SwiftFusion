@@ -26,7 +26,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     
     print("gfg = \(gfg)")
     print("error = \(gfg.residual(vv).norm)")
-    assertEqual((gfg.residual(vv))[0].tensor, expected, accuracy: 1e-6)
+    assertEqual(gfg.residual(vv).values[0].tensor, expected, accuracy: 1e-6)
   }
   
   /// test CGLS iterative solver
@@ -65,7 +65,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
         dx.insert(i, Vector(zeros: 3))
       }
       
-      optimizer.optimize(gfg: gfg, initial: &dx)
+      optimizer.optimize(objective: gfg, initial: &dx)
       
       val.move(along: dx)
     }
