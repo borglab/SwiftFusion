@@ -1,7 +1,1 @@
-import XCTest
-
-import SwiftFusionTests
-
-var tests = [XCTestCaseEntry]()
-tests += SwiftFusionTests.allTests()
-XCTMain(tests)
+fatalError("Run the tests with `swift test --enable-test-discovery`.")

@@ -51,12 +51,6 @@ final class G2OReaderTests: XCTestCase {
 
   /// Data directory for these tests.
   let dataDirectory = URL.sourceFileDirectory().appendingPathComponent("Data")
-
-  static var allTests = [
-    ("testLoadSimple", testLoadSimple),
-    ("testLoadNotExist", testLoadNotExist),
-    ("testLoadMalformed", testLoadMalformed)
-  ]
 }
 
 /// Stores a g2o dataset as an array of guesses and measurements.

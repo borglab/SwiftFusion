@@ -37,9 +37,4 @@ final class GaussianFactorGraphTests: XCTestCase {
     let actual = A * x
     XCTAssertEqual(expected, actual)
   }
-
-  static var allTests = [
-    ("testTransposeMultiplication", testTransposeMultiplication),
-    ("testMultiplication", testMultiplication)
-  ]
 }
