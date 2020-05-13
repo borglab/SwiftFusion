@@ -106,14 +106,4 @@ final class Rot2Tests: XCTestCase {
 
     XCTAssertEqual(R1.theta, R2.theta, accuracy: 1e-5)
   }
-
-  static var allTests = [
-    ("testBetweenIdentitiesTrivial", testBetweenIdentitiesTrivial),
-    ("testBetweenDerivatives", testBetweenDerivatives),
-    ("testThetaDerivative", testThetaDerivative),
-    ("testSinDerivative", testSinDerivative),
-    ("testCosDerivative", testCosDerivative),
-    ("testThetaInitDerivative", testThetaInitDerivative),
-    ("testCosSinInitDerivative", testCosSinInitDerivative),
-  ]
 }

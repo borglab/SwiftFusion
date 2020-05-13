@@ -19,8 +19,4 @@ final class CGLSTests: XCTestCase {
       assertEqual(x[k].tensor, expected[k].tensor, accuracy: 1e-6)
     }
   }
-
-  static var allTests = [
-    ("testCGLSSolver", testCGLSSolver),
-  ]
 }

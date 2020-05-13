@@ -4,13 +4,6 @@ import TensorFlow
 import SwiftFusion
 
 class TensorFlowMatrixTests: XCTestCase {
-    static var allTests = [
-        ("test_concat", testConcat),
-        ("test_log", test_log),
-        ("test_neg", test_neg),
-        ("test_squared", test_squared),
-    ]
-
     //--------------------------------------------------------------------------
     // testConcat
     func testConcat() {

@@ -5,10 +5,6 @@ import XCTest
 import SwiftFusion
 
 class JacobianTests: XCTestCase {
-  static var allTests = [
-    ("testJacobian2D", testJacobian2D)
-  ]
-
   /// tests the Jacobian of a 2D function
   func testJacobian2D() {
     let p1 = Vector2(0, 1), p2 = Vector2(0,0), p3 = Vector2(0,0);

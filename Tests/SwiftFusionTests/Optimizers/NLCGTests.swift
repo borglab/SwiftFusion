@@ -58,8 +58,4 @@ final class NLCGTests: XCTestCase {
     // Test condition: P_5 should be identical to P_1 (close loop)
     XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
-
-  static var allTests = [
-    ("testPose2SLAMWithSGD", testPose2SLAMWithNLCG),
-  ]
 }

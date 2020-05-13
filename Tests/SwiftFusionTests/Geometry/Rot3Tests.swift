@@ -114,9 +114,4 @@ final class Rot3Tests: XCTestCase {
     
     assertAllKeyPathEqual(actual, expected, accuracy: 1e-5)
   }
-  
-  static var allTests = [
-    ("testConstructorEquality", testConstructorEquality),
-    ("testConstructorInequal", testConstructorInequal),
-  ]
 }
