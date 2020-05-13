@@ -29,27 +29,25 @@ public class CGLS {
     max_iteration = maxiter
   }
   
-  /// Optimize the Gaussian Factor Graph with a initial estimate
+  /// Optimize the function `||f(x)||^2`, using CGLS, starting at `initial`.
+  ///
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
-  public func optimize<Objective: MatrixLinearLeastSquaresObjective>(
-    objective: Objective,
-    initial: inout Objective.Variables
-  ) {
+  public func optimize<F: DecomposedAffineFunction>(_ f: F, initial: inout F.Input) {
     step += 1
 
-    var x: Objective.Variables = initial // x(0), the initial value
-    var r: Objective.Residuals = objective.residuals(at: x) // r(0) = b - A * x(0), the residual
-    var p = objective.productATranspose(times: r) // p(0) = s(0) = A^T * r(0), residual in value space
+    var x: F.Input = initial // x(0), the initial value
+    var r: F.Output = f(x).scaled(by: -1) // r(0) = -b - A * x(0), the residual
+    var p = f.applyLinearAdjoint(r) // p(0) = s(0) = A^T * r(0), residual in value space
     var s = p // residual of normal equations
     var gamma = s.squaredNorm // γ(0) = ||s(0)||^2
     
     while step < max_iteration {
-      let q = objective.productA(times: p) // q(k) = A * p(k)
+      let q = f.applyLinearForward(p) // q(k) = A * p(k)
       let alpha: Double = gamma / q.squaredNorm // α(k) = γ(k)/||q(k)||^2
       x = x + p.scaled(by: alpha) // x(k+1) = x(k) + α(k) * p(k)
       r = r + q.scaled(by: -alpha) // r(k+1) = r(k) - α(k) * q(k)
-      s = objective.productATranspose(times: r) // s(k+1) = A.T * r(k+1)
+      s = f.applyLinearAdjoint(r) // s(k+1) = A.T * r(k+1)
       
       let gamma_next = s.squaredNorm // γ(k+1) = ||s(k+1)||^2
       let beta: Double = gamma_next/gamma // β(k) = γ(k+1)/γ(k)

@@ -61,19 +61,23 @@ public struct GaussianFactorGraph {
   }
 }
 
-extension GaussianFactorGraph: MatrixLinearLeastSquaresObjective {
-  public typealias Variables = VectorValues
-  public typealias Residuals = Errors
+extension GaussianFactorGraph: DecomposedAffineFunction {
+  public typealias Input = VectorValues
+  public typealias Output = Errors
 
-  public var bias: Residuals {
-    return b
+  public func callAsFunction(_ x: Input) -> Output {
+    return residual(x)
   }
 
-  public func productA(times x: Variables) -> Residuals {
+  public func applyLinearForward(_ x: Input) -> Output {
     return self * x
   }
 
-  public func productATranspose(times r: Residuals) -> Variables {
-    return self.atr(r)
+  public func applyLinearAdjoint(_ y: Output) -> Input {
+    return self.atr(y)
+  }
+
+  public var bias: Output {
+    return b.scaled(by: -1)
   }
 }

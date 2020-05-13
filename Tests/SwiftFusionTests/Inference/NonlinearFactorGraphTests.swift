@@ -65,7 +65,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
         dx.insert(i, Vector(zeros: 3))
       }
       
-      optimizer.optimize(objective: gfg, initial: &dx)
+      optimizer.optimize(gfg, initial: &dx)
       
       val.move(along: dx)
     }
