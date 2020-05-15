@@ -2,6 +2,8 @@ import TensorFlow
 
 /// Generic Lie Group protocol
 public protocol LieGroup: Manifold {
+  init()
+
   @differentiable(wrt: (lhs, rhs))
   static func * (_ lhs: Self, _ rhs: Self) -> Self
   

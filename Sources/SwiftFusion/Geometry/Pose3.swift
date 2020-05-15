@@ -4,6 +4,10 @@ import TensorFlow
 public struct Vector6: EuclideanVectorSpace, VectorProtocol, KeyPathIterable, TangentStandardBasis {
   var w: Vector3
   var v: Vector3
+
+  public var squaredNorm: Double {
+    return w.squaredNorm + v.squaredNorm
+  }
 }
 
 extension Vector6 {
@@ -49,6 +53,11 @@ public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
 
   public mutating func move(along direction: Coordinate.LocalCoordinate) {
     coordinateStorage = coordinateStorage.retract(direction)
+  }
+
+  /// Creates the identity.
+  public init() {
+    self.init(Rot3(), Vector3.zero)
   }
 
   /// Creates a `Pose3` with rotation `r` and translation `t`.

@@ -18,6 +18,11 @@ public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
 
   // MARK: - Convenience initializers and computed properties
 
+  /// Creates the identity.
+  public init() {
+    self.init(0)
+  }
+
   // Construct from theta.
   @differentiable
   public init(_ theta: Double) {
