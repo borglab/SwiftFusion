@@ -192,6 +192,8 @@ extension Vector: VectorProtocol {
   }
 }
 
+extension Vector: EuclideanVectorSpace {}
+
 /// Conversion to tensor.
 extension Vector {
   /// Returns this vector as a `Tensor<Double>`.

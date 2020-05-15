@@ -79,6 +79,11 @@ public struct Pose2: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
 
 // MARK: Convenience initializers
 extension Pose2 {
+  /// Creates the identity.
+  public init() {
+    self.init(0, 0, 0)
+  }
+
   /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
   @differentiable
   public init(_ x: Double, _ y: Double, _ theta: Double) {
