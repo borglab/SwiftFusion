@@ -20,10 +20,10 @@ public protocol BipartiteGraph: GraphProtocol
   where VertexId == BipartiteGraphVertexId<LeftVertexId, RightVertexId>
 {
   /// Identifies a vertex in the "left" half of the partition.
-  associatedtype LeftVertexId
+  associatedtype LeftVertexId: Equatable
 
   /// Identifies a vertex in the "right" half of the partition.
-  associatedtype RightVertexId
+  associatedtype RightVertexId: Equatable
 }
 
 /// Identifies an arbitrary vertex in a `BipartiteGraph`.

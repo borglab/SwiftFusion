@@ -15,7 +15,7 @@
 /// An assignment of values to an indexed set of variables (e.g. the variables in a `FactorGraph`).
 public protocol IndexedValues {
   /// A collection of variable indices.
-  associatedtype Indices: Collection where Indices.Collection: Equatable
+  associatedtype Indices: Collection where Indices.Element: Equatable
 
   /// Identifies a variable.
   typealias Index = Indices.Element
