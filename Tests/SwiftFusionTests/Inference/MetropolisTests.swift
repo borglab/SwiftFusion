@@ -4,9 +4,8 @@ import PenguinStructures
 import TensorFlow
 import XCTest
 
-/// A factor graph representation optimized for running the Metropolis algorithm with proposals
-/// that update a small number of variables.
-struct PoseSLAMFactorGraphForSmallProposals<Pose: LieGroup & UpdatedViewable>: FactorGraph {
+/// A factor graph tailored for a specific PoseSLAM problem.
+struct PoseSLAMFactorGraph<Pose: LieGroup & UpdatedViewable>: FactorGraph {
 
   // MARK: - Graph strucutre.
 
@@ -69,28 +68,22 @@ struct PoseSLAMFactorGraphForSmallProposals<Pose: LieGroup & UpdatedViewable>: F
 
   /// A collection of values of the variables in the factor graph.
   struct Variables: IndexedVariables, UpdatedViewable {
-    /// Values for all the variables, stored contiguously in memory.
-    var values: [Pose]
+    /// Values for all the variables.
+    var poses: [Pose]
 
     /// Creates `Variables` from the given `poses`.
     init(_ poses: [Pose]) {
-      self.values = poses
-      self.overlay = Update(updates: [])
+      self.poses = poses
     }
 
     /// Returns the value at `index`.
     subscript(index: Int) -> Pose {
-      for (updatedIndex, updateValue) in overlay.updates {
-        if updatedIndex == index {
-          return values[index].updatedView(updateValue)
-        }
-      }
-      return values[index]
+      return poses[index]
     }
 
     /// The indices of all the variables.
     var indices: Array<Pose>.Indices {
-      return values.indices
+      return poses.indices
     }
 
     /// An update to the variables.
@@ -101,30 +94,12 @@ struct PoseSLAMFactorGraphForSmallProposals<Pose: LieGroup & UpdatedViewable>: F
       }
     }
 
-    /// An update overlaid on top of `values`.
-    ///
-    /// Reads take this update into account. This allows an `updatedView` implementation whose
-    /// performance is independent of `variableCount`.
-    var overlay: Update
-
-    /// Creates `Variables` from the given `values` and `overlay`.
-    init(values: [Pose], overlay: Update) {
-      self.values = values
-      self.overlay = overlay
-    }
-
     func updatedView(_ update: Update) -> Variables {
-      return Variables(
-        values: self.values,
-        overlay: Update(updates: self.overlay.updates + update.updates)
-      )
-    }
-
-    mutating func update(_ update: Update) {
-      precondition(self.overlay.updates.count == 0)
+      var copy = self
       for (updatedIndex, updateValue) in update.updates {
-        self.values[updatedIndex] = self.values[updatedIndex].updatedView(updateValue)
+        copy.poses[updatedIndex] = self.poses[updatedIndex].updatedView(updateValue)
       }
+      return copy
     }
   }
 
@@ -167,7 +142,7 @@ extension Pose2: UpdatedViewable {
 }
 
 /// An example proposal to use in the test.
-extension PoseSLAMFactorGraphForSmallProposals where Pose == Pose2 {
+extension PoseSLAMFactorGraph where Pose == Pose2 {
   /// Selects a variable uniformly at random, and some of the "nearby" variables, and applies the
   /// same random movement to all of them.
   func exampleProposal<Generator: RandomNumberGenerator>(
@@ -203,7 +178,7 @@ final class MetropolisTests: XCTestCase {
     var generator = ThreefryRandomNumberGenerator(seed: [42])
 
     // Construct a graph,  and initial values for variables.
-    var graph = PoseSLAMFactorGraphForSmallProposals<Pose2>(variableCount: 1)
+    var graph = PoseSLAMFactorGraph<Pose2>(variableCount: 1)
     graph.add(0, prior: Pose2(0, 0, 0))
     var values = graph.variablesZero
 
@@ -218,7 +193,7 @@ final class MetropolisTests: XCTestCase {
         using: &generator
       )
       if let update = maybeUpdate {
-        values.update(update)
+        values = values.updatedView(update)
       }
       samples.append(values[0])
     }
@@ -253,7 +228,7 @@ final class MetropolisTests: XCTestCase {
     var generator = ThreefryRandomNumberGenerator(seed: [42])
 
     // Construct a graph.
-    var graph = PoseSLAMFactorGraphForSmallProposals<Pose2>(variableCount: 5)
+    var graph = PoseSLAMFactorGraph<Pose2>(variableCount: 5)
     graph.add(0, prior: Pose2(0, 0, 0))
     graph.add(1, 0, between: Pose2(2.0, 0.0, .pi / 2))
     graph.add(2, 1, between: Pose2(2.0, 0.0, .pi / 2))
@@ -273,7 +248,7 @@ final class MetropolisTests: XCTestCase {
         using: &generator
       )
       if let update = maybeUpdate {
-        values.update(update)
+        values = values.updatedView(update)
         acceptanceCount += 1
       }
     }
