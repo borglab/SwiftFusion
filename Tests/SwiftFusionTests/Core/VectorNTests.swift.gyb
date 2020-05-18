@@ -8,27 +8,6 @@ import SwiftFusion
 % dims = [1, 2, 3]
 
 class VectorNTests: XCTestCase {
-  static var allTests = [
-    % for dim in dims:
-    ("testVector${dim}Init", testVector${dim}Init),
-    ("testVector${dim}Equality", testVector${dim}Equality),
-    ("testVector${dim}Norm", testVector${dim}Norm),
-    ("testVector${dim}SquaredNorm", testVector${dim}SquaredNorm),
-    ("testVector${dim}Add", testVector${dim}Add),
-    ("testVector${dim}Subtract", testVector${dim}Subtract),
-    ("testVector${dim}ScalarMultiply", testVector${dim}ScalarMultiply),
-    ("testVector${dim}Negate", testVector${dim}Negate),
-    ("testVector${dim}Squared", testVector${dim}Squared),
-    ("testVector${dim}Sum", testVector${dim}Sum),
-    ("testVector${dim}TangentVector", testVector${dim}TangentVector),
-    ("testVector${dim}Move", testVector${dim}Move),
-    ("testVector${dim}ConvertToVector", testVector${dim}ConvertToVector),
-    ("testVector${dim}ConvertFromVector", testVector${dim}ConvertFromVector),
-    ("testVector${dim}TensorInit", testVector${dim}TensorInit),
-    ("testVector${dim}TensorExtract", testVector${dim}TensorExtract)${',' if dim < dims[-1] else ''}
-    % end
-  ]
-
   % for dim in dims:
   % coordinates = ['x', 'y', 'z'][0:dim]
   % values1 = range(1, dim + 1)
@@ -40,6 +19,11 @@ class VectorNTests: XCTestCase {
     % for (index, coordinate) in enumerate(coordinates):
     XCTAssertEqual(vector1.${coordinate}, ${values1[index]})
     % end
+  }
+
+  /// Test that the vector has the correct dimension.
+  func testVector${dim}Dimension() {
+    XCTAssertEqual(Vector${dim}.dimension, ${dim})
   }
 
   /// Test that vector norm works.
