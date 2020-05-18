@@ -11,69 +11,19 @@ import SwiftFusion
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 9)
 
 class VectorNTests: XCTestCase {
-  static var allTests = [
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 13)
-    ("testVector1Init", testVector1Init),
-    ("testVector1Equality", testVector1Equality),
-    ("testVector1Norm", testVector1Norm),
-    ("testVector1SquaredNorm", testVector1SquaredNorm),
-    ("testVector1Add", testVector1Add),
-    ("testVector1Subtract", testVector1Subtract),
-    ("testVector1ScalarMultiply", testVector1ScalarMultiply),
-    ("testVector1Negate", testVector1Negate),
-    ("testVector1Squared", testVector1Squared),
-    ("testVector1Sum", testVector1Sum),
-    ("testVector1TangentVector", testVector1TangentVector),
-    ("testVector1Move", testVector1Move),
-    ("testVector1ConvertToVector", testVector1ConvertToVector),
-    ("testVector1ConvertFromVector", testVector1ConvertFromVector),
-    ("testVector1TensorInit", testVector1TensorInit),
-    ("testVector1TensorExtract", testVector1TensorExtract),
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 13)
-    ("testVector2Init", testVector2Init),
-    ("testVector2Equality", testVector2Equality),
-    ("testVector2Norm", testVector2Norm),
-    ("testVector2SquaredNorm", testVector2SquaredNorm),
-    ("testVector2Add", testVector2Add),
-    ("testVector2Subtract", testVector2Subtract),
-    ("testVector2ScalarMultiply", testVector2ScalarMultiply),
-    ("testVector2Negate", testVector2Negate),
-    ("testVector2Squared", testVector2Squared),
-    ("testVector2Sum", testVector2Sum),
-    ("testVector2TangentVector", testVector2TangentVector),
-    ("testVector2Move", testVector2Move),
-    ("testVector2ConvertToVector", testVector2ConvertToVector),
-    ("testVector2ConvertFromVector", testVector2ConvertFromVector),
-    ("testVector2TensorInit", testVector2TensorInit),
-    ("testVector2TensorExtract", testVector2TensorExtract),
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 13)
-    ("testVector3Init", testVector3Init),
-    ("testVector3Equality", testVector3Equality),
-    ("testVector3Norm", testVector3Norm),
-    ("testVector3SquaredNorm", testVector3SquaredNorm),
-    ("testVector3Add", testVector3Add),
-    ("testVector3Subtract", testVector3Subtract),
-    ("testVector3ScalarMultiply", testVector3ScalarMultiply),
-    ("testVector3Negate", testVector3Negate),
-    ("testVector3Squared", testVector3Squared),
-    ("testVector3Sum", testVector3Sum),
-    ("testVector3TangentVector", testVector3TangentVector),
-    ("testVector3Move", testVector3Move),
-    ("testVector3ConvertToVector", testVector3ConvertToVector),
-    ("testVector3ConvertFromVector", testVector3ConvertFromVector),
-    ("testVector3TensorInit", testVector3TensorInit),
-    ("testVector3TensorExtract", testVector3TensorExtract)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 30)
-  ]
-
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 36)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 15)
 
   /// Test that initializing a vector from coordinate values works.
   func testVector1Init() {
     let vector1 = Vector1(1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 41)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 20)
     XCTAssertEqual(vector1.x, 1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 43)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 22)
+  }
+
+  /// Test that the vector has the correct dimension.
+  func testVector1Dimension() {
+    XCTAssertEqual(Vector1.dimension, 1)
   }
 
   /// Test that vector norm works.
@@ -101,9 +51,9 @@ class VectorNTests: XCTestCase {
     let vector1 = Vector1(1)
     let vector2 = Vector1(2)
     let sum = vector1 + vector2
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 71)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 55)
     XCTAssertEqual(sum.x, 3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 73)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 57)
   }
 
   /// Test that vector subtraction works.
@@ -111,36 +61,36 @@ class VectorNTests: XCTestCase {
     let vector1 = Vector1(1)
     let vector2 = Vector1(2)
     let difference = vector1 - vector2
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 81)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 65)
     XCTAssertEqual(difference.x, -1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 67)
   }
 
   /// Test that vector scalar multiplication works.
   func testVector1ScalarMultiply() {
     let vector1 = Vector1(1)
     let scaled = vector1.scaled(by: 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 90)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 74)
     XCTAssertEqual(scaled.x, 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 76)
   }
 
   /// Test that vector negation works.
   func testVector1Negate() {
     let vector1 = Vector1(1)
     let negated = -vector1
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 99)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
     XCTAssertEqual(negated.x, -1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 101)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 85)
   }
 
   /// Test that vector squaring works.
   func testVector1Squared() {
     let vector1 = Vector1(1)
     let squared = vector1.squared()
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 108)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
     XCTAssertEqual(squared.x, 1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 110)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 94)
   }
 
   /// Test that vector sum works.
@@ -161,9 +111,9 @@ class VectorNTests: XCTestCase {
     let vector2 = Vector1(2)
     var moved = vector1
     moved.move(along: vector2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 131)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 115)
     XCTAssertEqual(moved.x, 3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 133)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 117)
   }
 
   /// Tests that conversion to `Vector` works.
@@ -196,16 +146,21 @@ class VectorNTests: XCTestCase {
     XCTAssertEqual(vector1.tensor, tensor1)
   }
 
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 36)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 15)
 
   /// Test that initializing a vector from coordinate values works.
   func testVector2Init() {
     let vector1 = Vector2(1, 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 41)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 20)
     XCTAssertEqual(vector1.x, 1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 41)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 20)
     XCTAssertEqual(vector1.y, 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 43)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 22)
+  }
+
+  /// Test that the vector has the correct dimension.
+  func testVector2Dimension() {
+    XCTAssertEqual(Vector2.dimension, 2)
   }
 
   /// Test that vector norm works.
@@ -233,11 +188,11 @@ class VectorNTests: XCTestCase {
     let vector1 = Vector2(1, 2)
     let vector2 = Vector2(3, 4)
     let sum = vector1 + vector2
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 71)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 55)
     XCTAssertEqual(sum.x, 4)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 71)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 55)
     XCTAssertEqual(sum.y, 6)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 73)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 57)
   }
 
   /// Test that vector subtraction works.
@@ -245,44 +200,44 @@ class VectorNTests: XCTestCase {
     let vector1 = Vector2(1, 2)
     let vector2 = Vector2(3, 4)
     let difference = vector1 - vector2
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 81)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 65)
     XCTAssertEqual(difference.x, -2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 81)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 65)
     XCTAssertEqual(difference.y, -2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 67)
   }
 
   /// Test that vector scalar multiplication works.
   func testVector2ScalarMultiply() {
     let vector1 = Vector2(1, 2)
     let scaled = vector1.scaled(by: 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 90)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 74)
     XCTAssertEqual(scaled.x, 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 90)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 74)
     XCTAssertEqual(scaled.y, 4)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 76)
   }
 
   /// Test that vector negation works.
   func testVector2Negate() {
     let vector1 = Vector2(1, 2)
     let negated = -vector1
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 99)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
     XCTAssertEqual(negated.x, -1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 99)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
     XCTAssertEqual(negated.y, -2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 101)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 85)
   }
 
   /// Test that vector squaring works.
   func testVector2Squared() {
     let vector1 = Vector2(1, 2)
     let squared = vector1.squared()
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 108)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
     XCTAssertEqual(squared.x, 1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 108)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
     XCTAssertEqual(squared.y, 4)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 110)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 94)
   }
 
   /// Test that vector sum works.
@@ -303,11 +258,11 @@ class VectorNTests: XCTestCase {
     let vector2 = Vector2(3, 4)
     var moved = vector1
     moved.move(along: vector2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 131)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 115)
     XCTAssertEqual(moved.x, 4)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 131)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 115)
     XCTAssertEqual(moved.y, 6)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 133)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 117)
   }
 
   /// Tests that conversion to `Vector` works.
@@ -340,18 +295,23 @@ class VectorNTests: XCTestCase {
     XCTAssertEqual(vector1.tensor, tensor1)
   }
 
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 36)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 15)
 
   /// Test that initializing a vector from coordinate values works.
   func testVector3Init() {
     let vector1 = Vector3(1, 2, 3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 41)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 20)
     XCTAssertEqual(vector1.x, 1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 41)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 20)
     XCTAssertEqual(vector1.y, 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 41)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 20)
     XCTAssertEqual(vector1.z, 3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 43)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 22)
+  }
+
+  /// Test that the vector has the correct dimension.
+  func testVector3Dimension() {
+    XCTAssertEqual(Vector3.dimension, 3)
   }
 
   /// Test that vector norm works.
@@ -379,13 +339,13 @@ class VectorNTests: XCTestCase {
     let vector1 = Vector3(1, 2, 3)
     let vector2 = Vector3(4, 5, 6)
     let sum = vector1 + vector2
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 71)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 55)
     XCTAssertEqual(sum.x, 5)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 71)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 55)
     XCTAssertEqual(sum.y, 7)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 71)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 55)
     XCTAssertEqual(sum.z, 9)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 73)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 57)
   }
 
   /// Test that vector subtraction works.
@@ -393,52 +353,52 @@ class VectorNTests: XCTestCase {
     let vector1 = Vector3(1, 2, 3)
     let vector2 = Vector3(4, 5, 6)
     let difference = vector1 - vector2
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 81)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 65)
     XCTAssertEqual(difference.x, -3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 81)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 65)
     XCTAssertEqual(difference.y, -3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 81)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 65)
     XCTAssertEqual(difference.z, -3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 67)
   }
 
   /// Test that vector scalar multiplication works.
   func testVector3ScalarMultiply() {
     let vector1 = Vector3(1, 2, 3)
     let scaled = vector1.scaled(by: 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 90)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 74)
     XCTAssertEqual(scaled.x, 2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 90)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 74)
     XCTAssertEqual(scaled.y, 4)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 90)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 74)
     XCTAssertEqual(scaled.z, 6)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 76)
   }
 
   /// Test that vector negation works.
   func testVector3Negate() {
     let vector1 = Vector3(1, 2, 3)
     let negated = -vector1
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 99)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
     XCTAssertEqual(negated.x, -1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 99)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
     XCTAssertEqual(negated.y, -2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 99)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 83)
     XCTAssertEqual(negated.z, -3)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 101)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 85)
   }
 
   /// Test that vector squaring works.
   func testVector3Squared() {
     let vector1 = Vector3(1, 2, 3)
     let squared = vector1.squared()
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 108)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
     XCTAssertEqual(squared.x, 1)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 108)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
     XCTAssertEqual(squared.y, 4)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 108)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 92)
     XCTAssertEqual(squared.z, 9)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 110)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 94)
   }
 
   /// Test that vector sum works.
@@ -459,13 +419,13 @@ class VectorNTests: XCTestCase {
     let vector2 = Vector3(4, 5, 6)
     var moved = vector1
     moved.move(along: vector2)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 131)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 115)
     XCTAssertEqual(moved.x, 5)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 131)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 115)
     XCTAssertEqual(moved.y, 7)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 131)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 115)
     XCTAssertEqual(moved.z, 9)
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 133)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 117)
   }
 
   /// Tests that conversion to `Vector` works.
@@ -498,5 +458,5 @@ class VectorNTests: XCTestCase {
     XCTAssertEqual(vector1.tensor, tensor1)
   }
 
-// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 166)
+// ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 150)
 }

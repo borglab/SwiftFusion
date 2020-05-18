@@ -97,6 +97,11 @@ extension Vector${dim}: VectorConvertible {
   }
 }
 
+/// Conformance to `FixedDimensionVector`.
+extension Vector${dim}: FixedDimensionVector {
+  public static var dimension: Int { return ${dim} }
+}
+
 /// Conversion to/from tensor.
 extension Vector${dim} {
   /// A `Tensor` with shape `[${dim}]` whose elements are the elements of `self`.
