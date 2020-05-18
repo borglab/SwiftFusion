@@ -2,10 +2,22 @@
 
 Differentiable Swift based sensor fusion library.
 
-## Running benchmarks
+## Run tests
+
+```
+swift test
+```
+
+## Run benchmarks
 
 ```
 swift run -c release -Xswiftc -cross-module-optimization Benchmarks
+```
+
+## Update dependency versions
+
+```
+swift package update
 ```
 
 # LICENSE
