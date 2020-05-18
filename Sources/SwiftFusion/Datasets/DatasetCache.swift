@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import Foundation
+#if !os(macOS)
 import FoundationNetworking
+#endif
 
 /// Dictionary from dataset id to dataset url.
 fileprivate let datasets = [
