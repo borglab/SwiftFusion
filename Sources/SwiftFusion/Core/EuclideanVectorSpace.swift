@@ -9,3 +9,11 @@ public protocol EuclideanVectorSpace: Differentiable, VectorProtocol
   /// The squared Euclidean norm of `self`.
   var squaredNorm: Double { get }
 }
+
+/// Convenient operators on Euclidean vector spaces.
+extension EuclideanVectorSpace {
+  /// The Euclidean norm of `self`.
+  public var norm: Double {
+    return sqrt(squaredNorm)
+  }
+}

@@ -48,11 +48,6 @@ public struct VectorValues: KeyPathIterable {
     }
   }
   
-  /// L2 norm of the VectorValues
-  var norm: Double {
-    self._values.map { $0.squared().sum() }.reduce(0.0, { $0 + $1 })
-  }
-  
   /// Insert a key value pair
   public mutating func insert(_ key: Int, _ val: Vector) {
     assert(_indices[key] == nil)
@@ -61,26 +56,20 @@ public struct VectorValues: KeyPathIterable {
     self._values.append(val)
   }
   
-  /// VectorValues + Scalar
-  static func + (_ lhs: Self, _ rhs: Self.ScalarType) -> Self {
-    var result = lhs
-    let _ = result._values.indices.map { result._values[$0] += rhs }
-    return result
-  }
-
-  /// Scalar * VectorValues
-  static func * (_ lhs: Self.ScalarType, _ rhs: Self) -> Self {
-    var result = rhs
-    let _ = result._values.indices.map { result._values[$0] *= lhs }
-    return result
-  }
 }
 
-extension VectorValues: Differentiable {
+extension VectorValues: EuclideanVectorSpace {
+
+  // NOTE: Most of these are boilerplate that should be synthesized automatically. However, the
+  // current synthesis functionality can't deal with the `_indices` property. So we have to
+  // implement it manually for now.
+
+  // MARK: - Differentiable conformance.
+
   public typealias TangentVector = Self
-}
 
-extension VectorValues: AdditiveArithmetic {
+  // MARK: - AdditiveArithmetic conformance.
+
   public static func += (_ lhs: inout VectorValues, _ rhs: VectorValues) {
     for key in rhs.keys {
       let rhsVector = rhs[key]
@@ -110,6 +99,53 @@ extension VectorValues: AdditiveArithmetic {
   public static var zero: VectorValues {
     return VectorValues()
   }
+
+  // MARK: - VectorProtocol conformance
+
+  public typealias VectorValuesSpaceScalar = Double
+
+  public mutating func add(_ x: Double) {
+    for index in _values.indices {
+      _values[index] += x
+    }
+  }
+
+  public func adding(_ x: Double) -> VectorValues {
+    var result = self
+    result.add(x)
+    return result
+  }
+
+  public mutating func subtract(_ x: Double) {
+    for index in _values.indices {
+      _values[index] -= x
+    }
+  }
+
+  public func subtracting(_ x: Double) -> VectorValues {
+    var result = self
+    result.subtract(x)
+    return result
+  }
+
+  public mutating func scale(by scalar: Double) {
+    for index in _values.indices {
+      _values[index] *= scalar
+    }
+  }
+
+  public func scaled(by scalar: Double) -> VectorValues {
+    var result = self
+    result.scale(by: scalar)
+    return result
+  }
+
+  // MARK: - Additional EuclideanVectorSpace requirements.
+
+  public var squaredNorm: Double {
+    self._values.map { $0.squared().sum() }.reduce(0.0, { $0 + $1 })
+  }
+
 }
 
 extension VectorValues: CustomStringConvertible {
