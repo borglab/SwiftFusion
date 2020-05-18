@@ -99,6 +99,11 @@ extension Vector1: VectorConvertible {
   }
 }
 
+/// Conformance to `FixedDimensionVector`.
+extension Vector1: FixedDimensionVector {
+  public static var dimension: Int { return 1 }
+}
+
 /// Conversion to/from tensor.
 extension Vector1 {
   /// A `Tensor` with shape `[1]` whose elements are the elements of `self`.
@@ -113,9 +118,9 @@ extension Vector1 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [1])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 117)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 122)
   }
 }
 
@@ -231,6 +236,11 @@ extension Vector2: VectorConvertible {
   }
 }
 
+/// Conformance to `FixedDimensionVector`.
+extension Vector2: FixedDimensionVector {
+  public static var dimension: Int { return 2 }
+}
+
 /// Conversion to/from tensor.
 extension Vector2 {
   /// A `Tensor` with shape `[2]` whose elements are the elements of `self`.
@@ -245,11 +255,11 @@ extension Vector2 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [2])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 117)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 122)
   }
 }
 
@@ -382,6 +392,11 @@ extension Vector3: VectorConvertible {
   }
 }
 
+/// Conformance to `FixedDimensionVector`.
+extension Vector3: FixedDimensionVector {
+  public static var dimension: Int { return 3 }
+}
+
 /// Conversion to/from tensor.
 extension Vector3 {
   /// A `Tensor` with shape `[3]` whose elements are the elements of `self`.
@@ -396,13 +411,13 @@ extension Vector3 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [3])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 115)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
     self.z = tensor[2].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 117)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 122)
   }
 }
 
