@@ -1,6 +1,12 @@
 // Methods that factors provide:
 //
 // `errorVector` is a vector of errors. (The scalar `error` is the squared norm of this vector.)
+//
+// "gaussian factors" (aka "linear factors") are special factors that provide extra methods:
+//   - applyLinearMap: applies a linear map to the inputs
+//   - applyLinearMapTranspose: applies the tranpose of the linear map
+// For gaussian factors, `errorVector(x)` is `applyLinearMap(x)` plus a constant vector. (Note
+// that this is `DecomposedAffineFunction`).
 
 // Operations that we do:
 //
@@ -10,7 +16,23 @@
 // replaced with the derivative of the factor's error vector. This is a "gaussian factor graph".
 //
 // Given a gaussian factor graph, apply its linear map, its transposed linear map, and get its
-// current error at an assignment of variables. (This is `DecomposedAffineFunction`).
+// current error vector at an assignment of variables. (This is `DecomposedAffineFunction` again).
+//   - each of these operations just means applying all of the factors' corresponding operations
+//     to the variables
+
+// Other important things:
+//
+// In gaussian factor graphs, the variables are collections of flat vectors, e.g:
+//   [
+//     Vector3(1, 2, 3),
+//     Vector4(4, 5, 6, 7)
+//   ]
+// The "gaussian factors" want to receive their inputs as the correct vector type (e.g. Vector3,
+// Vector4).
+// The current implementation makes this fast by flattening these out into a single array of
+// Doubles.
+// A "type erase at the top level" implementation might actually be faster because you don't have
+// to store or look up as many offsets.
 
 public struct Pose2SLAMFactorGraph
 {
