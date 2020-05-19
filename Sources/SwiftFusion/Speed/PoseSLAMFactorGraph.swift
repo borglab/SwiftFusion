@@ -1,3 +1,17 @@
+// Methods that factors provide:
+//
+// `errorVector` is a vector of errors. (The scalar `error` is the squared norm of this vector.)
+
+// Operations that we do:
+//
+// Given a graph and an assignment of variables, get the total error.
+//
+// Given a graph and an assignment of variables, produce a new graph where each factor has been
+// replaced with the derivative of the factor's error vector. This is a "gaussian factor graph".
+//
+// Given a gaussian factor graph, apply its linear map, its transposed linear map, and get its
+// current error at an assignment of variables. (This is `DecomposedAffineFunction`).
+
 public struct Pose2SLAMFactorGraph
 {
   public typealias Pose2Values = [Pose2]

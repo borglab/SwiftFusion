@@ -1,8 +1,6 @@
 #if false
 
-// Based on some of "Data-Driven MCMC for Learning and Inference in
-// Switching Linear Dynamic Systems"
-// (https://www.aaai.org/Papers/AAAI/2005/AAAI05-149.pdf)
+// Based on some of [1].
 
 /// In an SLDS, there is a hidden "position" that evolves over time, according to a set of n
 /// linear movement models.
@@ -11,12 +9,16 @@
 ///
 /// Let T be the number of time steps.
 struct SLDSVariables {
+
+  // MARK: - Definitely variables.
+
   /// movementModelIndex[t] is the index of the movement model used at time t.
-  /// Note: Sometimes we want to change this to a distribution over the movement model indices.
   var movementModelIndex: [Int]
 
   /// position[t] is the position at time t.
   var position: [Vector]  // should be fixed-size vectors
+
+  // MARK: - Maybe model parameters, maybe variables?
 
   /// This is an n x n matrix.
   /// entry (i, j) is the transition probability from movement model j to movement model i.
@@ -28,7 +30,9 @@ struct SLDSVariables {
 
   /// The observation at time t is `observationMatrix * position[t]`.
   var observationMatrix: Matrix  // should be a fixed-size matrix
+}
 
+struct SLDSParameters {
   /// observation[t] is the observation at time t.
   var observation: [Vector]  // should be a fixed-size vector
 }
@@ -63,21 +67,12 @@ func movementError(
   return (position2 - movementMatrix[movementModelIndex] * position1).squaredNorm
 }
 
-/// The "distribution" version of the above factor.
-func movementError(
-  _ movementMatrix: [Matrix],
-  _ movementModelIndexDistribution: [Double],  // now it is a distribution! 
-  _ position1: Vector,
-  _ position2: Vector
-) -> Double {
-  // some sum over all i of
-  //  movementError(movementMatrix, i, position1, position2) * movementModelIndexDistribution[i]
-}
-
 /// Describs T "observation" factors.
 ///
+/// For t in [0, T-1], the t-th factor's parameters are
+///   SLDSParameters.observation[t] : Vector
+///
 /// For t in [0, T-1], the t-th factor's inputs are
-///   SLDSVariables.observation[t] : Vector
 ///   SLDSVariables.position[t] : Vector
 func observationError(
   _ observation: Vector,
@@ -86,21 +81,25 @@ func observationError(
   return (observation - parameters.observationMatrix * position).squaredNorm
 }
 
-// Now we want to run Metropolis-Hastings sampling on this.
+// Now we might want to run Metropolis-Hastings sampling on this, as in [1].
 
-// Operations that we want:
+// Operations that we need:
 //
-// Hold everything constant except for "positions". This gives you factors of the form:
-//     (position[t + 1] - M[t] * position[t]).squaredNorm
-//     (O[t] * position[t] - b[t]).squaredNorm
-// where M[t], O[t] are fixed matrices and b[t] is a fixed vector. Now run "RTS Smoothing" which
-// is some algorithm designed to find the optimal positions specifically in this structure of problem.
-// It needs to see the fixed matrices and vectors.
+// Get a view of a graph where some variables are held constant.
+//   - e.g. hold all nondifferentiable variables constant so that we can pass the graph to a solver
+//     that uses differentiation.
 //
-// Calculate the total error given an assignment of variables.
+// Belief Propagation
+//   Factors send messages to adjacent variables.
+//   Variables send messages to adjacent factors.
+//   The type of the message is a probability distribution over the variable.
+//     - Probability distributions over the same variable can be multiplied.
+//     - Factors define "marginalization" functions that take all incoming messages and produce an
+//       outgoing message along each edge.
+//   In [1], all the probability distributions are normal distributions over vectors.
 //
-// Change the "movementModelIndex[t]" from Int to a distribution over Int. Hold everything fixed except for
-// the matrices (transitionMatrix, observationMatrix, and movementMatrix). Run a general purpose optimizer to
-// find the optimal values of these. It'll specifically need derivatives of errors with respect to the matrices.
+
+// [1] "Data-Driven MCMC for Learning and Inference in Switching Linear Dynamic Systems"
+//      https://www.aaai.org/Papers/AAAI/2005/AAAI05-149.pdf
 
 #endif
