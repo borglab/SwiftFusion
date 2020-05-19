@@ -18,11 +18,6 @@ public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
 
   // MARK: - Convenience initializers and computed properties
 
-  /// Creates the identity.
-  public init() {
-    self.init(0)
-  }
-
   // Construct from theta.
   @differentiable
   public init(_ theta: Double) {
@@ -45,11 +40,6 @@ public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
   /// Sine value.
   @differentiable
   public var s: Double { coordinate.s }
-
-  @differentiable
-  public func localCoordinate(_ global: Rot2) -> Vector1 {
-    coordinate.localCoordinate(global.coordinate)
-  }
 }
 
 extension Rot2: TangentStandardBasis {
@@ -63,12 +53,6 @@ extension Rot2: CustomDebugStringConvertible {
 }
 
 extension Rot2 {
-  /// Product of two rotations.
-  @differentiable
-  public static func * (lhs: Rot2, rhs: Rot2) -> Rot2 {
-    Rot2(coordinate: lhs.coordinate * rhs.coordinate)
-  }
-
   /// Returns the result of acting `self` on `v`.
   @differentiable
   func rotate(_ v: Vector2) -> Vector2 {
@@ -79,12 +63,6 @@ extension Rot2 {
   @differentiable
   func unrotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
-  }
-
-  /// Inverse of the rotation.
-  @differentiable
-  public func inverse() -> Rot2 {
-    Rot2(coordinate: coordinate.inverse())
   }
 }
 
@@ -112,10 +90,15 @@ public extension Rot2Coordinate {
   }
 }
 
-public extension Rot2Coordinate {
+extension Rot2Coordinate: LieGroupCoordinate {
+  /// Creates the group identity.
+  public init() {
+    self.init(0)
+  }
+
   /// Product of two rotations.
   @differentiable
-  static func * (lhs: Rot2Coordinate, rhs: Rot2Coordinate) -> Rot2Coordinate {
+  public static func * (lhs: Rot2Coordinate, rhs: Rot2Coordinate) -> Rot2Coordinate {
     Rot2Coordinate(
       c: lhs.c * rhs.c - lhs.s * rhs.s,
       s: lhs.s * rhs.c + lhs.c * rhs.s)
@@ -123,7 +106,7 @@ public extension Rot2Coordinate {
 
   /// Inverse of the rotation.
   @differentiable
-  func inverse() -> Rot2Coordinate {
+  public func inverse() -> Rot2Coordinate {
     Rot2Coordinate(c: self.c, s: -self.s)
   }
 }
