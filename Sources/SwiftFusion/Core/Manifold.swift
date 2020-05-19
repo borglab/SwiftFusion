@@ -18,7 +18,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// Note that this is not the same type as `Self.TangentVector`.
   associatedtype LocalCoordinate: EuclideanVectorSpace & TangentStandardBasis
 
-  /// Diffeomorphism between a neigborhood of `Localcoordinate.zero` and `Self`.
+  /// Diffeomorphism between a neigborhood of `LocalCoordinate.zero` and `Self`.
   ///
   /// Satisfies the following properties:
   /// - `retract(LocalCoordinate.zero) == self`
@@ -149,5 +149,53 @@ extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
       value: Self(coordinateStorage: coordinate),
       pullback: pullback(at: coordinate) { coordinate.localCoordinate($0) }
     )
+  }
+}
+
+/// Default implementations of manifold operations in terms of the corresponding
+/// `ManifoldCoordinate` operations.
+extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
+  /// Diffeomorphism between a neigborhood of `TangentVector.zero` and `Self`.
+  ///
+  /// Satisfies the following properties:
+  /// - `retract(TangentVector.zero) == self`
+  /// - There exists an open set `B` around `TangentVector.zero` such that
+  ///   `localCoordinate(retract(b)) == b` for all `b \in B`.
+  @differentiable(wrt: local)
+  public func retract(_ local: TangentVector) -> Self {
+    return Self(coordinate: self.coordinate.retract(local))
+  }
+
+  /// Derivative of `retract`.
+  ///
+  /// Swift AD can compute this, but we know mathematically that the derivative is the identity, so
+  /// we can provide an implementation that is more efficient.
+  @derivative(of: retract, wrt: local)
+  @usableFromInline
+  func vjpRetract(_ local: TangentVector) -> (value: Self, pullback: (TangentVector) -> TangentVector) {
+    return (retract(local), { $0 })
+  }
+
+  /// Inverse of `retract`.
+  ///
+  /// Satisfies the following properties:
+  /// - `localCoordinate(self) == TangentVector.zero`
+  /// - There exists an open set `B` around `self` such that `localCoordinate(retract(b)) == b` for all
+  ///   `b \in B`.
+  @differentiable(wrt: global)
+  public func localCoordinate(_ global: Self) -> TangentVector {
+    return self.coordinate.localCoordinate(global.coordinate)
+  }
+
+  /// Derivative of `localCoordinate`.
+  ///
+  /// Swift AD can compute this, but we know mathematically that the derivative is the identity, so
+  /// we can provide an implementation that is more efficient.
+  @derivative(of: localCoordinate, wrt: global)
+  @usableFromInline
+  func vjpLocalCoordinate(_ global: Self) ->
+    (value: TangentVector, pullback: (TangentVector) -> TangentVector)
+  {
+    return (localCoordinate(global), { $0 })
   }
 }

@@ -55,11 +55,6 @@ public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
     coordinateStorage = coordinateStorage.retract(direction)
   }
 
-  /// Creates the identity.
-  public init() {
-    self.init(Rot3(), Vector3.zero)
-  }
-
   /// Creates a `Pose3` with rotation `r` and translation `t`.
   ///
   /// This is the bijection SO(3) x R^3 -> SE(3), where "x" means direct product of groups.
@@ -74,32 +69,10 @@ public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
   
   @differentiable public var rot: Rot3 { coordinate.rot }
   
-  /// Product of two rotations.
-  @differentiable
-  public static func * (lhs: Pose3, rhs: Pose3) -> Pose3 {
-    Pose3(coordinate: lhs.coordinate * rhs.coordinate)
-  }
-  
-  /// Inversion
-  @differentiable
-  public func inverse() -> Pose3 {
-    Pose3(coordinate: coordinate.inverse())
-  }
-  
   /// Create from an element in tangent space (Expmap)
   @differentiable
   public static func fromTangent(_ vector: Vector6) -> Self {
     return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).retract(vector))
-  }
-  
-  @differentiable
-  public func retract(_ local: Vector6) -> Self {
-    Self(coordinate: coordinate.retract(local))
-  }
-  
-  @differentiable
-  public func localCoordinate(_ global: Self) -> Self.Coordinate.LocalCoordinate {
-    coordinate.localCoordinate(global.coordinate)
   }
 }
 
@@ -131,16 +104,21 @@ public extension Pose3Coordinate {
 }
 
 // MARK: Coordinate Operators
-public extension Pose3Coordinate {
+extension Pose3Coordinate: LieGroupCoordinate {
+  /// Creates the group identity.
+  public init() {
+    self.init(Rot3(), Vector3.zero)
+  }
+
   /// Product of two transforms
   @differentiable
-  static func * (lhs: Pose3Coordinate, rhs: Pose3Coordinate) -> Pose3Coordinate {
+  public static func * (lhs: Pose3Coordinate, rhs: Pose3Coordinate) -> Pose3Coordinate {
     Pose3Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
   }
 
   /// Inverse of the rotation.
   @differentiable
-  func inverse() -> Pose3Coordinate {
+  public func inverse() -> Pose3Coordinate {
     Pose3Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
   }
 }
@@ -232,7 +210,8 @@ extension Pose3Coordinate: ManifoldCoordinate {
     // simplified with Mathematica, and multiplying in T to avoid matrix math
     let Tan = tan(0.5 * t)
     let WT = matmul(W, T.tensor.reshaped(to: [3, 1]))
-    let u = T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
+    let u: Tensor<Double> =
+      T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
     precondition(u.shape == [3, 1])
     return Vector6(w: w, v: Vector3(u.reshaped(to: [3])))
   }

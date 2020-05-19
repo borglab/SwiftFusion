@@ -114,4 +114,23 @@ final class Rot3Tests: XCTestCase {
     
     assertAllKeyPathEqual(actual, expected, accuracy: 1e-5)
   }
+
+  /// Tests that the custom implementations of `Adjoint` and `AdjointTranspose` are correct.
+  func testAdjoint() {
+    for _ in 0..<10 {
+      let rot = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
+      for v in Pose2.tangentStandardBasis {
+        assertEqual(
+          rot.Adjoint(v).tensor,
+          rot.coordinate.defaultAdjoint(v).tensor,
+          accuracy: 1e-10
+        )
+        assertEqual(
+          rot.AdjointTranspose(v).tensor,
+          rot.coordinate.defaultAdjointTranspose(v).tensor,
+          accuracy: 1e-10
+        )
+      }
+    }
+  }
 }
