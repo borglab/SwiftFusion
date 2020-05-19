@@ -39,13 +39,13 @@ public struct Rot3: LieGroup, TangentStandardBasis, Equatable, KeyPathIterable {
   /// Returns the result of acting `self` on `v`.
   @differentiable
   func rotate(_ v: Vector3) -> Vector3 {
-    Vector3(matmul(coordinate.R, v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
+    return coordinate.rotate(v)
   }
   
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
   func unrotate(_ v: Vector3) -> Vector3 {
-    Vector3(matmul(coordinate.R.transposed(), v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
+    return coordinate.unrotate(v)
   }
   
   /// Returns the result of acting `self` on `v`.
@@ -135,11 +135,26 @@ extension Matrix3Coordinate: LieGroupCoordinate {
 
   @differentiable(wrt: v)
   public func Adjoint(_ v: Vector3) -> Vector3 {
-    return Vector3(matmul(R, v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
+    return rotate(v)
   }
 
   @differentiable(wrt: v)
   public func AdjointTranspose(_ v: Vector3) -> Vector3 {
+    return unrotate(v)
+  }
+}
+
+/// Actions.
+extension Matrix3Coordinate {
+  /// Returns the result of acting `self` on `v`.
+  @differentiable
+  func rotate(_ v: Vector3) -> Vector3 {
+    return Vector3(matmul(R, v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
+  }
+
+  /// Returns the result of acting the inverse of `self` on `v`.
+  @differentiable
+  func unrotate(_ v: Vector3) -> Vector3 {
     return Vector3(matmul(R, transposed: true, v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
   }
 }

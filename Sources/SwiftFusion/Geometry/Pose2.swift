@@ -171,8 +171,10 @@ extension Pose2Coordinate: ManifoldCoordinate {
 extension Pose2Coordinate {
   public func Adjoint(_ v: Vector3) -> Vector3 {
     let (w, v) = Pose2Coordinate.decomposed(tangentVector: v)
-    let tPerp = Vector2(-t.y, t.x)
-    return Pose2Coordinate.tangentVector(w: w, v: rot.rotate(v) - tPerp.scaled(by: w.x))
+    return Pose2Coordinate.tangentVector(
+      w: w,
+      v: rot.rotate(v) - Rot2(.pi / 2).rotate(t).scaled(by: w.x)
+    )
   }
 
   public func AdjointTranspose(_ v: Vector3) -> Vector3 {
