@@ -132,6 +132,16 @@ extension Matrix3Coordinate: LieGroupCoordinate {
   public func inverse() -> Matrix3Coordinate {
     Matrix3Coordinate(R.transposed())
   }
+
+  @differentiable(wrt: v)
+  public func Adjoint(_ v: Vector3) -> Vector3 {
+    return Vector3(matmul(R, v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
+  }
+
+  @differentiable(wrt: v)
+  public func AdjointTranspose(_ v: Vector3) -> Vector3 {
+    return Vector3(matmul(R, transposed: true, v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
+  }
 }
 
 func sqrtWrap(_ v: Double) -> Double {
