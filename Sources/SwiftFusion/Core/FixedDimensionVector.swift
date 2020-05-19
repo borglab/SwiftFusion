@@ -5,6 +5,8 @@ public protocol FixedDimensionVector {
   subscript(_ index: Int) -> Double { get set }
 
   static var zero: Self { get }
+
+  func write(to array: inout Vector, at index: Int)
 }
 
 extension FixedDimensionVector {

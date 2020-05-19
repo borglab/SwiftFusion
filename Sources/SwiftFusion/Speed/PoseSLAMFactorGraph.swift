@@ -10,6 +10,17 @@ public struct Pose2SLAMFactorGraph
 
   public init() {}
 
+  public func error(at values: Pose2Values) -> Double {
+    var result = Double(0)
+    for i in priorInputs.indices {
+      result += priors.errorVector(of: i, at: ArraySubsettable1(values)[priorInputs[i]]).squaredNorm
+    }
+    for i in betweens.indices {
+      result += betweens.errorVector(of: i, at: ArraySubsettable2(values)[betweenInputs[i]]).squaredNorm
+    }
+    return result
+  }
+
   public func linearized(at values: Pose2Values) -> Pose2SLAMMaterializedGaussianFactorGraph {
     var linear = Pose2SLAMMaterializedGaussianFactorGraph(
       priorCount: priors.count,
@@ -72,46 +83,6 @@ public struct ArraySubsettable2<Element: Differentiable>: Subsettable {
     }
   }
 }
-
-//struct ValuesSubset1<Value: Differentiable>: Differentiable {
-//  var value1: Value
-//}
-//
-//extension ValuesSubset1: FixedDimensionVector where Value: FixedDimensionVector {
-//  static var dimension: Int { return Value.dimension }
-//  subscript(_ index: Int) -> Double {
-//    get {
-//      return value1[index]
-//    }
-//    set(newValue) {
-//      value1[index] = newValue
-//    }
-//  }
-//  static var standardBasis: Value.StandardBasisCollection {
-//    return Value.standardBasis
-//  }
-//  static var zero: Self {
-//    return Self(value1: Value.zero)
-//  }
-//}
-//
-//extension ValuesSubset1.TangentVector: FixedDimensionVector where Value.TangentVector: FixedDimensionVector {
-//  static var dimension: Int { return Value.TangentVector.dimension }
-//  subscript(_ index: Int) -> Double {
-//    get {
-//      return value1[index]
-//    }
-//    set(newValue) {
-//      value1[index] = newValue
-//    }
-//  }
-//  static var standardBasis: Value.TangentVector.StandardBasisCollection {
-//    return Value.TangentVector.standardBasis
-//  }
-//  static var zero: Self {
-//    return Self(value1: Value.TangentVector.zero)
-//  }
-//}
 
 public struct ValuesSubset2<Value> {
   var value1Storage: Value
@@ -196,32 +167,11 @@ extension ValuesSubset2: FixedDimensionVector where Value: FixedDimensionVector 
   public static var zero: Self {
     return Self(Value.zero, Value.zero)
   }
+  public func write(to array: inout Vector, at index: Int) {
+    value1.write(to: &array, at: index)
+    value2.write(to: &array, at: index + Value.dimension)
+  }
 }
-
-// extension ValuesSubset2.TangentVector: FixedDimensionVector where Value.TangentVector: FixedDimensionVector {
-//   static var dimension: Int { return 2 * Value.TangentVector.dimension }
-//   subscript(_ index: Int) -> Double {
-//     get {
-//       if index < Value.dimension {
-//         return value1[index]
-//       }
-//       return value2[index - Value.dimension]
-//     }
-//     set(newValue) {
-//       if index < Value.dimension {
-//         value1[index] = newValue
-//       }
-//       value2[index - Value.dimension] = newValue
-//     }
-//   }
-//   static var standardBasis: [Self] {
-//     // TODO: Make this lazy.
-//     Value.standardBasis.map { Self(value1: $0, value2: Value.zero) } + Value.standardBasis.map { Self(value1: zero, value2: $0) }
-//   }
-//   static var zero: Self {
-//     return Self(value1: Value.TangentVector.zero, value2: Value.TangentVector.zero)
-//   }
-// }
 
 public struct PriorFactors
 {
@@ -250,7 +200,7 @@ public struct BetweenFactors
 
   @differentiable(wrt: input)
   public func errorVector(of factor: Int, at input: ValuesSubset2<Pose2>) -> Pose2.TangentVector {
-    let actualDifference = between(input.value2, input.value1)
+    let actualDifference = between(input.value1, input.value2)
     let expectedDifference = parameters[factor]
     return expectedDifference.localCoordinate(actualDifference)
   }
@@ -295,6 +245,7 @@ public struct HomogeneousGaussianFactorGraph<
   public var errorScalarCountPerFactor: Int { return Output.Subset.dimension }
 
   public var zeroInput: Input { return Input(zeros: inputCount) }
+  public var zeroOutput: Output { return Output(zeros: factorCount) }
 
   public init(factorCount: Int, inputCount: Int) {
     self.factorCount = factorCount
@@ -356,8 +307,8 @@ extension HomogeneousGaussianFactorGraph: DecomposedAffineFunction {
       let outputSubset = output[outputs[factor]]
       let matrix = factorMatrix(factor)
       var matrixIndex = matrix.startIndex
-      for j in 0..<Input.Subset.dimension {
-        for i in 0..<Output.Subset.dimension {
+      for i in 0..<Output.Subset.dimension {
+        for j in 0..<Input.Subset.dimension {
           inputSubset[j] += matrix[matrixIndex] * outputSubset[i]
           matrixIndex += 1
         }
@@ -417,7 +368,7 @@ public struct HomogeneousVectorSubsettable1<Element: Differentiable & FixedDimen
       return Element(base.scalars[range(indices)])
     }
     set(newValue) {
-      base.replaceSubrange(range(indices), with: newValue.scalars)
+      newValue.write(to: &base, at: Element.dimension * indices)
     }
   }
 }
@@ -450,8 +401,8 @@ public struct HomogeneousVectorSubsettable2<Element: Differentiable & FixedDimen
       )
     }
     set(newValue) {
-      base.replaceSubrange(range(indices.0), with: newValue.value1.scalars)
-      base.replaceSubrange(range(indices.1), with: newValue.value2.scalars)
+      newValue.value1.write(to: &base, at: Element.dimension * indices.0)
+      newValue.value2.write(to: &base, at: Element.dimension * indices.1)
     }
   }
 }

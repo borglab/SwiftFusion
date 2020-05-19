@@ -30,21 +30,25 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     "NonlinearFactorGraph, Intel, 5 Gauss-Newton steps, 100 CGLS steps",
     settings: .iterations(1)
   ) {
+    var graph = intelNonlinearFactorGraph.graph
+    graph += PriorFactor(0, Pose2(0, 0, 0))
     var val = intelNonlinearFactorGraph.initialGuess
     for _ in 0..<5 {
-      let gfg = intelNonlinearFactorGraph.graph.linearize(val)
-      let optimizer = CGLS(precision: 0, max_iteration: 100)
+      let gfg = graph.linearize(val)
+      let optimizer = CGLS(precision: 0, max_iteration: 500)
       var dx = VectorValues()
       for i in 0..<val.count {
         dx.insert(i, Vector(zeros: 3))
       }
       optimizer.optimize(gfg, initial: &dx)
       val.move(along: dx)
+      print(graph.error(val))
     }
-    check(intelNonlinearFactorGraph.graph.error(val), near: 20.87, accuracy: 1e-2)
+    //check(graph.error(val), near: 63.55, accuracy: 1e-2)
   }
 
   let intelPoseSLAMFactorGraph = try! G2OPoseSLAMFactorGraph(fromG2O: try! cachedDataset("input_INTEL_g2o.txt"))
+  check(intelPoseSLAMFactorGraph.graph.error(at: intelPoseSLAMFactorGraph.initialGuess), near: 73565.64, accuracy: 1e-2)
 
   // Uses `PoseSLAMFactorGraph` on the Intel dataset.
   // The solvers are configured to run for a constant number of steps.
@@ -58,15 +62,17 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     graph.priors.parameters.append(Pose2(0, 0, 0))
     graph.priorInputs.append(0)
     var val = intelPoseSLAMFactorGraph.initialGuess
-    for _ in 0..<5 {
-      let gfg = intelPoseSLAMFactorGraph.graph.linearized(at: val)
-      let optimizer = CGLS(precision: 0, max_iteration: 100)
+    for _ in 0..<10 {
+      let gfg = graph.linearized(at: val)
+      let optimizer = CGLS(precision: 0, max_iteration: 500)
       var dx = gfg.zeroInput
       optimizer.optimize(gfg, initial: &dx)
       for index in val.indices {
         val[index].move(along: dx[index])
       }
+      print(graph.error(at: val))
     }
+    //check(graph.error(at: val), near: 63.55, accuracy: 1e-2)
   }
 
 }

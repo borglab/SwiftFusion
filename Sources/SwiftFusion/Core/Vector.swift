@@ -25,10 +25,13 @@ public struct Vector: Equatable, Differentiable {
 
 // TODO: Conform vector to the appropriate collection protocols instead of defining these manually.
 extension Vector {
-  mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C)
-    where C: Collection, C.Element == Double
-  {
-    self.scalarsStorage.replaceSubrange(subrange, with: newElements)
+  subscript(_ index: Int) -> Double {
+    get {
+      return scalarsStorage[index]
+    }
+    set(newValue) {
+      scalarsStorage[index] = newValue
+    }
   }
 }
 

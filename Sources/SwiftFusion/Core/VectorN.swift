@@ -126,12 +126,10 @@ extension Vector1: FixedDimensionVector {
     }
   }
 
-  public static var standardBasis: LazyMapCollection<Range<Int>, Self> {
-    (0..<1).lazy.map { index in
-      var vector = zero
-      vector[index] = 1
-      return vector
-    }
+  public func write(to array: inout Vector, at index: Int) {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 129)
+    array[index + 0] = x
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 131)
   }
 }
 
@@ -149,9 +147,9 @@ extension Vector1 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [1])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 149)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 153)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
   }
 }
 
@@ -300,12 +298,12 @@ extension Vector2: FixedDimensionVector {
     }
   }
 
-  public static var standardBasis: LazyMapCollection<Range<Int>, Self> {
-    (0..<2).lazy.map { index in
-      var vector = zero
-      vector[index] = 1
-      return vector
-    }
+  public func write(to array: inout Vector, at index: Int) {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 129)
+    array[index + 0] = x
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 129)
+    array[index + 1] = y
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 131)
   }
 }
 
@@ -323,11 +321,11 @@ extension Vector2 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [2])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 149)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 149)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 153)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
   }
 }
 
@@ -499,12 +497,14 @@ extension Vector3: FixedDimensionVector {
     }
   }
 
-  public static var standardBasis: LazyMapCollection<Range<Int>, Self> {
-    (0..<3).lazy.map { index in
-      var vector = zero
-      vector[index] = 1
-      return vector
-    }
+  public func write(to array: inout Vector, at index: Int) {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 129)
+    array[index + 0] = x
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 129)
+    array[index + 1] = y
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 129)
+    array[index + 2] = z
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 131)
   }
 }
 
@@ -522,13 +522,13 @@ extension Vector3 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [3])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 149)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 149)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 149)
     self.z = tensor[2].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 153)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
   }
 }
 

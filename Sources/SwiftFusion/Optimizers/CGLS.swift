@@ -38,6 +38,7 @@ public class CGLS {
 
     var x: F.Input = initial // x(0), the initial value
     var r: F.Output = f(x).scaled(by: -1) // r(0) = -b - A * x(0), the residual
+    //print(r)
     var p = f.applyLinearAdjoint(r) // p(0) = s(0) = A^T * r(0), residual in value space
     var s = p // residual of normal equations
     var gamma = s.squaredNorm // γ(0) = ||s(0)||^2

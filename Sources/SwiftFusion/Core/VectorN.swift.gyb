@@ -123,6 +123,12 @@ extension Vector${dim}: FixedDimensionVector {
       }
     }
   }
+
+  public func write(to array: inout Vector, at index: Int) {
+    % for (index, coordinate) in enumerate(coordinates):
+    array[index + ${index}] = ${coordinate}
+    % end
+  }
 }
 
 /// Conversion to/from tensor.
