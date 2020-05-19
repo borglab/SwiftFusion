@@ -1,11 +1,15 @@
 import TensorFlow
 
-% dims = [1, 2, 3]
+% dims = range(1, 10)
 % for dim in dims:
-% coordinates = ['x', 'y', 'z'][0:dim]
+% if dim <= 3:
+%   coordinates = ['x', 'y', 'z'][0:dim]
+% else:
+%   coordinates = ['s%d' % i for i in range(dim)]
+% end
 
-/// An element of R^${dim}, with Euclidean norm.
-public struct Vector${dim}: EuclideanVectorSpace, KeyPathIterable, TangentStandardBasis
+/// An element of R^${dim}, with Euclidean inner product.
+public struct Vector${dim}: KeyPathIterable, TangentStandardBasis
 {
   % for coordinate in coordinates:
   @differentiable public var ${coordinate}: Double
@@ -19,41 +23,34 @@ public struct Vector${dim}: EuclideanVectorSpace, KeyPathIterable, TangentStanda
   }
 }
 
-/// Normed vector space methods.
-extension Vector${dim}: AdditiveArithmetic, VectorProtocol {
-  public typealias VectorSpaceScalar = Double
-
-  /// Euclidean norm of `self`.
+/// Conformance to EuclideanVector
+extension Vector${dim}: AdditiveArithmetic, EuclideanVector {
   @differentiable
-  public var norm: Double { squaredNorm.squareRoot() }
-
-  /// Square of the Euclidean norm of `self`.
-  @differentiable
-  public var squaredNorm: Double { self.squared().sum() }
-
-  @differentiable
-  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
+  public static func += (_ lhs: inout Self, _ rhs: Self) {
     % for coordinate in coordinates:
-    result.${coordinate} = lhs.${coordinate} + rhs.${coordinate}
+    lhs.${coordinate} += rhs.${coordinate}
     % end
-    return result
   }
 
   @differentiable
-  public static func - (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = Self.zero
+  public static func -= (_ lhs: inout Self, _ rhs: Self) {
     % for coordinate in coordinates:
-    result.${coordinate} = lhs.${coordinate} - rhs.${coordinate}
+    lhs.${coordinate} -= rhs.${coordinate}
     % end
-    return result
   }
 
   @differentiable
-  public static prefix func - (_ v: Self) -> Self {
-    var result = Self.zero
+  public static func *= (_ lhs: inout Self, _ rhs: Double) {
     % for coordinate in coordinates:
-    result.${coordinate} = -v.${coordinate}
+    lhs.${coordinate} *= rhs
+    % end
+  }
+
+  @differentiable
+  public func dot(_ other: Self) -> Double {
+    var result = Double(0)
+    % for coordinate in coordinates:
+    result += self.${coordinate} * other.${coordinate}
     % end
     return result
   }
@@ -62,6 +59,7 @@ extension Vector${dim}: AdditiveArithmetic, VectorProtocol {
 /// Other arithmetic on the vector elements.
 extension Vector${dim}: ElementaryFunctions {
   /// Sum of the elements of `self`.
+  @differentiable
   public func sum() -> Double {
     var result: Double = 0
     % for coordinate in coordinates:
@@ -71,6 +69,7 @@ extension Vector${dim}: ElementaryFunctions {
   }
 
   /// Vector whose elements are squares of the elements of `self`.
+  @differentiable
   public func squared() -> Self {
     var result = Self.zero
     % for coordinate in coordinates:

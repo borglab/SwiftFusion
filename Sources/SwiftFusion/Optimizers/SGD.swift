@@ -17,8 +17,8 @@
 /// rate decay, and Nesterov momentum.
 
 public class SGD<Model: Differentiable>
-  where Model.TangentVector: VectorProtocol & ElementaryFunctions,
-  Model.TangentVector.VectorSpaceScalar == Double {
+  where Model.TangentVector: EuclideanVector & ElementaryFunctions
+{
   public typealias Model = Model
   /// The learning rate.
   public var learningRate: Double
@@ -53,9 +53,9 @@ public class SGD<Model: Differentiable>
   public func update(_ model: inout Model, along direction: Model.TangentVector) {
     step += 1
     let learningRate = self.learningRate * 1 / (1 + decay * Double(step))
-    velocity = velocity.scaled(by: momentum) - direction.scaled(by: learningRate)
+    velocity = momentum * velocity - learningRate * direction
     if nesterov {
-      model.move(along: velocity.scaled(by: momentum) - direction.scaled(by: learningRate))
+      model.move(along: momentum * velocity - learningRate * direction)
     } else {
       model.move(along: velocity)
     }

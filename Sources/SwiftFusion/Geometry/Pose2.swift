@@ -173,7 +173,7 @@ extension Pose2Coordinate {
     let (w, v) = Pose2Coordinate.decomposed(tangentVector: v)
     return Pose2Coordinate.tangentVector(
       w: w,
-      v: rot.rotate(v) - Rot2(.pi / 2).rotate(t).scaled(by: w.x)
+      v: rot.rotate(v) - w.x * Rot2(.pi / 2).rotate(t)
     )
   }
 

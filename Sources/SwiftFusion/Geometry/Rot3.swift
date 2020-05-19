@@ -1,13 +1,6 @@
 
 import TensorFlow
 
-extension Vector3 {
-  @differentiable
-  static func * (_ s:Double, _ vector:Vector3) -> Vector3 {
-    Vector3(s * vector.x, s * vector.y, s * vector.z)
-  }
-}
-
 /// SO(3) group of 3D Rotations
 public struct Rot3: LieGroup, TangentStandardBasis, Equatable, KeyPathIterable {
   public typealias TangentVector = Vector3

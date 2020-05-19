@@ -50,7 +50,7 @@ public struct VectorValues: KeyPathIterable {
   
   /// L2 norm of the VectorValues
   var norm: Double {
-    self._values.map { $0.squared().sum() }.reduce(0.0, { $0 + $1 })
+    self._values.map { $0.squaredNorm }.reduce(0.0, { $0 + $1 })
   }
   
   /// Insert a key value pair
@@ -59,13 +59,6 @@ public struct VectorValues: KeyPathIterable {
     
     self._indices[key] = self._values.count
     self._values.append(val)
-  }
-  
-  /// VectorValues + Scalar
-  static func + (_ lhs: Self, _ rhs: Self.ScalarType) -> Self {
-    var result = lhs
-    let _ = result._values.indices.map { result._values[$0] += rhs }
-    return result
   }
 
   /// Scalar * VectorValues

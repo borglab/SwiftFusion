@@ -1,46 +1,5 @@
 import TensorFlow
 
-/// TODO: Should be merged to Vector.swift
-public struct Vector6: EuclideanVectorSpace, VectorProtocol, KeyPathIterable, TangentStandardBasis {
-  var w: Vector3
-  var v: Vector3
-
-  public var squaredNorm: Double {
-    return w.squaredNorm + v.squaredNorm
-  }
-}
-
-extension Vector6 {
-  public init(_ tensor: Tensor<Double>) {
-    precondition(tensor.shape == [6])
-    
-    w = Vector3(tensor[0..<3])
-    v = Vector3(tensor[3..<6])
-  }
-}
-
-extension Vector6: TensorConvertible {
-  @differentiable
-  public var tensor: Tensor<Double> {
-    Tensor<Double>(concatenating: [w.tensor, v.tensor])
-  }
-}
-
-extension Vector6: VectorConvertible {
-  @differentiable
-  public init(_ vector: Vector) {
-    precondition(vector.dimension == 6)
-    
-    w = Vector3(vector.scalars[0], vector.scalars[1], vector.scalars[2])
-    v = Vector3(vector.scalars[3], vector.scalars[4], vector.scalars[5])
-  }
-  
-  @differentiable
-  public var vector: Vector {
-    Vector([w.x, w.y, w.z, v.x, v.y, v.z])
-  }
-}
-
 /// SE(3) Lie group of 3D Euclidean Poses.
 public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
   // MARK: - Manifold conformance
@@ -92,14 +51,29 @@ public extension Pose3Coordinate {
     self.t = t
   }
 
-  /// Returns the rotation (`w`) and translation (`v`) components of `tangentVector`.
-  static func decomposed(tangentVector: Vector6) -> (w: Vector3, v: Vector3) {
-    (tangentVector.w, tangentVector.v)
+  fileprivate struct DecomposedTangentVector: Differentiable {
+    /// Rotation component.
+    var w: Vector3
+
+    /// Translation component.
+    var v: Vector3
+  }
+
+  /// Returns the components of `tangentVector`.
+  @differentiable
+  fileprivate static func decomposed(tangentVector: Vector6) -> DecomposedTangentVector {
+    return DecomposedTangentVector(
+      w: Vector3(tangentVector.s0, tangentVector.s1, tangentVector.s2),
+      v: Vector3(tangentVector.s3, tangentVector.s4, tangentVector.s5)
+    )
   }
   
-  /// Creates a tangent vector given rotation (`w`) and translation (`v`) components.
-  static func tangentVector(w: Vector3, v: Vector3) -> Vector6 {
-    Vector6(w: w, v: v)
+  /// Creates a tangent vector given its components.
+  @differentiable
+  fileprivate static func tangentVector(_ t: DecomposedTangentVector) -> Vector6 {
+    let w = t.w
+    let v = t.v
+    return Vector6(w.x, w.y, w.z, v.x, v.y, v.z)
   }
 }
 
@@ -154,7 +128,9 @@ extension Pose3Coordinate: ManifoldCoordinate {
   @differentiable(wrt: local)
   public func retract(_ local: Vector6) -> Self {
     // get angular velocity omega and translational velocity v from twist xi
-    let (omega, v) = (local.w, local.v)
+    let decomposed = Pose3Coordinate.decomposed(tangentVector: local)
+    let omega = decomposed.w
+    let v = decomposed.v
     
     let R = Rot3.fromTangent(omega)
     
@@ -195,7 +171,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
     let relative = self.inverse() * global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     let T = relative.t
-    return Vector6(w: w, v: T)
+    return Pose3Coordinate.tangentVector(DecomposedTangentVector(w: w, v: T))
   }
 
   /// Implements `local` in the non-small rotation case.
@@ -213,7 +189,8 @@ extension Pose3Coordinate: ManifoldCoordinate {
     let u: Tensor<Double> =
       T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
     precondition(u.shape == [3, 1])
-    return Vector6(w: w, v: Vector3(u.reshaped(to: [3])))
+    return Pose3Coordinate.tangentVector(
+      DecomposedTangentVector(w: w, v: Vector3(u.reshaped(to: [3]))))
   }
 
 }

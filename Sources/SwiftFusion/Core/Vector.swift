@@ -66,63 +66,62 @@ extension Vector {
 /// Arithmetic on elements.
 extension Vector {
   /// Sum of the elements of `self`.
-  public func sum() -> Double {
-    return scalarsStorage.reduce(0, +)
-  }
-
-  /// Vector whose elements are squares of the elements of `self`.
-  public func squared() -> Self {
-    return Vector(scalarsStorage.map { $0 * $0 })
-  }
-}
-
-/// Euclidean norms.
-extension Vector {
-  /// Euclidean norm of `self`.
-  public var norm: Double { squaredNorm.squareRoot() }
-
-  /// Square of the Euclidean norm of `self`.
   @differentiable
-  public var squaredNorm: Double { self.squared().sum() }
-
-  /// Derivative of `squaredNorm`.
-  // TODO: This is a custom derivative because derivatives of `map` and
-  // `reduce` are currently very slow. We can use the automatic derivative for this once
-  // https://github.com/apple/swift/pull/31704 is available.
-  @derivative(of: squaredNorm)
-  @usableFromInline
-  func vjpSquaredNorm() -> (value: Double, pullback: (Double) -> TangentVector) {
-    return (
-      value: squaredNorm,
-      pullback: { self.scaled(by: 2 * $0) }
-    )
+  public func sum() -> Double {
+    return scalars.differentiableReduce(0, +)
   }
 }
 
-/// AdditiveArithmetic conformance.
-extension Vector: AdditiveArithmetic {
+/// EuclideanVector conformance.
+extension Vector: AdditiveArithmetic, EuclideanVector {
+  @differentiable
   public static func += (_ lhs: inout Vector, _ rhs: Vector) {
+    // If `lhs` or `rhs` is empty, then it may be a "zero tangent vector" created by AD, and we
+    // should treat it as a vector of zeros.
+    guard rhs.scalarsStorage.count > 0 else { return }
+    guard lhs.scalarsStorage.count > 0 else {
+      lhs = rhs
+      return
+    }
+
     for index in lhs.scalarsStorage.indices {
       lhs.scalarsStorage[index] += rhs.scalarsStorage[index]
     }
   }
 
-  public static func + (_ lhs: Vector, _ rhs: Vector) -> Vector {
-    var result = lhs
-    result += rhs
-    return result
+  @derivative(of: +=)
+  @usableFromInline
+  static func vjpAddVector(_ lhs: inout Vector, _ rhs: Vector) -> (value: (), pullback: (inout Vector) -> Vector) {
+    lhs += rhs
+    func pullback(_ v: inout Vector) -> Vector {
+      return v
+    }
+    return ((), pullback)
   }
 
+  @differentiable
   public static func -= (_ lhs: inout Vector, _ rhs: Vector) {
+    // If `lhs` or `rhs` is empty, then it may be a "zero tangent vector" created by AD, and we
+    // should treat it as a vector of zeros.
+    guard rhs.scalarsStorage.count > 0 else { return }
+    guard lhs.scalarsStorage.count > 0 else {
+      lhs = -rhs
+      return
+    }
+
     for index in lhs.scalarsStorage.indices {
       lhs.scalarsStorage[index] -= rhs.scalarsStorage[index]
     }
   }
 
-  public static func - (_ lhs: Vector, _ rhs: Vector) -> Vector {
-    var result = lhs
-    result -= rhs
-    return result
+  @derivative(of: -=)
+  @usableFromInline
+  static func vjpSubtractVector(_ lhs: inout Vector, _ rhs: Vector) -> (value: (), pullback: (inout Vector) -> Vector) {
+    lhs -= rhs
+    func pullback(_ v: inout Vector) -> Vector {
+      return -v
+    }
+    return ((), pullback)
   }
 
   /// The zero vector.
@@ -133,66 +132,42 @@ extension Vector: AdditiveArithmetic {
   public static var zero: Vector {
     return Vector([])
   }
-}
 
-/// VectorProtocol conformance.
-extension Vector: VectorProtocol {
-  public typealias VectorSpaceScalar = Double
-
-  public mutating func add(_ x: Double) {
-    for index in scalarsStorage.indices {
-      scalarsStorage[index] += x
-    }
-  }
-
-  public func adding(_ x: Double) -> Vector {
-    var result = self
-    result.add(x)
-    return result
-  }
-
-  public static func += (_ lhs: inout Vector, _ rhs: Double) {
-    lhs.add(rhs)
-  }
-
-  public mutating func subtract(_ x: Double) {
-    for index in scalarsStorage.indices {
-      scalarsStorage[index] -= x
-    }
-  }
-
-  public func subtracting(_ x: Double) -> Vector {
-    var result = self
-    result.subtract(x)
-    return result
-  }
-
-  public static func -= (_ lhs: inout Vector, _ rhs: Double) {
-    lhs.subtract(rhs)
-  }
-
-  public mutating func scale(by scalar: Double) {
-    for index in scalarsStorage.indices {
-      scalarsStorage[index] *= scalar
-    }
-  }
-
-  public func scaled(by scalar: Double) -> Vector {
-    var result = self
-    result.scale(by: scalar)
-    return result
-  }
-
+  @differentiable
   public static func *= (_ lhs: inout Vector, _ rhs: Double) {
-    lhs.scale(by: rhs)
+    for index in lhs.scalarsStorage.indices {
+      lhs.scalarsStorage[index] *= rhs
+    }
   }
 
-  public static func * (_ lhs: Double, _ rhs: Vector) -> Vector {
-    return rhs.scaled(by: lhs)
+  @derivative(of: *=)
+  @usableFromInline
+  static func vjpMultiplyScalar(_ lhs: inout Vector, _ rhs: Double) -> (value: (), pullback: (inout Vector) -> Double) {
+    let originalLhs = lhs
+    lhs *= rhs
+    func pullback(_ v: inout Vector) -> Double {
+      let tRhs = originalLhs.dot(v)
+      v *= rhs
+      return tRhs
+    }
+    return ((), pullback)
+  }
+
+  @differentiable
+  public func dot(_ other: Vector) -> Double {
+    var result = Double(0)
+    for index in scalarsStorage.indices {
+      result += self.scalarsStorage[index] * other.scalarsStorage[index]
+    }
+    return result
+  }
+
+  @derivative(of: dot)
+  @usableFromInline
+  func vjpDot(_ other: Vector) -> (value: Double, pullback: (Double) -> (Vector, Vector)) {
+    return (self.dot(other), { v in (v * other, v * self) })
   }
 }
-
-extension Vector: EuclideanVectorSpace {}
 
 /// Conversion to tensor.
 extension Vector {
