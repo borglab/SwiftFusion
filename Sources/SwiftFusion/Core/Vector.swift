@@ -23,6 +23,15 @@ public struct Vector: Equatable, Differentiable {
   internal var scalarsStorage: [Double]
 }
 
+// TODO: Conform vector to the appropriate collection protocols instead of defining these manually.
+extension Vector {
+  mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C)
+    where C: Collection, C.Element == Double
+  {
+    self.scalarsStorage.replaceSubrange(subrange, with: newElements)
+  }
+}
+
 /// Can be losslessly converted to and from a `Vector`.
 public protocol VectorConvertible: Differentiable {
   @differentiable

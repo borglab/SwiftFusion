@@ -102,6 +102,37 @@ extension Vector1: VectorConvertible {
 /// Conformance to `FixedDimensionVector`.
 extension Vector1: FixedDimensionVector {
   public static var dimension: Int { return 1 }
+
+  public subscript(_ index: Int) -> Double {
+    get {
+      switch index {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 108)
+      case 0:
+        return self.x
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 111)
+      default:
+        preconditionFailure("index out of bounds")
+      }
+    }
+    set(newValue) {
+      switch index {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 118)
+      case 0:
+        self.x = newValue
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 121)
+      default:
+        preconditionFailure("index \(index) out of bounds of Vector1")
+      }
+    }
+  }
+
+  public static var standardBasis: LazyMapCollection<Range<Int>, Self> {
+    (0..<1).lazy.map { index in
+      var vector = zero
+      vector[index] = 1
+      return vector
+    }
+  }
 }
 
 /// Conversion to/from tensor.
@@ -118,9 +149,9 @@ extension Vector1 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [1])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 122)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 153)
   }
 }
 
@@ -239,6 +270,43 @@ extension Vector2: VectorConvertible {
 /// Conformance to `FixedDimensionVector`.
 extension Vector2: FixedDimensionVector {
   public static var dimension: Int { return 2 }
+
+  public subscript(_ index: Int) -> Double {
+    get {
+      switch index {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 108)
+      case 0:
+        return self.x
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 108)
+      case 1:
+        return self.y
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 111)
+      default:
+        preconditionFailure("index out of bounds")
+      }
+    }
+    set(newValue) {
+      switch index {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 118)
+      case 0:
+        self.x = newValue
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 118)
+      case 1:
+        self.y = newValue
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 121)
+      default:
+        preconditionFailure("index \(index) out of bounds of Vector2")
+      }
+    }
+  }
+
+  public static var standardBasis: LazyMapCollection<Range<Int>, Self> {
+    (0..<2).lazy.map { index in
+      var vector = zero
+      vector[index] = 1
+      return vector
+    }
+  }
 }
 
 /// Conversion to/from tensor.
@@ -255,11 +323,11 @@ extension Vector2 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [2])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 122)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 153)
   }
 }
 
@@ -395,6 +463,49 @@ extension Vector3: VectorConvertible {
 /// Conformance to `FixedDimensionVector`.
 extension Vector3: FixedDimensionVector {
   public static var dimension: Int { return 3 }
+
+  public subscript(_ index: Int) -> Double {
+    get {
+      switch index {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 108)
+      case 0:
+        return self.x
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 108)
+      case 1:
+        return self.y
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 108)
+      case 2:
+        return self.z
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 111)
+      default:
+        preconditionFailure("index out of bounds")
+      }
+    }
+    set(newValue) {
+      switch index {
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 118)
+      case 0:
+        self.x = newValue
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 118)
+      case 1:
+        self.y = newValue
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 118)
+      case 2:
+        self.z = newValue
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 121)
+      default:
+        preconditionFailure("index \(index) out of bounds of Vector3")
+      }
+    }
+  }
+
+  public static var standardBasis: LazyMapCollection<Range<Int>, Self> {
+    (0..<3).lazy.map { index in
+      var vector = zero
+      vector[index] = 1
+      return vector
+    }
+  }
 }
 
 /// Conversion to/from tensor.
@@ -411,13 +522,13 @@ extension Vector3 {
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == [3])
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
     self.x = tensor[0].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
     self.y = tensor[1].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 120)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 151)
     self.z = tensor[2].scalarized()
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 122)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 153)
   }
 }
 
