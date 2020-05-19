@@ -9,7 +9,7 @@ extension Vector3 {
 }
 
 /// SO(3) group of 3D Rotations
-public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
+public struct Rot3: LieGroup, TangentStandardBasis, Equatable, KeyPathIterable {
   public typealias TangentVector = Vector3
   // MARK: - Manifold conformance
 
@@ -36,16 +36,6 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
     return Rot3(coordinate: Rot3().coordinate.retract(vector))
   }
   
-  public init() {
-    self.init(coordinate: Matrix3Coordinate(eye(rowCount: 3)))
-  }
-  
-  /// Product of two rotations.
-  @differentiable(wrt: (lhs, rhs))
-  public static func * (lhs: Rot3, rhs: Rot3) -> Rot3 {
-    Rot3(coordinate: lhs.coordinate * rhs.coordinate)
-  }
-  
   /// Returns the result of acting `self` on `v`.
   @differentiable
   func rotate(_ v: Vector3) -> Vector3 {
@@ -58,21 +48,10 @@ public struct Rot3: Manifold, TangentStandardBasis, Equatable, KeyPathIterable {
     Vector3(matmul(coordinate.R.transposed(), v.tensor.reshaped(to: [3, 1])).reshaped(to: [3]))
   }
   
-  /// Inverse of the rotation.
-  @differentiable
-  public func inverse() -> Rot3 {
-    Rot3(coordinate: coordinate.inverse())
-  }
-  
   /// Returns the result of acting `self` on `v`.
   @differentiable
   static func * (r: Rot3, p: Vector3) -> Vector3 {
     r.rotate(p)
-  }
-  
-  @differentiable
-  public func localCoordinate(_ global: Rot3) -> Vector3 {
-    coordinate.localCoordinate(global.coordinate)
   }
 }
 
@@ -130,16 +109,27 @@ public extension Matrix3Coordinate {
       pullback
     )
   }
+}
+
+extension Matrix3Coordinate: LieGroupCoordinate {
+  /// Creates the group identity.
+  public init() {
+    self.init(
+      1, 0, 0,
+      0, 1, 0,
+      0, 0, 1
+    )
+  }
   
   /// Product of two rotations.
   @differentiable(wrt: (lhs, rhs))
-  static func * (lhs: Matrix3Coordinate, rhs: Matrix3Coordinate) -> Matrix3Coordinate {
+  public static func * (lhs: Matrix3Coordinate, rhs: Matrix3Coordinate) -> Matrix3Coordinate {
     Matrix3Coordinate(matmul(lhs.R, rhs.R))
   }
   
   /// Inverse of the rotation.
   @differentiable
-  func inverse() -> Matrix3Coordinate {
+  public func inverse() -> Matrix3Coordinate {
     Matrix3Coordinate(R.transposed())
   }
 }
