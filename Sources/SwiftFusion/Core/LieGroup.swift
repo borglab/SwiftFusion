@@ -161,8 +161,8 @@ extension LieGroupCoordinate {
     return log(self * exp(v) * self.inverse())
   }
 
-  /// The default implementation of `Adjoint`, provided so that implementers can test their
-  /// implementation against the default implementation.
+  /// The default implementation of `AdjointTranspose`, provided so that implementers can test
+  /// their implementation against the default implementation.
   public func defaultAdjointTranspose(_ v: LocalCoordinate) -> LocalCoordinate {
     // This works because the pullback of a linear function is its transpose.
     return pullback(at: LocalCoordinate.zero, in: { self.Adjoint($0) })(v)
