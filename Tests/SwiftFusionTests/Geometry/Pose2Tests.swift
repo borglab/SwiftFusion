@@ -85,7 +85,7 @@ final class Pose2Tests: XCTestCase {
       }
 
       // print("𝛁loss", 𝛁loss)
-      pT1.move(along: 𝛁loss.scaled(by: -1))
+      pT1.move(along: -𝛁loss)
     }
 
     print("DONE.")
@@ -144,7 +144,7 @@ final class Pose2Tests: XCTestCase {
 
       // print("𝛁loss", 𝛁loss)
       // NOTE: this is more like sparse rep not matrix Jacobian
-      map.move(along: 𝛁loss.scaled(by: -1.0))
+      map.move(along: -𝛁loss)
     }
 
     // print("]")
