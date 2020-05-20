@@ -112,11 +112,11 @@ final class NonlinearFactorGraphTests: XCTestCase {
         X2, X3, Pose2(2.0, 0.0, 0.0))
 
     // Add Range-Bearing measurements to two different landmarks L1 and L2
-    fg += BearingRangeFactor<PoseToPointBearingRange2D>(
+    fg += BearingRangeFactor<Pose2ToVector2BearingRange>(
       X1, L1, Vector1(45 / 180 * .pi), sqrt(4.0+4.0))
-    fg += BearingRangeFactor<PoseToPointBearingRange2D>(
+    fg += BearingRangeFactor<Pose2ToVector2BearingRange>(
       X2, L1, Vector1(90 / 180 * .pi), 2.0)
-    fg += BearingRangeFactor<PoseToPointBearingRange2D>(
+    fg += BearingRangeFactor<Pose2ToVector2BearingRange>(
       X3, L2, Vector1(90 / 180 * .pi), 2.0)
 
     // Create (deliberately inaccurate) initial estimate

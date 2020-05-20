@@ -30,19 +30,6 @@ public protocol BearingFunction: Differentiable {
   static func bearing(_ from: Base, _ to: Target) -> Bearing
 }
 
-public struct PoseToPointBearingRange2D: RangeFunction & BearingFunction {
-  @differentiable
-  public static func bearing(_ from: Pose2, _ to: Vector2) -> Vector1 {
-    let dx = (to - from.t)
-    return Vector1(between(Rot2(c: dx.x / dx.norm, s: dx.y / dx.norm), from.rot).theta)
-  }
-  
-  @differentiable
-  public static func range(_ from: Pose2, _ to: Vector2) -> Double {
-    (to - from.t).norm
-  }
-}
-
 /// Error type for `BearingRangeFactor`.
 ///
 /// This type is composed of two parts:
