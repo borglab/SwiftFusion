@@ -134,11 +134,11 @@ final class NonlinearFactorGraphTests: XCTestCase {
       
       var dx = VectorValues()
       
-      for i in 0..<3 {
+      for i in [X1, X2, X3] {
         dx.insert(i, Vector(zeros: 3))
       }
       
-      for i in 3..<5 {
+      for i in [L1, L2] {
         dx.insert(i, Vector(zeros: 2))
       }
       

@@ -50,6 +50,12 @@ public struct PoseToPointBearingRange2D: RangeFunction & BearingFunction {
   }
 }
 
+/// Error type for `BearingRangeFactor`.
+///
+/// This type is composed of two parts:
+/// `bearing`: Error in bearing, type `VectorN`
+/// `range`: Error in range, type `Double`
+///
 public struct BearingRangeError<BE: TangentStandardBasis & VectorConvertible & FixedDimensionVector>:
   Differentiable & KeyPathIterable & TangentStandardBasis & VectorConvertible {
   @differentiable
@@ -109,6 +115,13 @@ where BearingRangeFunction.Base.TangentVector: VectorConvertible,
 
   public typealias Output = Error
 
+  /// Create a BearingRangeFactor.
+  ///
+  /// `key1`: Base
+  /// `key2`: Target
+  /// `bearing`: Measured bearing of `key2` looking from `key1`
+  /// `range`: Measured range between `key1` and `key2`
+  ///
   public init (_ key1: Int, _ key2: Int, _ bearing: Bearing, _ range: Double) {
     self.key1 = key1
     self.key2 = key2
@@ -120,11 +133,8 @@ where BearingRangeFunction.Base.TangentVector: VectorConvertible,
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let actual_bearing = BearingRangeFunction.bearing(values[key1, as: Base.self], values[key2, as: Target.self])
-    let actual_range = BearingRangeFunction.range(values[key1, as: Base.self], values[key2, as: Target.self])
-    let error_range = (actual_range - range) * (actual_range - range)
-    let error_bearing = (actual_bearing.vector - bearing.vector).squaredNorm
-    return error_range + error_bearing
+    let error_vector = errorVector(values)
+    return error_vector.range * error_vector.range + error_vector.bearing.squaredNorm
   }
 
   @differentiable(wrt: values)
