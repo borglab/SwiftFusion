@@ -198,3 +198,17 @@ extension Pose2: CustomStringConvertible {
     "Pose2(rot: \(coordinate.rot), t: \(coordinate.t))"
   }
 }
+
+/// Trait-like binding for being used in `BearingRangeFactor`
+public struct Pose2ToVector2BearingRange: RangeFunction & BearingFunction {
+  @differentiable
+  public static func bearing(_ from: Pose2, _ to: Vector2) -> Vector1 {
+    let dx = (to - from.t)
+    return Vector1(between(Rot2(c: dx.x / dx.norm, s: dx.y / dx.norm), from.rot).theta)
+  }
+  
+  @differentiable
+  public static func range(_ from: Pose2, _ to: Vector2) -> Double {
+    (to - from.t).norm
+  }
+}

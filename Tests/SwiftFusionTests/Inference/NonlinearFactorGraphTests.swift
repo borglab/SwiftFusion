@@ -92,4 +92,62 @@ final class NonlinearFactorGraphTests: XCTestCase {
     // Test condition: P_5 should be identical to P_1 (close loop)
     XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
+  
+  func testPlanarSLAM() {
+    var fg = NonlinearFactorGraph()
+    
+    let X1 = 0
+    let X2 = 1
+    let X3 = 2
+    let L1 = 3
+    let L2 = 4
+
+    // Add a prior on pose X1 at the origin. A prior factor consists of a mean and a noise model
+    fg += PriorFactor(X1, Pose2(0.0, 0.0, 0.0))
+
+    // Add odometry factors between X1,X2 and X2,X3, respectively
+    fg += BetweenFactor(
+        X1, X2, Pose2(2.0, 0.0, 0.0))
+    fg += BetweenFactor(
+        X2, X3, Pose2(2.0, 0.0, 0.0))
+
+    // Add Range-Bearing measurements to two different landmarks L1 and L2
+    fg += BearingRangeFactor<Pose2ToVector2BearingRange>(
+      X1, L1, Vector1(45 / 180 * .pi), sqrt(4.0+4.0))
+    fg += BearingRangeFactor<Pose2ToVector2BearingRange>(
+      X2, L1, Vector1(90 / 180 * .pi), 2.0)
+    fg += BearingRangeFactor<Pose2ToVector2BearingRange>(
+      X3, L2, Vector1(90 / 180 * .pi), 2.0)
+
+    // Create (deliberately inaccurate) initial estimate
+    var val = Values()
+    val.insert(X1, Pose2(-0.25, 0.20, 0.15))
+    val.insert(X2, Pose2(2.30, 0.10, -0.20))
+    val.insert(X3, Pose2(4.10, 0.10, 0.10))
+    val.insert(L1, Vector2(1.80, 2.10))
+    val.insert(L2, Vector2(4.10, 1.80))
+    
+    for _ in 0..<10 {
+      let gfg = fg.linearize(val)
+      
+      let optimizer = CGLS(precision: 1e-6, max_iteration: 500)
+      
+      var dx = VectorValues()
+      
+      for i in [X1, X2, X3] {
+        dx.insert(i, Vector(zeros: 3))
+      }
+      
+      for i in [L1, L2] {
+        dx.insert(i, Vector(zeros: 2))
+      }
+      
+      optimizer.optimize(gfg: gfg, initial: &dx)
+      
+      val.move(along: dx)
+    }
+    
+    // Test condition: P_5 should be identical to P_1 (close loop)
+    XCTAssertEqual(fg.error(val), 0.0, accuracy: 1e-3)
+  }
 }
