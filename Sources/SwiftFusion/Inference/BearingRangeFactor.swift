@@ -89,7 +89,7 @@ public struct BearingRangeError<BE: TangentStandardBasis & VectorConvertible & F
 public struct BearingRangeFactor<BearingRangeFunction: BearingFunction & RangeFunction>: NonlinearFactor
 where BearingRangeFunction.Base.TangentVector: VectorConvertible,
       BearingRangeFunction.Target.TangentVector: VectorConvertible,
-      BearingRangeFunction.Bearing: AdditiveArithmetic & Differentiable & VectorProtocol & TangentStandardBasis & EuclideanVectorSpace & VectorConvertible & FixedDimensionVector
+      BearingRangeFunction.Bearing: Differentiable & TangentStandardBasis & EuclideanVector & VectorConvertible & FixedDimensionVector
 {
   public typealias Base = BearingRangeFunction.Base
   public typealias Target = BearingRangeFunction.Target
@@ -137,74 +137,6 @@ where BearingRangeFunction.Base.TangentVector: VectorConvertible,
     return BearingRangeError(bearing: error_bearing, range: error_range)
   }
 
-  public func linearize(_ values: Values) -> JacobianFactor {
-    return JacobianFactor(of: self.errorVector, at: values)
-  }
-}
-
-
-/// A `NonlinearFactor` that calculates the bearing and range error of one pose and one landmark
-///
-/// Input is a dictionary of `Key` to `Value` pairs, and the output is the scalar
-/// error value
-///
-/// Interpretation
-/// ================
-/// `Input`: the input values as key-value pairs
-///
-public struct BearingRangeFactor2D: NonlinearFactor
-{
-  
-  var key1: Int
-  var key2: Int
-  @noDerivative
-  public var keys: Array<Int> {
-    get {
-      [key1, key2]
-    }
-  }
-  
-  public var bearing: Double
-  public var range: Double
-  
-  public typealias Output = Error
-  
-  public init (_ key1: Int, _ key2: Int, _ bearing: Double, _ range: Double) {
-    self.key1 = key1
-    self.key2 = key2
-    self.bearing = bearing
-    self.range = range
-  }
-  typealias ScalarType = Double
-  
-  /// Returns the `error` of the factor.
-  @differentiable(wrt: values)
-  public func error(_ values: Values) -> Double {
-    let from = values[key1, as: Pose2.self]
-    let to = values[key2, as: Vector2.self]
-    let dx = (to - from.t)
-    
-    let actual_bearing = between(Rot2(c: dx.x / dx.norm, s: dx.y / dx.norm), from.rot).theta
-    let actual_range = dx.squaredNorm
-    let error_range = (actual_range - range) * (actual_range - range)
-    let error_bearing = (actual_bearing - bearing)*(actual_bearing - bearing)
-    return error_range + error_bearing
-  }
-  
-  @differentiable(wrt: values)
-  public func errorVector(_ values: Values) -> Vector2 {
-    let from = values[key1, as: Pose2.self]
-    let to = values[key2, as: Vector2.self]
-    let dx = (to - from.t)
-    
-    let actual_bearing = between(Rot2(c: dx.x / dx.norm, s: dx.y / dx.norm), from.rot).theta
-    let actual_range = dx.squaredNorm
-    let error_range = (actual_range - range) * (actual_range - range)
-    let error_bearing = (actual_bearing - bearing)*(actual_bearing - bearing)
-    
-    return Vector2(error_bearing, error_range)
-  }
-  
   public func linearize(_ values: Values) -> JacobianFactor {
     return JacobianFactor(of: self.errorVector, at: values)
   }
