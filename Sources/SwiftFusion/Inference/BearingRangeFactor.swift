@@ -21,13 +21,6 @@ public protocol RangeFunction: Differentiable {
   static func range(_ from: Base, _ to: Target) -> Double
 }
 
-public struct PointToPointRange2D: RangeFunction {
-  @differentiable
-  public static func range(_ from: Vector2, _ to: Vector2) -> Double {
-    (to - from).norm
-  }
-}
-
 /// Protocol for indicating a struct is bearing-capable
 public protocol BearingFunction: Differentiable {
   associatedtype Base: Differentiable
@@ -55,7 +48,7 @@ public struct PoseToPointBearingRange2D: RangeFunction & BearingFunction {
 /// This type is composed of two parts:
 /// `bearing`: Error in bearing, type `VectorN`
 /// `range`: Error in range, type `Double`
-///
+/// `BE`: The type of the error in bearing
 public struct BearingRangeError<BE: TangentStandardBasis & VectorConvertible & FixedDimensionVector>:
   Differentiable & KeyPathIterable & TangentStandardBasis & VectorConvertible {
   @differentiable
