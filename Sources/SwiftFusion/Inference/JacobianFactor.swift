@@ -137,7 +137,7 @@ extension JacobianFactor {
       orderedKeys,
       orderedKeys.map { matrices[$0]! },
       // TODO: remove this negative sign
-      value.vector.scaled(by: -1)
+      -value.vector
     )
   }
 }

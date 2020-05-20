@@ -59,31 +59,10 @@ public struct Pose2: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPat
   @differentiable public var t: Vector2 { coordinate.t }
   
   @differentiable public var rot: Rot2 { coordinate.rot }
-  
-  /// Product of two rotations.
-  @differentiable
-  public static func * (lhs: Pose2, rhs: Pose2) -> Pose2 {
-    Pose2(coordinate: lhs.coordinate * rhs.coordinate)
-  }
-  
-  @differentiable
-  public func inverse() -> Pose2 {
-    Pose2(coordinate: coordinate.inverse())
-  }
-  
-  @differentiable
-  public func localCoordinate(_ global: Self) -> Self.Coordinate.LocalCoordinate {
-    coordinate.localCoordinate(global.coordinate)
-  }
 }
 
 // MARK: Convenience initializers
 extension Pose2 {
-  /// Creates the identity.
-  public init() {
-    self.init(0, 0, 0)
-  }
-
   /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
   @differentiable
   public init(_ x: Double, _ y: Double, _ theta: Double) {
@@ -124,16 +103,21 @@ public extension Pose2Coordinate {
 }
 
 // MARK: Coordinate Operators
-public extension Pose2Coordinate {
+extension Pose2Coordinate: LieGroupCoordinate {
+  /// Creates the group identity.
+  public init() {
+    self.init(Rot2(), Vector2.zero)
+  }
+
   /// Product of two transforms
   @differentiable
-  static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
+  public static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
     Pose2Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
   }
 
   /// Inverse of the rotation.
   @differentiable
-  func inverse() -> Pose2Coordinate {
+  public func inverse() -> Pose2Coordinate {
     Pose2Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
   }
 }
@@ -184,19 +168,28 @@ extension Pose2Coordinate: ManifoldCoordinate {
 }
 
 /// Methods related to the Lie group structure.
-extension Pose2 {
-  /// The Adjoint group action of `self` on the tangent space, as a linear map.
-  public var groupAdjoint: (Vector3) -> Vector3 {
-    {
-      let (w, v) = Pose2Coordinate.decomposed(tangentVector: $0)
-      let tPerp = Vector2(-coordinate.t.y, coordinate.t.x)
-      return Pose2Coordinate.tangentVector(w: w, v: coordinate.rot.rotate(v) - tPerp.scaled(by: w.x))
-    }
+extension Pose2Coordinate {
+  public func Adjoint(_ v: Vector3) -> Vector3 {
+    let (w, v) = Pose2Coordinate.decomposed(tangentVector: v)
+    return Pose2Coordinate.tangentVector(
+      w: w,
+      v: rot.rotate(v) - w.x * Rot2(.pi / 2).rotate(t)
+    )
   }
 
+  public func AdjointTranspose(_ v: Vector3) -> Vector3 {
+    let (w, v) = Pose2Coordinate.decomposed(tangentVector: v)
+    return Pose2Coordinate.tangentVector(
+      w: Vector1(w.x - t.x * v.y + t.y * v.x),
+      v: rot.unrotate(v)
+    )
+  }
+}
+
+extension Pose2 {
   /// The Adjoint group action of `self` on the tangent space, as a matrix.
-  public var groupAdjointMatrix: Tensor<Double> {
-    Tensor(stacking: Pose2.tangentStandardBasis.map { groupAdjoint($0).tensor }).transposed()
+  public var AdjointMatrix: Tensor<Double> {
+    Tensor(stacking: Pose2.tangentStandardBasis.map { Adjoint($0).tensor }).transposed()
   }
 }
 
@@ -205,4 +198,3 @@ extension Pose2: CustomStringConvertible {
     "Pose2(rot: \(coordinate.rot), t: \(coordinate.t))"
   }
 }
-

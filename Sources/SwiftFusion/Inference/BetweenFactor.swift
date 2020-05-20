@@ -23,7 +23,7 @@ import TensorFlow
 /// `Input`: the input values as key-value pairs
 ///
 public struct BetweenFactor<T: LieGroup>: NonlinearFactor
-  where T.TangentVector: VectorConvertible, T.TangentVector == T.Coordinate.LocalCoordinate
+  where T.TangentVector: VectorConvertible
 {
   
   var key1: Int

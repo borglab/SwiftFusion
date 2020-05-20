@@ -94,7 +94,7 @@ final class Rot3Tests: XCTestCase {
   func testExpmap() {
     let axis = Vector3(0, 1, 0)  // rotation around Y
     let angle = 3.14 / 4.0
-    let v = axis.scaled(by: angle)
+    let v = angle * axis
     let expected = Tensor<Double>([[ 0.707388, 0, 0.706825 ], [0, 1, 0], [-0.706825, 0, 0.707388]])
     
     var actual = Rot3()
@@ -106,12 +106,31 @@ final class Rot3Tests: XCTestCase {
   func testExpmapNearZero() {
     let axis = Vector3(0, 1, 0)  // rotation around Y
     let angle = 0.0
-    let v = axis.scaled(by: angle)
+    let v = angle * axis
     let expected = Rot3()
     
     var actual = Rot3()
     actual.move(along: v)
     
     assertAllKeyPathEqual(actual, expected, accuracy: 1e-5)
+  }
+
+  /// Tests that the custom implementations of `Adjoint` and `AdjointTranspose` are correct.
+  func testAdjoint() {
+    for _ in 0..<10 {
+      let rot = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
+      for v in Pose2.tangentStandardBasis {
+        assertEqual(
+          rot.Adjoint(v).tensor,
+          rot.coordinate.defaultAdjoint(v).tensor,
+          accuracy: 1e-10
+        )
+        assertEqual(
+          rot.AdjointTranspose(v).tensor,
+          rot.coordinate.defaultAdjointTranspose(v).tensor,
+          accuracy: 1e-10
+        )
+      }
+    }
   }
 }
