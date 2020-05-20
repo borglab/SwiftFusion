@@ -33,22 +33,21 @@ public class CGLS {
   ///
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
-  public func optimize<F: DecomposedAffineFunction>(_ f: F, initial: inout F.Input) {
+  public func optimize<F: GaussianFactor>(_ f: F, initial: inout F.InputVector) {
     step += 1
 
-    var x: F.Input = initial // x(0), the initial value
-    var r: F.Output = f(x).scaled(by: -1) // r(0) = -b - A * x(0), the residual
-    //print(r)
-    var p = f.applyLinearAdjoint(r) // p(0) = s(0) = A^T * r(0), residual in value space
+    var x: F.InputVector = initial // x(0), the initial value
+    var r: F.ErrorVector = f.errorVector(x).scaled(by: -1) // r(0) = -b - A * x(0), the residual
+    var p = f.applyLinearTranspose(r) // p(0) = s(0) = A^T * r(0), residual in value space
     var s = p // residual of normal equations
     var gamma = s.squaredNorm // γ(0) = ||s(0)||^2
-    
+   
     while step < max_iteration {
       let q = f.applyLinearForward(p) // q(k) = A * p(k)
       let alpha: Double = gamma / q.squaredNorm // α(k) = γ(k)/||q(k)||^2
       x = x + p.scaled(by: alpha) // x(k+1) = x(k) + α(k) * p(k)
       r = r + q.scaled(by: -alpha) // r(k+1) = r(k) - α(k) * q(k)
-      s = f.applyLinearAdjoint(r) // s(k+1) = A.T * r(k+1)
+      s = f.applyLinearTranspose(r) // s(k+1) = A.T * r(k+1)
       
       let gamma_next = s.squaredNorm // γ(k+1) = ||s(k+1)||^2
       let beta: Double = gamma_next/gamma // β(k) = γ(k+1)/γ(k)

@@ -6,7 +6,7 @@
 //   - applyLinearMap: applies a linear map to the inputs
 //   - applyLinearMapTranspose: applies the tranpose of the linear map
 // For gaussian factors, `errorVector(x)` is `applyLinearMap(x)` plus a constant vector. (Note
-// that this is `DecomposedAffineFunction`).
+// that this is `GaussianFactor`).
 
 // Operations that we do:
 //
@@ -16,7 +16,7 @@
 // replaced with the derivative of the factor's error vector. This is a "gaussian factor graph".
 //
 // Given a gaussian factor graph, apply its linear map, its transposed linear map, and get its
-// current error vector at an assignment of variables. (This is `DecomposedAffineFunction` again).
+// current error vector at an assignment of variables. (This is `GaussianFactor` again).
 //   - each of these operations just means applying all of the factors' corresponding operations
 //     to the variables
 
@@ -317,7 +317,7 @@ public struct HomogeneousGaussianFactorGraph<
   }
 }
 
-extension HomogeneousGaussianFactorGraph: DecomposedAffineFunction {
+extension HomogeneousGaussianFactorGraph: GaussianFactor {
   public func applyLinearForward(_ input: Input) -> Output {
     var output = Output(zeros: factorCount)
     for factor in inputs.indices {
@@ -336,7 +336,7 @@ extension HomogeneousGaussianFactorGraph: DecomposedAffineFunction {
     return output
   }
 
-  public func applyLinearAdjoint(_ output: Output) -> Input {
+  public func applyLinearTranspose(_ output: Output) -> Input {
     var input = Input(zeros: inputCount)
     for factor in inputs.indices {
       var inputSubset = input[inputs[factor]]
@@ -354,32 +354,32 @@ extension HomogeneousGaussianFactorGraph: DecomposedAffineFunction {
     return input
   }
 
-  public var bias: Output {
-    return error
+  public func errorVector(_ x: Input) -> Output {
+    return applyLinearForward(x) + error
   }
 }
 
-extension Pose2SLAMMaterializedGaussianFactorGraph: DecomposedAffineFunction {
+extension Pose2SLAMMaterializedGaussianFactorGraph: GaussianFactor {
   /// The linear component of the affine function.
-  public func applyLinearForward(_ x: HomogeneousVectorSubsettable1<Pose2.TangentVector>) -> Output {
-    return Output(
+  public func applyLinearForward(_ x: HomogeneousVectorSubsettable1<Pose2.TangentVector>) -> ErrorVector {
+    return ErrorVector(
       priorErrors: priors.applyLinearForward(x),
       betweenErrors: betweens.applyLinearForward(HomogeneousVectorSubsettable2(x.base))
     )
   }
 
   /// The linear adjoint of the linear component of the affine function.
-  public func applyLinearAdjoint(_ y: Output) -> HomogeneousVectorSubsettable1<Pose2.TangentVector> {
+  public func applyLinearTranspose(_ y: ErrorVector) -> HomogeneousVectorSubsettable1<Pose2.TangentVector> {
     return HomogeneousVectorSubsettable1(
-      priors.applyLinearAdjoint(y.priorErrors).base + betweens.applyLinearAdjoint(y.betweenErrors).base
+      priors.applyLinearTranspose(y.priorErrors).base + betweens.applyLinearTranspose(y.betweenErrors).base
     )
   }
 
-  public var bias: Output {
-    return Output(priorErrors: priors.error, betweenErrors: betweens.error)
+  public func errorVector(_ x: InputVector) -> ErrorVector {
+    return applyLinearForward(x) + ErrorVector(priorErrors: priors.error, betweenErrors: betweens.error)
   }
 
-  public struct Output: EuclideanVectorSpace {
+  public struct ErrorVector: EuclideanVectorSpace {
     public var priorErrors: HomogeneousVectorSubsettable1<Pose2.TangentVector>
     public var betweenErrors: HomogeneousVectorSubsettable1<Pose2.TangentVector>
 

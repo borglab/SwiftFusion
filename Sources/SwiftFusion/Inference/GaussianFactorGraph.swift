@@ -61,11 +61,11 @@ public struct GaussianFactorGraph {
   }
 }
 
-extension GaussianFactorGraph: DecomposedAffineFunction {
+extension GaussianFactorGraph: GaussianFactor {
   public typealias Input = VectorValues
   public typealias Output = Errors
 
-  public func callAsFunction(_ x: Input) -> Output {
+  public func errorVector(_ x: Input) -> Output {
     return residual(x)
   }
 
@@ -73,11 +73,7 @@ extension GaussianFactorGraph: DecomposedAffineFunction {
     return self * x
   }
 
-  public func applyLinearAdjoint(_ y: Output) -> Input {
+  public func applyLinearTranspose(_ y: Output) -> Input {
     return self.atr(y)
-  }
-
-  public var bias: Output {
-    return b.scaled(by: -1)
   }
 }
