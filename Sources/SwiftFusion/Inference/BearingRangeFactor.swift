@@ -85,13 +85,6 @@ public struct BearingRangeError<BE: TangentStandardBasis & VectorConvertible & F
 
 /// A `NonlinearFactor` that calculates the bearing and range error of one pose and one landmark
 ///
-/// Input is a dictionary of `Key` to `Value` pairs, and the output is the scalar
-/// error value
-///
-/// Interpretation
-/// ================
-/// `Input`: the input values as key-value pairs
-///
 public struct BearingRangeFactor<BearingRangeFunction: BearingFunction & RangeFunction>: NonlinearFactor
 where BearingRangeFunction.Base.TangentVector: VectorConvertible,
       BearingRangeFunction.Target.TangentVector: VectorConvertible,
@@ -130,7 +123,13 @@ where BearingRangeFunction.Base.TangentVector: VectorConvertible,
   }
   typealias ScalarType = Double
 
-  /// Returns the `error` of the factor.
+  /// Input is a dictionary of `Key` to `Value` pairs, and the output is the scalar
+  /// error value
+  ///
+  /// Interpretation
+  /// ================
+  /// `Input`: the input values as key-value pairs
+  ///
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
     let error_vector = errorVector(values)
