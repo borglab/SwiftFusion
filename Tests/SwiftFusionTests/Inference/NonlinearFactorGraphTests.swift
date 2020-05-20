@@ -145,12 +145,9 @@ final class NonlinearFactorGraphTests: XCTestCase {
       optimizer.optimize(gfg: gfg, initial: &dx)
       
       val.move(along: dx)
-      print("Current loss = \(fg.error(val))")
     }
     
-    print("Final estimate:")
-    print(val)
     // Test condition: P_5 should be identical to P_1 (close loop)
-//    XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
+    XCTAssertEqual(fg.error(val), 0.0, accuracy: 1e-3)
   }
 }

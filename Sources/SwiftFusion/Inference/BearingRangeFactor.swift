@@ -49,18 +49,18 @@ public struct PoseToPointBearingRange2D: RangeFunction & BearingFunction {
 /// `bearing`: Error in bearing, type `VectorN`
 /// `range`: Error in range, type `Double`
 /// `BE`: The type of the error in bearing
-public struct BearingRangeError<BE: TangentStandardBasis & VectorConvertible & FixedDimensionVector>:
+public struct BearingRangeError<BearingError: TangentStandardBasis & VectorConvertible & FixedDimensionVector>:
   Differentiable & KeyPathIterable & TangentStandardBasis & VectorConvertible {
   @differentiable
   public init(_ vector: Vector) {
-    precondition(vector.dimension == BE.dimension + 1)
-    let part = vector.scalars.differentiablePartition(BE.dimension)
-    bearing = BE(Vector(part.a))
-    range = vector.scalars[BE.dimension]
+    precondition(vector.dimension == BearingError.dimension + 1)
+    let part = vector.scalars.differentiablePartition(BearingError.dimension)
+    bearing = BearingError(Vector(part.a))
+    range = vector.scalars[BearingError.dimension]
   }
   
   @differentiable
-  public init(bearing: BE, range: Double) {
+  public init(bearing: BearingError, range: Double) {
     self.bearing = bearing
     self.range = range
   }
@@ -72,7 +72,7 @@ public struct BearingRangeError<BE: TangentStandardBasis & VectorConvertible & F
     }
   }
 
-  public var bearing: BE
+  public var bearing: BearingError
   public var range: Double
 }
 
