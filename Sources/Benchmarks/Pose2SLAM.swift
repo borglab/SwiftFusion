@@ -83,6 +83,9 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     runGenericFactorGraphBenchmark()
   }
 
+  suite.benchmark("GenericFactorGraphBees", settings: .iterations(1)) {
+    runBeeTrackingExample()
+  }
 }
 
 /// Builds an initial guess and a factor graph from a g2o file.

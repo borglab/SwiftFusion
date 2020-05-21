@@ -1,4 +1,5 @@
 import Foundation
+import TensorFlow
 
 // MARK: - Factors
 
@@ -256,7 +257,7 @@ struct DemoPriorFactor: DifferentiableFactor1 {
 
   @differentiable(wrt: value)
   func errorVector(at value: Pose2) -> Pose2.TangentVector {
-    return prior.localCoordinate(value)
+    return noise(prior.localCoordinate(value))
   }
 
   // MARK: - Linearization.
@@ -415,7 +416,7 @@ struct SwitchingBetweenFactor: DifferentiableFactor3 {
   @differentiable(wrt: (value2, value3))
   func errorVector(at value1: Int, _ value2: Pose2, _ value3: Pose2) -> Vector3 {
     let actualDifference = between(value2, value3)
-    return movements[value1].localCoordinate(actualDifference)
+    return noise(movements[value1].localCoordinate(actualDifference))
   }
 
   typealias LinearizedFactor = JacobianFactor2<Matrix3x3, Matrix3x3>
@@ -431,7 +432,12 @@ struct SwitchingBetweenFactor: DifferentiableFactor3 {
   }
 }
 
-func runBeeTrackingExample() {
+func noise(_ v: Vector3) -> Vector3 {
+  let n = Double(5)
+  return Vector3(n * v.x, n * v.y, n * v.z)
+}
+
+public func runBeeTrackingExample() {
   // Model parameters.
   let labelCount = 3
   let transitionMatrix: [Double] = [
@@ -442,22 +448,27 @@ func runBeeTrackingExample() {
   let movements = [
     Pose2(1, 0, 0),       // go forwards
     Pose2(1, 0, .pi / 4), // turn left
-    Pose2(1, 0, .pi / 4)  // turn right
+    Pose2(1, 0, -.pi / 4)  // turn right
   ]
 
-  // Synthetic observations where the bee goes straight for 10 steps, left for 10 steps, then
-  // right for 10 steps.
+  // Generate some synthetic data.
+  let actualLabels = generateSyntheticLabels(
+    labelCount: labelCount, transitionMatrix: transitionMatrix, count: 30)
+  //let actualLabels = Array(repeating: 0, count: 10)
+  //    + Array(repeating: 1, count: 10)
+  //    + Array(repeating: 2, count: 10)
   let observations = generateSyntheticObservations(
-    labels: Array(repeating: 0, count: 10)
-      + Array(repeating: 1, count: 10)
-      + Array(repeating: 2, count: 10),
-    movements: movements
+    labels: actualLabels,
+    movements: movements,
+    moveNoise: 0.0,
+    observeNoise: 0.0
   )
+
+  print(observations)
 
   // Create the initial guess: bee going straight for 30 steps.
   let initialGuessLabels = Array(repeating: 0, count: 30)
-  let initialGuessPositions =
-    generateSyntheticObservations(labels: initialGuessLabels, movements: movements)
+  let initialGuessPositions = Array(repeating: Pose2(0, 0, 0), count: 30)
 
   // Create variables, assigned to the initial guess.
   var values = VariableAssignments()
@@ -477,15 +488,112 @@ func runBeeTrackingExample() {
   for i in 0..<positionVars.count {
     graph += DemoPriorFactor(positionVars[i], observations[i])
   }
+
+  func labels(_ values: VariableAssignments) -> [Int] {
+    return labelVars.map { values[$0] }
+  }
+
+  // Run Metropolis-Hastings with a proposal that changes the labels and Pose2SLAMs the positions.
+  let metropolisStepCount = 1000000
+  var acceptCount = 0
+  var currentError = graph.error(at: values)
+  for metropolisStep in 0..<metropolisStepCount {
+    if metropolisStep % 1000 == 0 {
+      print("Actual labels : \(actualLabels)")
+      print("Current labels: \(labels(values))")
+      print("Current error: \(currentError)")
+      print("Accept count: \(acceptCount) / \(metropolisStep)")
+      print("")
+    }
+
+    var proposedValues = values
+
+    // Randomly change one label.
+    proposedValues[labelVars[Int.random(in: 0..<labelVars.count)]] = Int.random(in: 0..<labelCount)
+
+    // Pose2SLAM to find new proposed positions.
+
+    // Hack: Make the problem better conditioned by resetting all the positions to 0.
+    for i in positionVars.indices {
+      proposedValues[positionVars[i]] = Pose2(0, 0, 0)
+    }
+    gaussNewton(graph, &proposedValues)
+
+    // Decide whether to accept or reject.
+    let proposedError = graph.error(at: proposedValues)
+    let logA = currentError - proposedError
+    //print(logA)
+    guard logA >= 0 || Double.random(in: 0...1) < exp(logA) else {
+      // Proposal rejected.
+      continue
+    }
+
+    // Proposal accepted.
+    acceptCount += 1
+    currentError = proposedError
+    values = proposedValues
+  }
 }
 
-func generateSyntheticObservations(labels: [Int], movements: [Pose2]) -> [Pose2] {
+func gaussNewton(_ graph: FactorGraph, _ values: inout VariableAssignments) {
+
+  var currentError = graph.error(at: values)
+
+  for _ in 0..<10 {
+    let gfg = graph.linearized(at: values)
+    let optimizer = CGLS(precision: 1e-6, max_iteration: 500)
+    var dx = gfg.inputZero
+    optimizer.optimize(gfg, initial: &dx)
+
+    var newValues = values
+    newValues.move(along: dx)
+    let newError = graph.error(at: newValues)
+    if newError > currentError - 1e-2 {
+      return
+    }
+
+    currentError = newError
+    values = newValues
+  }
+}
+
+func randomRange(in range: Range<Int>) -> Range<Int> {
+  let a = Int.random(in: range.startIndex..<(range.endIndex + 1))
+  let b = Int.random(in: range.startIndex..<(range.endIndex + 1))
+  return min(a, b)..<max(a, b)
+}
+
+func generateSyntheticLabels(
+    labelCount: Int, transitionMatrix: [Double], count: Int) -> [Int] {
+  var currentLabel = 0
+  var labels: [Int] = []
+  for _ in 0..<count {
+    let r = Double.random(in: 0..<1)
+    var newLabel = 0
+    var cumSum = Double(0)
+    for candidateNewLabel in 0..<labelCount {
+      cumSum += transitionMatrix[candidateNewLabel * labelCount + currentLabel]
+      if r < cumSum {
+        newLabel = candidateNewLabel
+        break
+      }
+    }
+    currentLabel = newLabel
+    labels.append(currentLabel)
+  }
+  return labels
+ }
+
+
+func generateSyntheticObservations(labels: [Int], movements: [Pose2], moveNoise: Double, observeNoise: Double) -> [Pose2] {
   var currentPosition = Pose2(0, 0, 0)
   var observations: [Pose2] = [currentPosition]
   observations.reserveCapacity(labels.count + 1)
   for label in labels {
-    currentPosition = movements[label] * currentPosition
-    observations.append(currentPosition)
+    let moveNoisePose = moveNoise > 1e-2 ? Pose2(randomWithCovariance: moveNoise * eye(rowCount: 3)) : Pose2()
+    let observeNoisePose = observeNoise > 1e-2 ? Pose2(randomWithCovariance: observeNoise * eye(rowCount: 3)) : Pose2()
+    currentPosition = moveNoisePose * movements[label] * currentPosition
+    observations.append(observeNoisePose * currentPosition)
   }
   return observations
 }
