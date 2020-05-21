@@ -75,7 +75,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     //check(graph.error(at: val), near: 63.55, accuracy: 1e-2)
   }
 
-  suite.benchmark("GenericFactorGraph", settings: .iterations(1)) {
+  suite.benchmark("GenericFactorGraph", settings: .iterations(5)) {
     runGenericFactorGraphBenchmark()
   }
 

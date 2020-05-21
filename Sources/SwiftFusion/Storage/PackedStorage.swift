@@ -15,6 +15,9 @@ public typealias SimpleTypedID<Value> = TypedID<Value, Int>
 
 public typealias VariableAssignments = PackedStorage
 
+typealias PackedStorageFactors = PackedStorage
+typealias PackedStorageErrors = PackedStorage
+
 // MARK: - Storage without any operations.
 
 /// An existential type for instances of `HomogeneousStorage` that is agnostic to
@@ -55,21 +58,19 @@ protocol AnyHomogeneousStorage {
   /// Returns the total error of all the factors.
   func error(at values: PackedStorage) -> Double
 
-  /// Accumulates the error vectors of all the factors to `out`.
-  /// Precondition: `out` has entries for the error vectors of all the elements.
-  func errorVector(at values: PackedStorage, _ out: inout PackedStorage)
+  /// Returns the error vectors of all the factors at `values`.
+  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage
 
   /// Computes linear approximations of the elements at `values` and writes the approximations to
   /// `out`.
   func linearize(at values: PackedStorage, _ out: inout FactorGraph)
 
-  /// Applies all the elements' forward linear maps to `x` and accumulates the results to `y`.
-  /// Precondition: `y` has an entry at all the elements' outputs.
-  func applyLinearForward(_ x: PackedStorage, _ y: inout PackedStorage)
+  /// Returns the results of the elements' forward linear map applied to `x`.
+  func applyLinearForward(_ x: VariableAssignments) -> AnyHomogeneousStorage
 
   /// Applies all the elements' tranpose linear maps to `y` and accumulates the results to `x`.
   /// Precondition: `x` has an entry at all the elements' inputs.
-  func applyLinearTranspose(_ y: PackedStorage, _ x: inout PackedStorage)
+  func applyLinearTranspose(_ y: AnyHomogeneousStorage, into x: inout VariableAssignments)
 
   // MARK: - Differentiable methods.
 
@@ -81,7 +82,11 @@ protocol AnyHomogeneousStorage {
 
   func scaled(by scalar: Double) -> AnyHomogeneousStorage
 
-  func plus (_ other: AnyHomogeneousStorage) -> AnyHomogeneousStorage
+  func plus(_ other: AnyHomogeneousStorage) -> AnyHomogeneousStorage
+
+  mutating func add(_ other: AnyHomogeneousStorage)
+
+  mutating func scale(by scalar: Double)
 
   var squaredNorm: Double { get }
 }
@@ -91,7 +96,7 @@ extension AnyHomogeneousStorage {
     fatalError("unsupported")
   }
 
-  func errorVector(at values: PackedStorage, _ out: inout PackedStorage) {
+  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage {
     fatalError("unsupported")
   }
 
@@ -99,11 +104,11 @@ extension AnyHomogeneousStorage {
     fatalError("unsupported")
   }
 
-  func applyLinearForward(_ x: PackedStorage, _ y: inout PackedStorage) {
+  func applyLinearForward(_ x: VariableAssignments) -> AnyHomogeneousStorage {
     fatalError("unsupported")
   }
 
-  func applyLinearTranspose(_ y: PackedStorage, _ x: inout PackedStorage) {
+  func applyLinearTranspose(_ y: AnyHomogeneousStorage, into x: inout VariableAssignments) {
     fatalError("unsupported")
   }
 
@@ -119,7 +124,15 @@ extension AnyHomogeneousStorage {
     fatalError("unsupported")
   }
 
-  func plus (_ other: AnyHomogeneousStorage) -> AnyHomogeneousStorage {
+  func plus(_ other: AnyHomogeneousStorage) -> AnyHomogeneousStorage {
+    fatalError("unsupported")
+  }
+
+  mutating func add(_ other: AnyHomogeneousStorage) {
+    fatalError("unsupported")
+  }
+
+  mutating func scale(by scalar: Double) {
     fatalError("unsupported")
   }
 
@@ -209,21 +222,22 @@ struct HomogeneousStorageFactor<T: AnyFactor>: AnyHomogeneousStorage {
     }
   }
 
-  /// Accumulates the error vectors of all the factors to `out`.
-  /// Precondition: `out` has entries for the error vectors of all the elements.
-  func errorVector(
-    at values: PackedStorage,
-    _ out: inout PackedStorage
-  ) {
+  /// Returns the error vectors of all the factors at `values`.
+  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage {
     let factorsBuffer = base.buffer.bindMemory(to: T.self)
-    let resultBuffer = out.homogeneousStorage[ObjectIdentifier(T.self)]!
-      .mutableBuffer.bindMemory(to: T.ErrorVector.self)
-    T.InputIDs.withFastAssignments(values) { fastAssignments in
-      for index in 0..<factorsBuffer.count {
-        let factor = factorsBuffer[index]
-        resultBuffer[index] += factor.errorVector(at: fastAssignments)
+    let result = T.InputIDs.withFastAssignments(values) { fastAssignments in
+      return Array<T.ErrorVector>(unsafeUninitializedCapacity: factorsBuffer.count) {
+        resultBuffer, initializedCount in
+        for index in 0..<factorsBuffer.count {
+          let factor = factorsBuffer[index]
+          resultBuffer[index] = factor.errorVector(at: fastAssignments)
+        }
+        initializedCount = factorsBuffer.count
       }
     }
+    return HomogeneousStorageEuclideanVector<T.ErrorVector>(
+      base: HomogeneousStorage(storage: result)
+    )
   }
 
   /// Computes linear approximations of the elements at `values` and writes the approximations to
@@ -241,30 +255,33 @@ struct HomogeneousStorageFactor<T: AnyFactor>: AnyHomogeneousStorage {
     }
   }
 
-  /// Applies all the elements' forward linear maps to `x` and accumulates the results to `y`.
-  /// Precondition: `y` has an entry at all the elements' outputs.
+  /// Returns the results of the elements' forward linear map applied to `x`.
   @_specialize(where T == JacobianFactor1<Matrix3x3>)
   @_specialize(where T == JacobianFactor2<Matrix3x3, Matrix3x3>)
-  func applyLinearForward(_ x: PackedStorage, _ y: inout PackedStorage) {
+  func applyLinearForward(_ x: VariableAssignments) -> AnyHomogeneousStorage {
     let factorsBuffer = base.buffer.bindMemory(to: T.self)
-    let resultBuffer = y.homogeneousStorage[ObjectIdentifier(T.self)]!
-      .mutableBuffer.bindMemory(to: T.ErrorVector.self)
-    T.InputIDs.withFastAssignments(x) { fastAssignments in
-      for index in 0..<factorsBuffer.count {
-        let factor = factorsBuffer[index]
-        resultBuffer[index] += factor.applyLinearForward(fastAssignments)
+    let result = T.InputIDs.withFastAssignments(x) { fastAssignments in
+      return Array<T.ErrorVector>(unsafeUninitializedCapacity: factorsBuffer.count) {
+        resultBuffer, initializedCount in
+        for index in 0..<factorsBuffer.count {
+          let factor = factorsBuffer[index]
+          resultBuffer[index] = factor.applyLinearForward(fastAssignments)
+        }
+        initializedCount = factorsBuffer.count
       }
     }
+    return HomogeneousStorageEuclideanVector<T.ErrorVector>(
+      base: HomogeneousStorage(storage: result)
+    )
   }
 
   /// Applies all the elements' tranpose linear maps to `y` and accumulates the results to `x`.
   /// Precondition: `x` has an entry at all the elements' inputs.
   @_specialize(where T == JacobianFactor1<Matrix3x3>)
   @_specialize(where T == JacobianFactor2<Matrix3x3, Matrix3x3>)
-  func applyLinearTranspose(_ y: PackedStorage, _ x: inout PackedStorage) {
+  func applyLinearTranspose(_ y: AnyHomogeneousStorage, into x: inout VariableAssignments) {
     let factorsBuffer = base.buffer.bindMemory(to: T.self)
-    let yBuffer = y.homogeneousStorage[ObjectIdentifier(T.self)]!
-      .buffer.bindMemory(to: T.ErrorVector.self)
+    let yBuffer = y.buffer.bindMemory(to: T.ErrorVector.self)
     T.InputIDs.withMutableFastAssignments(&x) { fastAssignments in
       for index in 0..<factorsBuffer.count {
         let factor = factorsBuffer[index]
@@ -364,6 +381,7 @@ struct HomogeneousStorageEuclideanVector<T: EuclideanVectorSpace>: AnyHomogeneou
     return HomogeneousStorageEuclideanVector<T>(base: HomogeneousStorage(storage: result))
   }
 
+  @_specialize(where T == Vector3)
   func scaled(by scalar: Double) -> AnyHomogeneousStorage {
     let buffer = self.buffer.bindMemory(to: T.self)
     let result = Array<T>(unsafeUninitializedCapacity: buffer.count) {
@@ -376,7 +394,8 @@ struct HomogeneousStorageEuclideanVector<T: EuclideanVectorSpace>: AnyHomogeneou
     return HomogeneousStorageEuclideanVector<T>(base: HomogeneousStorage(storage: result))
   }
 
-  func plus (_ other: AnyHomogeneousStorage) -> AnyHomogeneousStorage {
+  @_specialize(where T == Vector3)
+  func plus(_ other: AnyHomogeneousStorage) -> AnyHomogeneousStorage {
     let ourBuffer = self.buffer.bindMemory(to: T.self)
     let otherBuffer = other.buffer.bindMemory(to: T.self)
     let result = Array<T>(unsafeUninitializedCapacity: base.storage.count) {
@@ -389,13 +408,33 @@ struct HomogeneousStorageEuclideanVector<T: EuclideanVectorSpace>: AnyHomogeneou
     return HomogeneousStorageEuclideanVector<T>(base: HomogeneousStorage(storage: result))
   }
 
-  var squaredNorm: Double {
-    var result = Double(0)
-    let buffer = self.buffer.bindMemory(to: T.self)
-    for index in 0..<buffer.count {
-      result += buffer[index].squaredNorm
+  @_specialize(where T == Vector3)
+  mutating func add(_ other: AnyHomogeneousStorage) {
+    let ourBuffer = self.mutableBuffer.bindMemory(to: T.self)
+    let otherBuffer = other.buffer.bindMemory(to: T.self)
+    for index in 0..<ourBuffer.count {
+      ourBuffer[index] += otherBuffer[index]
     }
-    return result
+  }
+
+  @_specialize(where T == Vector3)
+  mutating func scale(by scalar: Double) {
+    let ourBuffer = self.mutableBuffer.bindMemory(to: T.self)
+    for index in 0..<ourBuffer.count {
+      ourBuffer[index].scale(by: scalar)
+    }
+  }
+
+  var squaredNorm: Double {
+    @_specialize(where T == Vector3)
+    get {
+      var result = Double(0)
+      let buffer = self.buffer.bindMemory(to: T.self)
+      for index in 0..<buffer.count {
+        result += buffer[index].squaredNorm
+      }
+      return result
+    }
   }
 }
 
@@ -493,12 +532,13 @@ public struct PackedStorage {
     return result
   }
 
-  /// Accumulates the error vectors of all the factors to `out`.
-  /// Precondition: `out` has entries for the error vectors of all the elements.
-  func errorVector(at values: PackedStorage, _ out: inout PackedStorage) {
-    for factors in homogeneousStorage.values {
-      factors.errorVector(at: values, &out)
+  /// Returns the error vectors of all the factors at `values`.
+  func errorVectors(at values: PackedStorage) -> PackedStorage {
+    var result = PackedStorage()
+    for (objectIdentifier, factors) in homogeneousStorage {
+      result.homogeneousStorage[objectIdentifier] = factors.errorVectors(at: values)
     }
+    return result
   }
 
   /// Computes linear approximations of the elements at `values` and writes the approximations to
@@ -509,19 +549,20 @@ public struct PackedStorage {
     }
   }
 
-  /// Applies all the elements' forward linear maps to `x` and accumulates the results to `y`.
-  /// Precondition: `y` has an entry at all the elements' outputs.
-  func applyLinearForward(_ x: PackedStorage, _ y: inout PackedStorage) {
-    for factors in homogeneousStorage.values {
-      factors.applyLinearForward(x, &y)
+  /// Returns the results of the elements' forward linear map applied to `x`.
+  func applyLinearForward(_ x: VariableAssignments) -> PackedStorageErrors {
+    var result = PackedStorage()
+    for (objectIdentifier, factors) in homogeneousStorage {
+      result.homogeneousStorage[objectIdentifier] = factors.applyLinearForward(x)
     }
+    return result
   }
 
   /// Applies all the elements' tranpose linear maps to `y` and accumulates the results to `x`.
   /// Precondition: `x` has an entry at all the elements' inputs.
-  func applyLinearTranspose(_ y: PackedStorage, _ x: inout PackedStorage) {
-    for factors in homogeneousStorage.values {
-      factors.applyLinearTranspose(y, &x)
+  func applyLinearTranspose(_ y: PackedStorage, into x: inout PackedStorage) {
+    for (objectIdentifier, factors) in homogeneousStorage {
+      factors.applyLinearTranspose(y.homogeneousStorage[objectIdentifier]!, into: &x)
     }
   }
 
@@ -552,12 +593,24 @@ public struct PackedStorage {
     return result
   }
 
+  public static func += (_ lhs: inout PackedStorage, _ rhs: PackedStorage) {
+    for objectID in lhs.homogeneousStorage.keys {
+      lhs.homogeneousStorage[objectID]!.add(rhs.homogeneousStorage[objectID]!)
+    }
+  }
+
   public static func + (_ lhs: PackedStorage, _ rhs: PackedStorage) -> PackedStorage {
     var result = PackedStorage()
     for (objectID, value) in lhs.homogeneousStorage {
       result.homogeneousStorage[objectID] = value.plus(rhs.homogeneousStorage[objectID]!)
     }
     return result
+  }
+
+  public mutating func scale(by scalar: Double) {
+    for objectID in self.homogeneousStorage.keys {
+      self.homogeneousStorage[objectID]!.scale(by: scalar)
+    }
   }
 
   public var squaredNorm: Double {
@@ -577,9 +630,6 @@ extension PackedStorage: Equatable {
 
 extension PackedStorage: EuclideanVectorSpace {
   public typealias TangentVector = PackedStorage
-  public static func += (_ lhs: inout PackedStorage, _ rhs: PackedStorage) {
-    fatalError("unsupported")
-  }
   public static func - (_ lhs: PackedStorage, _ rhs: PackedStorage) -> PackedStorage {
     fatalError("unsupported")
   }
@@ -599,9 +649,6 @@ extension PackedStorage: EuclideanVectorSpace {
     fatalError("unsupported")
   }
   public func subtracting(_ x: Double) -> PackedStorage {
-    fatalError("unsupported")
-  }
-  public mutating func scale(by scalar: Double) {
     fatalError("unsupported")
   }
 }

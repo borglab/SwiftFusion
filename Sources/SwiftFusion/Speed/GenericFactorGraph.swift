@@ -142,56 +142,13 @@ struct JacobianFactor2<Jacobian1: LinearFunction, Jacobian2: LinearFunction>: Fa
   }
 }
 
-// struct MyJacobianFactor2<Jacobian1: LinearFunction, Jacobian2: LinearFunction>: Factor1
-//   where Jacobian1.Output == Jacobian2.Output
-// {
-//   typealias InputIDs = VariableIDs1<Jacobian1.Input, Jacobian2.Input>
-//   let inputId1: SimpleTypedID<InputVector>
-// 
-//   typealias ErrorVector = Jacobian.Output
-// 
-//   let jacobian: Jacobian
-//   let error: ErrorVector
-// 
-//   init<Input: Differentiable>(
-//     linearizing f: @differentiable (Input) -> ErrorVector,
-//     at values: Input,
-//     inputId1: SimpleTypedID<InputVector>
-//   ) where Input.TangentVector == InputVector {
-//     let (error, errorPullback) = valueWithPullback(at: values, in: f)
-//     self.error = error
-//     self.jacobian = Jacobian(transposing: errorPullback)
-//     self.inputId1 = inputId1
-//   }
-// 
-//   func errorVector(at values: InputVector) -> ErrorVector {
-//     return applyLinearForward(values) + error
-//   }
-// 
-//   func linearized(at values: InputVector) -> Self {
-//     return self
-//   }
-// 
-//   func applyLinearForward(_ x: InputVector) -> ErrorVector {
-//     return jacobian.forward(x)
-//   }
-// 
-//   func applyLinearTranspose(_ y: ErrorVector, into result: inout InputVector) {
-//     result += jacobian.transpose(y)
-//   }
-// }
-
 // MARK: - Generic FactorGraph
 
 struct FactorGraph {
-  var factors: PackedStorage = PackedStorage()
-
-  // tagged by factor type
-  var errorZero: PackedStorage = PackedStorage()
+  var factors: PackedStorageFactors = PackedStorageFactors()
 
   static func += <T: AnyFactor>(_ graph: inout Self, _ factor: T) {
     _ = graph.factors.storeFactor(factor)
-    _ = graph.errorZero.storeEuclideanVector(T.ErrorVector.zero, tag: ObjectIdentifier(T.self))
   }
 
   func error(at values: PackedStorage) -> Double {
@@ -212,19 +169,15 @@ struct MyGaussianFactorGraph {
 
 extension MyGaussianFactorGraph: GaussianFactor {
   func errorVector(_ x: PackedStorage) -> PackedStorage {
-    var result = graph.errorZero
-    graph.factors.errorVector(at: x, &result)
-    return result
+    return graph.factors.errorVectors(at: x)
   }
   func applyLinearForward(_ x: PackedStorage) -> PackedStorage {
-    var result = graph.errorZero
-    graph.factors.applyLinearForward(x, &result)
-    return result
+    return graph.factors.applyLinearForward(x)
   }
   func applyLinearTranspose(_ y: PackedStorage) -> PackedStorage {
-    var result = inputZero
-    graph.factors.applyLinearTranspose(y, &result)
-    return result
+    var x = inputZero
+    graph.factors.applyLinearTranspose(y, into: &x)
+    return x
   }
 }
 
