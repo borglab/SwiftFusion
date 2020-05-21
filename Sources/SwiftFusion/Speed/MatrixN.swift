@@ -1,7 +1,6 @@
 protocol LinearFunction {
-  associatedtype Input
-  associatedtype Output
-  init(transposing linear: (Output) -> Input)
+  associatedtype Input: EuclideanVectorSpace
+  associatedtype Output: EuclideanVectorSpace
   func forward(_ x: Input) -> Output
   func transpose(_ y: Output) -> Input
 }
@@ -53,39 +52,48 @@ struct Matrix3x3 {
 }
 
 extension Matrix3x3: LinearFunction {
-  init(transposing linear: (Vector3) -> FactorVectorInput1<Vector3>) {
-    let row0 = linear(Vector3(1, 0, 0))
-    let row1 = linear(Vector3(0, 1, 0))
-    let row2 = linear(Vector3(0, 0, 1))
-    self.init(stacking: row0.value1, row1.value1, row2.value1)
+  func forward(_ x: Vector3) -> Vector3 {
+    return Matrix3x3.matvec(self, x)
   }
-  func forward(_ x: FactorVectorInput1<Vector3>) -> Vector3 {
-    return Matrix3x3.matvec(self, x.value1)
-  }
-  func transpose(_ y: Vector3) -> FactorVectorInput1<Vector3> {
-    return FactorVectorInput1(value1: Matrix3x3.matvec(transposed: self, y))
+  func transpose(_ y: Vector3) -> Vector3 {
+    return Matrix3x3.matvec(transposed: self, y)
   }
 }
 
-struct Matrix3x6 {
-  var a, b: Matrix3x3
+func makeJacobian(transposing linear: (Vector3) -> Vector3) -> Matrix3x3 {
+  let row0 = linear(Vector3(1, 0, 0))
+  let row1 = linear(Vector3(0, 1, 0))
+  let row2 = linear(Vector3(0, 0, 1))
+  return Matrix3x3(stacking: row0, row1, row2)
 }
 
-extension Matrix3x6: LinearFunction {
-  init(transposing linear: (Vector3) -> FactorVectorInput2<Vector3, Vector3>) {
-    let row0 = linear(Vector3(1, 0, 0))
-    let row1 = linear(Vector3(0, 1, 0))
-    let row2 = linear(Vector3(0, 0, 1))
-    a = Matrix3x3(stacking: row0.value1, row1.value1, row2.value1)
-    b = Matrix3x3(stacking: row0.value2, row1.value2, row2.value2)
-  }
-  func forward(_ x: FactorVectorInput2<Vector3, Vector3>) -> Vector3 {
-    return Matrix3x3.matvec(a, x.value1) + Matrix3x3.matvec(b, x.value2)
-  }
-  func transpose(_ y: Vector3) -> FactorVectorInput2<Vector3, Vector3> {
-    return FactorVectorInput2(
-      value1: Matrix3x3.matvec(transposed: a, y),
-      value2: Matrix3x3.matvec(transposed: b, y)
-    )
-  }
+func makeJacobian(transposing linear: (Vector3) -> (Vector3, Vector3)) -> (Matrix3x3, Matrix3x3) {
+  let (row0a, row0b) = linear(Vector3(1, 0, 0))
+  let (row1a, row1b) = linear(Vector3(0, 1, 0))
+  let (row2a, row2b) = linear(Vector3(0, 0, 1))
+  return (Matrix3x3(stacking: row0a, row1a, row2a), Matrix3x3(stacking: row0b, row1b, row2b))
 }
+
+
+// struct Matrix3x6 {
+//   var a, b: Matrix3x3
+// }
+// 
+// extension Matrix3x6: LinearFunction {
+//   init(transposing linear: (Vector3) -> (Vector3, Vector3)) {
+//     let row0 = linear(Vector3(1, 0, 0))
+//     let row1 = linear(Vector3(0, 1, 0))
+//     let row2 = linear(Vector3(0, 0, 1))
+//     a = Matrix3x3(stacking: row0.value1, row1.value1, row2.value1)
+//     b = Matrix3x3(stacking: row0.value2, row1.value2, row2.value2)
+//   }
+//   func forward(_ x: (Vector3, Vector3)) -> Vector3 {
+//     return Matrix3x3.matvec(a, x.value1) + Matrix3x3.matvec(b, x.value2)
+//   }
+//   func transpose(_ y: Vector3) -> (Vector3, Vector3) {
+//     return FactorVectorInput2(
+//       value1: Matrix3x3.matvec(transposed: a, y),
+//       value2: Matrix3x3.matvec(transposed: b, y)
+//     )
+//   }
+// }
