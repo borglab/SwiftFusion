@@ -18,6 +18,9 @@ import Foundation
 ///
 /// See https://lucacarlone.mit.edu/datasets/ for g2o specification and example datasets.
 public protocol G2OReader {
+  /// Creates an empty reader.
+  init()
+
   /// Adds an initial guess that vertex `index` has pose `pose`.
   mutating func addInitialGuess(index: Int, pose: Pose2)
 
@@ -29,7 +32,13 @@ public protocol G2OReader {
 }
 
 extension G2OReader {
-  /// Reads a g2o dataset from `url`.
+  /// Creates a g2o dataset from `url`.
+  public init(fromG2O url: URL) throws {
+    self.init()
+    try self.read(fromG2O: url)
+  }
+
+  /// Adds the g2o dataset at `url` into `self`.
   public mutating func read(fromG2O url: URL) throws {
     let lines = try String(contentsOf: url).split(separator: "\n")
     for (lineIndex, line) in lines.enumerated() {
