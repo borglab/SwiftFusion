@@ -33,15 +33,8 @@ extension Array where Element == Error {
   /// Calculates the L2 norm
   public var norm: Double {
     get {
-      self.map { $0.squared().sum() }.reduce(0.0, { $0 + $1 })
+      self.map { $0.squaredNorm }.reduce(0.0, { $0 + $1 })
     }
-  }
-  
-  /// Errors + scalar
-  static func + (_ lhs: Self, _ rhs: Double) -> Self {
-    var result = lhs
-    let _ = result.indices.map { result[$0] += rhs }
-    return result
   }
   
   /// Errors + Errors

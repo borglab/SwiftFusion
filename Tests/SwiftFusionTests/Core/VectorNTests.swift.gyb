@@ -5,32 +5,15 @@ import XCTest
 import SwiftFusion
 
 % import math
-% dims = [1, 2, 3]
+% dims = range(1, 10)
 
 class VectorNTests: XCTestCase {
-  static var allTests = [
-    % for dim in dims:
-    ("testVector${dim}Init", testVector${dim}Init),
-    ("testVector${dim}Equality", testVector${dim}Equality),
-    ("testVector${dim}Norm", testVector${dim}Norm),
-    ("testVector${dim}SquaredNorm", testVector${dim}SquaredNorm),
-    ("testVector${dim}Add", testVector${dim}Add),
-    ("testVector${dim}Subtract", testVector${dim}Subtract),
-    ("testVector${dim}ScalarMultiply", testVector${dim}ScalarMultiply),
-    ("testVector${dim}Negate", testVector${dim}Negate),
-    ("testVector${dim}Squared", testVector${dim}Squared),
-    ("testVector${dim}Sum", testVector${dim}Sum),
-    ("testVector${dim}TangentVector", testVector${dim}TangentVector),
-    ("testVector${dim}Move", testVector${dim}Move),
-    ("testVector${dim}ConvertToVector", testVector${dim}ConvertToVector),
-    ("testVector${dim}ConvertFromVector", testVector${dim}ConvertFromVector),
-    ("testVector${dim}TensorInit", testVector${dim}TensorInit),
-    ("testVector${dim}TensorExtract", testVector${dim}TensorExtract)${',' if dim < dims[-1] else ''}
-    % end
-  ]
-
   % for dim in dims:
-  % coordinates = ['x', 'y', 'z'][0:dim]
+  % if dim <= 3:
+  %   coordinates = ['x', 'y', 'z'][0:dim]
+  % else:
+  %   coordinates = ['s%d' % i for i in range(dim)]
+  % end
   % values1 = range(1, dim + 1)
   % values2 = range(dim + 1, 2 * dim + 1)
 
@@ -42,16 +25,9 @@ class VectorNTests: XCTestCase {
     % end
   }
 
-  /// Test that vector norm works.
-  func testVector${dim}Norm() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    XCTAssertEqual(vector1.norm, ${math.sqrt(sum([x * x for x in values1]))}, accuracy: 1e-6)
-  }
-
-  /// Test that vector squared norm works.
-  func testVector${dim}SquaredNorm() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    XCTAssertEqual(vector1.squaredNorm, ${sum([x * x for x in values1])}, accuracy: 1e-6)
+  /// Test that the vector has the correct dimension.
+  func testVector${dim}Dimension() {
+    XCTAssertEqual(Vector${dim}.dimension, ${dim})
   }
 
   /// Test that vector `==` works.
@@ -60,53 +36,6 @@ class VectorNTests: XCTestCase {
     let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
     XCTAssertTrue(vector1 == vector1)
     XCTAssertFalse(vector1 == vector2)
-  }
-
-  /// Test that vector addition works.
-  func testVector${dim}Add() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
-    let sum = vector1 + vector2
-    % for (index, coordinate) in enumerate(coordinates):
-    XCTAssertEqual(sum.${coordinate}, ${values1[index] + values2[index]})
-    % end
-  }
-
-  /// Test that vector subtraction works.
-  func testVector${dim}Subtract() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
-    let difference = vector1 - vector2
-    % for (index, coordinate) in enumerate(coordinates):
-    XCTAssertEqual(difference.${coordinate}, ${values1[index] - values2[index]})
-    % end
-  }
-
-  /// Test that vector scalar multiplication works.
-  func testVector${dim}ScalarMultiply() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    let scaled = vector1.scaled(by: 2)
-    % for (index, coordinate) in enumerate(coordinates):
-    XCTAssertEqual(scaled.${coordinate}, ${2 * values1[index]})
-    % end
-  }
-
-  /// Test that vector negation works.
-  func testVector${dim}Negate() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    let negated = -vector1
-    % for (index, coordinate) in enumerate(coordinates):
-    XCTAssertEqual(negated.${coordinate}, ${-values1[index]})
-    % end
-  }
-
-  /// Test that vector squaring works.
-  func testVector${dim}Squared() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    let squared = vector1.squared()
-    % for (index, coordinate) in enumerate(coordinates):
-    XCTAssertEqual(squared.${coordinate}, ${values1[index] * values1[index]})
-    % end
   }
 
   /// Test that vector sum works.
@@ -164,3 +93,26 @@ class VectorNTests: XCTestCase {
 
   % end
 }
+
+% for dim in dims:
+/// Tests the `EuclideanVector` requirements.
+class Vector${dim}EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
+  var dimension: Int { return ${dim} }
+
+  var basisVectors: [Vector${dim}] {
+    return (0..<dimension).map { index in
+      var v = Array(repeating: Double(0), count: dimension)
+      v[index] = 1
+      return Vector${dim}(Vector(v))
+    }
+  }
+
+  func makeVector(from start: Double, stride: Double) -> Vector${dim} {
+    return Vector${dim}(Vector(Array((0..<dimension).map { start + Double($0) * stride })))
+  }
+
+  func testAll() {
+    runAllTests()
+  }
+}
+% end

@@ -19,8 +19,8 @@ public struct Vector${dim}: KeyPathIterable, TangentStandardBasis
   }
 }
 
-/// EuclideanVectorSpace conformance.
-extension Vector${dim}: EuclideanVectorSpace {
+/// EuclideanVector conformance.
+extension Vector${dim}: EuclideanVector {
   public typealias VectorSpaceScalar = Double
   public typealias TangentVector = Self
 

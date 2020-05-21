@@ -19,8 +19,8 @@ import TensorFlow
 /// It is generic over all differentiable models that is `KeyPathIterable`
 /// This loosely follows `Nocedal06book_numericalOptimization`, page 121
 public class NLCG<Model: Differentiable & KeyPathIterable>
-  where Model.TangentVector: VectorProtocol & ElementaryFunctions & KeyPathIterable,
-Model.TangentVector.VectorSpaceScalar == Double {
+  where Model.TangentVector: EuclideanVector & ElementaryFunctions & KeyPathIterable
+{
   public typealias Model = Model
   /// The set of steps taken.
   public var step: Int = 0
@@ -40,7 +40,7 @@ Model.TangentVector.VectorSpaceScalar == Double {
     a.recursivelyAllWritableKeyPaths(to: Double.self).map { a[keyPath: $0] * b[keyPath: $0] }.reduce(0.0, {$0 + $1})
   }
   
-  func lineSearch(f: @differentiable @escaping (Model) -> Model.TangentVector.VectorSpaceScalar,
+  func lineSearch(f: @differentiable @escaping (Model) -> Double,
                   currentValues: Model, gradient: Model.TangentVector) -> Double {
     /* normalize it such that it becomes a unit vector */
     let g = sqrt(dot(currentValues, gradient, gradient))
@@ -52,7 +52,7 @@ Model.TangentVector.VectorSpaceScalar == Double {
     var minStep = -1.0 / g, maxStep = 0.0, newStep = minStep + (maxStep - minStep) / (phi + 1.0);
 
     var newValues = currentValues
-    newValues.move(along: gradient.scaled(by: newStep))
+    newValues.move(along: newStep * gradient)
     var newError = f(newValues);
 
     while (true) {
@@ -66,7 +66,7 @@ Model.TangentVector.VectorSpaceScalar == Double {
       }
 
       var testValues = currentValues
-      testValues.move(along: gradient.scaled(by: testStep))
+      testValues.move(along: testStep * gradient)
       let testError = f(testValues)
 
       // update the working range
@@ -91,7 +91,7 @@ Model.TangentVector.VectorSpaceScalar == Double {
   }
   
   /// Optimize with an initial estimate `model`
-  public func optimize(loss f: @differentiable @escaping (Model) -> Model.TangentVector.VectorSpaceScalar, model x_in: inout Model) {
+  public func optimize(loss f: @differentiable @escaping (Model) -> Double, model x_in: inout Model) {
     step = 0
     
     let x_0 = x_in
@@ -102,7 +102,7 @@ Model.TangentVector.VectorSpaceScalar == Double {
     let a_0 = lineSearch(f: f, currentValues: x_0, gradient: dx_0)
     
     var x_1 = x_0
-    x_1.move(along: dx_0.scaled(by: a_0))
+    x_1.move(along: a_0 * dx_0)
     
     var x_n = x_1
     var dx_n_1 = dx_0
@@ -116,12 +116,12 @@ Model.TangentVector.VectorSpaceScalar == Double {
       let beta: Double = dot(x_in, dx, dx) / dot(x_in, dx_n_1, dx_n_1)
       
       // s_n = \delta x_n + \beta_n s_{n-1}
-      s = dx + s.scaled(by: beta)
+      s = dx + beta * s
       
       // Line search
       let a = lineSearch(f: f, currentValues: x_n, gradient: s)
 
-      let delta = s.scaled(by: a)
+      let delta = a * s
       
       x_n.move(along: delta) // update the estimate
       

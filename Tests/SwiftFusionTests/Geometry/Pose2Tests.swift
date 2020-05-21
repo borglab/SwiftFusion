@@ -85,7 +85,7 @@ final class Pose2Tests: XCTestCase {
       }
 
       // print("𝛁loss", 𝛁loss)
-      pT1.move(along: 𝛁loss.scaled(by: -1))
+      pT1.move(along: -𝛁loss)
     }
 
     print("DONE.")
@@ -144,7 +144,7 @@ final class Pose2Tests: XCTestCase {
 
       // print("𝛁loss", 𝛁loss)
       // NOTE: this is more like sparse rep not matrix Jacobian
-      map.move(along: 𝛁loss.scaled(by: -1.0))
+      map.move(along: -𝛁loss)
     }
 
     // print("]")
@@ -204,7 +204,7 @@ final class Pose2Tests: XCTestCase {
 //
 //    let v = Vector3(0.99, 0.01, -0.015);
 //    let pose = Pose2(coordinate: Pose2(0, 0, 0).coordinate.retract(v))
-//    let actual = pose.groupAdjointMatrix
+//    let actual = pose.AdjointMatrix
     // assertEqual(actual, expected, accuracy: 1e-5)
     // TODO: This is also commented out in GTSAM, why?
   }
@@ -251,7 +251,7 @@ final class Pose2Tests: XCTestCase {
   func testDerivativeInverse() {
     for _ in 0..<10 {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
-      let expected = -pose.groupAdjointMatrix
+      let expected = -pose.AdjointMatrix
       assertEqual(
         Tensor<Double>(stacking: jacobian(of: { $0.inverse() }, at: pose).map { $0.tensor }),
         expected,
@@ -265,7 +265,7 @@ final class Pose2Tests: XCTestCase {
     for _ in 0..<10 {
       let lhs = Pose2(randomWithCovariance: eye(rowCount: 3))
       let rhs = Pose2(randomWithCovariance: eye(rowCount: 3))
-      let expectedWrtLhs = rhs.inverse().groupAdjointMatrix
+      let expectedWrtLhs = rhs.inverse().AdjointMatrix
       let expectedWrtRhs: Tensor<Double> = eye(rowCount: 3)
       assertEqual(
         Tensor<Double>(stacking: jacobian(of: { $0 * rhs }, at: lhs).map { $0.tensor }),
@@ -389,16 +389,22 @@ final class Pose2Tests: XCTestCase {
     XCTAssertEqual(p5T1.t.norm, 0.0, accuracy: 1e-2)
   }
 
-  static var allTests = [
-    ("testBetweenIdentitiesTrivial", testBetweenIdentitiesTrivial),
-    ("testBetweenIdentities", testBetweenIdentities),
-    ("testBetweenIdentities", testBetweenIdentitiesRotated),
-    ("testBetweenDerivatives", testBetweenDerivatives),
-    ("testDerivativeIdentity", testDerivativeIdentity),
-    ("testDerivativeInverse", testDerivativeInverse),
-    ("testDerivativeMultiplication", testDerivativeMultiplication),
-    ("testJacobianPose2Identity", testJacobianPose2Identity),
-    ("testJacobianPose2Trivial", testJacobianPose2Trivial),
-    ("testPose2SLAM", testPose2SLAM),
-  ]
+  /// Tests that the custom implementations of `Adjoint` and `AdjointTranspose` are correct.
+  func testAdjoint() {
+    for _ in 0..<10 {
+      let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
+      for v in Pose2.tangentStandardBasis {
+        assertEqual(
+          pose.Adjoint(v).tensor,
+          pose.coordinate.defaultAdjoint(v).tensor,
+          accuracy: 1e-10
+        )
+        assertEqual(
+          pose.AdjointTranspose(v).tensor,
+          pose.coordinate.defaultAdjointTranspose(v).tensor,
+          accuracy: 1e-10
+        )
+      }
+    }
+  }
 }
