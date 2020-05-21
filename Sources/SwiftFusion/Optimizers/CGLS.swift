@@ -55,6 +55,7 @@ public class CGLS {
       p = s + p.scaled(by: beta) // p(k+1) = s(k+1) + β(k) * p(k)
       
       if alpha * alpha * p.squaredNorm < precision {
+        print("WARNING, early exit")
         break
       }
       step += 1

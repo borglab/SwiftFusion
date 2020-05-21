@@ -13,11 +13,6 @@ public struct TypedID<Value, PerTypeID: Equatable> {
 
 public typealias SimpleTypedID<Value> = TypedID<Value, Int>
 
-public typealias VariableAssignments = PackedStorage
-
-typealias PackedStorageFactors = PackedStorage
-typealias PackedStorageErrors = PackedStorage
-
 // MARK: - Storage without any operations.
 
 /// An existential type for instances of `HomogeneousStorage` that is agnostic to
@@ -59,11 +54,11 @@ protocol AnyHomogeneousStorage {
   func error(at values: PackedStorage) -> Double
 
   /// Returns the error vectors of all the factors at `values`.
-  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage
+  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage?
 
   /// Computes linear approximations of the elements at `values` and writes the approximations to
-  /// `out`.
-  func linearize(at values: PackedStorage, _ out: inout FactorGraph)
+  /// `result`.
+  func linearize(at values: PackedStorage, into result: inout FactorGraph)
 
   /// Returns the results of the elements' forward linear map applied to `x`.
   func applyLinearForward(_ x: VariableAssignments) -> AnyHomogeneousStorage
@@ -76,7 +71,7 @@ protocol AnyHomogeneousStorage {
 
   mutating func move(along direction: AnyHomogeneousStorage)
 
-  var zeroTangentVector: (ObjectIdentifier, AnyHomogeneousStorage) { get }
+  var zeroTangentVector: (ObjectIdentifier, AnyHomogeneousStorage)? { get }
 
   // MARK: - EuclideanVectorSpace methods.
 
@@ -96,13 +91,11 @@ extension AnyHomogeneousStorage {
     fatalError("unsupported")
   }
 
-  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage {
-    fatalError("unsupported")
+  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage? {
+    nil
   }
 
-  func linearize(at values: PackedStorage, _ out: inout FactorGraph) {
-    fatalError("unsupported")
-  }
+  func linearize(at values: PackedStorage, into result: inout FactorGraph) {}
 
   func applyLinearForward(_ x: VariableAssignments) -> AnyHomogeneousStorage {
     fatalError("unsupported")
@@ -116,8 +109,8 @@ extension AnyHomogeneousStorage {
     fatalError("unsupported")
   }
 
-  var zeroTangentVector: (ObjectIdentifier, AnyHomogeneousStorage) {
-    fatalError("unsupported")
+  var zeroTangentVector: (ObjectIdentifier, AnyHomogeneousStorage)? {
+    return nil
   }
 
   func scaled(by scalar: Double) -> AnyHomogeneousStorage {
@@ -221,9 +214,41 @@ struct HomogeneousStorageFactor<T: AnyFactor>: AnyHomogeneousStorage {
       return base.storage.reduce(0) { error, factor in error + factor.error(at: fastAssignments) }
     }
   }
+}
+
+struct HomogeneousStorageDifferentiableFactor<T: AnyDifferentiableFactor>: AnyHomogeneousStorage {
+  var base: HomogeneousStorage<T> = HomogeneousStorage()
+
+  // Delegate implementation to `base`.
+  mutating func appendValue(at p: UnsafeRawPointer) -> Int {
+    base.appendValue(at: p)
+  }
+  mutating func mutableAddress(ofElement i: Int) -> UnsafeMutableRawPointer {
+    base.mutableAddress(ofElement: i)
+  }
+  func address(ofElement i: Int) -> UnsafeRawPointer {
+    base.address(ofElement: i)
+  }
+  var mutableBuffer: UnsafeMutableRawBufferPointer {
+    mutating get {
+      base.mutableBuffer
+    }
+  }
+  var buffer: UnsafeRawBufferPointer {
+    get {
+      base.buffer
+    }
+  }
+
+  /// Returns the total error of all the factors.
+  func error(at values: PackedStorage) -> Double {
+    return T.InputIDs.withFastAssignments(values) { fastAssignments in
+      return base.storage.reduce(0) { error, factor in error + factor.error(at: fastAssignments) }
+    }
+  }
 
   /// Returns the error vectors of all the factors at `values`.
-  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage {
+  func errorVectors(at values: PackedStorage) -> AnyHomogeneousStorage? {
     let factorsBuffer = base.buffer.bindMemory(to: T.self)
     let result = T.InputIDs.withFastAssignments(values) { fastAssignments in
       return Array<T.ErrorVector>(unsafeUninitializedCapacity: factorsBuffer.count) {
@@ -241,16 +266,16 @@ struct HomogeneousStorageFactor<T: AnyFactor>: AnyHomogeneousStorage {
   }
 
   /// Computes linear approximations of the elements at `values` and writes the approximations to
-  /// `out`.
-  @_specialize(where T == MyPriorFactor)
-  @_specialize(where T == MyBetweenFactor)
+  /// `result`.
+  @_specialize(where T == DemoPriorFactor)
+  @_specialize(where T == DemoBetweenFactor)
   func linearize(
     at values: PackedStorage,
-    _ out: inout FactorGraph
+    into result: inout FactorGraph
   ) {
     T.InputIDs.withFastAssignments(values) { fastAssignments in
       for factor in base.storage {
-        out += factor.linearized(at: fastAssignments)
+        result += factor.linearized(at: fastAssignments)
       }
     }
   }
@@ -322,7 +347,7 @@ struct HomogeneousStorageDifferentiable<T: Differentiable>: AnyHomogeneousStorag
     }
   }
 
-  var zeroTangentVector: (ObjectIdentifier, AnyHomogeneousStorage) {
+  var zeroTangentVector: (ObjectIdentifier, AnyHomogeneousStorage)? {
     let buffer = self.buffer.bindMemory(to: T.self)
     let result = Array<T.TangentVector>(unsafeUninitializedCapacity: buffer.count) {
       resultBuffer, initializedCount in
@@ -369,7 +394,7 @@ struct HomogeneousStorageEuclideanVector<T: EuclideanVectorSpace>: AnyHomogeneou
     }
   }
 
-  var zeroTangentVector: AnyHomogeneousStorage {
+  var zeroTangentVector: (ObjectIdentifier, AnyHomogeneousStorage)? {
     let buffer = self.buffer.bindMemory(to: T.self)
     let result = Array<T>(unsafeUninitializedCapacity: buffer.count) {
       resultBuffer, initializedCount in
@@ -378,7 +403,10 @@ struct HomogeneousStorageEuclideanVector<T: EuclideanVectorSpace>: AnyHomogeneou
       }
       initializedCount = buffer.count
     }
-    return HomogeneousStorageEuclideanVector<T>(base: HomogeneousStorage(storage: result))
+    return (
+      ObjectIdentifier(T.TangentVector.self),
+      HomogeneousStorageEuclideanVector<T>(base: HomogeneousStorage(storage: result))
+    )
   }
 
   @_specialize(where T == Vector3)
@@ -461,6 +489,17 @@ public struct PackedStorage {
   }
 
   /// Stores `initialValue` as a new logical value and returns its ID.
+  public mutating func storeDifferentiableFactor<T: AnyDifferentiableFactor>(_ initialValue: T, tag: ObjectIdentifier = ObjectIdentifier(T.self)) -> TypedID<T, Int> {
+    .init(
+      withUnsafePointer(to: initialValue) { p in
+        homogeneousStorage[
+          tag, default: HomogeneousStorageDifferentiableFactor<T>()]
+          .appendValue(at: .init(p))
+      }
+    )
+  }
+
+  /// Stores `initialValue` as a new logical value and returns its ID.
   public mutating func storeFactor<T: AnyFactor>(_ initialValue: T, tag: ObjectIdentifier = ObjectIdentifier(T.self)) -> TypedID<T, Int> {
     .init(
       withUnsafePointer(to: initialValue) { p in
@@ -470,6 +509,7 @@ public struct PackedStorage {
       }
     )
   }
+
 
   /// Stores `initialValue` as a new logical value and returns its ID.
   public mutating func storeDifferentiable<T: Differentiable>(_ initialValue: T, tag: ObjectIdentifier = ObjectIdentifier(T.self)) -> TypedID<T, Int>
@@ -536,21 +576,25 @@ public struct PackedStorage {
   func errorVectors(at values: PackedStorage) -> PackedStorage {
     var result = PackedStorage()
     for (objectIdentifier, factors) in homogeneousStorage {
-      result.homogeneousStorage[objectIdentifier] = factors.errorVectors(at: values)
+      guard let errorVectors = factors.errorVectors(at: values) else {
+        // Non-differentiable factor.
+        continue
+      }
+      result.homogeneousStorage[objectIdentifier] = errorVectors
     }
     return result
   }
 
   /// Computes linear approximations of the elements at `values` and writes the approximations to
   /// `out`.
-  func linearize(at values: PackedStorage, _ out: inout FactorGraph) {
+  func linearize(at values: PackedStorage, into result: inout FactorGraph) {
     for factors in homogeneousStorage.values {
-      factors.linearize(at: values, &out)
+      factors.linearize(at: values, into: &result)
     }
   }
 
   /// Returns the results of the elements' forward linear map applied to `x`.
-  func applyLinearForward(_ x: VariableAssignments) -> PackedStorageErrors {
+  func applyLinearForward(_ x: VariableAssignments) -> ErrorVectors {
     var result = PackedStorage()
     for (objectIdentifier, factors) in homogeneousStorage {
       result.homogeneousStorage[objectIdentifier] = factors.applyLinearForward(x)
@@ -570,14 +614,25 @@ public struct PackedStorage {
 
   public mutating func move(along direction: PackedStorage) {
     for key in homogeneousStorage.keys {
-      homogeneousStorage[key]!.move(along: direction.homogeneousStorage[tangentVector[key]!]!)
+      guard let tangentVectorKey = tangentVector[key] else {
+        // Non-differentiable type.
+        continue
+      }
+      guard let componentDirction = direction.homogeneousStorage[tangentVectorKey] else {
+        // No movement along this component.
+        continue
+      }
+      homogeneousStorage[key]!.move(along: componentDirction)
     }
   }
 
   public var zeroTangentVector: PackedStorage {
     var result = PackedStorage()
     for value in homogeneousStorage.values {
-      let (objectID, zero) = value.zeroTangentVector
+      guard let (objectID, zero) = value.zeroTangentVector else {
+        // Non-Differentiable type.
+        continue
+      }
       result.homogeneousStorage[objectID] = zero
     }
     return result
@@ -656,9 +711,6 @@ extension PackedStorage: EuclideanVectorSpace {
 public struct Empty {}
 
 public protocol VariableIDs {
-  associatedtype Variable1
-  associatedtype Variable2
-
   associatedtype MutableFastAssignments
   static func withMutableFastAssignments<R>(_ values: inout VariableAssignments, _ f: (inout MutableFastAssignments) -> R) -> R
 
@@ -723,6 +775,57 @@ public struct FastAssignments2<Variable1, Variable2> {
   }
 }
 
+public struct MutableFastAssignments3<Variable1, Variable2, Variable3> {
+  var buffer1: UnsafeMutableBufferPointer<Variable1>
+  var buffer2: UnsafeMutableBufferPointer<Variable2>
+  var buffer3: UnsafeMutableBufferPointer<Variable3>
+  subscript(id: SimpleTypedID<Variable1>) -> Variable1 {
+    _read {
+      yield buffer1[id.perTypeID]
+    }
+    _modify {
+      yield &buffer1[id.perTypeID]
+    }
+  }
+  subscript(id: SimpleTypedID<Variable2>) -> Variable2 {
+    _read {
+      yield buffer2[id.perTypeID]
+    }
+    _modify {
+      yield &buffer2[id.perTypeID]
+    }
+  }
+  subscript(id: SimpleTypedID<Variable3>) -> Variable3 {
+    _read {
+      yield buffer3[id.perTypeID]
+    }
+    _modify {
+      yield &buffer3[id.perTypeID]
+    }
+  }
+}
+
+public struct FastAssignments3<Variable1, Variable2, Variable3> {
+  var buffer1: UnsafeBufferPointer<Variable1>
+  var buffer2: UnsafeBufferPointer<Variable2>
+  var buffer3: UnsafeBufferPointer<Variable3>
+  subscript(id: SimpleTypedID<Variable1>) -> Variable1 {
+    _read {
+      yield buffer1[id.perTypeID]
+    }
+  }
+  subscript(id: SimpleTypedID<Variable2>) -> Variable2 {
+    _read {
+      yield buffer2[id.perTypeID]
+    }
+  }
+  subscript(id: SimpleTypedID<Variable3>) -> Variable3 {
+    _read {
+      yield buffer3[id.perTypeID]
+    }
+  }
+}
+
 public struct VariableIDs1<Variable1>: VariableIDs {
   public typealias Variable2 = Empty
   public let id1: SimpleTypedID<Variable1>
@@ -757,6 +860,27 @@ public struct VariableIDs2<Variable1, Variable2>: VariableIDs {
   }
 }
 
+public struct VariableIDs3<Variable1, Variable2, Variable3>: VariableIDs {
+  public let id1: SimpleTypedID<Variable1>
+  public let id2: SimpleTypedID<Variable2>
+  public let id3: SimpleTypedID<Variable3>
+  public typealias MutableFastAssignments = MutableFastAssignments3<Variable1, Variable2, Variable3>
+  public static func withMutableFastAssignments<R>(_ values: inout VariableAssignments, _ f: (inout MutableFastAssignments) -> R) -> R {
+    let buffer1 = values.homogeneousStorage[ObjectIdentifier(Variable1.self)]!.mutableBuffer.bindMemory(to: Variable1.self)
+    let buffer2 = values.homogeneousStorage[ObjectIdentifier(Variable2.self)]!.mutableBuffer.bindMemory(to: Variable2.self)
+    let buffer3 = values.homogeneousStorage[ObjectIdentifier(Variable3.self)]!.mutableBuffer.bindMemory(to: Variable3.self)
+    var mutableFastAssignments = MutableFastAssignments3(buffer1: buffer1, buffer2: buffer2, buffer3: buffer3)
+    return f(&mutableFastAssignments)
+  }
+  public typealias FastAssignments = FastAssignments3<Variable1, Variable2, Variable3>
+  public static func withFastAssignments<R>(_ values: VariableAssignments, _ f: (FastAssignments) -> R) -> R {
+    let buffer1 = values.homogeneousStorage[ObjectIdentifier(Variable1.self)]!.buffer.bindMemory(to: Variable1.self)
+    let buffer2 = values.homogeneousStorage[ObjectIdentifier(Variable2.self)]!.buffer.bindMemory(to: Variable2.self)
+    let buffer3 = values.homogeneousStorage[ObjectIdentifier(Variable3.self)]!.buffer.bindMemory(to: Variable3.self)
+    return f(FastAssignments3(buffer1: buffer1, buffer2: buffer2, buffer3: buffer3))
+  }
+}
+
 // public struct VariableIDs2a<Variable1>: VariableIDs {
 //   public typealias Variable2 = Variable1
 //   public let id1: SimpleTypedID<Variable1>
@@ -784,18 +908,6 @@ public protocol AnyFactor {
   var inputIDs: InputIDs { get }
 
   func error(at value: InputIDs.FastAssignments) -> Double
-
-  associatedtype ErrorVector: EuclideanVectorSpace
-  func errorVector(at value: InputIDs.FastAssignments) -> ErrorVector
-
-  associatedtype LinearizedFactor: AnyFactor
-  func linearized(at value: InputIDs.FastAssignments) -> LinearizedFactor
-
-  /// Applies this Gaussian factor's forward linear map to `x`.
-  func applyLinearForward(_ x: InputIDs.FastAssignments) -> ErrorVector
-
-  /// Applies this Gaussian factor's transpose linear map to `y`.
-  func applyLinearTranspose(_ y: ErrorVector, into result: inout InputIDs.MutableFastAssignments)
 }
 
 public protocol Factor1: AnyFactor where InputIDs == VariableIDs1<Variable1> {
@@ -803,7 +915,73 @@ public protocol Factor1: AnyFactor where InputIDs == VariableIDs1<Variable1> {
   var inputId1: SimpleTypedID<Variable1> { get }
 
   func error(at value: Variable1) -> Double
+}
 
+extension Factor1 {
+  var inputIDs: VariableIDs1<Variable1> {
+    return VariableIDs1(id1: inputId1)
+  }
+
+  func error(at value: FastAssignments1<Variable1>) -> Double {
+    return error(at: value[inputId1])
+  }
+}
+
+public protocol Factor2: AnyFactor where InputIDs == VariableIDs2<Variable1, Variable2> {
+  associatedtype Variable1
+  associatedtype Variable2
+  var inputId1: SimpleTypedID<Variable1> { get }
+  var inputId2: SimpleTypedID<Variable2> { get }
+
+  func error(at value1: Variable1, _ value2: Variable2) -> Double
+}
+
+extension Factor2 {
+  var inputIDs: VariableIDs2<Variable1, Variable2> {
+    return VariableIDs2(id1: inputId1, id2: inputId2)
+  }
+
+  func error(at value: FastAssignments2<Variable1, Variable2>) -> Double {
+    return error(at: value[inputId1], value[inputId2])
+  }
+}
+
+public protocol Factor3: AnyFactor where InputIDs == VariableIDs3<Variable1, Variable2, Variable3> {
+  associatedtype Variable1
+  associatedtype Variable2
+  associatedtype Variable3
+  var inputId1: SimpleTypedID<Variable1> { get }
+  var inputId2: SimpleTypedID<Variable2> { get }
+  var inputId3: SimpleTypedID<Variable3> { get }
+
+  func error(at value1: Variable1, _ value2: Variable2, _ value3: Variable3) -> Double
+}
+
+extension Factor3 {
+  var inputIDs: VariableIDs3<Variable1, Variable2, Variable3> {
+    return VariableIDs3(id1: inputId1, id2: inputId2, id3: inputId3)
+  }
+
+  func error(at value: FastAssignments3<Variable1, Variable2, Variable3>) -> Double {
+    return error(at: value[inputId1], value[inputId2], value[inputId3])
+  }
+}
+
+public protocol AnyDifferentiableFactor: AnyFactor {
+  associatedtype ErrorVector: EuclideanVectorSpace
+  func errorVector(at value: InputIDs.FastAssignments) -> ErrorVector
+
+  associatedtype LinearizedFactor: AnyDifferentiableFactor
+  func linearized(at value: InputIDs.FastAssignments) -> LinearizedFactor
+
+  // TODO: These should go in protocol refinements.
+  /// Applies this Gaussian factor's forward linear map to `x`.
+  func applyLinearForward(_ x: InputIDs.FastAssignments) -> ErrorVector
+  /// Applies this Gaussian factor's transpose linear map to `y`.
+  func applyLinearTranspose(_ y: ErrorVector, into result: inout InputIDs.MutableFastAssignments)
+}
+
+public protocol DifferentiableFactor1: Factor1, AnyDifferentiableFactor {
   func errorVector(at value: Variable1) -> ErrorVector
 
   func linearized(at value: Variable1) -> LinearizedFactor
@@ -815,15 +993,7 @@ public protocol Factor1: AnyFactor where InputIDs == VariableIDs1<Variable1> {
   func applyLinearTranspose(_ y: ErrorVector, into result: inout Variable1)
 }
 
-extension Factor1 {
-  var inputIDs: VariableIDs1<Variable1> {
-    return VariableIDs1(id1: inputId1)
-  }
-
-  func error(at value: FastAssignments1<Variable1>) -> Double {
-    return error(at: value[inputId1])
-  }
-
+extension DifferentiableFactor1 {
   func errorVector(at value: FastAssignments1<Variable1>) -> ErrorVector {
     return errorVector(at: value[inputId1])
   }
@@ -841,7 +1011,7 @@ extension Factor1 {
   }
 }
 
-extension Factor1 {
+extension DifferentiableFactor1 {
   func error(at value: Variable1) -> Double {
     return errorVector(at: value).squaredNorm
   }
@@ -857,14 +1027,7 @@ extension Factor1 {
   }
 }
 
-public protocol Factor2: AnyFactor where InputIDs == VariableIDs2<Variable1, Variable2> {
-  associatedtype Variable1
-  associatedtype Variable2
-  var inputId1: SimpleTypedID<Variable1> { get }
-  var inputId2: SimpleTypedID<Variable2> { get }
-
-  func error(at value1: Variable1, _ value2: Variable2) -> Double
-
+public protocol DifferentiableFactor2: Factor2, AnyDifferentiableFactor {
   func errorVector(at value1: Variable1, _ value2: Variable2) -> ErrorVector
 
   func linearized(at value1: Variable1, _ value2: Variable2) -> LinearizedFactor
@@ -876,15 +1039,7 @@ public protocol Factor2: AnyFactor where InputIDs == VariableIDs2<Variable1, Var
   func applyLinearTranspose(_ y: ErrorVector, into result1: inout Variable1, _ result2: inout Variable2)
 }
 
-extension Factor2 {
-  var inputIDs: VariableIDs2<Variable1, Variable2> {
-    return VariableIDs2(id1: inputId1, id2: inputId2)
-  }
-
-  func error(at value: FastAssignments2<Variable1, Variable2>) -> Double {
-    return error(at: value[inputId1], value[inputId2])
-  }
-
+extension DifferentiableFactor2 {
   func errorVector(at value: FastAssignments2<Variable1, Variable2>) -> ErrorVector {
     return errorVector(at: value[inputId1], value[inputId2])
   }
@@ -902,7 +1057,7 @@ extension Factor2 {
   }
 }
 
-extension Factor2 {
+extension DifferentiableFactor2 {
   func error(at value1: Variable1, _ value2: Variable2) -> Double {
     return errorVector(at: value1, value2).squaredNorm
   }
@@ -914,6 +1069,36 @@ extension Factor2 {
 
   /// Applies this Gaussian factor's transpose linear map to `y`.
   func applyLinearTranspose(_ y: ErrorVector, into result1: inout Variable1, _ result2: inout Variable2) {
+    fatalError("not supported")
+  }
+}
+
+public protocol DifferentiableFactor3: Factor3, AnyDifferentiableFactor {
+  func errorVector(at value1: Variable1, _ value2: Variable2, _ value3: Variable3) -> ErrorVector
+
+  func linearized(at value1: Variable1, _ value2: Variable2, _ value3: Variable3) -> LinearizedFactor
+}
+
+extension DifferentiableFactor3 {
+  func errorVector(at value: FastAssignments3<Variable1, Variable2, Variable3>) -> ErrorVector {
+    return errorVector(at: value[inputId1], value[inputId2], value[inputId3])
+  }
+
+  func linearized(at value: FastAssignments3<Variable1, Variable2, Variable3>) -> LinearizedFactor {
+    return linearized(at: value[inputId1], value[inputId2], value[inputId3])
+  }
+}
+
+extension DifferentiableFactor3 {
+  func error(at value1: Variable1, _ value2: Variable2, _ value3: Variable3) -> Double {
+    return errorVector(at: value1, value2, value3).squaredNorm
+  }
+
+  func applyLinearForward(_ x: FastAssignments3<Variable1, Variable2, Variable3>) -> ErrorVector {
+    fatalError("not supported")
+  }
+
+  func applyLinearTranspose(_ y: ErrorVector, into result: inout MutableFastAssignments3<Variable1, Variable2, Variable3>) {
     fatalError("not supported")
   }
 }

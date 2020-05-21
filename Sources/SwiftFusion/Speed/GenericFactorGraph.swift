@@ -1,37 +1,11 @@
+import Foundation
+
 // MARK: - Factors
 
-struct MyPriorFactor: Factor1 {
-  typealias InputIDs = VariableIDs1<Pose2>
-  var inputId1: SimpleTypedID<Pose2>
-
-  let prior: Pose2
-
-  init(_ inputId1: SimpleTypedID<Pose2>, _ prior: Pose2) {
-    self.inputId1 = inputId1
-    self.prior = prior
-  }
-
-  @differentiable(wrt: value)
-  func errorVector(at value: Pose2) -> Pose2.TangentVector {
-    return prior.localCoordinate(value)
-  }
-
-  func linearized(at value: Pose2) -> JacobianFactor1<Matrix3x3> {
-    return JacobianFactor1(
-      linearizing: self.errorVector,
-      at: value,
-      inputId1: TypedID(inputId1.perTypeID),
-      makeJacobian: makeJacobian
-    )
-  }
-}
-
-struct MyBetweenFactor: Factor2 {
+struct DemoBetweenFactor: DifferentiableFactor2 {
   typealias InputIDs = VariableIDs2<Pose2, Pose2>
   var inputId1: SimpleTypedID<Pose2>
   var inputId2: SimpleTypedID<Pose2>
-
-  typealias ErrorVector = Vector3
 
   let difference: Pose2
 
@@ -40,6 +14,8 @@ struct MyBetweenFactor: Factor2 {
     self.inputId2 = inputId2
     self.difference = difference
   }
+
+  typealias ErrorVector = Vector3
 
   @differentiable(wrt: (value1, value2))
   func errorVector(at value1: Pose2, _ value2: Pose2) -> Vector3 {
@@ -60,7 +36,7 @@ struct MyBetweenFactor: Factor2 {
   }
 }
 
-struct JacobianFactor1<Jacobian: LinearFunction>: Factor1 {
+struct JacobianFactor1<Jacobian: LinearFunction>: DifferentiableFactor1 {
   typealias InputIDs = VariableIDs1<Jacobian.Input>
   let inputId1: SimpleTypedID<Jacobian.Input>
 
@@ -96,7 +72,7 @@ struct JacobianFactor1<Jacobian: LinearFunction>: Factor1 {
   }
 }
 
-struct JacobianFactor2<Jacobian1: LinearFunction, Jacobian2: LinearFunction>: Factor2 where Jacobian1.Output == Jacobian2.Output {
+struct JacobianFactor2<Jacobian1: LinearFunction, Jacobian2: LinearFunction>: DifferentiableFactor2 where Jacobian1.Output == Jacobian2.Output {
   typealias InputIDs = VariableIDs2<Jacobian1.Input, Jacobian2.Input>
   let inputId1: SimpleTypedID<Jacobian1.Input>
   let inputId2: SimpleTypedID<Jacobian2.Input>
@@ -142,32 +118,12 @@ struct JacobianFactor2<Jacobian1: LinearFunction, Jacobian2: LinearFunction>: Fa
   }
 }
 
-// MARK: - Generic FactorGraph
-
-struct FactorGraph {
-  var factors: PackedStorageFactors = PackedStorageFactors()
-
-  static func += <T: AnyFactor>(_ graph: inout Self, _ factor: T) {
-    _ = graph.factors.storeFactor(factor)
-  }
-
-  func error(at values: PackedStorage) -> Double {
-    return factors.error(at: values)
-  }
-
-  func linearized(at values: PackedStorage) -> MyGaussianFactorGraph {
-    var linearized = FactorGraph()
-    factors.linearize(at: values, &linearized)
-    return MyGaussianFactorGraph(graph: linearized, inputZero: values.zeroTangentVector)
-  }
-}
-
-struct MyGaussianFactorGraph {
+struct DemoGaussianFactorGraph {
   var graph: FactorGraph
   var inputZero: PackedStorage
 }
 
-extension MyGaussianFactorGraph: GaussianFactor {
+extension DemoGaussianFactorGraph: GaussianFactor {
   func errorVector(_ x: PackedStorage) -> PackedStorage {
     return graph.factors.errorVectors(at: x)
   }
@@ -181,14 +137,173 @@ extension MyGaussianFactorGraph: GaussianFactor {
   }
 }
 
+// MARK: - "Demo"
+
+public typealias Factors = PackedStorage
+public typealias VariableAssignments = PackedStorage
+public typealias ErrorVectors = PackedStorage
+
+public func runSimplePose2SLAM() {
+
+// # Section 1: Set up the initial guess.
+
+  var values = VariableAssignments()
+  let var0: SimpleTypedID<Pose2> = values.storeDifferentiable(Pose2(0.5, 0.0, 0.2))
+  let var1: SimpleTypedID<Pose2> = values.storeDifferentiable(Pose2(2.3, 0.1, -0.2))
+  let var2: SimpleTypedID<Pose2> = values.storeDifferentiable(Pose2(4.1, 0.1, .pi / 2))
+  let var3: SimpleTypedID<Pose2> = values.storeDifferentiable(Pose2(4.0, 2.0, .pi))
+  let var4: SimpleTypedID<Pose2> = values.storeDifferentiable(Pose2(2.1, 2.1, -.pi / 2))
+  let var5: SimpleTypedID<Int> = values.store(42)
+
+  // Under the hood, `values` is a dictionary of homogeneous arrays:
+  // [
+  //   "Pose2": [Pose2(0.5, 0.0, 0.2), Pose2(2.3, 0.1, -0.2), ...]
+  //   "Int"  : [42]
+  // ]
+  //
+  // This allows fast access (just pointer arithmetic into the array buffer) if you know
+  // statically what type you want.
+  //
+  // This also means that you only need one heap allocation per type of value.
+
+  let initialGuess1: Pose2 = values[var0]
+  // => Pose2(0.5, 0.0, 0.2)
+
+  let initialGuess2: Int = values[var5]
+  // => 42
+
+// # Section 2: Set up the factor graph.
+
+  var graph = FactorGraph()
+  graph += DemoPriorFactor(var1, Pose2(0, 0, 0))
+  graph += DemoBetweenFactor(var1, var0, Pose2(2.0, 0.0, .pi / 2))
+  graph += DemoBetweenFactor(var2, var1, Pose2(2.0, 0.0, .pi / 2))
+  graph += DemoBetweenFactor(var3, var2, Pose2(2.0, 0.0, .pi / 2))
+  graph += DemoBetweenFactor(var4, var3, Pose2(2.0, 0.0, .pi / 2))
+
+  // Under the hood, `graph` is a dictionary of homogeneous arrays, just like `values`.
+
+// # Section 3: Linearize the graph and run CGLS.
+
+  let linearApproximation: DemoGaussianFactorGraph = graph.linearized(at: values)
+  let optimizer = CGLS(precision: 1e-6, max_iteration: 500)
+  var dx = values.zeroTangentVector
+  optimizer.optimize(linearApproximation, initial: &dx)
+
+  print(graph.error(at: values))
+  values.move(along: dx)
+  print(graph.error(at: values))
+
+// # Section 4: Performance.
+
+  // Artificial benchmark:
+  //   Intel Pose2SLAM dataset.
+  //   Nonlinear solver: 10 iterations of Gauss-Newton.
+  //   Linear solver: 500 iterations of CGLS, "DummyPreconditioner".
+  //   Always run max iterations, to guarantee that each implementation does similar amounts of work.
+
+  // Results:
+  //   SwiftFusion `NonlinearFactorGraph`                110    seconds
+  //   GTSAM                                               4.1  seconds
+  //   SwiftFusion `PackedStorage`                         2.1  seconds
+  //   SwiftFusion `PackedStorage` + `@_specialize`        0.38 seconds
+
+  // Final errors:
+  //   SwiftFusion `NonlinearFactorGraph`                0.9873763132951586
+  //   SwiftFusion `PackedStorage`                       0.9873763132951586
+  //   SwiftFusion `PackedStorage` + `@_specialize`      0.9873763132951586
+  //   GTSAM                                             0.953261
+
+  //
+
+  // Configuraiton details:
+  //   CPU: Intel(R) Xeon(R) CPU E5-1650 v4 @ 3.60GHz
+  //   SwiftFusion:
+  //     * "-O -cross-module-optimization"
+  //   GTSAM:
+  //     * "Release" mode
+  //     * "-march=native"
+  //     * "SLOW_BUT_CORRECT_EXPMAP"
+  //     * modified to use unit noise
+  //     * no TBB
+  //     * no MKL
+
+}
+
+// # Section 5: Defining a factor.
+
+struct DemoPriorFactor: DifferentiableFactor1 {
+
+  // MARK: - Input variable ids.
+
+  typealias InputIDs = VariableIDs1<Pose2>
+  var inputId1: SimpleTypedID<Pose2>
+
+  // MARK: - Factor data.
+
+  let prior: Pose2
+
+  // MARK: - Initializer.
+
+  init(_ inputId1: SimpleTypedID<Pose2>, _ prior: Pose2) {
+    self.inputId1 = inputId1
+    self.prior = prior
+  }
+
+  // MARK: - Error function.
+
+  typealias ErrorVector = Pose2.TangentVector
+
+  @differentiable(wrt: value)
+  func errorVector(at value: Pose2) -> Pose2.TangentVector {
+    return prior.localCoordinate(value)
+  }
+
+  // MARK: - Linearization.
+
+  typealias LinearizedFactor = JacobianFactor1<Matrix3x3>
+
+  func linearized(at value: Pose2) -> JacobianFactor1<Matrix3x3> {
+    return JacobianFactor1(
+      linearizing: self.errorVector,
+      at: value,
+      inputId1: TypedID(inputId1.perTypeID),
+      makeJacobian: makeJacobian
+    )
+  }
+
+}
+
+struct FactorGraph {
+  var factors: Factors = Factors()
+
+  static func += <T: AnyDifferentiableFactor>(_ graph: inout Self, _ factor: T) {
+    _ = graph.factors.storeDifferentiableFactor(factor)
+  }
+
+  mutating func append<T: AnyFactor>(discrete factor: T) {
+    _ = factors.storeFactor(factor)
+  }
+
+  func error(at values: VariableAssignments) -> Double {
+    return factors.error(at: values)
+  }
+
+  func linearized(at values: VariableAssignments) -> DemoGaussianFactorGraph {
+    var linearized = FactorGraph()
+    factors.linearize(at: values, into: &linearized)
+    return DemoGaussianFactorGraph(graph: linearized, inputZero: values.zeroTangentVector)
+  }
+}
+
 public func runGenericFactorGraph() {
   var values = PackedStorage()
   let variable1 = values.storeDifferentiable(Pose2())
   //let variable2 = values.storeDifferentiable(Pose2())
 
   var graph = FactorGraph()
-  graph += MyPriorFactor(variable1, Pose2(1, 0, 0))
-  //graph += ((variable1, variable2), MyBetweenFactor(Pose2(1, 0, 1)))
+  graph += DemoPriorFactor(variable1, Pose2(1, 0, 0))
+  //graph += ((variable1, variable2), DemoBetweenFactor(Pose2(1, 0, 1)))
 
   print(graph.error(at: values))
   for _ in 0..<5 {
@@ -207,7 +322,7 @@ public func runGenericFactorGraphBenchmark() {
   var graph = intelPoseSLAMFactorGraph.graph
   var values = intelPoseSLAMFactorGraph.initialGuess
   print(graph.error(at: values))
-  graph += MyPriorFactor(intelPoseSLAMFactorGraph.variableIDs[0]!, Pose2(0, 0, 0))
+  graph += DemoPriorFactor(intelPoseSLAMFactorGraph.variableIDs[0]!, Pose2(0, 0, 0))
   for _ in 0..<10 {
     let gfg = graph.linearized(at: values)
     let optimizer = CGLS(precision: 0, max_iteration: 500)
@@ -233,10 +348,147 @@ struct MyG2OFactorGraph: G2OReader {
   }
 
   public mutating func addMeasurement(frameIndex: Int, measuredIndex: Int, pose: Pose2) {
-    graph += MyBetweenFactor(variableIDs[frameIndex]!, variableIDs[measuredIndex]!, pose)
+    graph += DemoBetweenFactor(variableIDs[frameIndex]!, variableIDs[measuredIndex]!, pose)
   }
 }
 
+// MARK: - Bee tracking.
+
+struct DiscreteTransitionFactor: Factor2 {
+  typealias InputIDs = VariableIDs2<Int, Int>
+  var inputId1: SimpleTypedID<Int>
+  var inputId2: SimpleTypedID<Int>
+
+  /// The number of states.
+  let stateCount: Int
+
+  /// Entry `i * stateCount + j` is the probability of transitioning from state `j` to state `i`.
+  let transitionMatrix: [Double]
+
+  init(
+    _ inputId1: SimpleTypedID<Int>,
+    _ inputId2: SimpleTypedID<Int>,
+    _ stateCount: Int,
+    _ transitionMatrix: [Double]
+  ) {
+    precondition(transitionMatrix.count == stateCount * stateCount)
+    self.inputId1 = inputId1
+    self.inputId2 = inputId2
+    self.stateCount = stateCount
+    self.transitionMatrix = transitionMatrix
+  }
+
+  func error(at value1: Int, _ value2: Int) -> Double {
+    return -log(transitionMatrix[value2 * stateCount + value1])
+  }
+}
+
+struct SwitchingBetweenFactor: DifferentiableFactor3 {
+  typealias InputIDs = VariableIDs3<Int, Pose2, Pose2>
+  var inputId1: SimpleTypedID<Int>
+  var inputId2: SimpleTypedID<Pose2>
+  var inputId3: SimpleTypedID<Pose2>
+
+  /// The number of states.
+  let stateCount: Int
+
+  /// The movement for each state.
+  let movements: [Pose2]
+
+  init(
+    _ inputId1: SimpleTypedID<Int>,
+    _ inputId2: SimpleTypedID<Pose2>,
+    _ inputId3: SimpleTypedID<Pose2>,
+    _ stateCount: Int,
+    _ movements: [Pose2]
+  ) {
+    precondition(movements.count == stateCount)
+    self.inputId1 = inputId1
+    self.inputId2 = inputId2
+    self.inputId3 = inputId3
+    self.stateCount = stateCount
+    self.movements = movements
+  }
+
+  typealias ErrorVector = Vector3
+
+  @differentiable(wrt: (value2, value3))
+  func errorVector(at value1: Int, _ value2: Pose2, _ value3: Pose2) -> Vector3 {
+    let actualDifference = between(value2, value3)
+    return movements[value1].localCoordinate(actualDifference)
+  }
+
+  typealias LinearizedFactor = JacobianFactor2<Matrix3x3, Matrix3x3>
+
+  func linearized(at value1: Int, _ value2: Pose2, _ value3: Pose2) -> JacobianFactor2<Matrix3x3, Matrix3x3> {
+    return JacobianFactor2(
+      linearizing: { self.errorVector(at: value1, $0, $1) },
+      at: value2, value3,
+      inputId1: TypedID(inputId2.perTypeID),
+      inputId2: TypedID(inputId3.perTypeID),
+      makeJacobian: makeJacobian
+    )
+  }
+}
+
+func runBeeTrackingExample() {
+  // Model parameters.
+  let labelCount = 3
+  let transitionMatrix: [Double] = [
+    0.8, 0.1, 0.1,
+    0.1, 0.8, 0.1,
+    0.1, 0.1, 0.8
+  ]
+  let movements = [
+    Pose2(1, 0, 0),       // go forwards
+    Pose2(1, 0, .pi / 4), // turn left
+    Pose2(1, 0, .pi / 4)  // turn right
+  ]
+
+  // Synthetic observations where the bee goes straight for 10 steps, left for 10 steps, then
+  // right for 10 steps.
+  let observations = generateSyntheticObservations(
+    labels: Array(repeating: 0, count: 10)
+      + Array(repeating: 1, count: 10)
+      + Array(repeating: 2, count: 10),
+    movements: movements
+  )
+
+  // Create the initial guess: bee going straight for 30 steps.
+  let initialGuessLabels = Array(repeating: 0, count: 30)
+  let initialGuessPositions =
+    generateSyntheticObservations(labels: initialGuessLabels, movements: movements)
+
+  // Create variables, assigned to the initial guess.
+  var values = VariableAssignments()
+  let labelVars = initialGuessLabels.map { values.store($0) }
+  let positionVars = initialGuessPositions.map { values.storeDifferentiable($0) }
+
+  // Create the factor graph.
+  var graph = FactorGraph()
+  for i in 0..<(labelVars.count - 1) {
+    graph.append(discrete: DiscreteTransitionFactor(
+      labelVars[i], labelVars[i + 1], labelCount, transitionMatrix
+    ))
+    graph += SwitchingBetweenFactor(
+      labelVars[i], positionVars[i], positionVars[i + 1], labelCount, movements
+    )
+  }
+  for i in 0..<positionVars.count {
+    graph += DemoPriorFactor(positionVars[i], observations[i])
+  }
+}
+
+func generateSyntheticObservations(labels: [Int], movements: [Pose2]) -> [Pose2] {
+  var currentPosition = Pose2(0, 0, 0)
+  var observations: [Pose2] = [currentPosition]
+  observations.reserveCapacity(labels.count + 1)
+  for label in labels {
+    currentPosition = movements[label] * currentPosition
+    observations.append(currentPosition)
+  }
+  return observations
+}
 
 // // Here is some psuedocode.
 // 
