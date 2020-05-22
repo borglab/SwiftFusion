@@ -1,5 +1,11 @@
 import TensorFlow
 
+/// The group operation of a Lie group.
+infix operator **: MultiplicationPrecedence
+
+/// The group action of a Lie group on a set.
+infix operator *^: MultiplicationPrecedence
+
 /// An element of a Lie group.
 ///
 /// To create a Lie group type, follow the manifold recipe [1] and conform the coordinate type to
@@ -39,18 +45,18 @@ extension LieGroup {
   @differentiable(wrt: (lhs, rhs))
   @differentiable(wrt: lhs)
   @differentiable(wrt: rhs)
-  public static func * (_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(coordinate: lhs.coordinate * rhs.coordinate)
+  public static func ** (_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(coordinate: lhs.coordinate ** rhs.coordinate)
   }
 
-  /// Derivative of `*` with respect to both sides.
+  /// Derivative of `**` with respect to both sides.
   ///
   /// We define separate derivatives with respect to different sets of arguments so that we can
   /// avoid doing unnecessary work when some of the arguments are not changing.
   ///
   /// Swift AD can compute this, but we know a mathematical expression for the derivative that
   /// is more efficient than the compiler can figure out.
-  @derivative(of: *, wrt: (lhs, rhs))
+  @derivative(of: **, wrt: (lhs, rhs))
   @usableFromInline
   static func vjpGroupOperationWrtBoth(_ lhs: Self, _ rhs: Self) ->
     (value: Self, pullback: (TangentVector) -> (TangentVector, TangentVector))
@@ -58,41 +64,41 @@ extension LieGroup {
     // Derivative from https://github.com/borglab/gtsam/blob/develop/doc/math.pdf sections 5.2 and
     // 5.4. We use the transpose of the Adjoint because the pullback is the transpose of the
     // differential.
-    return (lhs * rhs, { (rhs.inverse().AdjointTranspose($0), $0) })
+    return (lhs ** rhs, { (rhs.inverse().AdjointTranspose($0), $0) })
   }
 
-  /// Derivative of `*` with respect to the left side.
+  /// Derivative of `**` with respect to the left side.
   ///
   /// We define separate derivatives with respect to different sets of arguments so that we can
   /// avoid doing unnecessary work when some of the arguments are not changing.
   ///
   /// Swift AD can compute this, but we know a mathematical expression for the derivative that
   /// is more efficient than the compiler can figure out.
-  @derivative(of: *, wrt: lhs)
+  @derivative(of: **, wrt: lhs)
   @usableFromInline
   static func vjpGroupOperationWrtLhs(_ lhs: Self, _ rhs: Self) ->
     (value: Self, pullback: (TangentVector) -> TangentVector)
   {
     // Derivative from https://github.com/borglab/gtsam/blob/develop/doc/math.pdf section 5.4. We
     // use the transpose of the Adjoint because the pullback is the transpose of the differential.
-    return (lhs * rhs, { rhs.inverse().AdjointTranspose($0) })
+    return (lhs ** rhs, { rhs.inverse().AdjointTranspose($0) })
   }
 
-  /// Derivative of `*` with respect to the right side.
+  /// Derivative of `**` with respect to the right side.
   ///
   /// We define separate derivatives with respect to different sets of arguments so that we can
   /// avoid doing unnecessary work when some of the arguments are not changing.
   ///
   /// Swift AD can compute this, but we know a mathematical expression for the derivative that
   /// is more efficient than the compiler can figure out.
-  @derivative(of: *, wrt: rhs)
+  @derivative(of: **, wrt: rhs)
   @usableFromInline
   static func vjpGroupOperationWrtRhs(_ lhs: Self, _ rhs: Self) ->
     (value: Self, pullback: (TangentVector) -> TangentVector)
   {
     // Derivative from https://github.com/borglab/gtsam/blob/develop/doc/math.pdf section 5.2. We
     // use the transpose of the Adjoint because the pullback is the transpose of the differential.
-    return (lhs * rhs, { $0 })
+    return (lhs ** rhs, { $0 })
   }
 
   /// The Adjoint group action of `self` on `v`.
@@ -117,7 +123,7 @@ public protocol LieGroupCoordinate: ManifoldCoordinate {
 
   /// The group operation.
   @differentiable
-  static func * (_ lhs: Self, _ rhs: Self) -> Self
+  static func ** (_ lhs: Self, _ rhs: Self) -> Self
 
   /// The Adjoint group action of `self` on `v`.
   ///
@@ -158,7 +164,7 @@ extension LieGroupCoordinate {
     let identity = Self()
     func log(_ g: Self) -> LocalCoordinate { return identity.localCoordinate(g) }
     func exp(_ v: LocalCoordinate) -> Self { return identity.retract(v) }
-    return log(self * exp(v) * self.inverse())
+    return log(self ** exp(v) ** self.inverse())
   }
 
   /// The default implementation of `AdjointTranspose`, provided so that implementers can test
@@ -172,5 +178,5 @@ extension LieGroupCoordinate {
 /// Calculate relative pose 1T2 between two poses wT1 and wT2
 @differentiable(wrt: (wT1, wT2))
 public func between<T: LieGroup & Differentiable>(_ wT1: T, _ wT2: T) -> T {
-  wT1.inverse() * wT2
+  wT1.inverse() ** wT2
 }

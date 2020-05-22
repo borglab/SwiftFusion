@@ -111,8 +111,8 @@ extension Pose2Coordinate: LieGroupCoordinate {
 
   /// Product of two transforms
   @differentiable
-  public static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
-    Pose2Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
+  public static func ** (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
+    Pose2Coordinate(lhs.rot ** rhs.rot, lhs.t + lhs.rot *^ rhs.t)
   }
 
   /// Inverse of the rotation.
@@ -123,34 +123,34 @@ extension Pose2Coordinate: LieGroupCoordinate {
 }
 
 extension Pose2Coordinate: ManifoldCoordinate {
-  /// p * Exp(q)
+  /// p ** Exp(q)
   @differentiable(wrt: local)
   public func retract(_ local: Vector3) -> Self {
-    // self * Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
+    // self ** Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
     let v = Vector2(local.y,local.z)
     let w = local.x
     if (abs(w) < 1e-10) {
-      return self * Pose2Coordinate(Rot2(w), v)
+      return self ** Pose2Coordinate(Rot2(w), v)
     } else {
       let R = Rot2(w)
-      let v_ortho = Rot2(.pi/2) * v // points towards rot center
+      let v_ortho = Rot2(.pi/2) *^ v // points towards rot center
       let t_0 = (v_ortho - R.rotate(v_ortho))
       let t = Vector2(t_0.x / w, t_0.y / w)
-      return self * Pose2Coordinate(R, t)
+      return self ** Pose2Coordinate(R, t)
     }
   }
   
-  /// Log(p^{-1} * q)
+  /// Log(p^{-1} ** q)
   ///
   /// Explanation
   /// ====================
   /// `global_p(local_p(q)) = q`
-  /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
+  /// e.g. `p**Exp(Log(p^{-1} ** q)) = q`
   /// This invariant will be tested in the tests.
   ///
   @differentiable(wrt: global)
   public func localCoordinate(_ global: Self) -> Vector3 {
-    let p = self.inverse() * global
+    let p = self.inverse() ** global
 //    return Vector3(d.rot.theta, d.t.x, d.t.y)
     let R = p.rot
     let t = p.t
@@ -160,7 +160,7 @@ extension Pose2Coordinate: ManifoldCoordinate {
     } else {
       let c_1 = R.c-1.0, s = R.s
       let det = c_1*c_1 + s*s
-      let p = Rot2(.pi/2) * (R.unrotate(t) - t)
+      let p = Rot2(.pi/2) *^ (R.unrotate(t) - t)
       let v = Vector2((w / det) * p.x, (w / det) * p.y)
       return Vector3(w, v.x, v.y)
     }

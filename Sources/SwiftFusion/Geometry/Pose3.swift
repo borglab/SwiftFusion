@@ -86,8 +86,8 @@ extension Pose3Coordinate: LieGroupCoordinate {
 
   /// Product of two transforms
   @differentiable
-  public static func * (lhs: Pose3Coordinate, rhs: Pose3Coordinate) -> Pose3Coordinate {
-    Pose3Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
+  public static func ** (lhs: Pose3Coordinate, rhs: Pose3Coordinate) -> Pose3Coordinate {
+    Pose3Coordinate(lhs.rot ** rhs.rot, lhs.t + lhs.rot *^ rhs.t)
   }
 
   /// Inverse of the rotation.
@@ -124,7 +124,7 @@ public func skew_symmetric_v(_ v: Vector3) -> Tensor<Double> {
 }
 
 extension Pose3Coordinate: ManifoldCoordinate {
-  /// p * Exp(q)
+  /// p ** Exp(q)
   @differentiable(wrt: local)
   public func retract(_ local: Vector6) -> Self {
     // get angular velocity omega and translational velocity v from twist xi
@@ -138,23 +138,23 @@ extension Pose3Coordinate: ManifoldCoordinate {
     if theta2 > .ulpOfOne {
         let t_parallel = dot(omega, v) * omega // translation parallel to axis
         let omega_cross_v = omega.cross(v); // points towards axis
-        let t = 1 / theta2 * (omega_cross_v - R * omega_cross_v + t_parallel)
-        return self * Pose3Coordinate(R, t)
+        let t = 1 / theta2 * (omega_cross_v - R *^ omega_cross_v + t_parallel)
+        return self ** Pose3Coordinate(R, t)
     } else {
-        return self * Pose3Coordinate(R, v)
+        return self ** Pose3Coordinate(R, v)
     }
   }
   
-  /// Log(p^{-1} * q)
+  /// Log(p^{-1} ** q)
   ///
   /// Explanation
   /// ====================
   /// `global_p(local_p(q)) = q`
-  /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
+  /// e.g. `p**Exp(Log(p^{-1} ** q)) = q`
   /// This invariant will be tested in the tests.
   @differentiable(wrt: global)
   public func localCoordinate(_ global: Self) -> Vector6 {
-    let relative = self.inverse() * global
+    let relative = self.inverse() ** global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     // TODO(SR-12776): The `localSmallRot` and `localBigRot` helpers work around this bug. Once it
     // is fixed, we can inline them.
@@ -168,7 +168,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
   /// Implements `local` in the small rotation case.
   @differentiable(wrt: global)
   private func localSmallRot(_ global: Self) -> Vector6 {
-    let relative = self.inverse() * global
+    let relative = self.inverse() ** global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     let T = relative.t
     return Pose3Coordinate.tangentVector(DecomposedTangentVector(w: w, v: T))
@@ -177,7 +177,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
   /// Implements `local` in the non-small rotation case.
   @differentiable(wrt: global)
   private func localBigRot(_ global: Self) -> Vector6 {
-    let relative = self.inverse() * global
+    let relative = self.inverse() ** global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
     let T = relative.t.tensor.reshaped(to: [3, 1])
     let t = w.norm

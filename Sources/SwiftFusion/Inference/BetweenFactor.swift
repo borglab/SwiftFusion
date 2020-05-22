@@ -67,18 +67,13 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
   /// Returns the `error` of the factor.
   @differentiable(wrt: values)
   public func error(_ values: Values) -> Double {
-    let actual = values[key1, as: T.self].inverse() * values[key2, as: T.self]
-    let error = difference.localCoordinate(actual)
-    // TODO: It would be faster to call `error.squaredNorm` because then we don't have to pay
-    // the cost of a conversion to `Vector`. To do this, we need a protocol
-    // with a `squaredNorm` requirement.
-    return error.vector.squaredNorm
+    return errorVector(values).squaredNorm
   }
   
   @differentiable(wrt: values)
   public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
     let error = difference.localCoordinate(
-      values[key1, as: T.self].inverse() * values[key2, as: T.self]
+      values[key1, as: T.self].inverse() ** values[key2, as: T.self]
     )
     
     return error

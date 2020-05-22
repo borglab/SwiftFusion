@@ -43,7 +43,7 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   
   /// Returns the result of acting `self` on `v`.
   @differentiable
-  static func * (r: Rot3, p: Vector3) -> Vector3 {
+  static func *^ (r: Rot3, p: Vector3) -> Vector3 {
     r.rotate(p)
   }
 }
@@ -116,7 +116,7 @@ extension Matrix3Coordinate: LieGroupCoordinate {
   
   /// Product of two rotations.
   @differentiable(wrt: (lhs, rhs))
-  public static func * (lhs: Matrix3Coordinate, rhs: Matrix3Coordinate) -> Matrix3Coordinate {
+  public static func ** (lhs: Matrix3Coordinate, rhs: Matrix3Coordinate) -> Matrix3Coordinate {
     Matrix3Coordinate(matmul(lhs.R, rhs.R))
   }
   
@@ -181,18 +181,18 @@ extension Matrix3Coordinate: ManifoldCoordinate {
       let K = W / theta
       let KK = matmul(K, K)
       
-      return self * Matrix3Coordinate(
+      return self ** Matrix3Coordinate(
         I_3x3 + Tensor<Double>(repeating: sin_theta, shape: [3, 3]) * K
           + Tensor<Double>(repeating: one_minus_cos, shape: [3, 3]) * KK
       )
     } else {
-      return self * Matrix3Coordinate(I_3x3 + W)
+      return self ** Matrix3Coordinate(I_3x3 + W)
     }
   }
 
   @differentiable(wrt: global)
   public func localCoordinate(_ global: Matrix3Coordinate) -> Vector3 {
-    let relative = self.inverse() * global
+    let relative = self.inverse() ** global
     let R = relative.R
     let (R11, R12, R13) = (R[0, 0].scalars[0], R[0, 1].scalars[0], R[0, 2].scalars[0])
     let (R21, R22, R23) = (R[1, 0].scalars[0], R[1, 1].scalars[0], R[1, 2].scalars[0])

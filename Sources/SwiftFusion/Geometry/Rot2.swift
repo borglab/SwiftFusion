@@ -63,7 +63,7 @@ extension Rot2 {
 }
 
 @differentiable
-func * (r: Rot2, p: Vector2) -> Vector2 {
+func *^ (r: Rot2, p: Vector2) -> Vector2 {
   r.rotate(p)
 }
 
@@ -94,7 +94,7 @@ extension Rot2Coordinate: LieGroupCoordinate {
 
   /// Product of two rotations.
   @differentiable
-  public static func * (lhs: Rot2Coordinate, rhs: Rot2Coordinate) -> Rot2Coordinate {
+  public static func ** (lhs: Rot2Coordinate, rhs: Rot2Coordinate) -> Rot2Coordinate {
     Rot2Coordinate(
       c: lhs.c * rhs.c - lhs.s * rhs.s,
       s: lhs.s * rhs.c + lhs.c * rhs.s)
@@ -112,12 +112,12 @@ extension Rot2Coordinate: ManifoldCoordinate {
 
   @differentiable(wrt: local)
   public func retract(_ local: Vector1) -> Self {
-    self * Rot2Coordinate(local.x)
+    self ** Rot2Coordinate(local.x)
   }
 
   @differentiable(wrt: global)
   public func localCoordinate(_ global: Self) -> Vector1 {
-    Vector1((self.inverse() * global).theta)
+    Vector1((self.inverse() ** global).theta)
   }
 }
 
