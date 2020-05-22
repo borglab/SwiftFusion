@@ -42,10 +42,6 @@ public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
   public var s: Double { coordinate.s }
 }
 
-extension Rot2: TangentStandardBasis {
-  public static var tangentStandardBasis: [Vector1] { [Vector1(1)] }
-}
-
 extension Rot2: CustomDebugStringConvertible {
   public var debugDescription: String {
     "Rot2(theta: \(theta))"

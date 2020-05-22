@@ -7,7 +7,7 @@ import SwiftFusion
 % import math
 % dims = range(1, 10)
 
-class VectorNTests: XCTestCase {
+class ConcreteEuclideanVectorNTests: XCTestCase {
   % for dim in dims:
   % if dim <= 3:
   %   coordinates = ['x', 'y', 'z'][0:dim]
@@ -36,12 +36,6 @@ class VectorNTests: XCTestCase {
     let vector2 = Vector${dim}(${', '.join([str(v) for v in values2])})
     XCTAssertTrue(vector1 == vector1)
     XCTAssertFalse(vector1 == vector2)
-  }
-
-  /// Test that vector sum works.
-  func testVector${dim}Sum() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
-    XCTAssertEqual(vector1.sum(), ${sum(values1)})
   }
 
   /// Tests that `Vector${dim}.TangentVector == Vector${dim}`.
@@ -95,24 +89,12 @@ class VectorNTests: XCTestCase {
 }
 
 % for dim in dims:
-/// Tests the `EuclideanVector` requirements.
-class Vector${dim}EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
-  var dimension: Int { return ${dim} }
-
-  var basisVectors: [Vector${dim}] {
-    return (0..<dimension).map { index in
-      var v = Array(repeating: Double(0), count: dimension)
-      v[index] = 1
-      return Vector${dim}(Vector(v))
-    }
-  }
-
-  func makeVector(from start: Double, stride: Double) -> Vector${dim} {
-    return Vector${dim}(Vector(Array((0..<dimension).map { start + Double($0) * stride })))
-  }
-
+/// Tests the `EuclideanVectorN` requirements.
+class Vector${dim}EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+  typealias Testee = Vector${dim}
+  static var dimension: Int { return ${dim} }
   func testAll() {
-    runAllTests()
+    runAllEuclideanVectorNTests()
   }
 }
 % end

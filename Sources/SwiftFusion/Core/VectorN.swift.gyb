@@ -9,8 +9,7 @@ import TensorFlow
 % end
 
 /// An element of R^${dim}, with Euclidean inner product.
-public struct Vector${dim}: KeyPathIterable, TangentStandardBasis
-{
+public struct Vector${dim}: KeyPathIterable {
   % for coordinate in coordinates:
   @differentiable public var ${coordinate}: Double
   % end
@@ -23,8 +22,8 @@ public struct Vector${dim}: KeyPathIterable, TangentStandardBasis
   }
 }
 
-/// Conformance to EuclideanVector
-extension Vector${dim}: AdditiveArithmetic, EuclideanVector {
+/// Conformance to EuclideanVectorN
+extension Vector${dim}: AdditiveArithmetic, EuclideanVectorN {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     % for coordinate in coordinates:
@@ -54,33 +53,17 @@ extension Vector${dim}: AdditiveArithmetic, EuclideanVector {
     % end
     return result
   }
-}
 
-/// Other arithmetic on the vector elements.
-extension Vector${dim}: ElementaryFunctions {
-  /// Sum of the elements of `self`.
-  @differentiable
-  public func sum() -> Double {
-    var result: Double = 0
-    % for coordinate in coordinates:
-    result = result + ${coordinate}
+  public static var dimension: Int { return ${dim} }
+
+  public static var standardBasis: [Self] {
+    var result = Array(repeating: Self.zero, count: ${dim})
+    % for (i, coordinate) in enumerate(coordinates):
+    result[${i}].${coordinate} = 1
     % end
     return result
   }
 
-  /// Vector whose elements are squares of the elements of `self`.
-  @differentiable
-  public func squared() -> Self {
-    var result = Self.zero
-    % for coordinate in coordinates:
-    result.${coordinate} = ${coordinate} * ${coordinate}
-    % end
-    return result
-  }
-}
-
-/// Conformance to `VectorConvertible`.
-extension Vector${dim}: VectorConvertible {
   @differentiable
   public init(_ vector: Vector) {
     var index = withoutDerivative(at: vector.scalars.startIndex)
@@ -96,29 +79,6 @@ extension Vector${dim}: VectorConvertible {
   }
 }
 
-/// Conformance to `FixedDimensionVector`.
-extension Vector${dim}: FixedDimensionVector {
-  public static var dimension: Int { return ${dim} }
-}
-
-/// Conversion to/from tensor.
-extension Vector${dim} {
-  /// A `Tensor` with shape `[${dim}]` whose elements are the elements of `self`.
-  @differentiable
-  public var tensor: Tensor<Double> {
-    Tensor([${', '.join(coordinates)}])
-  }
-
-  /// Creates a `Vector${dim}` with the same elements as `tensor`.
-  ///
-  /// Precondition: `tensor` must have shape `[${dim}]`.
-  @differentiable
-  public init(_ tensor: Tensor<Double>) {
-    precondition(tensor.shape == [${dim}])
-    % for (index, coordinate) in enumerate(coordinates):
-    self.${coordinate} = tensor[${index}].scalarized()
-    % end
-  }
-}
+extension Vector${dim}: ElementaryFunctions {}
 
 % end

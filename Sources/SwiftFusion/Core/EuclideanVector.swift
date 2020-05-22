@@ -1,4 +1,5 @@
 import Foundation
+import TensorFlow
 
 /// A vector in a Euclidean vector space.
 public protocol EuclideanVector: Differentiable where Self.TangentVector == Self {
@@ -31,6 +32,16 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   /// The inner product of `self` with `other`.
   @differentiable
   func dot(_ other: Self) -> Double
+
+  // MARK: - Conversion to/from a concrete dynamically-sized `Vector`.
+
+  /// Creates an instance with the same elements as `vector`.
+  @differentiable
+  init(_ vector: Vector)
+
+  /// A `Vector` containint the same elements as `self`.
+  @differentiable
+  var vector: Vector { get }
 }
 
 /// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
@@ -49,6 +60,20 @@ extension EuclideanVector {
   @differentiable
   public var norm: Double {
     return squaredNorm.squareRoot()
+  }
+
+  /// Returns this vector as a `Tensor<Double>`.
+  @differentiable
+  public var tensor: Tensor<Double> {
+    let scalars = self.vector.scalars
+    return Tensor<Double>(shape: [withoutDerivative(at: scalars).count], scalars: scalars)
+  }
+
+  /// Creates a vector with the same elements as `tensor`.
+  @differentiable
+  public init(_ tensor: Tensor<Double>) {
+    let vector = Vector(tensor.scalars)
+    self.init(vector)
   }
 }
 
@@ -76,8 +101,8 @@ extension EuclideanVector {
   }
 }
 
-/// An Array is a `EuclideanVector` when its elements are.
-extension Array.DifferentiableView: EuclideanVector where Element: EuclideanVector {
+/// An Array is a `EuclideanVector` when its elements are `EuclideanVectorN`.
+extension Array.DifferentiableView: EuclideanVector where Element: EuclideanVectorN {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     // If `lhs` or `rhs` is empty, then it may be a "zero tangent vector" created by AD, and we
@@ -171,5 +196,34 @@ extension Array.DifferentiableView: EuclideanVector where Element: EuclideanVect
   @usableFromInline
   func vjpDot(_ other: Self) -> (value: Double, pullback: (Double) -> (Self, Self)) {
     return (self.dot(other), { v in (v * other, v * self) })
+  }
+
+  @differentiable
+  public init(_ vector: Vector) {
+    let elements = (0..<(vector.scalars.count / Element.dimension)).map { index -> Element in
+      let scalars = vector.scalars[(Element.dimension * index)..<(Element.dimension * (index + 1))]
+      return Element(Vector(Array<Double>(scalars)))
+    }
+    self.init(elements)
+  }
+
+  @derivative(of: init)
+  @usableFromInline
+  static func vjpVectorInit(_ vector: Vector) ->
+    (value: Self, pullback: (TangentVector) -> Vector)
+  {
+    fatalError("not implemented")
+  }
+
+  @differentiable
+  public var vector: Vector {
+    let scalars = base.flatMap { $0.vector.scalars }
+    return Vector(scalars)
+  }
+
+  @derivative(of: vector)
+  @usableFromInline
+  func vjpVector() -> (value: Vector, pullback: (Vector) -> TangentVector) {
+    fatalError("not implemented")
   }
 }

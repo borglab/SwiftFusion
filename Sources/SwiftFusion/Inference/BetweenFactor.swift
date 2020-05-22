@@ -22,9 +22,7 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct BetweenFactor<T: LieGroup>: NonlinearFactor
-  where T.TangentVector: VectorConvertible
-{
+public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
   
   var key1: Int
   var key2: Int

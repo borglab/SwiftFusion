@@ -26,11 +26,10 @@
 /// [ [-1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 ///   [0.0, -1.0, 0.0, 1.0, 0.0, 0.0] ]
 /// ```
-public func jacobian<A: Differentiable, B: TangentStandardBasis>(
+public func jacobian<A: Differentiable, B: Differentiable>(
   of f: @differentiable(A) -> B,
-  at p: A,
-  basisVectors: [B.TangentVector] = B.tangentStandardBasis
-) -> [A.TangentVector] {
+  at p: A
+) -> [A.TangentVector] where B.TangentVector: EuclideanVectorN {
   let pb = pullback(at: p, in: f)
-  return basisVectors.map { pb($0) }
+  return B.TangentVector.standardBasis.map { pb($0) }
 }

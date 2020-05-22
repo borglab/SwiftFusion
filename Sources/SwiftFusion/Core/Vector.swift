@@ -23,15 +23,6 @@ public struct Vector: Equatable, Differentiable {
   internal var scalarsStorage: [Double]
 }
 
-/// Can be losslessly converted to and from a `Vector`.
-public protocol VectorConvertible: Differentiable {
-  @differentiable
-  init(_ vector: Vector)
-
-  @differentiable
-  var vector: Vector { get }
-}
-
 /// Initializers.
 extension Vector {
   /// Creates a vector with the given `scalars`.
@@ -63,16 +54,7 @@ extension Vector {
   }
 }
 
-/// Arithmetic on elements.
-extension Vector {
-  /// Sum of the elements of `self`.
-  @differentiable
-  public func sum() -> Double {
-    return scalars.differentiableReduce(0, +)
-  }
-}
-
-/// EuclideanVector conformance.
+/// Conformance to `EuclideanVector`.
 extension Vector: AdditiveArithmetic, EuclideanVector {
   @differentiable
   public static func += (_ lhs: inout Vector, _ rhs: Vector) {
@@ -167,12 +149,14 @@ extension Vector: AdditiveArithmetic, EuclideanVector {
   func vjpDot(_ other: Vector) -> (value: Double, pullback: (Double) -> (Vector, Vector)) {
     return (self.dot(other), { v in (v * other, v * self) })
   }
-}
 
-/// Conversion to tensor.
-extension Vector {
-  /// Returns this vector as a `Tensor<Double>`.
-  public var tensor: Tensor<Double> {
-    return Tensor(shape: [scalarsStorage.count], scalars: scalarsStorage)
+  @differentiable
+  public init(_ vector: Vector) {
+    self = vector
+  }
+
+  @differentiable
+  public var vector: Vector {
+    return self
   }
 }

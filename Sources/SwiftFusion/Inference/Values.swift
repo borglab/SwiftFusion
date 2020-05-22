@@ -57,7 +57,7 @@ public struct Values: Differentiable & KeyPathIterable {
   /// Precondition: The value actually has type `type`.
   @differentiable
   public subscript<T: Differentiable>(key: Int, as type: T.Type) -> T
-    where T.TangentVector: VectorConvertible
+    where T.TangentVector: EuclideanVectorN
   {
     get {
       return _values[_indices[key]!].baseAs(type)
@@ -71,7 +71,7 @@ public struct Values: Differentiable & KeyPathIterable {
   @usableFromInline
   func vjpSubscript<T: Differentiable>(key: Int, as type: T.Type)
     -> (value: T, pullback: (T.TangentVector) -> VectorValues)
-    where T.TangentVector: VectorConvertible
+    where T.TangentVector: EuclideanVectorN
   {
     return (
       self._values[self._indices[key]!].baseAs(type),
@@ -85,7 +85,7 @@ public struct Values: Differentiable & KeyPathIterable {
 
   /// Insert a key value pair
   public mutating func insert<T: Differentiable>(_ key: Int, _ val: T)
-    where T.TangentVector: VectorConvertible
+    where T.TangentVector: EuclideanVectorN
   {
     assert(_indices[key] == nil)
     

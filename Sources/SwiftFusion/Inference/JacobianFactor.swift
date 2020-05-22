@@ -107,13 +107,13 @@ public struct JacobianFactor: LinearFactor {
 
 extension JacobianFactor {
   /// Creates a `JacobianFactor` by linearizing the error function `f` at `p`.
-  public init<R: VectorConvertible & TangentStandardBasis>(
+  public init<R: EuclideanVectorN>(
     of f: @differentiable (Values) -> R,
     at p: Values
   ) {
     // Compute the rows of the jacobian.
     let (value, pb) = valueWithPullback(at: p, in: f)
-    let rows = R.tangentStandardBasis.map { pb($0) }
+    let rows = R.TangentVector.standardBasis.map { pb($0) }
 
     // Construct empty matrices with the correct shape.
     assert(rows.count > 0)
