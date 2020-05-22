@@ -39,7 +39,7 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   @differentiable
   init(_ vector: Vector)
 
-  /// A `Vector` containint the same elements as `self`.
+  /// A `Vector` containing the same elements as `self`.
   @differentiable
   var vector: Vector { get }
 }
