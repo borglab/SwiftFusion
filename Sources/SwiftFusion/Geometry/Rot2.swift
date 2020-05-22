@@ -134,8 +134,13 @@ fileprivate func atan2wrap(_ s: Double, _ c: Double) -> Double {
 // d atan2(s,c)/s = -s / (s^2+c^2)
 // TODO(frank): make use of fact that s^2 + c^2 = 1
 @derivative(of: atan2wrap)
-fileprivate func _vjpAtan2wrap(_ s: Double, _ c: Double) -> (value: Double, pullback: (Double) -> (Double, Double)) {
+fileprivate func _vjpAtan2wrap(_ s: Double, _ c: Double) ->
+  (value: Double, pullback: (Double) -> (Double, Double))
+{
   let theta = atan2(s, c)
   let normSquared = c * c + s * s
-  return (theta, { v in (v * c / normSquared, -v * s / normSquared) })
+  return (
+    theta,
+    { (v: Double) -> (Double, Double) in (v * c / normSquared, -v * s / normSquared) }
+  )
 }
