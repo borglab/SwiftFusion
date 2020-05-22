@@ -97,13 +97,6 @@ extension Pose3Coordinate: LieGroupCoordinate {
   }
 }
 
-@differentiable(wrt: (a, b))
-func dot(_ a: Vector3, _ b: Vector3) -> Double {
-  let squared = a.x * b.x + a.y * b.y + a.z * b.z
-
-  return squared
-}
-
 extension Vector3 {
   public func cross(_ b: Vector3) -> Vector3 {
     let a = self
@@ -136,9 +129,9 @@ extension Pose3Coordinate: ManifoldCoordinate {
     
     let theta2 = omega.squaredNorm
     if theta2 > .ulpOfOne {
-        let t_parallel = dot(omega, v) * omega // translation parallel to axis
+        let t_parallel = omega.dot(v) * omega // translation parallel to axis
         let omega_cross_v = omega.cross(v); // points towards axis
-        let t = 1 / theta2 * (omega_cross_v - R * omega_cross_v + t_parallel)
+        let t = (1 / theta2) * (omega_cross_v - R * omega_cross_v + t_parallel as Vector3)
         return self * Pose3Coordinate(R, t)
     } else {
         return self * Pose3Coordinate(R, v)
@@ -186,7 +179,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
     // simplified with Mathematica, and multiplying in T to avoid matrix math
     let Tan = tan(0.5 * t)
     let WT = matmul(W, T)
-    let u: Tensor<Double> = T - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
+    let u = ((T - (0.5 * t) * WT) as Tensor<Double>) + (1 - t / (2 * Tan)) * matmul(W, WT)
     precondition(u.shape == [3, 1])
     return Pose3Coordinate.tangentVector(
       DecomposedTangentVector(w: w, v: Vector3(u.reshaped(to: [3]))))
