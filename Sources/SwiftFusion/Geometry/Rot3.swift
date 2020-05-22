@@ -2,7 +2,7 @@
 import TensorFlow
 
 /// SO(3) group of 3D Rotations
-public struct Rot3: LieGroup, TangentStandardBasis, Equatable, KeyPathIterable {
+public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   public typealias TangentVector = Vector3
   // MARK: - Manifold conformance
 

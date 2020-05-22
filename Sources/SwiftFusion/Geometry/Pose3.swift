@@ -1,7 +1,7 @@
 import TensorFlow
 
 /// SE(3) Lie group of 3D Euclidean Poses.
-public struct Pose3: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
+public struct Pose3: LieGroup, Equatable, KeyPathIterable {
   // MARK: - Manifold conformance
 
   public typealias Coordinate = Pose3Coordinate
@@ -179,15 +179,14 @@ extension Pose3Coordinate: ManifoldCoordinate {
   private func localBigRot(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
-    let T = relative.t
+    let T = relative.t.tensor.reshaped(to: [3, 1])
     let t = w.norm
     let W = skew_symmetric_v((1 / t) * w);
     // Formula from Agrawal06iros, equation (14)
     // simplified with Mathematica, and multiplying in T to avoid matrix math
     let Tan = tan(0.5 * t)
-    let WT = matmul(W, T.tensor.reshaped(to: [3, 1]))
-    let u: Tensor<Double> =
-      T.tensor.reshaped(to: [3, 1]) - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
+    let WT = matmul(W, T)
+    let u: Tensor<Double> = T - (0.5 * t) * WT + (1 - t / (2 * Tan)) * matmul(W, WT)
     precondition(u.shape == [3, 1])
     return Pose3Coordinate.tangentVector(
       DecomposedTangentVector(w: w, v: Vector3(u.reshaped(to: [3]))))

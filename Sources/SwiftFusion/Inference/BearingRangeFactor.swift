@@ -33,11 +33,12 @@ public protocol BearingFunction: Differentiable {
 /// Error type for `BearingRangeFactor`.
 ///
 /// This type is composed of two parts:
-/// `bearing`: Error in bearing, type `VectorN`
+/// `bearing`: Error in bearing, type `EuclideanVectorN`
 /// `range`: Error in range, type `Double`
 /// `BE`: The type of the error in bearing
-public struct BearingRangeError<BearingError: TangentStandardBasis & VectorConvertible & FixedDimensionVector>:
-  Differentiable & KeyPathIterable & TangentStandardBasis & VectorConvertible {
+public struct BearingRangeError<BearingError: EuclideanVectorN>:
+  AdditiveArithmetic & Differentiable & EuclideanVectorN
+{
   @differentiable
   public init(_ vector: Vector) {
     precondition(vector.dimension == BearingError.dimension + 1)
@@ -59,16 +60,54 @@ public struct BearingRangeError<BearingError: TangentStandardBasis & VectorConve
     }
   }
 
+  @differentiable
+  public static func += (_ lhs: inout Self, _ rhs: Self) {
+    lhs.bearing += rhs.bearing
+    lhs.range += rhs.range
+  }
+
+  @differentiable
+  public static func -= (_ lhs: inout Self, _ rhs: Self) {
+    lhs.bearing -= rhs.bearing
+    lhs.range -= rhs.range
+  }
+
+  @differentiable
+  public static func *= (_ lhs: inout Self, _ rhs: Double) {
+    lhs.bearing *= rhs
+    lhs.range *= rhs
+  }
+
+  @differentiable
+  public func dot(_ other: Self) -> Double {
+    return bearing.dot(other.bearing) + range * other.range
+  }
+
+  public static var dimension: Int {
+    return BearingError.dimension + 1
+  }
+
+  public static var standardBasis: [Self] {
+    return BearingError.standardBasis.map { BearingRangeError(bearing: $0, range: 0) }
+      + [BearingRangeError(bearing: BearingError.zero, range: 1)]
+  }
+
+  public static var zero: Self {
+    return BearingRangeError(bearing: BearingError.zero, range: 0)
+  }
+
   public var bearing: BearingError
   public var range: Double
 }
 
+extension BearingRangeError: Equatable {}
+
 /// A `NonlinearFactor` that calculates the bearing and range error of one pose and one landmark
 ///
 public struct BearingRangeFactor<BearingRangeFunction: BearingFunction & RangeFunction>: NonlinearFactor
-where BearingRangeFunction.Base.TangentVector: VectorConvertible,
-      BearingRangeFunction.Target.TangentVector: VectorConvertible,
-      BearingRangeFunction.Bearing: Differentiable & TangentStandardBasis & EuclideanVector & VectorConvertible & FixedDimensionVector
+where BearingRangeFunction.Base.TangentVector: EuclideanVectorN,
+      BearingRangeFunction.Target.TangentVector: EuclideanVectorN,
+      BearingRangeFunction.Bearing: EuclideanVectorN
 {
   public typealias Base = BearingRangeFunction.Base
   public typealias Target = BearingRangeFunction.Target

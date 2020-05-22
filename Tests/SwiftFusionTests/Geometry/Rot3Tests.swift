@@ -119,7 +119,7 @@ final class Rot3Tests: XCTestCase {
   func testAdjoint() {
     for _ in 0..<10 {
       let rot = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
-      for v in Pose2.tangentStandardBasis {
+      for v in Pose2.TangentVector.standardBasis {
         assertEqual(
           rot.Adjoint(v).tensor,
           rot.coordinate.defaultAdjoint(v).tensor,

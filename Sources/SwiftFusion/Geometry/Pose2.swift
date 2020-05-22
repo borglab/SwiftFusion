@@ -35,7 +35,7 @@ import TensorFlow
 /// [2]: https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
-public struct Pose2: Manifold, LieGroup, Equatable, TangentStandardBasis, KeyPathIterable {
+public struct Pose2: LieGroup, Equatable, KeyPathIterable {
   // MARK: - Manifold conformance
 
   public var coordinateStorage: Pose2Coordinate
@@ -189,7 +189,7 @@ extension Pose2Coordinate {
 extension Pose2 {
   /// The Adjoint group action of `self` on the tangent space, as a matrix.
   public var AdjointMatrix: Tensor<Double> {
-    Tensor(stacking: Pose2.tangentStandardBasis.map { Adjoint($0).tensor }).transposed()
+    Tensor(stacking: Pose2.TangentVector.standardBasis.map { Adjoint($0).tensor }).transposed()
   }
 }
 

@@ -19,7 +19,7 @@ import TensorFlow
 /// It is generic over all differentiable models that is `KeyPathIterable`
 /// This loosely follows `Nocedal06book_numericalOptimization`, page 121
 public class NLCG<Model: Differentiable & KeyPathIterable>
-  where Model.TangentVector: EuclideanVector & ElementaryFunctions & KeyPathIterable
+  where Model.TangentVector: EuclideanVector & KeyPathIterable
 {
   public typealias Model = Model
   /// The set of steps taken.

@@ -285,10 +285,10 @@ final class Pose2Tests: XCTestCase {
     let wT1 = Pose2(1, 0, 3.1415926 / 2.0), wT2 = Pose2(1, 0, 3.1415926 / 2.0)
     let pts: [Pose2] = [wT1, wT2]
 
-    let f: @differentiable(_ pts: [Pose2]) -> Double = { (_ pts: [Pose2]) -> Double in
+    let f: @differentiable(_ pts: [Pose2]) -> Vector1 = { (_ pts: [Pose2]) -> Vector1 in
       let d = between(pts[0], pts[1])
 
-      return d.rot.theta * d.rot.theta + d.t.x * d.t.x + d.t.y * d.t.y
+      return Vector1(d.rot.theta * d.rot.theta + d.t.x * d.t.x + d.t.y * d.t.y)
     }
 
     let j = jacobian(of: f, at: pts)
@@ -393,7 +393,7 @@ final class Pose2Tests: XCTestCase {
   func testAdjoint() {
     for _ in 0..<10 {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
-      for v in Pose2.tangentStandardBasis {
+      for v in Pose2.TangentVector.standardBasis {
         assertEqual(
           pose.Adjoint(v).tensor,
           pose.coordinate.defaultAdjoint(v).tensor,
