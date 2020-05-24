@@ -72,4 +72,44 @@ class MatrixTests: XCTestCase {
       Vector([240, 330, 420])
     )
   }
+  
+  /// Test matrix-matrix multiplication.
+  func testMatMul() {
+    let matrix1 = Matrix(eye: 3)
+    XCTAssertEqual(
+      matmul(matrix1, matrix1),
+      matrix1
+    )
+    
+    let matrix2 = Matrix([1, 0, 0, 1], rowCount: 2, columnCount: 2)
+    let matrix3 = Matrix([4, 1, 2, 2], rowCount: 2, columnCount: 2)
+    XCTAssertEqual(
+      matmul(matrix2, matrix3),
+      matrix3
+    )
+    
+    let matrix4 = Matrix([ 5, 1 ,3,
+     1, 1 , 1,
+     1, 2 , 1], rowCount: 3, columnCount: 3)
+    let matrix5 = Matrix([1, 2, 3], rowCount: 3, columnCount: 1)
+    
+    XCTAssertEqual(
+      matmul(matrix4, matrix5),
+      Matrix([16, 6, 8], rowCount: 3, columnCount: 1)
+    )
+    
+    let matrix6 = Matrix([1, 7, 3,
+          3, 5, 6,
+          6, 8, 9], rowCount: 3, columnCount: 3)
+    
+    let matrix7 = Matrix([1, 1, 1, 2,
+        6, 7, 3, 0,
+        4, 5, 9, 1], rowCount: 3, columnCount: 4)
+    
+    XCTAssertEqual(matmul(matrix6, matrix7),
+      Matrix([55, 65, 49, 5,
+      57, 68, 72, 12,
+      90, 107, 111, 21], rowCount: 3, columnCount: 4)
+    )
+  }
 }

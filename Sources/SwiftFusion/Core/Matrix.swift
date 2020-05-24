@@ -6,11 +6,12 @@ public struct Matrix: Equatable {
   public fileprivate(set) var scalars: [Double]
 
   /// The number of rows and columns in the matrix.
+  @noDerivative
   public fileprivate(set) var rowCount, columnCount: Int
 }
 
 /// Initializers.
-extension Matrix {
+extension Matrix: Differentiable {
   /// Creates a matrix with `scalars` in row major order with shape `rowCount` x `columnCount`.
   public init(_ scalars: [Double], rowCount: Int, columnCount: Int) {
     precondition(scalars.count == rowCount * columnCount)
@@ -18,7 +19,18 @@ extension Matrix {
     self.rowCount = rowCount
     self.columnCount = columnCount
   }
-
+  
+  /// Creates a matrix filled with a repeating constant
+  @differentiable
+  public init(repeating: Double, rowCount: Int, columnCount: Int) {
+    self.init([], rowCount: 0, columnCount: columnCount)
+    self.reserveCapacity(rowCount * columnCount)
+    for _ in 0..<rowCount {
+      let scalars = Array(repeating: Double(0), count: columnCount)
+      self.append(row: Vector(scalars))
+    }
+  }
+  
   /// Creates a matrix stacking `rows`.
   public init(stacking rows: [Vector]) {
     guard rows.count > 0 else {
@@ -104,6 +116,20 @@ public func matvec(_ lhs: Matrix, transposed: Bool = false, _ rhs: Vector) -> Ve
   for i in 0..<lhs.rowCount {
     for j in 0..<lhs.columnCount {
       result.scalarsStorage[transposed ? j : i] += lhs[i, j] * rhs.scalarsStorage[transposed ? i : j]
+    }
+  }
+  return result
+}
+
+/// Returns the matrix-vector product of `lhs` and `rhs`.
+public func matmul(_ lhs: Matrix, _ rhs: Matrix) -> Matrix {
+  precondition(rhs.rowCount == lhs.columnCount)
+  var result = Matrix(repeating: 0, rowCount: lhs.rowCount, columnCount: rhs.columnCount)
+  for line in 0..<rhs.columnCount {
+    for i in 0..<lhs.rowCount {
+      for j in 0..<lhs.columnCount {
+        result.scalars[i * result.columnCount + line] += lhs[i, j] * rhs.scalars[j * result.columnCount + line]
+      }
     }
   }
   return result
