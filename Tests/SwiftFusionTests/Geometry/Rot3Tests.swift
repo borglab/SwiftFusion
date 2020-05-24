@@ -95,12 +95,12 @@ final class Rot3Tests: XCTestCase {
     let axis = Vector3(0, 1, 0)  // rotation around Y
     let angle = 3.14 / 4.0
     let v = angle * axis
-    let expected = Tensor<Double>([[ 0.707388, 0, 0.706825 ], [0, 1, 0], [-0.706825, 0, 0.707388]])
+    let expected = Matrix3(0.707388, 0, 0.706825, 0, 1, 0, -0.706825, 0, 0.707388)
     
     var actual = Rot3()
     actual.move(along: v)
     
-    assertEqual(actual.coordinate.R, expected, accuracy: 1e-5)
+    assertAllKeyPathEqual(actual.coordinate.R, expected, accuracy: 1e-5)
   }
   
   func testExpmapNearZero() {
