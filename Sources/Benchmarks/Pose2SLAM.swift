@@ -19,7 +19,8 @@ import SwiftFusion
 
 let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
 
-  let intelDataset = try! G2OFactorGraph(fromG2O: try! cachedDataset("input_INTEL_g2o.txt"))
+  let intelDataset =
+    try! G2OReader.G2ONonlinearFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
   check(intelDataset.graph.error(intelDataset.initialGuess), near: 73565.64, accuracy: 1e-2)
 
   // Uses `NonlinearFactorGraph` on the Intel dataset.
@@ -42,23 +43,6 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
       val.move(along: dx)
     }
     check(intelDataset.graph.error(val), near: 35.59, accuracy: 1e-2)
-  }
-}
-
-/// Builds an initial guess and a factor graph from a g2o file.
-struct G2OFactorGraph: G2OReader {
-  /// The initial guess.
-  var initialGuess: Values = Values()
-
-  /// The factor graph representing the measurements.
-  var graph: NonlinearFactorGraph = NonlinearFactorGraph()
-
-  public mutating func addInitialGuess(index: Int, pose: Pose2) {
-    initialGuess.insert(index, pose)
-  }
-
-  public mutating func addMeasurement(frameIndex: Int, measuredIndex: Int, pose: Pose2) {
-    graph += BetweenFactor(frameIndex, measuredIndex, pose)
   }
 }
 

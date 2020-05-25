@@ -27,23 +27,6 @@ import Foundation
 import SwiftFusion
 import TensorFlow
 
-/// Builds an initial guess and a factor graph from a g2o file.
-struct G2OFactorGraph: G2OReader {
-  /// The initial guess.
-  var initialGuess: Values = Values()
-
-  /// The factor graph representing the measurements.
-  var graph: NonlinearFactorGraph = NonlinearFactorGraph()
-
-  public mutating func addInitialGuess(index: Int, pose: Pose2) {
-    initialGuess.insert(index, pose)
-  }
-
-  public mutating func addMeasurement(frameIndex: Int, measuredIndex: Int, pose: Pose2) {
-    graph += BetweenFactor(frameIndex, measuredIndex, pose)
-  }
-}
-
 func main() {
   // Parse commandline.
   guard CommandLine.arguments.count == 2 else {
@@ -53,8 +36,7 @@ func main() {
   let g2oURL = URL(fileURLWithPath: CommandLine.arguments[1])
 
   // Load .g2o file.
-  var problem = G2OFactorGraph()
-  try! problem.read(fromG2O: g2oURL)
+  var problem = try! G2OReader.G2ONonlinearFactorGraph(g2oFile2D: g2oURL)
 
   // Add prior on the pose with key 0.
   problem.graph += PriorFactor(0, Pose2(0, 0, 0))
