@@ -181,12 +181,11 @@ fileprivate struct G2OLineParser {
   /// Returns a `Rot3`, parsed as a quaternion starting at the current index, and advances the
   /// `columnIndex`.
   mutating func parseQuaternion() throws -> Rot3 {
-    print("warning, totally incorrect quaternion parsing")
-    let w = try parseDouble()
     let x = try parseDouble()
     let y = try parseDouble()
     let z = try parseDouble()
-    return Rot3(w, x, y, z, 0, 0, 0, 0, 0)
+    let w = try parseDouble()
+    return Rot3.fromQuaternion(w, x, y, z)
   }
 
   /// Returns a `Pose2`, parsed starting at the current index, and advances the

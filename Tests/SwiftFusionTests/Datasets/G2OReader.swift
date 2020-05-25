@@ -41,8 +41,7 @@ final class G2OReaderTests: XCTestCase {
     func pose3(_ g2oEntries: [Double]) -> Pose3 {
       let s = g2oEntries
       let t = Vector3(s[0], s[1], s[2])
-      // TODO: This Rot3 is wrong.
-      let r = Rot3(s[3], s[4], s[5], s[6], 0, 0, 0, 0, 0)
+      let r = Rot3.fromQuaternion(s[6], s[3], s[4], s[5])
       return Pose3(r, t)
     }
 
