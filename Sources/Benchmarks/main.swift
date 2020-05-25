@@ -15,5 +15,6 @@
 import Benchmark
 
 Benchmark.main([
-  pose2SLAM
+  pose2SLAM,
+  pose3SLAM
 ])
