@@ -20,7 +20,7 @@ import SwiftFusion
 let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
 
   var gridDataset =
-    try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("sphere_bignoise_vertex3.g2o"))
+    try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
 //  check(gridDataset.graph.error(gridDataset.initialGuess), near: 12.99, accuracy: 1e-2)
 
   // Uses `NonlinearFactorGraph` on the Intel dataset.
@@ -42,6 +42,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
         dx.insert(i, Vector(zeros: 6))
       }
       optimizer.optimize(gfg: gfg, initial: &dx)
+      print("gfg error = \(gfg.residual(dx).norm)")
       val.move(along: dx)
     }
     for i in val.keys.sorted() {
