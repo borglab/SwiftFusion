@@ -29,6 +29,30 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
     return Rot3(coordinate: Rot3().coordinate.retract(vector))
   }
   
+  /// Create Manifold object from a quaternion representation
+  /// Using the Eigen convention
+  @differentiable
+  public static func fromQuaternion(_ w: Double, _ x: Double, _ y: Double, _ z: Double) -> Self {
+    let tx  = 2.0 * x
+    let ty  = 2.0 * y
+    let tz  = 2.0 * z
+    let twx = tx * w
+    let twy = ty * w
+    let twz = tz * w
+    let txx = tx * x
+    let txy = ty * x
+    let txz = tz * x
+    let tyy = ty * y
+    let tyz = tz * y
+    let tzz = tz * z
+    
+    return Rot3(
+      1.0-(tyy+tzz), txy-twz, txz+twy,
+      txy+twz, 1.0-(txx+tzz), tyz-twx,
+      txz-twy, tyz+twx, 1.0-(txx+tyy)
+    )
+  }
+  
   /// Returns the result of acting `self` on `v`.
   @differentiable
   func rotate(_ v: Vector3) -> Vector3 {
