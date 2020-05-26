@@ -45,7 +45,7 @@ final class Rot3Tests: XCTestCase {
       let p = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
       let q = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
-      assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
+      assertAllKeyPathEqual(actual, q, accuracy: 1e-8)
     }
   }
   
