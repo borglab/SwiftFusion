@@ -20,7 +20,11 @@ import FoundationNetworking
 /// Dictionary from dataset id to dataset url.
 fileprivate let datasets = [
   "input_INTEL_g2o.txt":
-    "https://github.com/pkchen1129/Mobile-Robotics/raw/8551df10ba8af36801403daeba710c1f9c9e54cd/ps4/code/dataset/input_INTEL_g2o.txt"
+    "https://github.com/pkchen1129/Mobile-Robotics/raw/8551df10ba8af36801403daeba710c1f9c9e54cd/ps4/code/dataset/input_INTEL_g2o.txt",
+  "sphere_bignoise_vertex3.g2o":
+    "https://github.com/HeYijia/GraphSLAM_tutorials_code/raw/master/g2o_test/data/sphere_bignoise_vertex3.g2o",
+  "pose3example.txt":
+    "https://github.com/borglab/gtsam/raw/master/examples/Data/pose3example.txt"
 ]
 
 /// Returns a dataset cached on the local system.

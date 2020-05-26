@@ -108,11 +108,11 @@ extension Vector3 {
 }
 
 @differentiable
-public func skew_symmetric_v(_ v: Vector3) -> Tensor<Double> {
-  Tensor<Double>(shape: [3, 3], scalars: [
+public func skew_symmetric_v(_ v: Vector3) -> Matrix3 {
+  Matrix3(
         0, -v.z, v.y,
         v.z, 0, -v.x,
-        -v.y, v.x, 0]
+        -v.y, v.x, 0
     )
 }
 
@@ -172,17 +172,16 @@ extension Pose3Coordinate: ManifoldCoordinate {
   private func localBigRot(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
-    let T = relative.t.tensor.reshaped(to: [3, 1])
+    let T = relative.t
     let t = w.norm
     let W = skew_symmetric_v((1 / t) * w);
     // Formula from Agrawal06iros, equation (14)
     // simplified with Mathematica, and multiplying in T to avoid matrix math
     let Tan = tan(0.5 * t)
-    let WT = matmul(W, T)
-    let u = ((T - (0.5 * t) * WT) as Tensor<Double>) + (1 - t / (2 * Tan)) * matmul(W, WT)
-    precondition(u.shape == [3, 1])
+    let WT = matvec(W, T)
+    let u = ((T - (0.5 * t) * WT) as Vector3) + (1 - t / (2 * Tan)) * matvec(W, WT)
     return Pose3Coordinate.tangentVector(
-      DecomposedTangentVector(w: w, v: Vector3(u.reshaped(to: [3]))))
+      DecomposedTangentVector(w: w, v: u))
   }
 
 }

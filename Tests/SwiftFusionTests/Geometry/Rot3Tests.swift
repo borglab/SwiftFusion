@@ -21,13 +21,31 @@ final class Rot3Tests: XCTestCase {
     XCTAssertNotEqual(R1, R2)
   }
 
+  /// Test if the conversion from quaternion to rotation matrix is correct
+  func testQuaternionMatrix() {
+    let R1 = Rot3.fromQuaternion(0.710997408193224, 0.360544029310185, 0.594459869568306, 0.105395217842782)
+    let R2 = Rot3(
+        0.271018623057411,   0.278786459830371,   0.921318086098018,
+        0.578529366719085,   0.717799701969298,  -0.387385285854279,
+       -0.769319620053772,   0.637998195662053,   0.033250932803219)
+
+    let R3 = Rot3.fromQuaternion(0.263360579192421, 0.571813128030932, 0.494678363680335, 0.599136268678053);
+    let R4 = Rot3(
+        -0.207341903877828,   0.250149415542075,   0.945745528564780,
+         0.881304914479026,  -0.371869043667957,   0.291573424846290,
+         0.424630407073532,   0.893945571198514,  -0.143353873763946)
+    
+    assertAllKeyPathEqual(R1, R2, accuracy: 1e-5)
+    assertAllKeyPathEqual(R3, R4, accuracy: 1e-5)
+  }
+  
   /// Tests that the manifold invariant holds for Rot3
   func testManifoldIdentity() {
     for _ in 0..<30 {
       let p = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
       let q = Rot3.fromTangent(Vector3(Tensor<Double>(randomNormal: [3])))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
-      assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
+      assertAllKeyPathEqual(actual, q, accuracy: 1e-8)
     }
   }
   
