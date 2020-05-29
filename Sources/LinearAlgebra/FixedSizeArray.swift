@@ -151,25 +151,3 @@ public struct Array3<Element>: FixedSizeArray {
 }
 
 extension Array3: Equatable where Element: Equatable {}
-
-public typealias Matrix2<Scalar> = Matrix<Array2<Vector2<Scalar>>>
-public typealias Matrix3x2<Scalar> = Matrix<Array2<Vector3<Scalar>>>
-public typealias Matrix3<Scalar> = Matrix<Array3<Vector3<Scalar>>>
-
-public typealias Matrix2d = Matrix2<Double>
-public typealias Matrix3x2d = Matrix3x2<Double>
-public typealias Matrix3d = Matrix3<Double>
-
-extension Matrix {
-  public init<V>(_ column0: V) where Columns == Array1<V> {
-    self.columns = Array1(column0)
-  }
-
-  public init<V>(_ column0: V, _ column1: V) where Columns == Array2<V> {
-    self.columns = Array2(column0, column1)
-  }
-
-  public init<V>(_ column0: V, _ column1: V, _ column2: V) where Columns == Array3<V> {
-    self.columns = Array3(column0, column1, column2)
-  }
-}

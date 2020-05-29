@@ -5,7 +5,7 @@
 ///
 /// We require `Self == Covector == TangentVector` because Swift AD APIs do not
 /// currently support distinguishing between tangent vectors and cotangent vectors.
-public protocol DifferentiableVector: Differentiable, Vector
+public protocol DifferentiableVector: Differentiable, VectorProtocol
 where Scalar: Differentiable, Scalar.TangentVector == Scalar,
       Covector == Self,
       TangentVector == Covector
