@@ -5,7 +5,7 @@ public protocol LinearMap {
 
   /// The output type.
   associatedtype Output: Vector
-  
+
   /// Returns the result of the linear map applied to `x`.
   func callAsFunction(_ x: Input) -> Output
 }
