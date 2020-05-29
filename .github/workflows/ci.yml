@@ -10,7 +10,7 @@ jobs:
       - name: Install toolchain
         run: |
           wget https://storage.googleapis.com/swift-tensorflow/mac/swift-tensorflow-DEVELOPMENT-2020-05-26-a-osx.pkg
-          sudo installer -pkg swift-tensorflow-DEVELOPMENT-2020-05-09-a-osx.pkg -target /
+          sudo installer -pkg swift-tensorflow-DEVELOPMENT-2020-05-26-a-osx.pkg -target /
           echo "::set-env name=PATH::/Library/Developer/Toolchains/swift-latest/usr/bin:${PATH}"
       - name: Build
         run: swift build -v
