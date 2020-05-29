@@ -8,6 +8,11 @@ public protocol Vector: AdditiveArithmetic {
   /// the columns.
   associatedtype Scalar: Numeric
 
+  /// A vector in the dual space [1].
+  ///
+  /// [1] https://en.wikipedia.org/wiki/Dual_space
+  associatedtype Covector: Vector where Covector.Scalar == Scalar, Covector.Covector == Self
+
   /// Adds `other` to `self` using vector space addition.
   ///
   /// TODO(TF-982): We can eliminate this requirement and use `AdditiveArithmetic.+=` instead.
@@ -16,6 +21,17 @@ public protocol Vector: AdditiveArithmetic {
 
   /// Scales `self` by `scalar` using vector space scalar multiplication.
   mutating func scale(by scalar: Scalar)
+
+  /// Returns the result of `covector` evaluated at `self`.
+  ///
+  /// In addition to "bracket", this is also known as the "natural pairing" or the "evaluation
+  /// map" [1].
+  ///
+  /// Example: If `Self` is a Euclidean vector and we identify `Self == Covector`, then this is
+  /// the inner product.
+  ///
+  /// [1] https://en.wikipedia.org/wiki/Dual_space
+  func bracket(_ covector: Covector) -> Scalar
 }
 
 /// Default implementations of `+=`, `+`, `-=`, `-`, `*=`, and `*`.

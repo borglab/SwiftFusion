@@ -1,6 +1,7 @@
 /// Views `Scalar` as a vector.
 public struct ScalarVector<Scalar> {
   var scalar: Scalar
+  
   public init(_ scalar: Scalar) {
     self.scalar = scalar
   }
@@ -28,8 +29,13 @@ extension ScalarVector: AdditiveArithmetic, Vector where Scalar: Numeric {
   public mutating func scale(by scalar: Scalar) {
     self.scalar *= scalar
   }
-  public func apply(_ v: Self) -> Scalar {
+  public func bracket(_ v: Self) -> Scalar {
     return self.scalar * v.scalar
   }
   public static var zero: Self { return Self(0) }
+}
+
+extension ScalarVector: Differentiable, DifferentiableVector
+where Scalar: Differentiable, Scalar: Numeric, Scalar.TangentVector == Scalar {
+  public typealias TangentVector = Covector
 }

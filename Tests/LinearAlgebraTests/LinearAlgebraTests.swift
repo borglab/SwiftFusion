@@ -14,6 +14,13 @@ final class LinearAlgebraTests: XCTestCase {
     let v1 = Vector2d(1, 2)
     XCTAssertEqual(3 * v1, Vector2d(3, 6))
   }
+  
+  /// Tests vector bracket.
+  func testVectorBracket() {
+    let v1 = Vector2d(1, 2)
+    let v2 = Vector2d(3, 4)
+    XCTAssertEqual(v1.bracket(v2), 11)
+  }
 
   /// Tests applying a matrix to a vector.
   func testMatrixVector() {
@@ -42,5 +49,49 @@ final class LinearAlgebraTests: XCTestCase {
     )
 
     XCTAssertEqual(mat1.matmul(mat2), expectedProduct)
+  }
+  
+  /// Tests the derivative of adding two vectors.
+  func testVectorAddDerivative() {
+    let v1 = Vector2d(1, 2)
+    let v2 = Vector2d(3, 4)
+    let (value, pb) = valueWithPullback(at: v1, v2) {
+      $0 + $1
+    }
+    
+    XCTAssertEqual(value, Vector2d(4, 6))
+    XCTAssertEqual(pb(Vector2d(1, 0)).0, Vector2d(1, 0))
+    XCTAssertEqual(pb(Vector2d(1, 0)).1, Vector2d(1, 0))
+    
+    XCTAssertEqual(pb(Vector2d(0, 1)).0, Vector2d(0, 1))
+    XCTAssertEqual(pb(Vector2d(0, 1)).1, Vector2d(0, 1))
+  }
+  
+  /// Tests the derivative of scaling a vector.
+  func testVectorScaleDerivative() {
+    let v1 = Vector2d(3, 4)
+    let (value, pb) = valueWithPullback(at: 10, v1) {
+      $0 * $1
+    }
+    
+    XCTAssertEqual(value, Vector2d(30, 40))
+    XCTAssertEqual(pb(Vector2d(1, 0)).0, 3)
+    XCTAssertEqual(pb(Vector2d(1, 0)).1, Vector2d(10, 0))
+    
+    XCTAssertEqual(pb(Vector2d(0, 1)).0, 4)
+    XCTAssertEqual(pb(Vector2d(0, 1)).1, Vector2d(0, 10))
+  }
+  
+  /// Tests the derivative of vector bracket.
+  func testVectorBracketDerivative() {
+    let v1 = Vector2d(1, 2)
+    let v2 = Vector2d(3, 4)
+    let (value, grad) = valueWithGradient(at: v1, v2) {
+      $0.differentiableBracket($1)
+    }
+    
+    XCTAssertEqual(value, 11)
+    XCTAssertEqual(grad.0, v2)
+    XCTAssertEqual(grad.1, v1)
   }
 }
