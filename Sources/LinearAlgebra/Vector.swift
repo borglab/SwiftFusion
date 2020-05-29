@@ -1,53 +1,48 @@
-/// A vector in a vector space.
-public protocol Vector: AdditiveArithmetic {
-  /// The scalar type of the vector space.
-  ///
-  /// Note that if the vector is a collection, this is not necessarily the same as the element
-  /// type of the collection. For example, a matrix could be viewed as a collection of columns,
-  /// but a matrix could simultaneously be viewed as a vector whose scalar is the element type of
-  /// the columns.
-  associatedtype Scalar: Numeric
-
-  /// Adds `other` to `self` using vector space addition.
-  ///
-  /// TODO(TF-982): We can eliminate this requirement and use `AdditiveArithmetic.+=` instead.
-  /// But we need default derivative implementations for protocol requirements (TF-982) first.
-  mutating func add(_ other: Self)
-
-  /// Scales `self` by `scalar` using vector space scalar multiplication.
-  mutating func scale(by scalar: Scalar)
+/// Views `Scalars` as a vector.
+public struct Vector<Scalars: Equatable & FixedSizeArray>: VectorProtocol
+where Scalars.Element: Numeric {
+  /// The elements of the vector.
+  public var scalars: Scalars
+  
+  /// Creates a vector containing `scalars`.
+  public init(_ scalars: Scalars) {
+    self.scalars = scalars
+  }
+  
+  // MARK: - `VectorProtocol` conformance.
+  
+  public typealias Scalar = Scalars.Element
+  public mutating func add(_ other: Self) {
+    for index in scalars.indices {
+      scalars[index] += other.scalars[index]
+    }
+  }
+  public mutating func scale(by scalar: Scalar) {
+    for index in scalars.indices {
+      scalars[index] *= scalar
+    }
+  }
+  public static var zero: Self {
+    return Self(Scalars((0..<Scalars.count).lazy.map { _ in Scalar.zero }))
+  }
 }
 
-/// Default implementations of `+=`, `+`, `-=`, `-`, `*=`, and `*`.
+extension Vector: Equatable where Scalars: Equatable {}
+
+// MARK: - "Generated Code"
+
+typealias Vector1 = Vector<Array1<Double>>
+typealias Vector2 = Vector<Array2<Double>>
+typealias Vector3 = Vector<Array3<Double>>
+
 extension Vector {
-  public static func += (_ lhs: inout Self, _ rhs: Self) {
-    lhs.add(rhs)
+  public init(_ s0: Double) where Scalars == Array1<Double> {
+    self.scalars = Array1(s0)
   }
-
-  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = lhs
-    result += rhs
-    return result
+  public init(_ s0: Double, _ s1: Double) where Scalars == Array2<Double> {
+    self.scalars = Array2(s0, s1)
   }
-
-  public static func -= (_ lhs: inout Self, _ rhs: Self) {
-    let negRhs = (-1 as Scalar) * rhs
-    lhs += negRhs
-  }
-
-  public static func - (_ lhs: Self, _ rhs: Self) -> Self {
-    var result = lhs
-    result -= rhs
-    return result
-  }
-
-  public static func *= (_ lhs: inout Self, _ rhs: Scalar) {
-    lhs.scale(by: rhs)
-  }
-
-  public static func * (_ lhs: Scalar, _ rhs: Self) -> Self {
-    var result = rhs
-    result *= lhs
-    return result
+  public init(_ s0: Double, _ s1: Double, _ s2: Double) where Scalars == Array3<Double> {
+    self.scalars = Array3(s0, s1, s2)
   }
 }
