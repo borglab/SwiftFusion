@@ -33,10 +33,16 @@ let package = Package(
         "SwiftFusion",
       ]),
     .target(
+      name: "LinearAlgebra",
+      dependencies: []),
+    .target(
       name: "Pose2SLAMG2O",
       dependencies: ["SwiftFusion"],
       path: "Examples/Pose2SLAMG2O"),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: ["SwiftFusion"]),
+    .testTarget(
+      name: "LinearAlgebraTests",
+      dependencies: ["LinearAlgebra"]),
   ])
