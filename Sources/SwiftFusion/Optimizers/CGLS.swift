@@ -43,11 +43,20 @@ public class CGLS {
     var s = p // residual of normal equations
     var gamma = s.norm // γ(0) = ||s(0)||^2
     
+    print("[CGLS    ] |r|=\(r.norm), gamma = \(gamma)")
     while step < max_iteration {
       let q = gfg * p // q(k) = A * p(k)
       let alpha: Double = gamma / q.norm // α(k) = γ(k)/||q(k)||^2
       x = x + (alpha * p) // x(k+1) = x(k) + α(k) * p(k)
+      
+      let r_norm_0 = r.norm
       r = r + (-alpha) * q // r(k+1) = r(k) - α(k) * q(k)
+      
+      if r_norm_0 - r.norm < 0 {
+        print("[CGLS    ] residual increasing at step \(step), last = \(r_norm_0), now = \(r.norm)")
+        break
+      }
+      
       s = gfg.atr(r) // s(k+1) = A.T * r(k+1)
       
       let gamma_next = s.norm // γ(k+1) = ||s(k+1)||^2
