@@ -46,9 +46,9 @@ extension Vector: Equatable where Scalars: Equatable {}
 
 // MARK: - "Generated Code"
 
-typealias Vector1 = Vector<Array1<Double>>
-typealias Vector2 = Vector<Array2<Double>>
-typealias Vector3 = Vector<Array3<Double>>
+public typealias Vector1 = Vector<Array1<Double>>
+public typealias Vector2 = Vector<Array2<Double>>
+public typealias Vector3 = Vector<Array3<Double>>
 
 extension Vector {
   public init(_ s0: Double) where Scalars == Array1<Double> {
