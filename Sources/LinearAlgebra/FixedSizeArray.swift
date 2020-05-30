@@ -1,10 +1,11 @@
-/// An array whose number of elements is known at compile time.
-public protocol FixedSizeArray: MutableCollection {
-  /// Creates an array with elements from `source`.
-  ///
-  /// Precondition: `source` has exactly `count` elements.
+/// A collection that can be initialized from any other collection with the same element type.
+public protocol InitializableFromCollection: Collection {
+  /// Creates `Self`, containing the elements of `source`.
   init<C: Collection>(_ source: C) where C.Element == Element
+}
 
+/// An array whose number of elements is known at compile time.
+public protocol FixedSizeArray: InitializableFromCollection, MutableCollection {
   /// The number of elements in the array.
   static var count: Int { get }
 }

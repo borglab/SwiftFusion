@@ -7,5 +7,5 @@ public protocol LinearMap {
   associatedtype Output: VectorProtocol
 
   /// Returns the result of the linear map applied to `x`.
-  func apply(_ x: Input) -> Output
+  func forward(_ x: Input) -> Output
 }

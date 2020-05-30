@@ -1,5 +1,5 @@
 /// Views `Scalars` as a vector.
-public struct Vector<Scalars: Equatable & FixedSizeArray>: VectorProtocol
+public struct Vector<Scalars: Equatable & FixedSizeArray>: MutableCollection, VectorProtocol
 where Scalars.Element: Numeric {
   /// The elements of the vector.
   public var scalars: Scalars
@@ -8,6 +8,21 @@ where Scalars.Element: Numeric {
   public init(_ scalars: Scalars) {
     self.scalars = scalars
   }
+  
+  // MARK: - `MutableCollection` conformance.
+  
+  public subscript(index: Scalars.Index) -> Scalars.Element {
+    get {
+      return self.scalars[index]
+    }
+    set(newValue) {
+      self.scalars[index] = newValue
+    }
+  }
+
+  public func index(after i: Scalars.Index) -> Scalars.Index { return scalars.index(after: i) }
+  public var startIndex: Scalars.Index { scalars.startIndex }
+  public var endIndex: Scalars.Index { scalars.endIndex }
   
   // MARK: - `VectorProtocol` conformance.
   
