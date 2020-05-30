@@ -38,7 +38,7 @@ struct FileHandlerOutputStream: TextOutputStream {
 let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
 
   var gridDataset = // try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
-    try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("sphere2500.g2o"))
+    try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("parking-garage.g2o"))
   
 //  check(gridDataset.graph.error(gridDataset.initialGuess), near: 12.99, accuracy: 1e-2)
 
@@ -73,11 +73,11 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
         print("[LM INNER] starting one iteration, lambda = \(lambda)")
         var damped = gfg
         
-        for i in dx.keys {
-          var j0 = [lambda * Matrix(eye: dx[i].dimension)]
-          var b0 = Vector(zeros: dx[i].dimension)
-          damped += JacobianFactor([i], j0, b0)
-        }
+//        for i in dx.keys {
+//          var j0 = [lambda * Matrix(eye: dx[i].dimension)]
+//          var b0 = Vector(zeros: dx[i].dimension)
+//          damped += JacobianFactor([i], j0, b0)
+//        }
         
         var dx_t = dx
         optimizer.optimize(gfg: damped, initial: &dx_t)
@@ -117,8 +117,20 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     }
     print("[FINAL   ] final error = \(gridDataset.graph.error(val))")
     
-    let url = URL(fileURLWithPath: "/Users/proffan/Documents/result_pose3.txt")
-    let fileHandle = try! FileHandle(forUpdating: url)
+    let fileManager = FileManager.default
+    var filePath = URL(fileURLWithPath: fileManager.currentDirectoryPath)
+    filePath.appendPathComponent("./result_pose3.txt")
+    
+    if fileManager.fileExists(atPath: filePath.path) {
+      do {
+        try fileManager.removeItem(atPath: filePath.path)
+      } catch let error {
+        print("error occurred, here are the details:\n \(error)")
+      }
+    }
+
+    fileManager.createFile(atPath: filePath.path, contents: nil)
+    let fileHandle = try! FileHandle(forUpdating: URL(fileURLWithPath: filePath.path))
     var output = FileHandlerOutputStream(fileHandle)
     for i in val.keys.sorted() {
       let t = val[i, as: Pose3.self].t
