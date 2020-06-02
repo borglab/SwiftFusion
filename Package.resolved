@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "Penguin",
+        "repositoryURL": "https://github.com/saeta/penguin.git",
+        "state": {
+          "branch": "master",
+          "revision": "749620ae314d1899b71005ecec337cdb171ec629",
+          "version": null
+        }
+      },
+      {
         "package": "swift-argument-parser",
         "repositoryURL": "https://github.com/apple/swift-argument-parser",
         "state": {
