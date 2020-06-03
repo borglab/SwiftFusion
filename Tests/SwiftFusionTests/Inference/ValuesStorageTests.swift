@@ -42,7 +42,7 @@ class ValuesStorageTests: XCTestCase {
     let values = DifferentiableArrayStorage.create(repeating: Pose2(0, 0, 0), count: 5)
     let directions = VectorArrayStorage.create(repeating: Vector3(1, 0, 0), count: 5)
     directions.withUnsafeMutableRawBufferPointer { directionBuffer in
-      values.move(along: UnsafeRawBufferPointer(directionBuffer))
+      values.move(along: UnsafeRawPointer(directionBuffer.baseAddress!))
     }
     for i in 0..<5 {
       XCTAssertEqual(values[i], Pose2(0, 0, 1))
@@ -53,7 +53,7 @@ class ValuesStorageTests: XCTestCase {
     let values = VectorArrayStorage.create(repeating: Vector3(1, 2, 3), count: 5)
     let directions = VectorArrayStorage.create(repeating: Vector3(10, 20, 30), count: 5)
     directions.withUnsafeMutableRawBufferPointer { directionBuffer in
-      values.move(along: UnsafeRawBufferPointer(directionBuffer))
+      values.move(along: UnsafeRawPointer(directionBuffer.baseAddress!))
     }
     for i in 0..<5 {
       XCTAssertEqual(values[i], Vector3(11, 22, 33))
@@ -64,7 +64,7 @@ class ValuesStorageTests: XCTestCase {
     let a = VectorArrayStorage.create(repeating: Vector3(1, 2, 3), count: 5)
     let b = VectorArrayStorage.create(repeating: Vector3(10, 20, 30), count: 5)
     b.withUnsafeMutableBufferPointer { bBuffer in
-      a.add(UnsafeRawBufferPointer(bBuffer))
+      a.add(UnsafeRawPointer(bBuffer.baseAddress!))
     }
     for i in 0..<5 {
       XCTAssertEqual(a[i], Vector3(11, 22, 33))
@@ -83,7 +83,7 @@ class ValuesStorageTests: XCTestCase {
     let a = VectorArrayStorage.create(repeating: Vector3(1, 2, 3), count: 5)
     let b = VectorArrayStorage.create(repeating: Vector3(10, 20, 30), count: 5)
     let dot = b.withUnsafeMutableBufferPointer { bBuffer in
-      return a.dot(UnsafeRawBufferPointer(bBuffer))
+      return a.dot(UnsafeRawPointer(bBuffer.baseAddress!))
     }
     XCTAssertEqual(dot, 5 * (Double(1 * 10 + 2 * 20 + 3 * 30)))
   }
