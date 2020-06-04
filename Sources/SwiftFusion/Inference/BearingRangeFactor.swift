@@ -40,24 +40,9 @@ public struct BearingRangeError<BearingError: EuclideanVectorN>:
   AdditiveArithmetic & Differentiable & EuclideanVectorN
 {
   @differentiable
-  public init(_ vector: Vector) {
-    precondition(vector.dimension == BearingError.dimension + 1)
-    let part = vector.scalars.differentiablePartition(BearingError.dimension)
-    bearing = BearingError(Vector(part.a))
-    range = vector.scalars[BearingError.dimension]
-  }
-  
-  @differentiable
   public init(bearing: BearingError, range: Double) {
     self.bearing = bearing
     self.range = range
-  }
-
-  @differentiable
-  public var vector: Vector {
-    get {
-      Vector(bearing.vector.scalars + [range])
-    }
   }
 
   @differentiable
@@ -81,6 +66,16 @@ public struct BearingRangeError<BearingError: EuclideanVectorN>:
   @differentiable
   public func dot(_ other: Self) -> Double {
     return bearing.dot(other.bearing) + range * other.range
+  }
+
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    let bearingPrefix = scalars.prefix(BearingError.dimension)
+    self.bearing = BearingError(bearingPrefix)
+    self.range = scalars[bearingPrefix.endIndex]
+  }
+
+  public var scalars: [Double] {
+    return bearing.scalars + [range]
   }
 
   public static var dimension: Int {

@@ -33,15 +33,16 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   @differentiable
   func dot(_ other: Self) -> Double
 
-  // MARK: - Conversion to/from a concrete dynamically-sized `Vector`.
+  // MARK: - Conversion to/from collections of scalars.
 
-  /// Creates an instance with the same elements as `vector`.
-  @differentiable
-  init(_ vector: Vector)
+  /// Creates an instance whose elements are `scalars`.
+  ///
+  /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
+  /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
+  init<Source: Collection>(_ scalars: Source) where Source.Element == Double
 
-  /// A `Vector` containing the same elements as `self`.
-  @differentiable
-  var vector: Vector { get }
+  /// The scalars in `self`.
+  var scalars: [Double] { get }
 }
 
 /// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
@@ -62,15 +63,23 @@ extension EuclideanVector {
     return squaredNorm.squareRoot()
   }
 
+  /// Returns this vector as a `Vector`.
+  public var vector: Vector {
+    return Vector(Array(scalars))
+  }
+
+  /// Creates a vector with the same elements as `vector`.
+  public init(_ vector: Vector) {
+    self.init(vector.scalars)
+  }
+
   /// Returns this vector as a `Tensor<Double>`.
-  @differentiable
   public var tensor: Tensor<Double> {
     let scalars = self.vector.scalars
     return Tensor<Double>(shape: [withoutDerivative(at: scalars).count], scalars: scalars)
   }
 
   /// Creates a vector with the same elements as `tensor`.
-  @differentiable
   public init(_ tensor: Tensor<Double>) {
     let vector = Vector(tensor.scalars)
     self.init(vector)
@@ -198,32 +207,13 @@ extension Array.DifferentiableView: EuclideanVector where Element: EuclideanVect
     return (self.dot(other), { v in (v * other, v * self) })
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    let elements = (0..<(vector.scalars.count / Element.dimension)).map { index -> Element in
-      let scalars = vector.scalars[(Element.dimension * index)..<(Element.dimension * (index + 1))]
-      return Element(Vector(Array<Double>(scalars)))
-    }
-    self.init(elements)
-  }
-
-  @derivative(of: init)
-  @usableFromInline
-  static func vjpVectorInit(_ vector: Vector) ->
-    (value: Self, pullback: (TangentVector) -> Vector)
-  {
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    // No one currently uses this and we intend to remove its soon.
     fatalError("not implemented")
   }
 
-  @differentiable
-  public var vector: Vector {
-    let scalars = base.flatMap { $0.vector.scalars }
-    return Vector(scalars)
-  }
-
-  @derivative(of: vector)
-  @usableFromInline
-  func vjpVector() -> (value: Vector, pullback: (Vector) -> TangentVector) {
+  public var scalars: [Double] {
+    // No one currently uses this and we intend to remove its soon.
     fatalError("not implemented")
   }
 }

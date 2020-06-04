@@ -72,7 +72,7 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
     // TODO: It would be faster to call `error.squaredNorm` because then we don't have to pay
     // the cost of a conversion to `Vector`. To do this, we need a protocol
     // with a `squaredNorm` requirement.
-    return error.vector.squaredNorm
+    return error.squaredNorm
   }
   
   @differentiable(wrt: values)
