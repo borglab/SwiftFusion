@@ -23,9 +23,9 @@ import PenguinStructures
 extension ArrayStorageImplementation {
   /// Creates an array with `count` copies of `element`.
   static func create(repeating element: Element, count: Int) -> Self {
-    let array = Self.create(minimumCapacity: count)
-    for _ in 0..<count { _ = array.append(element) }
-    return array
+    let r = Self.create(minimumCapacity: count)
+    for _ in 0..<count { _ = r.append(element) }
+    return r
   }
   
   /// Returns the element at `index`.

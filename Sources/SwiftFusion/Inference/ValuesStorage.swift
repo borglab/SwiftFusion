@@ -28,8 +28,8 @@ class AnyDifferentiableStorage: AnyArrayStorage {
   
   /// Moves `self` along the vector starting at `directionsStart`.
   ///
-  /// Precondition: `directionsStart` points to the beginning of a buffer of `self.count`
-  /// `Element.TangentVector`s, where `Element` is the element type of `self`.
+  /// Precondition: `directionsStart` points to memory with at least `count` initialized
+  /// `Element.TangentVector`s where `Element` is the element type of `self`.
   final func move(along directionsStart: UnsafeRawPointer) {
     differentiableImplementation.move_(along: directionsStart)
   }
@@ -39,8 +39,8 @@ class AnyDifferentiableStorage: AnyArrayStorage {
 protocol AnyDifferentiableStorageImplementation: AnyDifferentiableStorage {
   /// Moves `self` along the vector starting at `directionsStart`.
   ///
-  /// Precondition: `directionsStart` points to the beginning of a buffer of `self.count`
-  /// `Element.TangentVector`s, where `Element` is the element type of `self`.
+  /// Precondition: `directionsStart` points to memory with at least `count` initialized
+  /// `Element.TangentVector`s where `Element` is the element type of `self`.
   func move_(along directionsStart: UnsafeRawPointer)
 }
 
@@ -48,7 +48,7 @@ protocol AnyDifferentiableStorageImplementation: AnyDifferentiableStorage {
 extension ArrayStorageImplementation where Element: Differentiable {
   /// Moves `self` along the vector starting at `directionsStart`.
   ///
-  /// Precondition: `directionsStart` points to the beginning of a buffer of `self.count`
+  /// Precondition: all values in `directionsStart..<directionsStart+count` point to initialized
   /// `Element.TangentVector`s.
   func move(along directionsStart: UnsafePointer<Element.TangentVector>) {
     withUnsafeMutableBufferPointer { elementBuffer in
@@ -62,8 +62,8 @@ extension ArrayStorageImplementation where Element: Differentiable {
   
   /// Moves `self` along the vector starting at `directionsStart`.
   ///
-  /// Precondition: `directionsStart` points to the beginning of a buffer of `self.count`
-  /// `Element.TangentVector`s.
+  /// Precondition: `directionsStart` points to memory with at least `count` initialized
+  /// `Element.TangentVector`s where `Element` is the element type of `self`.
   func move_(along directionsStart: UnsafeRawPointer) {
     move(along: directionsStart.assumingMemoryBound(to: Element.TangentVector.self))
   }
@@ -93,8 +93,8 @@ class AnyVectorStorage: AnyDifferentiableStorage {
   
   /// Adds the vector starting at `otherStart` to `self`.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count and element
-  /// type as `self`.
+  /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s,
+  /// where `Element` is the element type of `self`.
   final func add(_ otherStart: UnsafeRawPointer) {
     vectorImplementation.add_(otherStart)
   }
@@ -108,8 +108,8 @@ class AnyVectorStorage: AnyDifferentiableStorage {
   ///
   /// This is the sum of the dot products of corresponding elements.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count and element
-  /// type as `self`.
+  /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s,
+  /// where `Element` is the element type of `self`.
   final func dot(_ other: UnsafeRawPointer) -> Double {
     vectorImplementation.dot_(other)
   }
@@ -121,8 +121,8 @@ protocol AnyVectorStorageImplementation:
 {
   /// Adds the vector starting at `otherStart` to `self`.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count and element
-  /// type as `self`.
+  /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s,
+  /// where `Element` is the element type of `self`.
   func add_(_ otherStart: UnsafeRawPointer)
   
   /// Scales each element of `self` by `scalar`.
@@ -132,8 +132,8 @@ protocol AnyVectorStorageImplementation:
   ///
   /// This is the sum of the dot products of corresponding elements.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count and element
-  /// type as `self`.
+  /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s,
+  /// where `Element` is the element type of `self`.
   func dot_(_ otherStart: UnsafeRawPointer) -> Double
 }
 
@@ -141,14 +141,10 @@ protocol AnyVectorStorageImplementation:
 extension ArrayStorageImplementation where Element: EuclideanVector {
   /// Adds the vector starting at `otherStart` to `self`.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count as `self`.
+  /// Precondition: all values in `otherStart..<otherStart+count` refer to initialized `Element`s.
   func add(_ otherStart: UnsafePointer<Element>) {
-    withUnsafeMutableBufferPointer { elementBuffer in
-      var otherPointer = otherStart
-      for elementIndex in elementBuffer.indices {
-        elementBuffer[elementIndex] += otherPointer.pointee
-        otherPointer = otherPointer.advanced(by: 1)
-      }
+    withUnsafeMutableBufferPointer { b in
+      b.indices.forEach { i in b[i] += otherStart[i] }
     }
   }
   
@@ -156,33 +152,24 @@ extension ArrayStorageImplementation where Element: EuclideanVector {
   ///
   /// This is the sum of the dot products of corresponding elements.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count as `self`.
+  /// Precondition: all values in `otherStart..<otherStart+count` refer to initialized `Element`s.
   func dot(_ otherStart: UnsafePointer<Element>) -> Double {
-    var result = Double(0)
-    withUnsafeMutableBufferPointer { elementBuffer in
-      var otherPointer = otherStart
-      for elementIndex in elementBuffer.indices {
-        result += elementBuffer[elementIndex].dot(otherPointer.pointee)
-        otherPointer = otherPointer.advanced(by: 1)
-      }
+    return withUnsafeMutableBufferPointer { b in
+      return b.enumerated().lazy.map { (n, v) in v.dot(otherStart[n])}.reduce(0, +)
     }
-    return result
   }
   
   /// Adds the vector starting at `otherStart` to `self`.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count and element
-  /// type as `self`.
+  /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s.
   func add_(_ otherStart: UnsafeRawPointer) {
     add(otherStart.assumingMemoryBound(to: Element.self))
   }
   
   /// Scales each element of `self` by `scalar`.
   func scale_(by scalar: Double) {
-    withUnsafeMutableBufferPointer { elementBuffer in
-      for index in elementBuffer.indices {
-        elementBuffer[index] *= scalar
-      }
+    withUnsafeMutableBufferPointer { b in
+      b.indices.forEach { i in b[i] *= scalar }
     }
   }
   
@@ -190,8 +177,7 @@ extension ArrayStorageImplementation where Element: EuclideanVector {
   ///
   /// This is the sum of the dot products of corresponding elements.
   ///
-  /// Precondition: `otherStart` points to the beginning of a buffer with the same count and element
-  /// type as `self`.
+  /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s.
   func dot_(_ otherStart: UnsafeRawPointer) -> Double {
     return dot(otherStart.assumingMemoryBound(to: Element.self))
   }
