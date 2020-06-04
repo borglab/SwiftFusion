@@ -51,12 +51,8 @@ extension ArrayStorageImplementation where Element: Differentiable {
   /// Precondition: all values in `directionsStart..<directionsStart+count` point to initialized
   /// `Element.TangentVector`s.
   func move(along directionsStart: UnsafePointer<Element.TangentVector>) {
-    withUnsafeMutableBufferPointer { elementBuffer in
-      var directionPointer = directionsStart
-      for elementIndex in elementBuffer.indices {
-        elementBuffer[elementIndex].move(along: directionPointer.pointee)
-        directionPointer = directionPointer.advanced(by: 1)
-      }
+    withUnsafeMutableBufferPointer { b in
+      b.indices.forEach { i in b[i].move(along: directionsStart[i]) }
     }
   }
   
