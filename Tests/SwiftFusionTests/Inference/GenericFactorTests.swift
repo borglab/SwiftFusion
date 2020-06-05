@@ -19,57 +19,87 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
-/// A factor that selects a pose prior using an integer input index.
-fileprivate struct DemoFactor<Pose: LieGroup>: GenericFactor {
-  typealias Variables = Tuple2<Int, Pose>
+/// A factor that specifies a prior on a pose.
+fileprivate struct PriorFactor<Pose: LieGroup>: GenericFactor {
+  typealias Variables = Tuple1<Pose>
 
   let edges: Variables.Indices
 
-  let priors: [Pose]
+  let prior: Pose
 
   func error(_ variables: Variables) -> Double {
-    let (priorIndex, position) = (variables.head, variables.tail.head)
-    return priors[priorIndex].localCoordinate(position).squaredNorm
+    let actualPosition = variables.head
+    return prior.localCoordinate(actualPosition).squaredNorm
+  }
+}
+
+/// A factor that switches between different linear motions based on an integer label.
+fileprivate struct SwitchingLinearMotionFactor<Pose: LieGroup>: GenericFactor {
+  typealias Variables = Tuple3<Int, Pose, Pose>
+
+  let edges: Variables.Indices
+
+  let motions: [Pose]
+
+  func error(_ variables: Variables) -> Double {
+    let (motionLabel, start, end) = (variables.head, variables.tail.head, variables.tail.tail.head)
+    let actualMotion = between(start, end)
+    return motions[motionLabel].localCoordinate(actualMotion).squaredNorm
   }
 }
 
 class GenericFactorTests: XCTestCase {
   /// Tests errors in a simple factor graph.
   func testErrors() {
-    // Set up 4 variables:
-    // - `intVar1` is an `Int` with value `0`.
-    // - `intVar2` is an `Int` with value `1`.
-    // - `poseVar1` is a `Pose2` with value `Pose2(1, 0, 0)`.
-    // - `poseVar2` is a `Pose2` with value `Pose2(0, 1, 1)`.
+    // A switching linear motion factor graph.
+    //
+    // There are 3 pose variables and 2 motion labels in the graph. The initial guesses are:
+    // - motion labels: 0, 1
+    // - poses: Pose2(0, 0, 0), Pose2(1, 1, 0), Pose2(1, 1, 0.9)
+    //
+    // The factors are:
+    // - a prior factor giving a prior of `Pose2(0, 0, 0)` on the first position.
+    // - two motion factors with possible motions [Pose2(1, 1, 0), Pose2(0, 0, 1)]
+
+    // Set up the initial guess.
 
     let intVariables = ArrayStorage<Int>.create(minimumCapacity: 2)
-    let intVar1 = TypedID<Int, Int>(intVariables.append(0)!)
-    let intVar2 = TypedID<Int, Int>(intVariables.append(1)!)
+    let motionLabel1ID = TypedID<Int, Int>(intVariables.append(0)!)
+    let motionLabel2ID = TypedID<Int, Int>(intVariables.append(1)!)
 
-    let poseVariables = ArrayStorage<Pose2>.create(minimumCapacity: 2)
-    let poseVar1 = TypedID<Pose2, Int>(poseVariables.append(Pose2(1, 0, 0))!)
-    let poseVar2 = TypedID<Pose2, Int>(poseVariables.append(Pose2(0, 1, 1))!)
+    let poseVariables = ArrayStorage<Pose2>.create(minimumCapacity: 3)
+    let pose1ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(0, 0, 0))!)
+    let pose2ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(1, 1, 0))!)
+    let pose3ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(1, 1, 0.9))!)
 
     let variableAssignments = ValuesArray(contiguousStorage: [
       ObjectIdentifier(Int.self): intVariables,
       ObjectIdentifier(Pose2.self): poseVariables
     ])
 
-    // Set up 4 `DemoFactor`s, connected to each combination of `Int` and `Pose2` variables.
+    // Set up the factor graph.
 
-    let priors = [Pose2(1, 0, 0), Pose2(0, 1, 1)]
-    let factors = FactorArrayStorage<DemoFactor<Pose2>>.create(minimumCapacity: 4)
-    _ = factors.append(DemoFactor(edges: Tuple2(intVar1, poseVar1), priors: priors))
-    _ = factors.append(DemoFactor(edges: Tuple2(intVar1, poseVar2), priors: priors))
-    _ = factors.append(DemoFactor(edges: Tuple2(intVar2, poseVar1), priors: priors))
-    _ = factors.append(DemoFactor(edges: Tuple2(intVar2, poseVar2), priors: priors))
+    let priorFactors = FactorArrayStorage<PriorFactor<Pose2>>.create(minimumCapacity: 1)
+    _ = priorFactors.append(PriorFactor(edges: Tuple1(pose1ID), prior: Pose2(0, 0, 0)))
+
+    let motionFactors =
+      FactorArrayStorage<SwitchingLinearMotionFactor<Pose2>>.create(minimumCapacity: 2)
+    _ = motionFactors.append(SwitchingLinearMotionFactor(
+      edges: Tuple3(motionLabel1ID, pose1ID, pose2ID),
+      motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
+    ))
+    _ = motionFactors.append(SwitchingLinearMotionFactor(
+      edges: Tuple3(motionLabel2ID, pose2ID, pose3ID),
+      motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
+    ))
 
     // Check that the errors are what we expect.
 
-    let errors = factors.errors(variableAssignments)
-    XCTAssertEqual(errors[0], 0)
-    XCTAssertEqual(errors[1], Pose2(1, 0, 0).localCoordinate(Pose2(0, 1, 1)).squaredNorm)
-    XCTAssertEqual(errors[2], Pose2(1, 0, 0).localCoordinate(Pose2(0, 1, 1)).squaredNorm)
-    XCTAssertEqual(errors[3], 0)
+    let priorErrors = priorFactors.errors(variableAssignments)
+    XCTAssertEqual(priorErrors[0], 0)
+
+    let motionErrors = motionFactors.errors(variableAssignments)
+    XCTAssertEqual(motionErrors[0], 0)
+    XCTAssertEqual(motionErrors[1], Vector3(0.1, 0, 0).squaredNorm, accuracy: 1e-6)
   }
 }
