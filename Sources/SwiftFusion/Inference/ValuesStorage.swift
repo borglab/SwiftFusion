@@ -35,6 +35,12 @@ class AnyDifferentiableStorage: AnyArrayStorage {
   }
 }
 
+extension AnyArrayBuffer where Storage: AnyDifferentiableStorage {
+  mutating func move(along directionsStart: UnsafeRawPointer) {
+    withMutableStorage { s in s.move(along: directionsStart) }
+  }
+}
+
 /// Contiguous storage of homogeneous `Differentiable` values of statically unknown type.
 protocol AnyDifferentiableStorageImplementation: AnyDifferentiableStorage {
   /// Moves `self` along the vector starting at `directionsStart`.
@@ -62,6 +68,12 @@ extension ArrayStorageImplementation where Element: Differentiable {
   /// `Element.TangentVector`s where `Element` is the element type of `self`.
   func move_(along directionsStart: UnsafeRawPointer) {
     move(along: directionsStart.assumingMemoryBound(to: Element.TangentVector.self))
+  }
+}
+
+extension ArrayBuffer where Element: Differentiable {
+  mutating func move(along directionsStart: UnsafePointer<Element.TangentVector>) {
+    withMutableStorage { s in s.move(along: directionsStart) }
   }
 }
 
@@ -108,6 +120,20 @@ class AnyVectorStorage: AnyDifferentiableStorage {
   /// where `Element` is the element type of `self`.
   final func dot(_ other: UnsafeRawPointer) -> Double {
     vectorImplementation.dot_(other)
+  }
+}
+
+extension AnyArrayBuffer where Storage: AnyVectorStorage {
+  mutating func add(_ otherStart: UnsafeRawPointer) {
+    withMutableStorage { s in s.add(otherStart) }
+  }
+
+  mutating func scale(by scalar: Double) {
+    withMutableStorage { s in s.scale(by: scalar) }
+  }
+
+  func dot(_ other: UnsafeRawPointer) -> Double {
+    withStorage { s in s.dot(other) }
   }
 }
 
@@ -176,6 +202,20 @@ extension ArrayStorageImplementation where Element: EuclideanVector {
   /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s.
   func dot_(_ otherStart: UnsafeRawPointer) -> Double {
     return dot(otherStart.assumingMemoryBound(to: Element.self))
+  }
+}
+
+extension ArrayBuffer where Element: EuclideanVector {
+  mutating func add(_ otherStart: UnsafePointer<Element>) {
+    withMutableStorage { s in s.add(otherStart) }
+  }
+
+  mutating func scale(by scalar: Double) {
+    withMutableStorage { s in s.scale_(by: scalar) }
+  }
+
+  func dot(_ otherStart: UnsafePointer<Element>) -> Double {
+    withStorage { s in s.dot(otherStart) }
   }
 }
 

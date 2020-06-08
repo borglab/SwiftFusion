@@ -19,10 +19,11 @@ import PenguinStructures
 /// e.g. variable assignments, factor error vectors.
 ///
 /// Note: This is just a temporary placeholder until we get the real heterogeneous array type. This
-/// one has many problems, such as reference semantics and non-growing storage.
+/// one is missing nice abstractions that let clients interact with it without knowing about
+/// `contiguousStorage`.
 struct ValuesArray {
   /// Dictionary from variable type to contiguous storage for that type.
-  var contiguousStorage: [ObjectIdentifier: AnyArrayStorage]
+  var contiguousStorage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>]
 }
 
 /// An identifier of a given abstract value with the value's type attached

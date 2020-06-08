@@ -29,6 +29,12 @@ class AnyFactorStorage: AnyArrayStorage {
   }
 }
 
+extension AnyArrayBuffer where Storage: AnyFactorStorage {
+  func errors(_ variableAssignments: ValuesArray) -> [Double] {
+    withStorage { s in s.errors(variableAssignments) }
+  }
+}
+
 /// Contiguous storage of homogeneous `Factor` values of statically unknown type.
 protocol AnyFactorStorageImplementation: AnyFactorStorage {
   /// Returns the errors of the factors given `variableAssignments`.
@@ -46,6 +52,12 @@ extension ArrayStorageImplementation where Element: GenericFactor {
         }
       }
     }
+  }
+}
+
+extension ArrayBuffer where Element: GenericFactor {
+  func errors(_ variableAssignments: ValuesArray) -> [Double] {
+    withStorage { s in s.errors_(variableAssignments) }
   }
 }
 
