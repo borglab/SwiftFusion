@@ -34,7 +34,7 @@ fileprivate struct PriorFactor<Pose: LieGroup>: GenericFactor {
 }
 
 /// A factor that switches between different linear motions based on an integer label.
-fileprivate struct SwitchingLinearMotionFactor<Pose: LieGroup>: GenericFactor {
+fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup>: GenericFactor {
   typealias Variables = Tuple3<Int, Pose, Pose>
 
   let edges: Variables.Indices
@@ -51,7 +51,7 @@ fileprivate struct SwitchingLinearMotionFactor<Pose: LieGroup>: GenericFactor {
 class GenericFactorTests: XCTestCase {
   /// Tests errors in a simple factor graph.
   func testErrors() {
-    // A switching linear motion factor graph.
+    // A switching motion model factor graph.
     //
     // There are 3 pose variables and 2 motion labels in the graph. The initial guesses are:
     // - motion labels: 0, 1
@@ -83,12 +83,12 @@ class GenericFactorTests: XCTestCase {
     _ = priorFactors.append(PriorFactor(edges: Tuple1(pose1ID), prior: Pose2(0, 0, 0)))
 
     let motionFactors =
-      FactorArrayStorage<SwitchingLinearMotionFactor<Pose2>>.create(minimumCapacity: 2)
-    _ = motionFactors.append(SwitchingLinearMotionFactor(
+      FactorArrayStorage<SwitchingMotionModelFactor<Pose2>>.create(minimumCapacity: 2)
+    _ = motionFactors.append(SwitchingMotionModelFactor(
       edges: Tuple3(motionLabel1ID, pose1ID, pose2ID),
       motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
     ))
-    _ = motionFactors.append(SwitchingLinearMotionFactor(
+    _ = motionFactors.append(SwitchingMotionModelFactor(
       edges: Tuple3(motionLabel2ID, pose2ID, pose3ID),
       motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
     ))
