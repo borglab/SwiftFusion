@@ -78,7 +78,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   ) -> R {
     return variableAssignments
       .contiguousStorage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
-      .withUnsafeRawBaseAddress { headBase in
+      .withUnsafeRawPointerToElements { headBase in
         return Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
           return body(UnsafePointers(
             head: headBase.assumingMemoryBound(to: Head.self),

@@ -31,7 +31,7 @@ class AnyFactorStorage: AnyArrayStorage {
 
 extension AnyArrayBuffer where Storage: AnyFactorStorage {
   func errors(_ variableAssignments: ValuesArray) -> [Double] {
-    withStorage { s in s.errors(variableAssignments) }
+    storage.errors(variableAssignments)
   }
 }
 
@@ -57,7 +57,7 @@ extension ArrayStorageImplementation where Element: GenericFactor {
 
 extension ArrayBuffer where Element: GenericFactor {
   func errors(_ variableAssignments: ValuesArray) -> [Double] {
-    withStorage { s in s.errors_(variableAssignments) }
+    storage.errors_(variableAssignments)
   }
 }
 

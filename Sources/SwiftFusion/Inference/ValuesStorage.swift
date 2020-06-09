@@ -37,7 +37,8 @@ class AnyDifferentiableStorage: AnyArrayStorage {
 
 extension AnyArrayBuffer where Storage: AnyDifferentiableStorage {
   mutating func move(along directionsStart: UnsafeRawPointer) {
-    withMutableStorage { s in s.move(along: directionsStart) }
+    ensureUniqueStorage()
+    storage.move(along: directionsStart)
   }
 }
 
@@ -73,7 +74,8 @@ extension ArrayStorageImplementation where Element: Differentiable {
 
 extension ArrayBuffer where Element: Differentiable {
   mutating func move(along directionsStart: UnsafePointer<Element.TangentVector>) {
-    withMutableStorage { s in s.move(along: directionsStart) }
+    ensureUniqueStorage()
+    storage.move(along: directionsStart)
   }
 }
 
@@ -125,15 +127,17 @@ class AnyVectorStorage: AnyDifferentiableStorage {
 
 extension AnyArrayBuffer where Storage: AnyVectorStorage {
   mutating func add(_ otherStart: UnsafeRawPointer) {
-    withMutableStorage { s in s.add(otherStart) }
+    ensureUniqueStorage()
+    storage.add(otherStart)
   }
 
   mutating func scale(by scalar: Double) {
-    withMutableStorage { s in s.scale(by: scalar) }
+    ensureUniqueStorage()
+    storage.scale(by: scalar)
   }
 
   func dot(_ other: UnsafeRawPointer) -> Double {
-    withStorage { s in s.dot(other) }
+    storage.dot(other)
   }
 }
 
@@ -207,15 +211,17 @@ extension ArrayStorageImplementation where Element: EuclideanVector {
 
 extension ArrayBuffer where Element: EuclideanVector {
   mutating func add(_ otherStart: UnsafePointer<Element>) {
-    withMutableStorage { s in s.add(otherStart) }
+    ensureUniqueStorage()
+    storage.add(otherStart)
   }
 
   mutating func scale(by scalar: Double) {
-    withMutableStorage { s in s.scale_(by: scalar) }
+    ensureUniqueStorage()
+    storage.scale_(by: scalar)
   }
 
   func dot(_ otherStart: UnsafePointer<Element>) -> Double {
-    withStorage { s in s.dot(otherStart) }
+    storage.dot(otherStart)
   }
 }
 
