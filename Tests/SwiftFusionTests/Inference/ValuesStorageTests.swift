@@ -21,8 +21,8 @@ import PenguinStructures
 
 fileprivate typealias VectorArray<Element: EuclideanVector> =
   ArrayBuffer<VectorArrayStorage<Element>>
-fileprivate typealias DifferentiableArray<Element: Differentiable> =
-  ArrayBuffer<DifferentiableArrayStorage<Element>>
+fileprivate typealias DifferentiableArray<Element: Differentiable>
+  = ArrayBuffer<DifferentiableArrayStorage<Element>> where Element.TangentVector: EuclideanVector
 
 class ValuesStorageTests: XCTestCase {
   

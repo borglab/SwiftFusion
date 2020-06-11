@@ -157,7 +157,7 @@ extension ArrayStorageImplementation where Element: GenericLinearizableFactor {
 extension ArrayBuffer where Element: GenericLinearizableFactor {
   /// Returns the error vectors of the factors given the values of the adjacent variables.
   func errorVectors(at x: VariableAssignments)
-  -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
+    -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
   {
     storage.errorVectors(at: x)
   }
@@ -175,16 +175,17 @@ extension ArrayBuffer where Element: GenericLinearizableFactor {
 /// Note: instances have reference semantics.
 final class LinearizableFactorArrayStorage<Element: GenericLinearizableFactor>:
   AnyLinearizableFactorStorage, AnyLinearizableFactorStorageImplementation,
-  ArrayStorageImplementation
+  AnyFactorStorageImplementation, ArrayStorageImplementation
 {
   override var implementation: AnyArrayStorageImplementation { self }
+  override var factorImplementation: AnyFactorStorageImplementation { self }
   override var linearizableFactorImplementation: AnyLinearizableFactorStorageImplementation { self }
 }
 
 // MARK: - Storage for contiguous arrays of `GenericGaussianFactor`s.
 
 /// Contiguous storage of homogeneous `GaussianFactor` values of statically unknown type.
-class AnyGaussianFactorStorage: AnyFactorStorage {
+class AnyGaussianFactorStorage: AnyLinearizableFactorStorage {
   typealias GaussianFactorImplementation = AnyGaussianFactorStorageImplementation
   var gaussianFactorImplementation: GaussianFactorImplementation {
     fatalError("implement me!")
@@ -283,7 +284,10 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   ///
   /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
   /// `Element.ErrorVector`s.
-  func linearAdjoint_(_ errorVectorsStart: UnsafeRawPointer, into result: inout VariableAssignments) {
+  func linearAdjoint_(
+    _ errorVectorsStart: UnsafeRawPointer,
+    into result: inout VariableAssignments
+  ) {
     linearAdjoint(
       UnsafeBufferPointer(
         start: errorVectorsStart.assumingMemoryBound(to: Element.ErrorVector.self),
@@ -319,8 +323,11 @@ extension ArrayBuffer where Element: GenericGaussianFactor {
 /// Note: instances have reference semantics.
 final class GaussianFactorArrayStorage<Element: GenericGaussianFactor>:
   AnyGaussianFactorStorage, AnyGaussianFactorStorageImplementation,
+  AnyLinearizableFactorStorageImplementation, AnyFactorStorageImplementation,
   ArrayStorageImplementation
 {
   override var implementation: AnyArrayStorageImplementation { self }
+  override var factorImplementation: AnyFactorStorageImplementation { self }
+  override var linearizableFactorImplementation: AnyLinearizableFactorStorageImplementation { self }
   override var gaussianFactorImplementation: AnyGaussianFactorStorageImplementation { self }
 }

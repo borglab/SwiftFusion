@@ -25,6 +25,16 @@ class AnyDifferentiableStorage: AnyArrayStorage {
   var differentiableImplementation: DifferentiableImplementation {
     fatalError("implement me!")
   }
+
+  /// Identifies the values' `TangentVector`.
+  var tangentIdentifier: ObjectIdentifier {
+    differentiableImplementation.tangentIdentifier_
+  }
+
+  /// The values' zero `TangentVector`s.
+  var zeroTangent: AnyArrayBuffer<AnyVectorStorage> {
+    differentiableImplementation.zeroTangent_
+  }
   
   /// Moves `self` along the vector starting at `directionsStart`.
   ///
@@ -36,6 +46,16 @@ class AnyDifferentiableStorage: AnyArrayStorage {
 }
 
 extension AnyArrayBuffer where Storage: AnyDifferentiableStorage {
+  /// Identifies the values' `TangentVector`.
+  var tangentIdentifier: ObjectIdentifier {
+    storage.tangentIdentifier
+  }
+
+  /// The values' zero `TangentVector`s.
+  var zeroTangent: AnyArrayBuffer<AnyVectorStorage> {
+    storage.zeroTangent
+  }
+
   /// Moves each element of `self` along the corresponding element of `directions`.
   ///
   /// Precondition: `direction` has at least `count` elements of type `Element.TangentVector`,
@@ -50,6 +70,12 @@ extension AnyArrayBuffer where Storage: AnyDifferentiableStorage {
 
 /// Contiguous storage of homogeneous `Differentiable` values of statically unknown type.
 protocol AnyDifferentiableStorageImplementation: AnyDifferentiableStorage {
+  /// Identifies the values' `TangentVector`.
+  var tangentIdentifier_: ObjectIdentifier { get }
+
+  /// The values' zero `TangentVector`s.
+  var zeroTangent_: AnyArrayBuffer<AnyVectorStorage> { get }
+
   /// Moves `self` along the vector starting at `directionsStart`.
   ///
   /// Precondition: `directionsStart` points to memory with at least `count` initialized
@@ -58,7 +84,21 @@ protocol AnyDifferentiableStorageImplementation: AnyDifferentiableStorage {
 }
 
 /// APIs that depend on `Differentiable` `Element` type.
-extension ArrayStorageImplementation where Element: Differentiable {
+extension ArrayStorageImplementation
+  where Element: Differentiable, Element.TangentVector: EuclideanVector
+{
+  /// Identifies the values' `TangentVector`.
+  var tangentIdentifier_: ObjectIdentifier {
+    ObjectIdentifier(Element.TangentVector.self)
+  }
+
+  /// The values' zero `TangentVector`s.
+  var zeroTangent_: AnyArrayBuffer<AnyVectorStorage> {
+    AnyArrayBuffer(ArrayBuffer<VectorArrayStorage<Element.TangentVector>>(withUnsafeMutableBufferPointer { b in
+      b.map { $0.zeroTangentVector }
+    }))
+  }
+
   /// Moves each element of `self` along the corresponding element of `directions`.
   ///
   /// Precondition: `directions.count >= count`.
@@ -84,7 +124,7 @@ extension ArrayStorageImplementation where Element: Differentiable {
   }
 }
 
-extension ArrayBuffer where Element: Differentiable {
+extension ArrayBuffer where Element: Differentiable, Element.TangentVector: EuclideanVector {
   /// Moves each element of `self` along the corresponding element of `directions`.
   ///
   /// Precondition: `directions.count >= count`.
@@ -102,6 +142,7 @@ extension ArrayBuffer where Element: Differentiable {
 final class DifferentiableArrayStorage<Element: Differentiable>:
   AnyDifferentiableStorage, AnyDifferentiableStorageImplementation,
   ArrayStorageImplementation
+  where Element.TangentVector: EuclideanVector
 {
   override var implementation: AnyArrayStorageImplementation { self }
   override var differentiableImplementation: AnyDifferentiableStorageImplementation {
@@ -125,6 +166,13 @@ class AnyVectorStorage: AnyDifferentiableStorage {
   final func add(_ otherStart: UnsafeRawPointer) {
     vectorImplementation.add_(otherStart)
   }
+
+  final func add(_ other: AnyVectorStorage) {
+    other.withUnsafeMutableRawBufferPointer { buf in
+      guard let base = buf.baseAddress else { return }
+      vectorImplementation.add_(UnsafeRawPointer(base))
+    }
+  }
   
   /// Scales each element of `self` by `scalar`.
   final func scale(by scalar: Double) {
@@ -139,6 +187,13 @@ class AnyVectorStorage: AnyDifferentiableStorage {
   /// where `Element` is the element type of `self`.
   final func dot(_ otherStart: UnsafeRawPointer) -> Double {
     vectorImplementation.dot_(otherStart)
+  }
+
+  final func dot(_ other: AnyVectorStorage) -> Double {
+    other.withUnsafeMutableRawBufferPointer { buf in
+      guard let base = buf.baseAddress else { return 0 }
+      return vectorImplementation.dot_(UnsafeRawPointer(base))
+    }
   }
 }
 

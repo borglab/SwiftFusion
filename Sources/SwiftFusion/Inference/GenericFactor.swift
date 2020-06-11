@@ -190,7 +190,8 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   }
 
   func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {
-    variableBufferBases.head.assign(repeating: self.head, count: 1)
+    variableBufferBases.head.advanced(by: indices.head.perTypeID)
+      .assign(repeating: self.head, count: 1)
     self.tail.store(into: variableBufferBases.tail, indices: indices.tail)
   }
 }
