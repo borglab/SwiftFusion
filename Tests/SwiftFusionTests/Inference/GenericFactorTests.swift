@@ -19,41 +19,11 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
-/// A factor that specifies a prior on a pose.
-///
-/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
-/// When we completely replace the existing factors with the "Generic" ones, we should remove this
-/// prefix.
-fileprivate struct GenericPriorFactor<Pose: LieGroup>: GenericLinearizableFactor {
-  typealias Variables = Tuple1<Pose>
-
-  let edges: Variables.Indices
-  let prior: Pose
-
-  typealias ErrorVector = Pose.TangentVector
-  func errorVector(at x: Pose) -> ErrorVector {
-    return prior.localCoordinate(x)
-  }
-
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-
-  func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
-  }
-
-  func errorVector(at x: Variables) -> Pose.TangentVector {
-    return errorVector(at: x.head)
-  }
-
-  typealias Linearized = GenericJacobianFactor<Variables.TangentVector, ErrorVector>
-  func linearized(at x: Variables) -> Linearized {
-    Linearized(linearizing: errorVector, at: x.head, edges: edges)
-  }
-}
-
 /// A factor that switches between different linear motions based on an integer label.
-fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup>: GenericLinearizableFactor {
+fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+  GenericLinearizableFactor
+  where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
+{
   typealias Variables = Tuple3<Int, Pose, Pose>
 
   let edges: Variables.Indices
@@ -77,79 +47,18 @@ fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup>: GenericLinearizab
     return errorVector(x.head, x.tail.head, x.tail.tail.head)
   }
 
-  typealias Linearized = GenericJacobianFactor<Variables.Tail.TangentVector, ErrorVector>
+  typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
   func linearized(at x: Variables) -> Linearized {
-    fatalError()
+    Linearized(
+      linearizing: { errorVector(x.head, $0.head, $0.tail.head) },
+      at: x.tail,
+      edges: edges.tail
+    )
   }
 }
 
-/// A Gaussian factor stored as a jacobian matrix and an error vector.
-///
-/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
-/// When we completely replace the existing factors with the "Generic" ones, we should remove this
-/// prefix.
-fileprivate struct GenericJacobianFactor<
-  Variables: EuclideanVectorN & VariableTuple,
-  ErrorVector: EuclideanVectorN
->: GenericGaussianFactor {
-  /// The Jacobian matrix.
-  ///
-  /// Note: It's inefficient to use this dynamically-shaped matrix type, so we want to eventually
-  /// switch this to a fixed-size matrix type.
-  let jacobian: Matrix
-
-  /// The error vector.
-  let error: ErrorVector
-
-  /// The ids of the variables adjacent to this factor.
-  let edges: Variables.Indices
-
-  /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
-  init(jacobian: Matrix, error: ErrorVector, edges: Variables.Indices) {
-    self.jacobian = jacobian
-    self.error = error
-    self.edges = edges
-  }
-
-  /// Creates a Jacobian factor that linearizes `f` at `x`, and is adjacent to the variables
-  /// identifed by edges.
-  init<Input: Differentiable>(
-    linearizing f: @differentiable (Input) -> ErrorVector,
-    at x: Input,
-    edges: Tuple<TypedID<Input, Int>, Empty>
-  ) where Variables == Tuple<Input.TangentVector, Empty> {
-    let (error, pb) = valueWithPullback(at: x, in: f)
-    self.error = error
-    self.jacobian = Matrix(stacking: ErrorVector.standardBasis.map { basisVector in
-      return pb(basisVector).vector
-    })
-
-    // TODO: Note that this is wrong when there are different types of input variables that have
-    // the same tangent vector.
-    self.edges = Tuple1(TypedID(edges.head.perTypeID))
-  }
-
-  func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
-  }
-
-  func errorVector(at x: Variables) -> ErrorVector {
-    return linearForward(x) + error
-  }
-
-  func linearForward(_ x: Variables) -> ErrorVector {
-    return ErrorVector(matvec(jacobian, x.vector))
-  }
-
-  func linearAdjoint(_ errorVector: ErrorVector) -> Variables {
-    return Variables(matvec(jacobian, transposed: true, errorVector.vector))
-  }
-
-  typealias Linearized = Self
-  func linearized(at x: Variables) -> Self {
-    return self
-  }
-}
+fileprivate typealias SwitchingMotionModelFactor2 =
+  SwitchingMotionModelFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
 
 // A switching motion model factor graph.
 //
@@ -161,29 +70,22 @@ fileprivate struct GenericJacobianFactor<
 // - a prior factor giving a prior of `Pose2(0, 0, 0)` on the first position.
 // - two motion factors with possible motions [Pose2(1, 1, 0), Pose2(0, 0, 1)]
 fileprivate struct ExampleFactorGraph {
-  var initialGuess = VariableAssignments(contiguousStorage: [:])
+  var initialGuess = VariableAssignments()
   var motionLabelIDs = [TypedID<Int, Int>]()
   var poseIDs = [TypedID<Pose2, Int>]()
 
-  var priorFactors = ArrayBuffer<FactorArrayStorage<GenericPriorFactor<Pose2>>>()
-  var motionFactors = ArrayBuffer<FactorArrayStorage<SwitchingMotionModelFactor<Pose2>>>()
+  var priorFactors = ArrayBuffer<FactorArrayStorage<GenericPriorFactor2>>()
+  var motionFactors = ArrayBuffer<FactorArrayStorage<SwitchingMotionModelFactor2>>()
 
   init() {
     // Set up the initial guess.
 
-    var motionLabelVariables = ArrayBuffer<ArrayStorage<Int>>()
-    motionLabelIDs.append(TypedID(motionLabelVariables.append(0)))
-    motionLabelIDs.append(TypedID(motionLabelVariables.append(1)))
+    motionLabelIDs.append(initialGuess.store(0))
+    motionLabelIDs.append(initialGuess.store(1))
 
-    var poseVariables = ArrayBuffer<ArrayStorage<Pose2>>()
-    poseIDs.append(TypedID(poseVariables.append(Pose2(0, 0, 0))))
-    poseIDs.append(TypedID(poseVariables.append(Pose2(1, 1, 0))))
-    poseIDs.append(TypedID(poseVariables.append(Pose2(1, 1, 0.9))))
-
-    initialGuess = VariableAssignments(contiguousStorage: [
-      ObjectIdentifier(Int.self): AnyArrayBuffer(motionLabelVariables),
-      ObjectIdentifier(Pose2.self): AnyArrayBuffer(poseVariables)
-    ])
+    poseIDs.append(initialGuess.store(Pose2(0, 0, 0)))
+    poseIDs.append(initialGuess.store(Pose2(1, 1, 0)))
+    poseIDs.append(initialGuess.store(Pose2(1, 1, 0.9)))
 
     // Set up the factor graph.
 
@@ -218,28 +120,62 @@ class GenericFactorTests: XCTestCase {
     let graph = ExampleFactorGraph()
 
     let priorsLinearized = graph.priorFactors.linearized(at: graph.initialGuess)
-    XCTAssertEqual(priorsLinearized[0].jacobian, Matrix(eye: 3))
+    XCTAssertEqual(priorsLinearized[0].jacobian, Array3(
+      Tuple1(Vector3(1, 0, 0)),
+      Tuple1(Vector3(0, 1, 0)),
+      Tuple1(Vector3(0, 0, 1))
+    ))
     XCTAssertEqual(priorsLinearized[0].error, Vector3(0, 0, 0))
+
+    let motionsLinearized = graph.motionFactors.linearized(at: graph.initialGuess)
+    XCTAssertEqual(motionsLinearized[0].jacobian, Array3(
+      Tuple2(Vector3(-1, 0, 0), Vector3(1, 0, 0)),
+      Tuple2(Vector3(1, -1, 0), Vector3(0, 1, 0)),
+      Tuple2(Vector3(-1, 0, -1), Vector3(0, 0, 1))
+    ))
+    XCTAssertEqual(motionsLinearized[0].error, Vector3(0, 0, 0))
+    assertAllKeyPathEqual(
+      motionsLinearized[1].jacobian.map { $0.head },
+      [
+        Vector3(-1.0, 0.0, 0.0),
+        Vector3(0.0, -0.62160997, -0.78332691),
+        Vector3(0.0, 0.78332691, -0.62160997)
+      ],
+      accuracy: 1e-6
+    )
+    assertAllKeyPathEqual(
+      motionsLinearized[1].jacobian.map { $0.tail.head },
+      [
+        Vector3(1, 0, 0),
+        Vector3(0, 1, 0),
+        Vector3(0, 0, 1)
+      ],
+      accuracy: 1e-6
+    )
+    assertAllKeyPathEqual(motionsLinearized[1].error, Vector3(-0.1, 0, 0), accuracy: 1e-6)
   }
 
   /// Test the `errorVectors`, `linearForward`, and `linearAdjoint` operations on a collection of
   /// Gaussian factors.
   func testGaussianFactorOperations() {
-    var vectorVariables = ArrayBuffer<ArrayStorage<Vector2>>()
-    let vectorVar1ID = TypedID<Vector2, Int>(vectorVariables.append(Vector2(1, 2)))
-    let variableAssignments = VariableAssignments(contiguousStorage: [
-      ObjectIdentifier(Vector2.self): AnyArrayBuffer(vectorVariables)
-    ])
+    var variableAssignments = VariableAssignments()
+    let vectorVar1ID = variableAssignments.store(Vector2(1, 2))
 
     var factors =
-      ArrayBuffer<GaussianFactorArrayStorage<GenericJacobianFactor<Tuple1<Vector2>, Vector2>>>()
-    let matrix1 = Matrix(scalars: [1, 1, 0, 1], rowCount: 2, columnCount: 2)
+      ArrayBuffer<GaussianFactorArrayStorage<GenericJacobianFactor<Array2<Tuple1<Vector2>>, Vector2>>>()
+    let matrix1 = Array2(
+      Tuple1(Vector2(1, 1)),
+      Tuple1(Vector2(0, 1))
+    )
     _ = factors.append(GenericJacobianFactor(
       jacobian: matrix1,
       error: Vector2(0, 0),
       edges: Tuple1(vectorVar1ID)
     ))
-    let matrix2 = Matrix(scalars: [0, 3, 7, 0], rowCount: 2, columnCount: 2)
+    let matrix2 = Array2(
+      Tuple1(Vector2(0, 3)),
+      Tuple1(Vector2(7, 0))
+    )
     _ = factors.append(GenericJacobianFactor(
       jacobian: matrix2,
       error: Vector2(100, 200),
@@ -254,17 +190,11 @@ class GenericFactorTests: XCTestCase {
     XCTAssertEqual(forwardResult[0], Vector2(3, 2))  // matrix1 * [1 2]
     XCTAssertEqual(forwardResult[1], Vector2(6, 7))  // matrix2 * [1 2]
 
-    var adjointResult = VariableAssignments(contiguousStorage: [
-      ObjectIdentifier(Vector2.self): AnyArrayBuffer(
-        ArrayBuffer<VectorArrayStorage<Vector2>>([Vector2(0, 0)])
-      )
-    ])
+    var adjointResult = VariableAssignments()
+    let adjointResultId = adjointResult.store(Vector2(0, 0))
     factors.linearAdjoint(forwardResult, into: &adjointResult)
 
     // matrix1^T * [3 2] + matrix2^T * [6 7]
-    adjointResult.contiguousStorage[ObjectIdentifier(Vector2.self)]!
-      .withUnsafeRawPointerToElements { p in
-        XCTAssertEqual(p.assumingMemoryBound(to: Vector2.self).pointee, Vector2(52, 23))
-      }
+    XCTAssertEqual(adjointResult[adjointResultId], Vector2(52, 23))
   }
 }

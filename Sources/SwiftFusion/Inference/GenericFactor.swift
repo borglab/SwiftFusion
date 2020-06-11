@@ -195,3 +195,26 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
     self.tail.store(into: variableBufferBases.tail, indices: indices.tail)
   }
 }
+
+protocol DifferentiableVariableTuple: VariableTuple {
+  associatedtype TangentIndices: TupleProtocol
+  static func tangentIndices(_ indices: Indices) -> TangentIndices
+}
+
+extension Empty: DifferentiableVariableTuple {
+  typealias TangentIndices = Self
+  static func tangentIndices(_ indices: Indices) -> TangentIndices {
+    indices
+  }
+}
+
+extension Tuple: DifferentiableVariableTuple
+where Head: Differentiable, Tail: DifferentiableVariableTuple {
+  typealias TangentIndices = Tuple<TypedID<Head.TangentVector, Int>, Tail.TangentIndices>
+  static func tangentIndices(_ indices: Indices) -> TangentIndices {
+    TangentIndices(
+      head: TypedID<Head.TangentVector, Int>(indices.head.perTypeID),
+      tail: Tail.tangentIndices(indices.tail)
+    )
+  }
+}

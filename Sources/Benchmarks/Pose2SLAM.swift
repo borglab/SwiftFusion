@@ -44,6 +44,17 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     }
 //    check(intelDataset.graph.error(val), near: 35.59, accuracy: 1e-2)
   }
+
+  // Uses `GenericFactorGraph` on the Intel dataset.
+  // The solvers are configured to run for a constant number of steps.
+  // The nonlinear solver is 10 iterations of Gauss-Newton.
+  // The linear solver is 500 iterations of CGLS.
+  suite.benchmark(
+    "GenericFactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
+    settings: .iterations(1)
+  ) {
+    runGenericFactorGraphBenchmark()
+  }
 }
 
 func check(_ actual: Double, near expected: Double, accuracy: Double) {

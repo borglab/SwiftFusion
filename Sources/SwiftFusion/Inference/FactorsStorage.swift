@@ -275,6 +275,8 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   }
 
   /// Returns the results of the factors' linear functions at the given point.
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_2>)
   func linearForward_(_ x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
     return AnyArrayBuffer(linearForward(x))
   }
@@ -284,6 +286,8 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   ///
   /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
   /// `Element.ErrorVector`s.
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_2>)
   func linearAdjoint_(
     _ errorVectorsStart: UnsafeRawPointer,
     into result: inout VariableAssignments
