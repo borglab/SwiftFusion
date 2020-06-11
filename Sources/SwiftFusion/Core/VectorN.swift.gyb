@@ -64,18 +64,16 @@ extension Vector${dim}: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
     % for coordinate in coordinates:
-    self.${coordinate} = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
+    self.${coordinate} = scalars[index]
+    index = scalars.index(after: index)
     % end
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([${', '.join(coordinates)}])
+  public var scalars: [Double] {
+    return [${', '.join(coordinates)}]
   }
 }
 

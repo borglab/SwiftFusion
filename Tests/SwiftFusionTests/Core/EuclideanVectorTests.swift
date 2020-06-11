@@ -65,28 +65,16 @@ extension EuclideanVectorTests {
     XCTAssertEqual(v, makeVector(from: 1, stride: 2))
   }
 
-  /// Tests conversion to/from `Vector`, and the derivative of this conversion.
+  /// Tests conversion to/from `Vector`.
   func testConversionVector() {
     let v1 = makeVector(from: 0, stride: 1)
     XCTAssertEqual(Testee(v1.vector), v1)
-
-    let (value, pb) = valueWithPullback(at: v1) { Testee($0.vector) }
-    XCTAssertEqual(value, v1)
-    for v in basisVectors {
-      XCTAssertEqual(pb(v), v)
-    }
   }
 
-  /// Tests conversion to/from `Tensor`, and the derivative of this conversion.
+  /// Tests conversion to/from `Tensor`.
   func testConversionTensor() {
     let v1 = makeVector(from: 0, stride: 1)
     XCTAssertEqual(Testee(v1.tensor), v1)
-
-    let (value, pb) = valueWithPullback(at: v1) { Testee($0.tensor) }
-    XCTAssertEqual(value, v1)
-    for v in basisVectors {
-      XCTAssertEqual(pb(v), v)
-    }
   }
 
   /// Tests the value and derivative of the mutating +=.

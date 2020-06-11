@@ -150,13 +150,8 @@ extension Vector: AdditiveArithmetic, EuclideanVector {
     return (self.dot(other), { v in (v * other, v * self) })
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    self = vector
-  }
-
-  @differentiable
-  public var vector: Vector {
-    return self
+  /// Creates an instance whose elements are `scalars`.
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    self.scalarsStorage = Array(scalars)
   }
 }
