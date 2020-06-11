@@ -26,7 +26,7 @@ protocol GenericFactor {
   var edges: Variables.Indices { get }
 
   /// Returns the error given the values of the adjacent variables.
-  func error(_: Variables) -> Double
+  func error(at x: Variables) -> Double
 }
 
 /// A factor with an error vector, which can be linearized around any point.
@@ -40,14 +40,14 @@ protocol GenericLinearizableFactor: GenericFactor {
   associatedtype ErrorVector: EuclideanVector
 
   /// Returns the error vector given the values of the adjacent variables.
-  func errorVector(_: Variables) -> ErrorVector
+  func errorVector(at x: Variables) -> ErrorVector
 
   /// The type of the linearized factor.
   associatedtype Linearization: GenericGaussianFactor
 
   /// Returns a factor whose `errorVector` linearly approximates `self`'s `errorVector` around the
   /// given point.
-  func linearized(_: Variables) -> Linearization
+  func linearized(at x: Variables) -> Linearization
 }
 
 /// A factor with a vector error that is a linear function of the input, plus a constant.
@@ -57,11 +57,11 @@ protocol GenericLinearizableFactor: GenericFactor {
 /// prefix.
 protocol GenericGaussianFactor: GenericLinearizableFactor where Variables: EuclideanVector {
   /// Returns the result of the linear function at the given point.
-  func linearForward(_: Variables) -> ErrorVector
+  func linearForward(_ x: Variables) -> ErrorVector
 
   /// Returns the result of the adjoint (aka "transpose" or "dual") of the linear function at the
   /// given point.
-  func linearAdjoint(_: ErrorVector) -> Variables
+  func linearAdjoint(_ y: ErrorVector) -> Variables
 }
 
 // MARK: - `VariableTuple`.
@@ -81,14 +81,14 @@ protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
   /// types in this `VariableTuble`.
   // TODO: `variableAssignments` should be the receiver.
   static func withVariableBufferBaseUnsafePointers<R>(
-    _ variableAssignments: ValuesArray,
+    _ variableAssignments: VariableAssignments,
     _ body: (UnsafePointers) -> R
   ) -> R
 
   /// Ensures that `variableAssignments` has unique storage for all the variable assignment buffers
   /// for the variable types in this `VariableTuble`.
   // TODO: `variableAssignments` should be the receiver.
-  static func ensureUniqueStorage(_ variableAssignments: inout ValuesArray)
+  static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments)
 
   /// Returns mutable pointers referring to the same memory as `pointers`.
   // TODO: Maybe `pointers` should be the receiver.
@@ -108,7 +108,7 @@ extension VariableTuple {
   /// types in this `VariableTuble`.
   // TODO: `variableAssignments` should be the receiver.
   static func withVariableBufferBaseUnsafeMutablePointers<R>(
-    _ variableAssignments: inout ValuesArray,
+    _ variableAssignments: inout VariableAssignments,
     _ body: (UnsafeMutablePointers) -> R
   ) -> R {
     ensureUniqueStorage(&variableAssignments)
@@ -131,13 +131,13 @@ extension Empty: VariableTuple {
   typealias Indices = Self
 
   static func withVariableBufferBaseUnsafePointers<R>(
-    _ variableAssignments: ValuesArray,
+    _ variableAssignments: VariableAssignments,
     _ body: (UnsafePointers) -> R
   ) -> R {
     return body(Empty())
   }
 
-  static func ensureUniqueStorage(_ variableAssignments: inout ValuesArray) {}
+  static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {}
 
   static func unsafeMutablePointers(mutating pointers: UnsafePointers) -> UnsafeMutablePointers {
     Self()
@@ -156,7 +156,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   typealias Indices = Tuple<TypedID<Head, Int>, Tail.Indices>
 
   static func withVariableBufferBaseUnsafePointers<R>(
-    _ variableAssignments: ValuesArray,
+    _ variableAssignments: VariableAssignments,
     _ body: (UnsafePointers) -> R
   ) -> R {
     return variableAssignments
@@ -170,7 +170,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
       }
   }
 
-  static func ensureUniqueStorage(_ variableAssignments: inout ValuesArray) {
+  static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {
     variableAssignments.contiguousStorage[ObjectIdentifier(Head.self)]!.ensureUniqueStorage()
     Tail.ensureUniqueStorage(&variableAssignments)
   }

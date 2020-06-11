@@ -31,24 +31,24 @@ fileprivate struct GenericPriorFactor<Pose: LieGroup>: GenericLinearizableFactor
   let prior: Pose
 
   typealias ErrorVector = Pose.TangentVector
-  func errorVector(_ x: Pose) -> ErrorVector {
+  func errorVector(at x: Pose) -> ErrorVector {
     return prior.localCoordinate(x)
   }
 
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
 
-  func error(_ variables: Variables) -> Double {
-    return errorVector(variables).squaredNorm
+  func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
   }
 
-  func errorVector(_ variables: Variables) -> Pose.TangentVector {
-    return errorVector(variables.head)
+  func errorVector(at x: Variables) -> Pose.TangentVector {
+    return errorVector(at: x.head)
   }
 
   typealias Linearized = GenericJacobianFactor<Variables.TangentVector, ErrorVector>
-  func linearized(_ variables: Variables) -> Linearized {
-    Linearized(linearizing: errorVector, at: variables.head, edges: edges)
+  func linearized(at x: Variables) -> Linearized {
+    Linearized(linearizing: errorVector, at: x.head, edges: edges)
   }
 }
 
@@ -69,16 +69,16 @@ fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup>: GenericLinearizab
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
 
-  func error(_ variables: Variables) -> Double {
-    return errorVector(variables).squaredNorm
+  func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
   }
 
-  func errorVector(_ variables: Variables) -> Pose.TangentVector {
-    return errorVector(variables.head, variables.tail.head, variables.tail.tail.head)
+  func errorVector(at x: Variables) -> Pose.TangentVector {
+    return errorVector(x.head, x.tail.head, x.tail.tail.head)
   }
 
   typealias Linearized = GenericJacobianFactor<Variables.Tail.TangentVector, ErrorVector>
-  func linearized(_ variables: Variables) -> Linearized {
+  func linearized(at x: Variables) -> Linearized {
     fatalError()
   }
 }
@@ -129,16 +129,16 @@ fileprivate struct GenericJacobianFactor<
     self.edges = Tuple1(TypedID(edges.head.perTypeID))
   }
 
-  func error(_ variables: Variables) -> Double {
-    return errorVector(variables).squaredNorm
+  func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
   }
 
-  func errorVector(_ variables: Variables) -> ErrorVector {
-    return linearForward(variables) + error
+  func errorVector(at x: Variables) -> ErrorVector {
+    return linearForward(x) + error
   }
 
-  func linearForward(_ variables: Variables) -> ErrorVector {
-    return ErrorVector(matvec(jacobian, variables.vector))
+  func linearForward(_ x: Variables) -> ErrorVector {
+    return ErrorVector(matvec(jacobian, x.vector))
   }
 
   func linearAdjoint(_ errorVector: ErrorVector) -> Variables {
@@ -146,7 +146,7 @@ fileprivate struct GenericJacobianFactor<
   }
 
   typealias Linearized = Self
-  func linearized(_: Variables) -> Self {
+  func linearized(at x: Variables) -> Self {
     return self
   }
 }
@@ -161,7 +161,7 @@ fileprivate struct GenericJacobianFactor<
 // - a prior factor giving a prior of `Pose2(0, 0, 0)` on the first position.
 // - two motion factors with possible motions [Pose2(1, 1, 0), Pose2(0, 0, 1)]
 fileprivate struct ExampleFactorGraph {
-  var initialGuess = ValuesArray(contiguousStorage: [:])
+  var initialGuess = VariableAssignments(contiguousStorage: [:])
   var motionLabelIDs = [TypedID<Int, Int>]()
   var poseIDs = [TypedID<Pose2, Int>]()
 
@@ -180,7 +180,7 @@ fileprivate struct ExampleFactorGraph {
     poseIDs.append(TypedID(poseVariables.append(Pose2(1, 1, 0))))
     poseIDs.append(TypedID(poseVariables.append(Pose2(1, 1, 0.9))))
 
-    initialGuess = ValuesArray(contiguousStorage: [
+    initialGuess = VariableAssignments(contiguousStorage: [
       ObjectIdentifier(Int.self): AnyArrayBuffer(motionLabelVariables),
       ObjectIdentifier(Pose2.self): AnyArrayBuffer(poseVariables)
     ])
@@ -205,10 +205,10 @@ class GenericFactorTests: XCTestCase {
   func testErrors() {
     let graph = ExampleFactorGraph()
 
-    let priorErrors = graph.priorFactors.errors(graph.initialGuess)
+    let priorErrors = graph.priorFactors.errors(at: graph.initialGuess)
     XCTAssertEqual(priorErrors[0], 0)
 
-    let motionErrors = graph.motionFactors.errors(graph.initialGuess)
+    let motionErrors = graph.motionFactors.errors(at: graph.initialGuess)
     XCTAssertEqual(motionErrors[0], 0)
     XCTAssertEqual(motionErrors[1], Vector3(0.1, 0, 0).squaredNorm, accuracy: 1e-6)
   }
@@ -217,7 +217,7 @@ class GenericFactorTests: XCTestCase {
   func testLinearized() {
     let graph = ExampleFactorGraph()
 
-    let priorsLinearized = graph.priorFactors.linearized(graph.initialGuess)
+    let priorsLinearized = graph.priorFactors.linearized(at: graph.initialGuess)
     XCTAssertEqual(priorsLinearized[0].jacobian, Matrix(eye: 3))
     XCTAssertEqual(priorsLinearized[0].error, Vector3(0, 0, 0))
   }
@@ -227,7 +227,7 @@ class GenericFactorTests: XCTestCase {
   func testGaussianFactorOperations() {
     var vectorVariables = ArrayBuffer<ArrayStorage<Vector2>>()
     let vectorVar1ID = TypedID<Vector2, Int>(vectorVariables.append(Vector2(1, 2)))
-    let variableAssignments = ValuesArray(contiguousStorage: [
+    let variableAssignments = VariableAssignments(contiguousStorage: [
       ObjectIdentifier(Vector2.self): AnyArrayBuffer(vectorVariables)
     ])
 
@@ -246,7 +246,7 @@ class GenericFactorTests: XCTestCase {
       edges: Tuple1(vectorVar1ID)
     ))
 
-    let errorVectors = factors.errorVectors(variableAssignments)
+    let errorVectors = factors.errorVectors(at: variableAssignments)
     XCTAssertEqual(errorVectors[0], Vector2(3, 2))  // matrix1 * [1 2] + [0 0]
     XCTAssertEqual(errorVectors[1], Vector2(106, 207))  // matrix2 * [1 2] + [100 200]
 
@@ -254,7 +254,7 @@ class GenericFactorTests: XCTestCase {
     XCTAssertEqual(forwardResult[0], Vector2(3, 2))  // matrix1 * [1 2]
     XCTAssertEqual(forwardResult[1], Vector2(6, 7))  // matrix2 * [1 2]
 
-    var adjointResult = ValuesArray(contiguousStorage: [
+    var adjointResult = VariableAssignments(contiguousStorage: [
       ObjectIdentifier(Vector2.self): AnyArrayBuffer(
         ArrayBuffer<VectorArrayStorage<Vector2>>([Vector2(0, 0)])
       )

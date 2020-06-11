@@ -25,32 +25,32 @@ class AnyFactorStorage: AnyArrayStorage {
     fatalError("implement me!")
   }
 
-  /// Returns the errors of the factors given `variableAssignments`.
-  final func errors(_ variableAssignments: ValuesArray) -> [Double] {
-    factorImplementation.errors_(variableAssignments)
+  /// Returns the errors of the factors given `x`.
+  final func errors(at x: VariableAssignments) -> [Double] {
+    factorImplementation.errors_(at: x)
   }
 }
 
 extension AnyArrayBuffer where Storage: AnyFactorStorage {
-  func errors(_ variableAssignments: ValuesArray) -> [Double] {
-    storage.errors(variableAssignments)
+  func errors(at x: VariableAssignments) -> [Double] {
+    storage.errors(at: x)
   }
 }
 
 /// Contiguous storage of homogeneous `Factor` values of statically unknown type.
 protocol AnyFactorStorageImplementation: AnyFactorStorage {
   /// Returns the errors of the factors given `variableAssignments`.
-  func errors_(_ variableAssignments: ValuesArray) -> [Double]
+  func errors_(at x: VariableAssignments) -> [Double]
 }
 
 /// APIs that depend on `Factor` `Element` type.
 extension ArrayStorageImplementation where Element: GenericFactor {
   /// Returns the errors of the factors given `variableAssignments`.
-  func errors_(_ variableAssignments: ValuesArray) -> [Double] {
-    return Element.Variables.withVariableBufferBaseUnsafePointers(variableAssignments) { varsBuf in
+  func errors_(at x: VariableAssignments) -> [Double] {
+    return Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBuf in
       return withUnsafeMutableBufferPointer { factors in
         return factors.map { factor in
-          return factor.error(Element.Variables(varsBuf, indices: factor.edges))
+          return factor.error(at: Element.Variables(varsBuf, indices: factor.edges))
         }
       }
     }
@@ -58,8 +58,8 @@ extension ArrayStorageImplementation where Element: GenericFactor {
 }
 
 extension ArrayBuffer where Element: GenericFactor {
-  func errors(_ variableAssignments: ValuesArray) -> [Double] {
-    storage.errors_(variableAssignments)
+  func errors(at x: VariableAssignments) -> [Double] {
+    storage.errors_(at: x)
   }
 }
 
@@ -84,89 +84,89 @@ class AnyLinearizableFactorStorage: AnyFactorStorage {
   }
 
   /// Returns the error vectors of the factors given the values of the adjacent variables.
-  func errorVectors(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage> {
-    return linearizableFactorImplementation.errorVectors_(variableAssignments)
+  func errorVectors(at x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
+    return linearizableFactorImplementation.errorVectors_(at: x)
   }
 
   /// Returns the linearized factors at the given values.
-  func linearized(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyGaussianFactorStorage> {
-    return linearizableFactorImplementation.linearized_(variableAssignments)
+  func linearized(at x: VariableAssignments) -> AnyArrayBuffer<AnyGaussianFactorStorage> {
+    return linearizableFactorImplementation.linearized_(at: x)
   }
 }
 
 extension AnyArrayBuffer where Storage: AnyLinearizableFactorStorage {
   /// Returns the error vectors of the factors given the values of the adjacent variables.
-  func errorVectors(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage> {
-    return storage.errorVectors(variableAssignments)
+  func errorVectors(at x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
+    return storage.errorVectors(at: x)
   }
 
   /// Returns the linearized factors at the given values.
-  func linearized(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyGaussianFactorStorage> {
-    return storage.linearized(variableAssignments)
+  func linearized(at x: VariableAssignments) -> AnyArrayBuffer<AnyGaussianFactorStorage> {
+    return storage.linearized(at: x)
   }
 }
 
 /// Contiguous storage of homogeneous `LinearizableFactor` values of statically unknown type.
 protocol AnyLinearizableFactorStorageImplementation: AnyLinearizableFactorStorage {
   /// Returns the error vectors of the factors given the values of the adjacent variables.
-  func errorVectors_(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage>
+  func errorVectors_(at x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage>
 
   /// Returns the linearized factors at the given values.
-  func linearized_(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyGaussianFactorStorage>
+  func linearized_(at x: VariableAssignments) -> AnyArrayBuffer<AnyGaussianFactorStorage>
 }
 
 /// APIs that depend on `LinearizableFactor` `Element` type.
 extension ArrayStorageImplementation where Element: GenericLinearizableFactor {
   /// Returns the error vectors of the factors given the values of the adjacent variables.
-  func errorVectors(_ variableAssignments: ValuesArray)
+  func errorVectors(at x: VariableAssignments)
     -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
   {
-    Element.Variables.withVariableBufferBaseUnsafePointers(variableAssignments) { varsBufs in
+    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
       withUnsafeMutableBufferPointer { factors in
         ArrayBuffer(factors.lazy.map { factor in
-          factor.errorVector(Element.Variables(varsBufs, indices: factor.edges))
+          factor.errorVector(at: Element.Variables(varsBufs, indices: factor.edges))
         })
       }
     }
   }
 
   /// Returns the linearized factors at the given values.
-  func linearized(_ variableAssignments: ValuesArray)
+  func linearized(at x: VariableAssignments)
     -> ArrayBuffer<GaussianFactorArrayStorage<Element.Linearization>>
   {
-    Element.Variables.withVariableBufferBaseUnsafePointers(variableAssignments) { varsBufs in
+    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
       withUnsafeMutableBufferPointer { factors in
         ArrayBuffer(factors.lazy.map { factor in
-          factor.linearized(Element.Variables(varsBufs, indices: factor.edges))
+          factor.linearized(at: Element.Variables(varsBufs, indices: factor.edges))
         })
       }
     }
   }
 
   /// Returns the error vectors of the factors given the values of the adjacent variables.
-  func errorVectors_(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage> {
-    return AnyArrayBuffer(errorVectors(variableAssignments))
+  func errorVectors_(at x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
+    return AnyArrayBuffer(errorVectors(at: x))
   }
 
   /// Returns the linearized factors at the given values.
-  func linearized_(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyGaussianFactorStorage> {
-    return AnyArrayBuffer(linearized(variableAssignments))
+  func linearized_(at x: VariableAssignments) -> AnyArrayBuffer<AnyGaussianFactorStorage> {
+    return AnyArrayBuffer(linearized(at: x))
   }
 }
 
 extension ArrayBuffer where Element: GenericLinearizableFactor {
   /// Returns the error vectors of the factors given the values of the adjacent variables.
-  func errorVectors(_ variableAssignments: ValuesArray)
-    -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
+  func errorVectors(at x: VariableAssignments)
+  -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
   {
-    storage.errorVectors(variableAssignments)
+    storage.errorVectors(at: x)
   }
 
   /// Returns the linearized factors at the given values.
-  func linearized(_ variableAssignments: ValuesArray)
+  func linearized(at x: VariableAssignments)
     -> ArrayBuffer<GaussianFactorArrayStorage<Element.Linearization>>
   {
-    storage.linearized(variableAssignments)
+    storage.linearized(at: x)
   }
 }
 
@@ -191,8 +191,8 @@ class AnyGaussianFactorStorage: AnyFactorStorage {
   }
 
   /// Returns the results of the factors' linear functions at the given point.
-  func linearForward(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage> {
-    gaussianFactorImplementation.linearForward_(variableAssignments)
+  func linearForward(_ x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
+    gaussianFactorImplementation.linearForward_(x)
   }
 
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
@@ -200,15 +200,15 @@ class AnyGaussianFactorStorage: AnyFactorStorage {
   ///
   /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
   /// `Element.ErrorVector`s where `Element` is the element type of `self`.
-  func linearAdjoint(_ errorVectorsStart: UnsafeRawPointer, into result: inout ValuesArray) {
+  func linearAdjoint(_ errorVectorsStart: UnsafeRawPointer, into result: inout VariableAssignments) {
     gaussianFactorImplementation.linearAdjoint_(errorVectorsStart, into: &result)
   }
 }
 
 extension AnyArrayBuffer where Storage: AnyGaussianFactorStorage {
   /// Returns the results of the factors' linear functions at the given point.
-  func linearForward(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage> {
-    return storage.linearForward(variableAssignments)
+  func linearForward(_ x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
+    return storage.linearForward(x)
   }
 
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
@@ -218,7 +218,7 @@ extension AnyArrayBuffer where Storage: AnyGaussianFactorStorage {
   /// the element type of `self`.
   func linearAdjoint<VectorStorage>(
     _ errorVectors: AnyArrayBuffer<VectorStorage>,
-    into result: inout ValuesArray
+    into result: inout VariableAssignments
   ) {
     errorVectors.withUnsafeRawPointerToElements { errorVectorsStart in
       storage.linearAdjoint(errorVectorsStart, into: &result)
@@ -229,23 +229,23 @@ extension AnyArrayBuffer where Storage: AnyGaussianFactorStorage {
 /// Contiguous storage of homogeneous `GaussianFactor` values of statically unknown type.
 protocol AnyGaussianFactorStorageImplementation: AnyGaussianFactorStorage {
   /// Returns the results of the factors' linear functions at the given point.
-  func linearForward_(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage>
+  func linearForward_(_ x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage>
 
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
   /// given point into `result`.
   ///
   /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
   /// `Element.ErrorVector`s where `Element` is the element type of `self`.
-  func linearAdjoint_(_ errorVectorsStart: UnsafeRawPointer, into result: inout ValuesArray)
+  func linearAdjoint_(_ errorVectorsStart: UnsafeRawPointer, into result: inout VariableAssignments)
 }
 
 /// APIs that depend on `GaussianFactor` `Element` type.
 extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   /// Returns the results of the factors' linear functions at the given point.
-  func linearForward(_ variableAssignments: ValuesArray)
+  func linearForward(_ x: VariableAssignments)
     -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
   {
-    Element.Variables.withVariableBufferBaseUnsafePointers(variableAssignments) { varsBufs in
+    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
       withUnsafeMutableBufferPointer { factors in
         ArrayBuffer(factors.map { factor in
           factor.linearForward(Element.Variables(varsBufs, indices: factor.edges))
@@ -260,7 +260,7 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   /// Precondition: `errorVectors.count >= count`.
   func linearAdjoint<ErrorVectors: Collection>(
     _ errorVectors: ErrorVectors,
-    into result: inout ValuesArray
+    into result: inout VariableAssignments
   ) where ErrorVectors.Element == Element.ErrorVector {
     Element.Variables.withVariableBufferBaseUnsafeMutablePointers(&result) { varsBufs in
       withUnsafeMutableBufferPointer { factors in
@@ -274,8 +274,8 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   }
 
   /// Returns the results of the factors' linear functions at the given point.
-  func linearForward_(_ variableAssignments: ValuesArray) -> AnyArrayBuffer<AnyVectorStorage> {
-    return AnyArrayBuffer(linearForward(variableAssignments))
+  func linearForward_(_ x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
+    return AnyArrayBuffer(linearForward(x))
   }
 
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
@@ -283,7 +283,7 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   ///
   /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
   /// `Element.ErrorVector`s.
-  func linearAdjoint_(_ errorVectorsStart: UnsafeRawPointer, into result: inout ValuesArray) {
+  func linearAdjoint_(_ errorVectorsStart: UnsafeRawPointer, into result: inout VariableAssignments) {
     linearAdjoint(
       UnsafeBufferPointer(
         start: errorVectorsStart.assumingMemoryBound(to: Element.ErrorVector.self),
@@ -296,10 +296,10 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
 
 extension ArrayBuffer where Element: GenericGaussianFactor {
   /// Returns the results of the factors' linear functions at the given point.
-  func linearForward(_ variableAssignments: ValuesArray)
+  func linearForward(_ x: VariableAssignments)
     -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
   {
-    storage.linearForward(variableAssignments)
+    storage.linearForward(x)
   }
 
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
@@ -308,7 +308,7 @@ extension ArrayBuffer where Element: GenericGaussianFactor {
   /// Precondition: `errorVectors.count >= count`.
   func linearAdjoint<ErrorVectors: Collection>(
     _ errorVectors: ErrorVectors,
-    into result: inout ValuesArray
+    into result: inout VariableAssignments
   ) where ErrorVectors.Element == Element.ErrorVector {
     storage.linearAdjoint(errorVectors, into: &result)
   }

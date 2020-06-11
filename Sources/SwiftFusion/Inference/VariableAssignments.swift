@@ -21,7 +21,7 @@ import PenguinStructures
 /// Note: This is just a temporary placeholder until we get the real heterogeneous array type. This
 /// one is missing nice abstractions that let clients interact with it without knowing about
 /// `contiguousStorage`.
-struct ValuesArray {
+struct VariableAssignments {
   /// Dictionary from variable type to contiguous storage for that type.
   var contiguousStorage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>]
 }
