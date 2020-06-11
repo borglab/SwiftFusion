@@ -39,6 +39,8 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   ///
   /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
   /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
+  ///
+  /// TODO: Maybe make this failable.
   init<Source: Collection>(_ scalars: Source) where Source.Element == Double
 
   /// The scalars in `self`.
@@ -64,11 +66,15 @@ extension EuclideanVector {
   }
 
   /// Returns this vector as a `Vector`.
+  ///
+  /// Note: This is for backwards compatibility with existing code.
   public var vector: Vector {
     return Vector(Array(scalars))
   }
 
   /// Creates a vector with the same elements as `vector`.
+  ///
+  /// Note: This is for backwards compatibility with existing code.
   public init(_ vector: Vector) {
     self.init(vector.scalars)
   }

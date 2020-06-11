@@ -132,7 +132,7 @@ extension ArrayStorageImplementation where Element: GenericLinearizableFactor {
 
   /// Returns the linearized factors at the given values.
   func linearized(_ variableAssignments: ValuesArray)
-    -> ArrayBuffer<GaussianFactorArrayStorage<Element.Linearized>>
+    -> ArrayBuffer<GaussianFactorArrayStorage<Element.Linearization>>
   {
     Element.Variables.withVariableBufferBaseUnsafePointers(variableAssignments) { varsBufs in
       withUnsafeMutableBufferPointer { factors in
@@ -164,7 +164,7 @@ extension ArrayBuffer where Element: GenericLinearizableFactor {
 
   /// Returns the linearized factors at the given values.
   func linearized(_ variableAssignments: ValuesArray)
-    -> ArrayBuffer<GaussianFactorArrayStorage<Element.Linearized>>
+    -> ArrayBuffer<GaussianFactorArrayStorage<Element.Linearization>>
   {
     storage.linearized(variableAssignments)
   }

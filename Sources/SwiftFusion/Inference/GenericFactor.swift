@@ -29,23 +29,32 @@ protocol GenericFactor {
   func error(_: Variables) -> Double
 }
 
-/// A factor with a vector error, which can be linearized around any point.
+/// A factor with an error vector, which can be linearized around any point.
+///
+/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
+/// When we completely replace the existing factors with the "Generic" ones, we should remove this
+/// prefix.
 protocol GenericLinearizableFactor: GenericFactor {
-  /// The type of the vector error.
+  /// The type of the error vector.
+  // TODO: Add a description of what an error vector is.
   associatedtype ErrorVector: EuclideanVector
 
   /// Returns the error vector given the values of the adjacent variables.
   func errorVector(_: Variables) -> ErrorVector
 
   /// The type of the linearized factor.
-  associatedtype Linearized: GenericGaussianFactor
+  associatedtype Linearization: GenericGaussianFactor
 
   /// Returns a factor whose `errorVector` linearly approximates `self`'s `errorVector` around the
   /// given point.
-  func linearized(_: Variables) -> Linearized
+  func linearized(_: Variables) -> Linearization
 }
 
 /// A factor with a vector error that is a linear function of the input, plus a constant.
+///
+/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
+/// When we completely replace the existing factors with the "Generic" ones, we should remove this
+/// prefix.
 protocol GenericGaussianFactor: GenericLinearizableFactor where Variables: EuclideanVector {
   /// Returns the result of the linear function at the given point.
   func linearForward(_: Variables) -> ErrorVector
@@ -70,6 +79,7 @@ protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
 
   /// Invokes `body` with the base addressess of the variable assignment buffers for the variable
   /// types in this `VariableTuble`.
+  // TODO: `variableAssignments` should be the receiver.
   static func withVariableBufferBaseUnsafePointers<R>(
     _ variableAssignments: ValuesArray,
     _ body: (UnsafePointers) -> R
@@ -77,9 +87,11 @@ protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
 
   /// Ensures that `variableAssignments` has unique storage for all the variable assignment buffers
   /// for the variable types in this `VariableTuble`.
+  // TODO: `variableAssignments` should be the receiver.
   static func ensureUniqueStorage(_ variableAssignments: inout ValuesArray)
 
   /// Returns mutable pointers referring to the same memory as `pointers`.
+  // TODO: Maybe `pointers` should be the receiver.
   static func unsafeMutablePointers(mutating pointers: UnsafePointers) -> UnsafeMutablePointers
 
   /// Creates a tuple containing the variable values in `variableBufferBases`, at `indices`.
@@ -94,6 +106,7 @@ protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
 extension VariableTuple {
   /// Invokes `body` with the base addressess of the variable assignment buffers for the variable
   /// types in this `VariableTuble`.
+  // TODO: `variableAssignments` should be the receiver.
   static func withVariableBufferBaseUnsafeMutablePointers<R>(
     _ variableAssignments: inout ValuesArray,
     _ body: (UnsafeMutablePointers) -> R
