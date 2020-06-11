@@ -19,37 +19,41 @@ import PenguinStructures
 /// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
 /// When we completely replace the existing factors with the "Generic" ones, we should remove this
 /// prefix.
-struct GenericBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+public struct GenericBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
   GenericLinearizableFactor
   where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 {
-  typealias Variables = Tuple2<Pose, Pose>
+  public typealias Variables = Tuple2<Pose, Pose>
 
-  let edges: Variables.Indices
+  public let edges: Variables.Indices
+  public let difference: Pose
 
-  let difference: Pose
+  public init(_ startId: TypedID<Pose, Int>, _ endId: TypedID<Pose, Int>, _ difference: Pose) {
+    self.edges = Tuple2(startId, endId)
+    self.difference = difference
+  }
 
-  typealias ErrorVector = Pose.TangentVector
-  func errorVector(_ start: Pose, _ end: Pose) -> ErrorVector {
+  public typealias ErrorVector = Pose.TangentVector
+  public func errorVector(_ start: Pose, _ end: Pose) -> ErrorVector {
     let actualMotion = between(start, end)
     return difference.localCoordinate(actualMotion)
   }
 
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
-  func error(at x: Variables) -> Double {
+  public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }
 
-  func errorVector(at x: Variables) -> Pose.TangentVector {
+  public func errorVector(at x: Variables) -> Pose.TangentVector {
     return errorVector(x.head, x.tail.head)
   }
 
-  typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
-  func linearized(at x: Variables) -> Linearized {
+  public typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearized {
     Linearized(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
-typealias GenericBetweenFactor2 =
+public typealias GenericBetweenFactor2 =
   GenericBetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>

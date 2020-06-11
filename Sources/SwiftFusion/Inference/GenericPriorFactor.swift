@@ -19,34 +19,39 @@ import PenguinStructures
 /// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
 /// When we completely replace the existing factors with the "Generic" ones, we should remove this
 /// prefix.
-struct GenericPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+public struct GenericPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
   GenericLinearizableFactor
   where JacobianRows.Element == Tuple1<Pose.TangentVector>
 {
-  typealias Variables = Tuple1<Pose>
+  public typealias Variables = Tuple1<Pose>
 
-  let edges: Variables.Indices
-  let prior: Pose
+  public let edges: Variables.Indices
+  public let prior: Pose
 
-  typealias ErrorVector = Pose.TangentVector
-  func errorVector(_ x: Pose) -> ErrorVector {
+  public init(_ id: TypedID<Pose, Int>, _ prior: Pose) {
+    self.edges = Tuple1(id)
+    self.prior = prior
+  }
+
+  public typealias ErrorVector = Pose.TangentVector
+  public func errorVector(_ x: Pose) -> ErrorVector {
     return prior.localCoordinate(x)
   }
 
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
-  func error(at x: Variables) -> Double {
+  public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }
 
-  func errorVector(at x: Variables) -> Pose.TangentVector {
+  public func errorVector(at x: Variables) -> Pose.TangentVector {
     return errorVector(x.head)
   }
 
-  typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
-  func linearized(at x: Variables) -> Linearized {
+  public typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearized {
     Linearized(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
-typealias GenericPriorFactor2 = GenericPriorFactor<Pose2, Array3<Tuple1<Vector3>>>
+public typealias GenericPriorFactor2 = GenericPriorFactor<Pose2, Array3<Tuple1<Vector3>>>

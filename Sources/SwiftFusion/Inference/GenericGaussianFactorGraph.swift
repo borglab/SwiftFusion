@@ -14,7 +14,7 @@
 
 import PenguinStructures
 
-struct GenericGaussianFactorGraph {
+public struct GenericGaussianFactorGraph {
   var inputZero: VariableAssignments
   var contiguousStorage: [ObjectIdentifier: AnyArrayBuffer<AnyGaussianFactorStorage>]
 

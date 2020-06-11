@@ -17,7 +17,7 @@ import TensorFlow
 import XCTest
 
 import PenguinStructures
-@testable import SwiftFusion
+import SwiftFusion
 
 class GenericFactorGraphTests: XCTestCase {
   func testSimplePose2SLAM() {
@@ -29,15 +29,11 @@ class GenericFactorGraphTests: XCTestCase {
     let pose5ID = x.store(Pose2(Rot2(-.pi / 2), Vector2(2.1, 2.1)))
 
     var graph = GenericFactorGraph()
-    graph.store(
-      GenericBetweenFactor2(edges: Tuple2(pose2ID, pose1ID), difference: Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(
-      GenericBetweenFactor2(edges: Tuple2(pose3ID, pose2ID), difference: Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(
-      GenericBetweenFactor2(edges: Tuple2(pose4ID, pose3ID), difference: Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(
-      GenericBetweenFactor2(edges: Tuple2(pose5ID, pose4ID), difference: Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(GenericPriorFactor2(edges: Tuple1(pose1ID), prior: Pose2(0, 0, 0)))
+    graph.store(GenericBetweenFactor2(pose2ID, pose1ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(GenericBetweenFactor2(pose3ID, pose2ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(GenericBetweenFactor2(pose4ID, pose3ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(GenericBetweenFactor2(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(GenericPriorFactor2(pose1ID, Pose2(0, 0, 0)))
 
     for _ in 0..<3 {
       let linearized = graph.linearized(at: x)

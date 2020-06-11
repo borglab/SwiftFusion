@@ -69,7 +69,7 @@ public class CGLS {
 /// Conjugate Gradient Least Squares (CGLS) optimizer.
 ///
 /// An optimizer that implements CGLS second order optimizer
-struct GenericCGLS {
+public struct GenericCGLS {
   /// The set of steps taken.
   public var step: Int = 0
   public var precision: Double = 1e-10

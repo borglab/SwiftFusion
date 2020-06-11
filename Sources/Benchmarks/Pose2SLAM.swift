@@ -45,6 +45,13 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
 //    check(intelDataset.graph.error(val), near: 35.59, accuracy: 1e-2)
   }
 
+  let intelDatasetGen =
+    try! G2OReader.G2OGenericFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
+  check(
+    intelDatasetGen.graph.error(at: intelDatasetGen.initialGuess),
+    near: 73565.64,
+    accuracy: 1e-2)
+
   // Uses `GenericFactorGraph` on the Intel dataset.
   // The solvers are configured to run for a constant number of steps.
   // The nonlinear solver is 10 iterations of Gauss-Newton.
@@ -53,7 +60,19 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     "GenericFactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
     settings: .iterations(1)
   ) {
-    runGenericFactorGraphBenchmark()
+    var x = intelDatasetGen.initialGuess
+    var graph = intelDatasetGen.graph
+    graph.store(GenericPriorFactor2(TypedID(0), Pose2(0, 0, 0)))
+
+    for _ in 0..<10 {
+      let linearized = graph.linearized(at: x)
+      var dx = x.zeroTangent
+      var optimizer = GenericCGLS(precision: 0, max_iteration: 500)
+      optimizer.optimize(gfg: linearized, initial: &dx)
+      x.move(along: (-1) * dx)
+    }
+
+    check(graph.error(at: x), near: 0.987, accuracy: 1e-2)
   }
 }
 

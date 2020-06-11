@@ -18,7 +18,7 @@ import PenguinStructures
 ///
 /// Note: This is currently named `GenericFactor` to avoid clashing with the other `Factor`
 /// protocol. When we completely replace `Factor`, we should rename this one to `Factor`.
-protocol GenericFactor {
+public protocol GenericFactor {
   /// A tuple of the variable types of variables adjacent to this factor.
   associatedtype Variables: VariableTuple
 
@@ -34,7 +34,7 @@ protocol GenericFactor {
 /// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
 /// When we completely replace the existing factors with the "Generic" ones, we should remove this
 /// prefix.
-protocol GenericLinearizableFactor: GenericFactor {
+public protocol GenericLinearizableFactor: GenericFactor {
   /// The type of the error vector.
   // TODO: Add a description of what an error vector is.
   associatedtype ErrorVector: EuclideanVector
@@ -55,7 +55,7 @@ protocol GenericLinearizableFactor: GenericFactor {
 /// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
 /// When we completely replace the existing factors with the "Generic" ones, we should remove this
 /// prefix.
-protocol GenericGaussianFactor: GenericLinearizableFactor where Variables: EuclideanVector {
+public protocol GenericGaussianFactor: GenericLinearizableFactor where Variables: EuclideanVector {
   /// Returns the result of the linear function at the given point.
   func linearForward(_ x: Variables) -> ErrorVector
 
@@ -67,7 +67,7 @@ protocol GenericGaussianFactor: GenericLinearizableFactor where Variables: Eucli
 // MARK: - `VariableTuple`.
 
 /// Collections of variable types suitable for a factor.
-protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
+public protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
   /// A tuple of `UnsafePointer`s to the types of the variables adjacent to a factor.
   associatedtype UnsafePointers: TupleProtocol
 
@@ -126,36 +126,39 @@ extension VariableTuple {
 }
 
 extension Empty: VariableTuple {
-  typealias UnsafePointers = Self
-  typealias UnsafeMutablePointers = Self
-  typealias Indices = Self
+  public typealias UnsafePointers = Self
+  public typealias UnsafeMutablePointers = Self
+  public typealias Indices = Self
 
-  static func withVariableBufferBaseUnsafePointers<R>(
+  public static func withVariableBufferBaseUnsafePointers<R>(
     _ variableAssignments: VariableAssignments,
     _ body: (UnsafePointers) -> R
   ) -> R {
     return body(Empty())
   }
 
-  static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {}
+  public static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {}
 
-  static func unsafeMutablePointers(mutating pointers: UnsafePointers) -> UnsafeMutablePointers {
+  public static func unsafeMutablePointers(mutating pointers: UnsafePointers)
+    -> UnsafeMutablePointers
+  {
     Self()
   }
 
-  init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
+  public init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
     self.init()
   }
 
-  func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {}
+  public func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {}
 }
 
 extension Tuple: VariableTuple where Tail: VariableTuple {
-  typealias UnsafePointers = Tuple<UnsafePointer<Head>, Tail.UnsafePointers>
-  typealias UnsafeMutablePointers = Tuple<UnsafeMutablePointer<Head>, Tail.UnsafeMutablePointers>
-  typealias Indices = Tuple<TypedID<Head, Int>, Tail.Indices>
+  public typealias UnsafePointers = Tuple<UnsafePointer<Head>, Tail.UnsafePointers>
+  public typealias UnsafeMutablePointers =
+    Tuple<UnsafeMutablePointer<Head>, Tail.UnsafeMutablePointers>
+  public typealias Indices = Tuple<TypedID<Head, Int>, Tail.Indices>
 
-  static func withVariableBufferBaseUnsafePointers<R>(
+  public static func withVariableBufferBaseUnsafePointers<R>(
     _ variableAssignments: VariableAssignments,
     _ body: (UnsafePointers) -> R
   ) -> R {
@@ -170,26 +173,28 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
       }
   }
 
-  static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {
+  public static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {
     variableAssignments.contiguousStorage[ObjectIdentifier(Head.self)]!.ensureUniqueStorage()
     Tail.ensureUniqueStorage(&variableAssignments)
   }
 
-  static func unsafeMutablePointers(mutating pointers: UnsafePointers) -> UnsafeMutablePointers {
+  public static func unsafeMutablePointers(mutating pointers: UnsafePointers)
+    -> UnsafeMutablePointers
+  {
     return UnsafeMutablePointers(
       head: UnsafeMutablePointer(mutating: pointers.head),
       tail: Tail.unsafeMutablePointers(mutating: pointers.tail)
     )
   }
 
-  init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
+  public init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
     self.init(
       head: variableBufferBases.head.advanced(by: indices.head.perTypeID).pointee,
       tail: Tail(variableBufferBases.tail, indices: indices.tail)
     )
   }
 
-  func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {
+  public func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {
     variableBufferBases.head.advanced(by: indices.head.perTypeID)
       .assign(repeating: self.head, count: 1)
     self.tail.store(into: variableBufferBases.tail, indices: indices.tail)

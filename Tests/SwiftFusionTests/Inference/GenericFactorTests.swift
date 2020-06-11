@@ -89,7 +89,7 @@ fileprivate struct ExampleFactorGraph {
 
     // Set up the factor graph.
 
-    _ = priorFactors.append(GenericPriorFactor(edges: Tuple1(poseIDs[0]), prior: Pose2(0, 0, 0)))
+    _ = priorFactors.append(GenericPriorFactor(poseIDs[0], Pose2(0, 0, 0)))
 
     _ = motionFactors.append(SwitchingMotionModelFactor(
       edges: Tuple3(motionLabelIDs[0], poseIDs[0], poseIDs[1]),

@@ -23,10 +23,10 @@ import PenguinStructures
 /// Note: This is just a temporary placeholder until we get the real `TypedID` in penguin.
 public struct TypedID<Value, PerTypeID: Equatable> {
   /// A specifier of which logical value of type `value` is being identified.
-  let perTypeID: PerTypeID
+  public let perTypeID: PerTypeID
 
   /// Creates an instance indicating the given logical value of type `Value`.
-  init(_ perTypeID: PerTypeID) { self.perTypeID = perTypeID }
+  public init(_ perTypeID: PerTypeID) { self.perTypeID = perTypeID }
 }
 
 /// Assignments of values to factor graph variables.
@@ -106,7 +106,7 @@ public struct VariableAssignments {
 
 /// Differentiable operations.
 extension VariableAssignments {
-  var zeroTangent: VariableAssignments {
+  public var zeroTangent: VariableAssignments {
     let r = Dictionary(uniqueKeysWithValues: contiguousStorage.compactMap {
       (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>)? in
       guard let differentiableValue = value.cast(to: AnyDifferentiableStorage.self) else {
@@ -120,7 +120,7 @@ extension VariableAssignments {
     return VariableAssignments(contiguousStorage: r)
   }
 
-  mutating func move(along direction: VariableAssignments) {
+  public mutating func move(along direction: VariableAssignments) {
     contiguousStorage = contiguousStorage.mapValues { value in
       guard var diffVal = value.cast(to: AnyDifferentiableStorage.self) else {
         return value
@@ -139,14 +139,14 @@ extension VariableAssignments {
 // this by adding a `VectorVariableAssignments` type that is statically known to contain only
 // vectors.
 extension VariableAssignments {
-  var squaredNorm: Double {
+  public var squaredNorm: Double {
     return contiguousStorage.values.lazy
       .map { $0.storage as! AnyVectorStorage }
       .map { $0.dot($0) }
       .reduce(0, +)
   }
 
-  static func * (_ lhs: Double, _ rhs: Self) -> Self {
+  public static func * (_ lhs: Double, _ rhs: Self) -> Self {
     VariableAssignments(contiguousStorage: rhs.contiguousStorage.mapValues { value in
       var vector = value.cast(to: AnyVectorStorage.self)!
       vector.scale(by: lhs)
@@ -154,7 +154,7 @@ extension VariableAssignments {
     })
   }
 
-  static func + (_ lhs: Self, _ rhs: Self) -> Self {
+  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     let r = Dictionary(uniqueKeysWithValues: lhs.contiguousStorage.map {
       (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>) in
       var resultVector = value.cast(to: AnyVectorStorage.self)!

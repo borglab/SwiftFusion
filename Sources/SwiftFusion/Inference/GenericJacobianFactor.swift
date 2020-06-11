@@ -19,23 +19,23 @@ import PenguinStructures
 /// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
 /// When we completely replace the existing factors with the "Generic" ones, we should remove this
 /// prefix.
-struct GenericJacobianFactor<
+public struct GenericJacobianFactor<
   Rows: FixedSizeArray,
   ErrorVector: EuclideanVectorN
 >: GenericGaussianFactor where Rows.Element: EuclideanVectorN & VariableTuple {
-  typealias Variables = Rows.Element
+  public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.
-  let jacobian: Rows
+  public let jacobian: Rows
 
   /// The error vector.
-  let error: ErrorVector
+  public let error: ErrorVector
 
   /// The ids of the variables adjacent to this factor.
-  let edges: Variables.Indices
+  public let edges: Variables.Indices
 
   /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
-  init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
+  public init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
     self.jacobian = jacobian
     self.error = error
     self.edges = edges
@@ -55,27 +55,28 @@ struct GenericJacobianFactor<
     self.edges = Input.tangentIndices(edges)
   }
 
-  func error(at x: Variables) -> Double {
+  public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }
 
-  func errorVector(at x: Variables) -> ErrorVector {
+  public func errorVector(at x: Variables) -> ErrorVector {
     return linearForward(x) + error
   }
 
-  func linearForward(_ x: Variables) -> ErrorVector {
+  public func linearForward(_ x: Variables) -> ErrorVector {
     return ErrorVector(jacobian.lazy.map { $0.dot(x) })
   }
 
-  func linearAdjoint(_ y: ErrorVector) -> Variables {
+  public func linearAdjoint(_ y: ErrorVector) -> Variables {
     return zip(y.scalars, jacobian).lazy.map(*).reduce(Variables.zero, +)
   }
 
-  typealias Linearized = Self
-  func linearized(at x: Variables) -> Self {
+  public typealias Linearized = Self
+  public func linearized(at x: Variables) -> Self {
     return self
   }
 }
 
-typealias JacobianFactor3x3 = GenericJacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
-typealias JacobianFactor3x3_2 = GenericJacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>
+public typealias JacobianFactor3x3 = GenericJacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
+public typealias JacobianFactor3x3_2 =
+  GenericJacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>
