@@ -14,7 +14,8 @@
 
 import PenguinStructures
 
-/// A Gaussian factor stored as a jacobian matrix and an error vector.
+/// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and
+/// materialized error vector.
 ///
 /// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
 /// When we completely replace the existing factors with the "Generic" ones, we should remove this
@@ -35,7 +36,7 @@ public struct GenericJacobianFactor<
   public let edges: Variables.Indices
 
   /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
-  public init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
+  init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
     self.jacobian = jacobian
     self.error = error
     self.edges = edges
@@ -52,7 +53,7 @@ public struct GenericJacobianFactor<
     let rows = Rows(ErrorVector.standardBasis.lazy.map(pb))
     self.jacobian = rows
     self.error = value
-    self.edges = Input.tangentIndices(edges)
+    self.edges = Input.linearized(edges)
   }
 
   public func error(at x: Variables) -> Double {
@@ -77,6 +78,9 @@ public struct GenericJacobianFactor<
   }
 }
 
-public typealias JacobianFactor3x3 = GenericJacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
+/// A Jacobian factor with 1 3-dimensional input and a 3-dimensional error vector.
+public typealias JacobianFactor3x3_1 = GenericJacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
+
+/// A Jacobian factor with 2 3-dimensional inputs and a 3-dimensional error vector.
 public typealias JacobianFactor3x3_2 =
   GenericJacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>

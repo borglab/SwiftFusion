@@ -106,7 +106,8 @@ public struct VariableAssignments {
 
 /// Differentiable operations.
 extension VariableAssignments {
-  public var zeroTangent: VariableAssignments {
+  /// Assignment of zero to all the variables in `GenericFactorGraph.linearized(at: self)`.
+  public var linearizedZero: VariableAssignments {
     let r = Dictionary(uniqueKeysWithValues: contiguousStorage.compactMap {
       (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>)? in
       guard let differentiableValue = value.cast(to: AnyDifferentiableStorage.self) else {
@@ -120,6 +121,10 @@ extension VariableAssignments {
     return VariableAssignments(contiguousStorage: r)
   }
 
+  /// Moves each differentiable variable along the corresponding element of `direction`.
+  ///
+  /// See `GenericFactorGraph.linearized(at:)` for documentation about the correspondence between
+  /// differentiable variables and their linearizations.
   public mutating func move(along direction: VariableAssignments) {
     contiguousStorage = contiguousStorage.mapValues { value in
       guard var diffVal = value.cast(to: AnyDifferentiableStorage.self) else {
@@ -132,13 +137,23 @@ extension VariableAssignments {
       return AnyArrayBuffer(diffVal)
     }
   }
+
+  /// See `move(along:)`.
+  public func moved(along direction: VariableAssignments) -> Self {
+    var result = self
+    result.move(along: direction)
+    return result
+  }
 }
 
 /// Vector operations.
 // TODO: These currently have a precondition that all stored values are vectors. We could improve
-// this by adding a `VectorVariableAssignments` type that is statically known to contain only
-// vectors.
+// this by creating and using a "Vectors" type that is statically known to contain only vectors.
 extension VariableAssignments {
+  /// Returns the squared norm of `self`, where `self` is viewed as a vector in the vector space
+  /// direct sum of all the variables.
+  ///
+  /// Precondition: All the variables in `self` are vectors.
   public var squaredNorm: Double {
     return contiguousStorage.values.lazy
       .map { $0.storage as! AnyVectorStorage }
@@ -146,6 +161,10 @@ extension VariableAssignments {
       .reduce(0, +)
   }
 
+  /// Returns the scalar product of `lhs` with `rhs`, where `rhs` is viewed as a vector in the
+  /// vector space direct sum of all the variables.
+  ///
+  /// Precondition: All the variables in `rhs` are vectors.
   public static func * (_ lhs: Double, _ rhs: Self) -> Self {
     VariableAssignments(contiguousStorage: rhs.contiguousStorage.mapValues { value in
       var vector = value.cast(to: AnyVectorStorage.self)!
@@ -154,6 +173,11 @@ extension VariableAssignments {
     })
   }
 
+  /// Returns the vector sum of `lhs` with `rhs`, where `lhs` and `rhs` are viewed as vectors in the
+  /// vector space direct sum of all the variables.
+  ///
+  /// Precondition: All the elements in `lhs` and `rhs` are vectors. `lhs` and `rhs` have
+  /// assignments for exactly the same sets of variables.
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     let r = Dictionary(uniqueKeysWithValues: lhs.contiguousStorage.map {
       (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>) in

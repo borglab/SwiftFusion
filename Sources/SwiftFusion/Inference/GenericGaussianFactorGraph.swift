@@ -14,24 +14,47 @@
 
 import PenguinStructures
 
+/// A factor graph whose factors are all `GenericGaussianFactor`s.
+///
+/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
+/// When we completely replace the existing factors with the "Generic" ones, we should remove this
+/// prefix.
 public struct GenericGaussianFactorGraph {
-  var inputZero: VariableAssignments
+  /// Dictionary from factor type to contiguous storage for that type.
   var contiguousStorage: [ObjectIdentifier: AnyArrayBuffer<AnyGaussianFactorStorage>]
 
+  /// Assignment of zero to all the variables in the factor graph.
+  var zeroValues: VariableAssignments
+
+  /// Returns the error vectors of all the factors, at `x`.
+  ///
+  /// Note: Using `VariableAssignments` as the return type is slightly inappropriate here because
+  /// the return value assigns an error vector to each factor, not to each variable. We will fix
+  /// this when we create a "Vectors" type for a heterogeneous collection of vectors.
   func errorVectors(at x: VariableAssignments) -> VariableAssignments {
     return VariableAssignments(contiguousStorage: contiguousStorage.mapValues { factors in
       AnyArrayBuffer(factors.errorVectors(at: x))
     })
   }
 
-  func errorVectorLinearComponents(at x: VariableAssignments) -> VariableAssignments {
+  /// Returns the linear component of the error vectors of all the factors, at `x`.
+  ///
+  /// Note: Using `VariableAssignments` as the return type is slightly inappropriate here because
+  /// the return value assigns an error vector to each factor, not to each variable. We will fix
+  /// this when we create a "Vectors" type for a heterogeneous collection of vectors.
+  func errorVectorsLinearComponent(at x: VariableAssignments) -> VariableAssignments {
     return VariableAssignments(contiguousStorage: contiguousStorage.mapValues { factors in
       AnyArrayBuffer(factors.linearForward(x))
     })
   }
 
-  func errorVectorLinearComponentAdjoints(_ y: VariableAssignments) -> VariableAssignments {
-    var x = inputZero
+  /// Returns the adjoint of the linear component of the error vectors of all the factors, at `y`.
+  ///
+  /// Note: Using `VariableAssignments` as the argument type is slightly inappropriate here because
+  /// the argument is an error vector for each factor, not for each variable. We will fix this when
+  /// we create a "Vectors" type for a heterogeneous collection of vectors.
+  func errorVectorsLinearComponentAdjoint(_ y: VariableAssignments) -> VariableAssignments {
+    var x = zeroValues
     contiguousStorage.forEach { (key, factor) in
       factor.linearAdjoint(y.contiguousStorage[key].unsafelyUnwrapped, into: &x)
     }

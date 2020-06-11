@@ -40,6 +40,7 @@ public struct GenericPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
 
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
+  
   public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }

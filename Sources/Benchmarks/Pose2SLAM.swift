@@ -66,7 +66,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
 
     for _ in 0..<10 {
       let linearized = graph.linearized(at: x)
-      var dx = x.zeroTangent
+      var dx = x.linearizedZero
       var optimizer = GenericCGLS(precision: 0, max_iteration: 500)
       optimizer.optimize(gfg: linearized, initial: &dx)
       x.move(along: (-1) * dx)

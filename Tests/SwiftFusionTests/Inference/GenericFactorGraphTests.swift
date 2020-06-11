@@ -37,7 +37,7 @@ class GenericFactorGraphTests: XCTestCase {
 
     for _ in 0..<3 {
       let linearized = graph.linearized(at: x)
-      var dx = x.zeroTangent
+      var dx = x.linearizedZero
       var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
       optimizer.optimize(gfg: linearized, initial: &dx)
       x.move(along: (-1) * dx)

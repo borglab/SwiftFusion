@@ -20,7 +20,7 @@ import PenguinStructures
 /// When we completely replace the existing factors with the "Generic" ones, we should remove this
 /// prefix.
 public struct GenericFactorGraph {
-  /// Dictionary from variable type to contiguous storage for that type.
+  /// Dictionary from factor type to contiguous storage for that type.
   var contiguousStorage: [ObjectIdentifier: AnyArrayBuffer<AnyFactorStorage>] = [:]
 
   /// Creates an empty instance.
@@ -54,16 +54,43 @@ public struct GenericFactorGraph {
     ].append(factor)
   }
 
+  /// Returns the total error of all the factors, at `x`.
   public func error(at x: VariableAssignments) -> Double {
     return contiguousStorage.values.lazy.map { $0.errors(at: x).reduce(0, +) }.reduce(0, +)
   }
 
+  /// Returns the error vectors of all the linearizable factors, at `x`.
+  ///
+  /// Note: Using `VariableAssignments` as the return type is slightly inappropriate here because
+  /// the return value assigns an error vector to each factor, not to each variable. We will fix
+  /// this when we create a "Vectors" type for a heterogeneous collection of vectors.
+  func errorVectors(at x: VariableAssignments) -> VariableAssignments {
+    return VariableAssignments(contiguousStorage: contiguousStorage.compactMapValues { factors in
+      guard let linearizableFactors = factors.cast(to: AnyLinearizableFactorStorage.self) else {
+        return nil
+      }
+      return AnyArrayBuffer(linearizableFactors.errorVectors(at: x))
+    })
+  }
+
+  /// Returns a linear approximation to `self`, centered around `x`.
+  ///
+  /// `linearized(at: x)` has one variable corresponding to each `Differentiable` variable in
+  /// `self`. The variable identified by `TypedID<T>(id)` in `self` corresponds to the variable
+  /// identified by `TypedID<T.TangentVector>(id)` in the linear approximation.
+  ///
+  /// TODO: If there are different types of variables in `self` with the same tangent vector types,
+  /// this leads to id clashes in `linearized(at: x)`. Fix this.
+  ///
+  /// The linear approximation satisfies the approximate equality:
+  ///   `linearized(at: x).errorVectors(dx) ~= self.errorVectors(at: x.moved(along: dx))`
+  /// where the equality is exact when `dx == x.linearizedZero`.
   public func linearized(at x: VariableAssignments) -> GenericGaussianFactorGraph {
     return GenericGaussianFactorGraph(
-      inputZero: x.zeroTangent,
       contiguousStorage: contiguousStorage.compactMapValues { factors in
         factors.cast(to: AnyLinearizableFactorStorage.self)?.linearized(at: x)
-      }
+      },
+      zeroValues: x.linearizedZero
     )
   }
 }

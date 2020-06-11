@@ -201,14 +201,19 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   }
 }
 
+/// Tuple of differentiable variable types suitable for a factor.
 protocol DifferentiableVariableTuple: VariableTuple {
+  /// A tuple of `TypedID`s referring to variables adjacent to a factor.
   associatedtype TangentIndices: TupleProtocol
-  static func tangentIndices(_ indices: Indices) -> TangentIndices
+
+  /// Returns the indices of the linearized variables corresponding to `indices` in the linearized
+  /// factor graph.
+  static func linearized(_ indices: Indices) -> TangentIndices
 }
 
 extension Empty: DifferentiableVariableTuple {
   typealias TangentIndices = Self
-  static func tangentIndices(_ indices: Indices) -> TangentIndices {
+  static func linearized(_ indices: Indices) -> TangentIndices {
     indices
   }
 }
@@ -216,10 +221,10 @@ extension Empty: DifferentiableVariableTuple {
 extension Tuple: DifferentiableVariableTuple
 where Head: Differentiable, Tail: DifferentiableVariableTuple {
   typealias TangentIndices = Tuple<TypedID<Head.TangentVector, Int>, Tail.TangentIndices>
-  static func tangentIndices(_ indices: Indices) -> TangentIndices {
+  static func linearized(_ indices: Indices) -> TangentIndices {
     TangentIndices(
       head: TypedID<Head.TangentVector, Int>(indices.head.perTypeID),
-      tail: Tail.tangentIndices(indices.tail)
+      tail: Tail.linearized(indices.tail)
     )
   }
 }
