@@ -24,9 +24,7 @@ class ValuesStorageTests: XCTestCase {
   func testDifferentiableMove() {
     var values = ArrayBuffer<DifferentiableArrayStorage>((0..<5).map { _ in Pose2(0, 0, 0) })
     let directions = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 0, 0) })
-    directions.withUnsafeBufferPointer { directionsBuffer in
-      values.move(along: directionsBuffer.baseAddress!)
-    }
+    values.move(along: directions)
     for i in 0..<5 {
       XCTAssertEqual(values[i], Pose2(0, 0, 1))
     }
@@ -35,9 +33,7 @@ class ValuesStorageTests: XCTestCase {
   func testVectorMove() {
     var values = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 2, 3) })
     let directions = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(10, 20, 30) })
-    directions.withUnsafeBufferPointer { directionsBuffer in
-      values.move(along: directionsBuffer.baseAddress!)
-    }
+    values.move(along: directions)
     for i in 0..<5 {
       XCTAssertEqual(values[i], Vector3(11, 22, 33))
     }
@@ -46,9 +42,7 @@ class ValuesStorageTests: XCTestCase {
   func testVectorAdd() {
     var a = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 2, 3) })
     let b = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(10, 20, 30) })
-    b.withUnsafeBufferPointer { bBuffer in
-      a.add(bBuffer.baseAddress!)
-    }
+    a.add(b)
     for i in 0..<5 {
       XCTAssertEqual(a[i], Vector3(11, 22, 33))
     }
@@ -65,9 +59,6 @@ class ValuesStorageTests: XCTestCase {
   func testVectorDot() {
     let a = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 2, 3) })
     let b = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(10, 20, 30) })
-    let dot = b.withUnsafeBufferPointer { bBuffer in
-      return a.dot(bBuffer.baseAddress!)
-    }
-    XCTAssertEqual(dot, 5 * (Double(1 * 10 + 2 * 20 + 3 * 30)))
+    XCTAssertEqual(a.dot(b), 5 * (Double(1 * 10 + 2 * 20 + 3 * 30)))
   }
 }

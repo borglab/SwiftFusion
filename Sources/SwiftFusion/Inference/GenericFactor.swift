@@ -80,9 +80,8 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
       .contiguousStorage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
       .withUnsafeRawPointerToElements { headBase in
         return Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
-          return body(UnsafePointers(
-            head: headBase.assumingMemoryBound(to: Head.self),
-            tail: tailBase)
+          return body(
+            UnsafePointers(head: headBase.assumingMemoryBound(to: Head.self), tail: tailBase)
           )
         }
       }
