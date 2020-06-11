@@ -63,27 +63,26 @@ class GenericFactorTests: XCTestCase {
 
     // Set up the initial guess.
 
-    let intVariables = ArrayStorage<Int>.create(minimumCapacity: 2)
-    let motionLabel1ID = TypedID<Int, Int>(intVariables.append(0)!)
-    let motionLabel2ID = TypedID<Int, Int>(intVariables.append(1)!)
+    var intVariables = ArrayBuffer<ArrayStorage<Int>>()
+    let motionLabel1ID = TypedID<Int, Int>(intVariables.append(0))
+    let motionLabel2ID = TypedID<Int, Int>(intVariables.append(1))
 
-    let poseVariables = ArrayStorage<Pose2>.create(minimumCapacity: 3)
-    let pose1ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(0, 0, 0))!)
-    let pose2ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(1, 1, 0))!)
-    let pose3ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(1, 1, 0.9))!)
+    var poseVariables = ArrayBuffer<ArrayStorage<Pose2>>()
+    let pose1ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(0, 0, 0)))
+    let pose2ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(1, 1, 0)))
+    let pose3ID = TypedID<Pose2, Int>(poseVariables.append(Pose2(1, 1, 0.9)))
 
     let variableAssignments = ValuesArray(contiguousStorage: [
-      ObjectIdentifier(Int.self): intVariables,
-      ObjectIdentifier(Pose2.self): poseVariables
+      ObjectIdentifier(Int.self): AnyArrayBuffer(intVariables),
+      ObjectIdentifier(Pose2.self): AnyArrayBuffer(poseVariables)
     ])
 
     // Set up the factor graph.
 
-    let priorFactors = FactorArrayStorage<PriorFactor<Pose2>>.create(minimumCapacity: 1)
+    var priorFactors = ArrayBuffer<FactorArrayStorage<PriorFactor<Pose2>>>()
     _ = priorFactors.append(PriorFactor(edges: Tuple1(pose1ID), prior: Pose2(0, 0, 0)))
 
-    let motionFactors =
-      FactorArrayStorage<SwitchingMotionModelFactor<Pose2>>.create(minimumCapacity: 2)
+    var motionFactors = ArrayBuffer<FactorArrayStorage<SwitchingMotionModelFactor<Pose2>>>()
     _ = motionFactors.append(SwitchingMotionModelFactor(
       edges: Tuple3(motionLabel1ID, pose1ID, pose2ID),
       motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]

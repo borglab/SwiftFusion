@@ -78,16 +78,11 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   ) -> R {
     return variableAssignments
       .contiguousStorage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
-      .withUnsafeMutableRawBufferPointer { headBuffer in
-        let headBase: UnsafePointer<Head>
-        if let rawHeadBase = headBuffer.baseAddress {
-          headBase = UnsafePointer(rawHeadBase.assumingMemoryBound(to: Head.self))
-        } else {
-          // An invalid pointer is okay because we know it'll never get dereferenced.
-          headBase = UnsafePointer<Head>(bitPattern: -1).unsafelyUnwrapped
-        }
+      .withUnsafeRawPointerToElements { headBase in
         return Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
-          return body(UnsafePointers(head: headBase, tail: tailBase))
+          return body(
+            UnsafePointers(head: headBase.assumingMemoryBound(to: Head.self), tail: tailBase)
+          )
         }
       }
   }

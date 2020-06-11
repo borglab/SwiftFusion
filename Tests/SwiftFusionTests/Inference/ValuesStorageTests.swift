@@ -19,73 +19,51 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
-/// Test helpers.
-extension ArrayStorageImplementation {
-  /// Creates an array with `count` copies of `element`.
-  static func create(repeating element: Element, count: Int) -> Self {
-    let r = Self.create(minimumCapacity: count)
-    for _ in 0..<count { _ = r.append(element) }
-    return r
-  }
-  
-  /// Returns the element at `index`.
-  subscript(index: Int) -> Element {
-    return withUnsafeMutableBufferPointer { buffer in
-      return buffer[index]
-    }
-  }
-}
+fileprivate typealias VectorArray<Element: EuclideanVector> =
+  ArrayBuffer<VectorArrayStorage<Element>>
+fileprivate typealias DifferentiableArray<Element: Differentiable> =
+  ArrayBuffer<DifferentiableArrayStorage<Element>>
 
 class ValuesStorageTests: XCTestCase {
   
   func testDifferentiableMove() {
-    let values = DifferentiableArrayStorage.create(repeating: Pose2(0, 0, 0), count: 5)
-    let directions = VectorArrayStorage.create(repeating: Vector3(1, 0, 0), count: 5)
-    directions.withUnsafeMutableRawBufferPointer { directionBuffer in
-      values.move(along: UnsafeRawPointer(directionBuffer.baseAddress!))
-    }
+    var values = DifferentiableArray((0..<5).map { _ in Pose2(0, 0, 0) })
+    let directions = VectorArray((0..<5).map { _ in Vector3(1, 0, 0) })
+    values.move(along: directions)
     for i in 0..<5 {
       XCTAssertEqual(values[i], Pose2(0, 0, 1))
     }
   }
   
   func testVectorMove() {
-    let values = VectorArrayStorage.create(repeating: Vector3(1, 2, 3), count: 5)
-    let directions = VectorArrayStorage.create(repeating: Vector3(10, 20, 30), count: 5)
-    directions.withUnsafeMutableRawBufferPointer { directionBuffer in
-      values.move(along: UnsafeRawPointer(directionBuffer.baseAddress!))
-    }
+    var values = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
+    let directions = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
+    values.move(along: directions)
     for i in 0..<5 {
       XCTAssertEqual(values[i], Vector3(11, 22, 33))
     }
   }
-  
+
   func testVectorAdd() {
-    let a = VectorArrayStorage.create(repeating: Vector3(1, 2, 3), count: 5)
-    let b = VectorArrayStorage.create(repeating: Vector3(10, 20, 30), count: 5)
-    b.withUnsafeMutableBufferPointer { bBuffer in
-      a.add(UnsafeRawPointer(bBuffer.baseAddress!))
-    }
+    var a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
+    let b = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
+    a.add(b)
     for i in 0..<5 {
       XCTAssertEqual(a[i], Vector3(11, 22, 33))
     }
   }
-  
+
   func testVectorScale() {
-    let a = VectorArrayStorage.create(repeating: Vector3(1, 2, 3), count: 5)
+    var a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
     a.scale(by: 10)
     for i in 0..<5 {
       XCTAssertEqual(a[i], Vector3(10, 20, 30))
     }
   }
-  
+
   func testVectorDot() {
-    let a = VectorArrayStorage.create(repeating: Vector3(1, 2, 3), count: 5)
-    let b = VectorArrayStorage.create(repeating: Vector3(10, 20, 30), count: 5)
-    let dot = b.withUnsafeMutableBufferPointer { bBuffer in
-      return a.dot(UnsafeRawPointer(bBuffer.baseAddress!))
-    }
-    XCTAssertEqual(dot, 5 * (Double(1 * 10 + 2 * 20 + 3 * 30)))
+    let a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
+    let b = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
+    XCTAssertEqual(a.dot(b), 5 * (Double(1 * 10 + 2 * 20 + 3 * 30)))
   }
-  
 }
