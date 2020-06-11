@@ -214,10 +214,15 @@ extension AnyArrayBuffer where Storage: AnyGaussianFactorStorage {
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
   /// given point into `result`.
   ///
-  /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
-  /// `Element.ErrorVector`s where `Element` is the element type of `self`.
-  func linearAdjoint(_ errorVectorsStart: UnsafeRawPointer, into result: inout ValuesArray) {
-    storage.linearAdjoint(errorVectorsStart, into: &result)
+  /// Precondition: `errorVectors` has at least `count` `Element.ErrorVector`s where `Element` is
+  /// the element type of `self`.
+  func linearAdjoint<VectorStorage>(
+    _ errorVectors: AnyArrayBuffer<VectorStorage>,
+    into result: inout ValuesArray
+  ) {
+    errorVectors.withUnsafeRawPointerToElements { errorVectorsStart in
+      storage.linearAdjoint(errorVectorsStart, into: &result)
+    }
   }
 }
 
@@ -252,17 +257,16 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
   /// given point into `result`.
   ///
-  /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
-  /// `Element.ErrorVector`s.
-  func linearAdjoint(
-  _ errorVectorsStart: UnsafePointer<Element.ErrorVector>,
+  /// Precondition: `errorVectors.count >= count`.
+  func linearAdjoint<ErrorVectors: Collection>(
+    _ errorVectors: ErrorVectors,
     into result: inout ValuesArray
-  ) {
+  ) where ErrorVectors.Element == Element.ErrorVector {
     Element.Variables.withVariableBufferBaseUnsafeMutablePointers(&result) { varsBufs in
       withUnsafeMutableBufferPointer { factors in
-        factors.enumerated().forEach { (i, f) in
+        zip(factors, errorVectors).forEach { (f, e) in
           let vars = Element.Variables(varsBufs, indices: f.edges)
-          let newVars = vars + f.linearAdjoint(errorVectorsStart[i])
+          let newVars = vars + f.linearAdjoint(e)
           newVars.store(into: varsBufs, indices: f.edges)
         }
       }
@@ -281,7 +285,10 @@ extension ArrayStorageImplementation where Element: GenericGaussianFactor {
   /// `Element.ErrorVector`s.
   func linearAdjoint_(_ errorVectorsStart: UnsafeRawPointer, into result: inout ValuesArray) {
     linearAdjoint(
-      errorVectorsStart.assumingMemoryBound(to: Element.ErrorVector.self),
+      UnsafeBufferPointer(
+        start: errorVectorsStart.assumingMemoryBound(to: Element.ErrorVector.self),
+        count: count
+      ),
       into: &result
     )
   }
@@ -298,13 +305,12 @@ extension ArrayBuffer where Element: GenericGaussianFactor {
   /// Accumulates the adjoints (aka "transpose" or "dual") of the factors' linear functions at the
   /// given point into `result`.
   ///
-  /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
-  /// `Element.ErrorVector`s.
-  func linearAdjoint(
-  _ errorVectorsStart: UnsafePointer<Element.ErrorVector>,
+  /// Precondition: `errorVectors.count >= count`.
+  func linearAdjoint<ErrorVectors: Collection>(
+    _ errorVectors: ErrorVectors,
     into result: inout ValuesArray
-  ) {
-    storage.linearAdjoint(errorVectorsStart, into: &result)
+  ) where ErrorVectors.Element == Element.ErrorVector {
+    storage.linearAdjoint(errorVectors, into: &result)
   }
 }
 

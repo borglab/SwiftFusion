@@ -259,9 +259,7 @@ class GenericFactorTests: XCTestCase {
         ArrayBuffer<VectorArrayStorage<Vector2>>([Vector2(0, 0)])
       )
     ])
-    forwardResult.withUnsafeBufferPointer { b in
-      factors.linearAdjoint(b.baseAddress!, into: &adjointResult)
-    }
+    factors.linearAdjoint(forwardResult, into: &adjointResult)
 
     // matrix1^T * [3 2] + matrix2^T * [6 7]
     adjointResult.contiguousStorage[ObjectIdentifier(Vector2.self)]!
