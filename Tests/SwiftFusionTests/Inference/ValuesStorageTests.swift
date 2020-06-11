@@ -19,11 +19,16 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
+fileprivate typealias VectorArray<Element: EuclideanVector> =
+  ArrayBuffer<VectorArrayStorage<Element>>
+fileprivate typealias DifferentiableArray<Element: Differentiable> =
+  ArrayBuffer<DifferentiableArrayStorage<Element>>
+
 class ValuesStorageTests: XCTestCase {
   
   func testDifferentiableMove() {
-    var values = ArrayBuffer<DifferentiableArrayStorage>((0..<5).map { _ in Pose2(0, 0, 0) })
-    let directions = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 0, 0) })
+    var values = DifferentiableArray((0..<5).map { _ in Pose2(0, 0, 0) })
+    let directions = VectorArray((0..<5).map { _ in Vector3(1, 0, 0) })
     values.move(along: directions)
     for i in 0..<5 {
       XCTAssertEqual(values[i], Pose2(0, 0, 1))
@@ -31,8 +36,8 @@ class ValuesStorageTests: XCTestCase {
   }
   
   func testVectorMove() {
-    var values = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 2, 3) })
-    let directions = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(10, 20, 30) })
+    var values = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
+    let directions = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
     values.move(along: directions)
     for i in 0..<5 {
       XCTAssertEqual(values[i], Vector3(11, 22, 33))
@@ -40,8 +45,8 @@ class ValuesStorageTests: XCTestCase {
   }
 
   func testVectorAdd() {
-    var a = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 2, 3) })
-    let b = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(10, 20, 30) })
+    var a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
+    let b = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
     a.add(b)
     for i in 0..<5 {
       XCTAssertEqual(a[i], Vector3(11, 22, 33))
@@ -49,7 +54,7 @@ class ValuesStorageTests: XCTestCase {
   }
 
   func testVectorScale() {
-    var a = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 2, 3) })
+    var a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
     a.scale(by: 10)
     for i in 0..<5 {
       XCTAssertEqual(a[i], Vector3(10, 20, 30))
@@ -57,8 +62,8 @@ class ValuesStorageTests: XCTestCase {
   }
 
   func testVectorDot() {
-    let a = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(1, 2, 3) })
-    let b = ArrayBuffer<VectorArrayStorage>((0..<5).map { _ in Vector3(10, 20, 30) })
+    let a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
+    let b = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
     XCTAssertEqual(a.dot(b), 5 * (Double(1 * 10 + 2 * 20 + 3 * 30)))
   }
 }
