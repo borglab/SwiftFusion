@@ -29,7 +29,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
   // The linear solver is 100 iterations of CGLS.
   suite.benchmark(
     "NonlinearFactorGraph, Intel, 5 Gauss-Newton steps, 100 CGLS steps",
-    settings: .iterations(1)
+    settings: Iterations(1)
   ) {
     var val = intelDataset.initialGuess
     for _ in 0..<5 {
@@ -43,6 +43,36 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
       val.move(along: dx)
     }
 //    check(intelDataset.graph.error(val), near: 35.59, accuracy: 1e-2)
+  }
+
+  let intelDatasetNew =
+    try! G2OReader.G2ONewFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
+  check(
+    intelDatasetNew.graph.error(at: intelDatasetNew.initialGuess),
+    near: 73565.64,
+    accuracy: 1e-2)
+
+  // Uses `NewFactorGraph` on the Intel dataset.
+  // The solvers are configured to run for a constant number of steps.
+  // The nonlinear solver is 10 iterations of Gauss-Newton.
+  // The linear solver is 500 iterations of CGLS.
+  suite.benchmark(
+    "NewFactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
+    settings: Iterations(1)
+  ) {
+    var x = intelDatasetNew.initialGuess
+    var graph = intelDatasetNew.graph
+    graph.store(NewPriorFactor2(TypedID(0), Pose2(0, 0, 0)))
+
+    for _ in 0..<10 {
+      let linearized = graph.linearized(at: x)
+      var dx = x.tangentVectorZeros
+      var optimizer = GenericCGLS(precision: 0, max_iteration: 500)
+      optimizer.optimize(gfg: linearized, initial: &dx)
+      x.move(along: (-1) * dx)
+    }
+
+    check(graph.error(at: x), near: 0.987, accuracy: 1e-2)
   }
 }
 

@@ -62,18 +62,16 @@ extension Vector1: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.x = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.x = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([x])
+  public var scalars: [Double] {
+    return [x]
   }
 }
 
@@ -151,21 +149,19 @@ extension Vector2: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.x = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.y = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.x = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.y = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([x, y])
+  public var scalars: [Double] {
+    return [x, y]
   }
 }
 
@@ -257,24 +253,22 @@ extension Vector3: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.x = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.y = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.z = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.x = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.y = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.z = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([x, y, z])
+  public var scalars: [Double] {
+    return [x, y, z]
   }
 }
 
@@ -380,27 +374,25 @@ extension Vector4: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s0 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s1 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s2 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s3 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s0 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s1 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s2 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s3 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([s0, s1, s2, s3])
+  public var scalars: [Double] {
+    return [s0, s1, s2, s3]
   }
 }
 
@@ -520,30 +512,28 @@ extension Vector5: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s0 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s1 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s2 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s3 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s4 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s0 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s1 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s2 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s3 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s4 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([s0, s1, s2, s3, s4])
+  public var scalars: [Double] {
+    return [s0, s1, s2, s3, s4]
   }
 }
 
@@ -677,33 +667,31 @@ extension Vector6: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s0 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s1 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s2 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s3 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s4 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s5 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s0 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s1 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s2 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s3 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s4 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s5 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([s0, s1, s2, s3, s4, s5])
+  public var scalars: [Double] {
+    return [s0, s1, s2, s3, s4, s5]
   }
 }
 
@@ -851,36 +839,34 @@ extension Vector7: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s0 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s1 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s2 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s3 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s4 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s5 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s6 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s0 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s1 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s2 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s3 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s4 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s5 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s6 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([s0, s1, s2, s3, s4, s5, s6])
+  public var scalars: [Double] {
+    return [s0, s1, s2, s3, s4, s5, s6]
   }
 }
 
@@ -1042,39 +1028,37 @@ extension Vector8: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s0 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s1 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s2 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s3 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s4 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s5 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s6 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s7 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s0 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s1 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s2 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s3 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s4 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s5 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s6 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s7 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([s0, s1, s2, s3, s4, s5, s6, s7])
+  public var scalars: [Double] {
+    return [s0, s1, s2, s3, s4, s5, s6, s7]
   }
 }
 
@@ -1250,42 +1234,40 @@ extension Vector9: AdditiveArithmetic, EuclideanVectorN {
     return result
   }
 
-  @differentiable
-  public init(_ vector: Vector) {
-    var index = withoutDerivative(at: vector.scalars.startIndex)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s0 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s1 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s2 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s3 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s4 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s5 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s6 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s7 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 71)
-    self.s8 = vector.scalars[index]
-    index = withoutDerivative(at: vector.scalars.index(after: index))
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 74)
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    var index = scalars.startIndex
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s0 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s1 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s2 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s3 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s4 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s5 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s6 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s7 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
+    self.s8 = scalars[index]
+    index = scalars.index(after: index)
+// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  @differentiable
-  public var vector: Vector {
-    return Vector([s0, s1, s2, s3, s4, s5, s6, s7, s8])
+  public var scalars: [Double] {
+    return [s0, s1, s2, s3, s4, s5, s6, s7, s8]
   }
 }
 
