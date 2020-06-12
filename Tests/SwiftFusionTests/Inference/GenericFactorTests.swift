@@ -21,7 +21,7 @@ import PenguinStructures
 
 /// A factor that switches between different linear motions based on an integer label.
 fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  GenericLinearizableFactor
+  NewLinearizableFactor
   where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 {
   typealias Variables = Tuple3<Int, Pose, Pose>
@@ -47,9 +47,9 @@ fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: Fixe
     return errorVector(x.head, x.tail.head, x.tail.tail.head)
   }
 
-  typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
-  func linearized(at x: Variables) -> Linearized {
-    Linearized(
+  typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
+  func linearized(at x: Variables) -> Linearization {
+    Linearization(
       linearizing: { errorVector(x.head, $0.head, $0.tail.head) },
       at: x.tail,
       edges: edges.tail
@@ -74,7 +74,7 @@ fileprivate struct ExampleFactorGraph {
   var motionLabelIDs = [TypedID<Int, Int>]()
   var poseIDs = [TypedID<Pose2, Int>]()
 
-  var priorFactors = ArrayBuffer<FactorArrayStorage<GenericPriorFactor2>>()
+  var priorFactors = ArrayBuffer<FactorArrayStorage<NewPriorFactor2>>()
   var motionFactors = ArrayBuffer<FactorArrayStorage<SwitchingMotionModelFactor2>>()
 
   init() {
@@ -89,7 +89,7 @@ fileprivate struct ExampleFactorGraph {
 
     // Set up the factor graph.
 
-    _ = priorFactors.append(GenericPriorFactor(poseIDs[0], Pose2(0, 0, 0)))
+    _ = priorFactors.append(NewPriorFactor(poseIDs[0], Pose2(0, 0, 0)))
 
     _ = motionFactors.append(SwitchingMotionModelFactor(
       edges: Tuple3(motionLabelIDs[0], poseIDs[0], poseIDs[1]),
@@ -102,7 +102,7 @@ fileprivate struct ExampleFactorGraph {
   }
 }
 
-class GenericFactorTests: XCTestCase {
+class NewFactorTests: XCTestCase {
   /// Tests errors in the example factor graph.
   func testErrors() {
     let graph = ExampleFactorGraph()
@@ -155,19 +155,19 @@ class GenericFactorTests: XCTestCase {
     assertAllKeyPathEqual(motionsLinearized[1].error, Vector3(-0.1, 0, 0), accuracy: 1e-6)
   }
 
-  /// Test the `errorVectors`, `linearForward`, and `linearAdjoint` operations on a collection of
+  /// Test the `errorVectors`, `errorVector_linearComponent`, and `errorVector_linearComponent_adjoint` operations on a collection of
   /// Gaussian factors.
   func testGaussianFactorOperations() {
     var variableAssignments = VariableAssignments()
     let vectorVar1ID = variableAssignments.store(Vector2(1, 2))
 
     var factors =
-      ArrayBuffer<GaussianFactorArrayStorage<GenericJacobianFactor<Array2<Tuple1<Vector2>>, Vector2>>>()
+      ArrayBuffer<GaussianFactorArrayStorage<NewJacobianFactor<Array2<Tuple1<Vector2>>, Vector2>>>()
     let matrix1 = Array2(
       Tuple1(Vector2(1, 1)),
       Tuple1(Vector2(0, 1))
     )
-    _ = factors.append(GenericJacobianFactor(
+    _ = factors.append(NewJacobianFactor(
       jacobian: matrix1,
       error: Vector2(0, 0),
       edges: Tuple1(vectorVar1ID)
@@ -176,7 +176,7 @@ class GenericFactorTests: XCTestCase {
       Tuple1(Vector2(0, 3)),
       Tuple1(Vector2(7, 0))
     )
-    _ = factors.append(GenericJacobianFactor(
+    _ = factors.append(NewJacobianFactor(
       jacobian: matrix2,
       error: Vector2(100, 200),
       edges: Tuple1(vectorVar1ID)
@@ -186,13 +186,13 @@ class GenericFactorTests: XCTestCase {
     XCTAssertEqual(errorVectors[0], Vector2(3, 2))  // matrix1 * [1 2] + [0 0]
     XCTAssertEqual(errorVectors[1], Vector2(106, 207))  // matrix2 * [1 2] + [100 200]
 
-    let forwardResult = factors.linearForward(variableAssignments)
+    let forwardResult = factors.errorVector_linearComponent(variableAssignments)
     XCTAssertEqual(forwardResult[0], Vector2(3, 2))  // matrix1 * [1 2]
     XCTAssertEqual(forwardResult[1], Vector2(6, 7))  // matrix2 * [1 2]
 
     var adjointResult = VariableAssignments()
     let adjointResultId = adjointResult.store(Vector2(0, 0))
-    factors.linearAdjoint(forwardResult, into: &adjointResult)
+    factors.errorVector_linearComponent_adjoint(forwardResult, into: &adjointResult)
 
     // matrix1^T * [3 2] + matrix2^T * [6 7]
     XCTAssertEqual(adjointResult[adjointResultId], Vector2(52, 23))

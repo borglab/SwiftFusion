@@ -15,12 +15,8 @@
 import PenguinStructures
 
 /// A factor that specifies a difference between two poses.
-///
-/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
-/// When we completely replace the existing factors with the "Generic" ones, we should remove this
-/// prefix.
-public struct GenericBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  GenericLinearizableFactor
+public struct NewBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+  NewLinearizableFactor
   where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 {
   public typealias Variables = Tuple2<Pose, Pose>
@@ -50,11 +46,10 @@ public struct GenericBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>
     return errorVector(x.head, x.tail.head)
   }
 
-  public typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearized {
-    Linearized(linearizing: errorVector, at: x, edges: edges)
+  public typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearization {
+    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
-public typealias GenericBetweenFactor2 =
-  GenericBetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
+public typealias NewBetweenFactor2 = NewBetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>

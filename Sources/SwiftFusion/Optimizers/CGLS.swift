@@ -84,20 +84,20 @@ public struct GenericCGLS {
   /// Optimize the Gaussian Factor Graph with a initial estimate
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
-  public mutating func optimize(gfg: GenericGaussianFactorGraph, initial x: inout VariableAssignments) {
+  public mutating func optimize(gfg: NewGaussianFactorGraph, initial x: inout VariableAssignments) {
     step += 1
 
     var r = gfg.errorVectors(at: x) // r(0) = b - A * x(0), the residual
-    var p = gfg.errorVectorsLinearComponentAdjoint(r) // p(0) = s(0) = A^T * r(0), residual in value space
+    var p = gfg.errorVectors_linearComponent_adjoint(r) // p(0) = s(0) = A^T * r(0), residual in value space
     var s = p // residual of normal equations
     var gamma = s.squaredNorm // γ(0) = ||s(0)||^2
 
     while step < max_iteration {
-      let q = gfg.errorVectorsLinearComponent(at: p) // q(k) = A * p(k)
+      let q = gfg.errorVectors_linearComponent(at: p) // q(k) = A * p(k)
       let alpha: Double = gamma / q.squaredNorm // α(k) = γ(k)/||q(k)||^2
       x = x + (alpha * p) // x(k+1) = x(k) + α(k) * p(k)
       r = r + (-alpha) * q // r(k+1) = r(k) - α(k) * q(k)
-      s = gfg.errorVectorsLinearComponentAdjoint(r) // s(k+1) = A.T * r(k+1)
+      s = gfg.errorVectors_linearComponent_adjoint(r) // s(k+1) = A.T * r(k+1)
 
       let gamma_next = s.squaredNorm // γ(k+1) = ||s(k+1)||^2
       let beta: Double = gamma_next/gamma // β(k) = γ(k+1)/γ(k)

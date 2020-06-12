@@ -32,22 +32,23 @@ public struct TypedID<Value, PerTypeID: Equatable> {
 /// Assignments of values to factor graph variables.
 public struct VariableAssignments {
   /// Dictionary from variable type to contiguous storage for that type.
-  var contiguousStorage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>] = [:]
+  var storage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>] = [:]
 
   /// Creates an empty instance.
   public init() {}
 
-  internal init(contiguousStorage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>]) {
-    self.contiguousStorage = contiguousStorage
+  /// Creates an instance backed by the given `storage`.
+  internal init(storage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>]) {
+    self.storage = storage
   }
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
   public mutating func store<T>(_ value: T) -> TypedID<T, Int> {
-    let perTypeID = contiguousStorage[
+    let perTypeID = storage[
       ObjectIdentifier(T.self),
       default: AnyArrayBuffer(ArrayBuffer<ArrayStorage<T>>())
     ].append(value)
-    assert(type(of: contiguousStorage[ObjectIdentifier(T.self)]!.storage) == ArrayStorage<T>.self)
+    assert(type(of: storage[ObjectIdentifier(T.self)]!.storage) == ArrayStorage<T>.self)
     return TypedID(perTypeID)
   }
 
@@ -55,12 +56,12 @@ public struct VariableAssignments {
   public mutating func store<T: Differentiable>(_ value: T) -> TypedID<T, Int>
     where T.TangentVector: EuclideanVector
   {
-    let perTypeID = contiguousStorage[
+    let perTypeID = storage[
       ObjectIdentifier(T.self),
       default: AnyArrayBuffer(ArrayBuffer<DifferentiableArrayStorage<T>>())
     ].append(value)
     assert(
-      type(of: contiguousStorage[ObjectIdentifier(T.self)]!.storage)
+      type(of: storage[ObjectIdentifier(T.self)]!.storage)
         == DifferentiableArrayStorage<T>.self
     )
     return TypedID(perTypeID)
@@ -68,12 +69,12 @@ public struct VariableAssignments {
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
   public mutating func store<T: EuclideanVector>(_ value: T) -> TypedID<T, Int> {
-    let perTypeID = contiguousStorage[
+    let perTypeID = storage[
       ObjectIdentifier(T.self),
       default: AnyArrayBuffer(ArrayBuffer<VectorArrayStorage<T>>())
     ].append(value)
     assert(
-      type(of: contiguousStorage[ObjectIdentifier(T.self)]!.storage)
+      type(of: storage[ObjectIdentifier(T.self)]!.storage)
         == VectorArrayStorage<T>.self
     )
     return TypedID(perTypeID)
@@ -88,14 +89,14 @@ public struct VariableAssignments {
   /// Accesses the stored value with the given ID.
   public subscript<T>(id: TypedID<T, Int>) -> T {
     _read {
-      yield contiguousStorage[ObjectIdentifier(T.self), default: Self.noSuchType]
+      yield storage[ObjectIdentifier(T.self), default: Self.noSuchType]
         .withUnsafeRawPointerToElements { p in
           p.assumingMemoryBound(to: T.self).advanced(by: id.perTypeID).pointee
         }
     }
     _modify {
       defer { _fixLifetime(self) }
-      yield &contiguousStorage[ObjectIdentifier(T.self), default: Self.noSuchType]
+      yield &storage[ObjectIdentifier(T.self), default: Self.noSuchType]
         .withUnsafeMutableRawPointerToElements { p in
           p.assumingMemoryBound(to: T.self).advanced(by: id.perTypeID)
         }
@@ -105,10 +106,12 @@ public struct VariableAssignments {
 }
 
 /// Differentiable operations.
+// TODO: There are some mutating operations here that copy, mutate, and write back. Make these
+// more efficient.
 extension VariableAssignments {
-  /// Assignment of zero to all the variables in `GenericFactorGraph.linearized(at: self)`.
-  public var linearizedZero: VariableAssignments {
-    let r = Dictionary(uniqueKeysWithValues: contiguousStorage.compactMap {
+  /// For each differentiable value in `self`, the zero value of its tangent vector.
+  public var tangentVectorZeros: AllVectors {
+    let r = Dictionary(uniqueKeysWithValues: storage.compactMap {
       (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>)? in
       guard let differentiableValue = value.cast(to: AnyDifferentiableStorage.self) else {
         return nil
@@ -118,19 +121,19 @@ extension VariableAssignments {
         AnyArrayBuffer(differentiableValue.zeroTangent)
       )
     })
-    return VariableAssignments(contiguousStorage: r)
+    return AllVectors(storage: r)
   }
 
   /// Moves each differentiable variable along the corresponding element of `direction`.
   ///
-  /// See `GenericFactorGraph.linearized(at:)` for documentation about the correspondence between
+  /// See `NewFactorGraph.linearized(at:)` for documentation about the correspondence between
   /// differentiable variables and their linearizations.
-  public mutating func move(along direction: VariableAssignments) {
-    contiguousStorage = contiguousStorage.mapValues { value in
+  public mutating func move(along direction: AllVectors) {
+    storage = storage.mapValues { value in
       guard var diffVal = value.cast(to: AnyDifferentiableStorage.self) else {
         return value
       }
-      guard let dirElem = direction.contiguousStorage[diffVal.tangentIdentifier] else {
+      guard let dirElem = direction.storage[diffVal.tangentIdentifier] else {
         return value
       }
       diffVal.move(along: dirElem)
@@ -139,53 +142,10 @@ extension VariableAssignments {
   }
 
   /// See `move(along:)`.
-  public func moved(along direction: VariableAssignments) -> Self {
+  public func moved(along direction: AllVectors) -> Self {
+    // TODO: Make sure that this is efficient when we have a unique reference.
     var result = self
     result.move(along: direction)
     return result
-  }
-}
-
-/// Vector operations.
-// TODO: These currently have a precondition that all stored values are vectors. We could improve
-// this by creating and using a "Vectors" type that is statically known to contain only vectors.
-extension VariableAssignments {
-  /// Returns the squared norm of `self`, where `self` is viewed as a vector in the vector space
-  /// direct sum of all the variables.
-  ///
-  /// Precondition: All the variables in `self` are vectors.
-  public var squaredNorm: Double {
-    return contiguousStorage.values.lazy
-      .map { $0.storage as! AnyVectorStorage }
-      .map { $0.dot($0) }
-      .reduce(0, +)
-  }
-
-  /// Returns the scalar product of `lhs` with `rhs`, where `rhs` is viewed as a vector in the
-  /// vector space direct sum of all the variables.
-  ///
-  /// Precondition: All the variables in `rhs` are vectors.
-  public static func * (_ lhs: Double, _ rhs: Self) -> Self {
-    VariableAssignments(contiguousStorage: rhs.contiguousStorage.mapValues { value in
-      var vector = value.cast(to: AnyVectorStorage.self)!
-      vector.scale(by: lhs)
-      return AnyArrayBuffer(vector)
-    })
-  }
-
-  /// Returns the vector sum of `lhs` with `rhs`, where `lhs` and `rhs` are viewed as vectors in the
-  /// vector space direct sum of all the variables.
-  ///
-  /// Precondition: All the elements in `lhs` and `rhs` are vectors. `lhs` and `rhs` have
-  /// assignments for exactly the same sets of variables.
-  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
-    let r = Dictionary(uniqueKeysWithValues: lhs.contiguousStorage.map {
-      (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>) in
-      var resultVector = value.cast(to: AnyVectorStorage.self)!
-      let rhsVector = rhs.contiguousStorage[key]!.cast(to: AnyVectorStorage.self)!
-      resultVector.add(rhsVector)
-      return (key, AnyArrayBuffer(resultVector))
-    })
-    return VariableAssignments(contiguousStorage: r)
   }
 }

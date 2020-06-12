@@ -16,14 +16,10 @@ import PenguinStructures
 
 /// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and
 /// materialized error vector.
-///
-/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
-/// When we completely replace the existing factors with the "Generic" ones, we should remove this
-/// prefix.
-public struct GenericJacobianFactor<
+public struct NewJacobianFactor<
   Rows: FixedSizeArray,
   ErrorVector: EuclideanVectorN
->: GenericGaussianFactor where Rows.Element: EuclideanVectorN & VariableTuple {
+>: NewGaussianFactor where Rows.Element: EuclideanVectorN & VariableTuple {
   public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.
@@ -61,26 +57,25 @@ public struct GenericJacobianFactor<
   }
 
   public func errorVector(at x: Variables) -> ErrorVector {
-    return linearForward(x) + error
+    return errorVector_linearComponent(x) + error
   }
 
-  public func linearForward(_ x: Variables) -> ErrorVector {
+  public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {
     return ErrorVector(jacobian.lazy.map { $0.dot(x) })
   }
 
-  public func linearAdjoint(_ y: ErrorVector) -> Variables {
+  public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {
     return zip(y.scalars, jacobian).lazy.map(*).reduce(Variables.zero, +)
   }
 
-  public typealias Linearized = Self
+  public typealias Linearization = Self
   public func linearized(at x: Variables) -> Self {
     return self
   }
 }
 
 /// A Jacobian factor with 1 3-dimensional input and a 3-dimensional error vector.
-public typealias JacobianFactor3x3_1 = GenericJacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
+public typealias JacobianFactor3x3_1 = NewJacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
 
 /// A Jacobian factor with 2 3-dimensional inputs and a 3-dimensional error vector.
-public typealias JacobianFactor3x3_2 =
-  GenericJacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>
+public typealias JacobianFactor3x3_2 = NewJacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>

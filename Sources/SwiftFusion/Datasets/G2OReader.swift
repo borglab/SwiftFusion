@@ -46,13 +46,13 @@ public enum G2OReader {
     }
   }
 
-  /// A G2O problem expressed as a `GenericFactorGraph`.
-  public struct G2OGenericFactorGraph {
+  /// A G2O problem expressed as a `NewFactorGraph`.
+  public struct G2ONewFactorGraph {
     /// The initial guess.
     public var initialGuess = VariableAssignments()
 
     /// The factor graph representing the measurements.
-    public var graph = GenericFactorGraph()
+    public var graph = NewFactorGraph()
 
     /// Creates a problem from the given 2D file.
     public init(g2oFile2D: URL) throws {
@@ -62,7 +62,7 @@ public enum G2OReader {
           let typedID = initialGuess.store(guess)
           assert(typedID.perTypeID == id)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
-          graph.store(GenericBetweenFactor2(TypedID(id1), TypedID(id2), difference))
+          graph.store(NewBetweenFactor2(TypedID(id1), TypedID(id2), difference))
         }
       }
     }

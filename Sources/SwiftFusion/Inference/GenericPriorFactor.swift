@@ -15,12 +15,8 @@
 import PenguinStructures
 
 /// A factor that specifies a prior on a pose.
-///
-/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
-/// When we completely replace the existing factors with the "Generic" ones, we should remove this
-/// prefix.
-public struct GenericPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  GenericLinearizableFactor
+public struct NewPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+  NewLinearizableFactor
   where JacobianRows.Element == Tuple1<Pose.TangentVector>
 {
   public typealias Variables = Tuple1<Pose>
@@ -49,10 +45,10 @@ public struct GenericPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
     return errorVector(x.head)
   }
 
-  public typealias Linearized = GenericJacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearized {
-    Linearized(linearizing: errorVector, at: x, edges: edges)
+  public typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearization {
+    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
-public typealias GenericPriorFactor2 = GenericPriorFactor<Pose2, Array3<Tuple1<Vector3>>>
+public typealias NewPriorFactor2 = NewPriorFactor<Pose2, Array3<Tuple1<Vector3>>>

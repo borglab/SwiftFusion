@@ -45,28 +45,28 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
 //    check(intelDataset.graph.error(val), near: 35.59, accuracy: 1e-2)
   }
 
-  let intelDatasetGen =
-    try! G2OReader.G2OGenericFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
+  let intelDatasetNew =
+    try! G2OReader.G2ONewFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
   check(
-    intelDatasetGen.graph.error(at: intelDatasetGen.initialGuess),
+    intelDatasetNew.graph.error(at: intelDatasetNew.initialGuess),
     near: 73565.64,
     accuracy: 1e-2)
 
-  // Uses `GenericFactorGraph` on the Intel dataset.
+  // Uses `NewFactorGraph` on the Intel dataset.
   // The solvers are configured to run for a constant number of steps.
   // The nonlinear solver is 10 iterations of Gauss-Newton.
   // The linear solver is 500 iterations of CGLS.
   suite.benchmark(
-    "GenericFactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
+    "NewFactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
     settings: Iterations(1)
   ) {
-    var x = intelDatasetGen.initialGuess
-    var graph = intelDatasetGen.graph
-    graph.store(GenericPriorFactor2(TypedID(0), Pose2(0, 0, 0)))
+    var x = intelDatasetNew.initialGuess
+    var graph = intelDatasetNew.graph
+    graph.store(NewPriorFactor2(TypedID(0), Pose2(0, 0, 0)))
 
     for _ in 0..<10 {
       let linearized = graph.linearized(at: x)
-      var dx = x.linearizedZero
+      var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 0, max_iteration: 500)
       optimizer.optimize(gfg: linearized, initial: &dx)
       x.move(along: (-1) * dx)

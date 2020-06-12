@@ -15,10 +15,7 @@
 import PenguinStructures
 
 /// A factor in a factor graph.
-///
-/// Note: This is currently named `GenericFactor` to avoid clashing with the other `Factor`
-/// protocol. When we completely replace `Factor`, we should rename this one to `Factor`.
-public protocol GenericFactor {
+public protocol NewFactor {
   /// A tuple of the variable types of variables adjacent to this factor.
   associatedtype Variables: VariableTuple
 
@@ -30,11 +27,7 @@ public protocol GenericFactor {
 }
 
 /// A factor with an error vector, which can be linearized around any point.
-///
-/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
-/// When we completely replace the existing factors with the "Generic" ones, we should remove this
-/// prefix.
-public protocol GenericLinearizableFactor: GenericFactor {
+public protocol NewLinearizableFactor: NewFactor {
   /// The type of the error vector.
   // TODO: Add a description of what an error vector is.
   associatedtype ErrorVector: EuclideanVector
@@ -43,25 +36,20 @@ public protocol GenericLinearizableFactor: GenericFactor {
   func errorVector(at x: Variables) -> ErrorVector
 
   /// The type of the linearized factor.
-  associatedtype Linearization: GenericGaussianFactor
+  associatedtype Linearization: NewGaussianFactor
 
   /// Returns a factor whose `errorVector` linearly approximates `self`'s `errorVector` around the
   /// given point.
   func linearized(at x: Variables) -> Linearization
 }
 
-/// A factor with a vector error that is a linear function of the input, plus a constant.
-///
-/// Note: This is currently named with a "Generic" prefix to avoid clashing with the other factors.
-/// When we completely replace the existing factors with the "Generic" ones, we should remove this
-/// prefix.
-public protocol GenericGaussianFactor: GenericLinearizableFactor where Variables: EuclideanVector {
-  /// Returns the result of the linear function at the given point.
-  func linearForward(_ x: Variables) -> ErrorVector
+/// A factor whose `errorVector` is a linear function of the variables, plus a constant.
+public protocol NewGaussianFactor: NewLinearizableFactor where Variables: EuclideanVector {
+  /// The linear component of `errorVector`.
+  func errorVector_linearComponent(_ x: Variables) -> ErrorVector
 
-  /// Returns the result of the adjoint (aka "transpose" or "dual") of the linear function at the
-  /// given point.
-  func linearAdjoint(_ y: ErrorVector) -> Variables
+  /// The adjoint (aka "transpose" or "dual") of the linear component of `errorVector`.
+  func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables
 }
 
 // MARK: - `VariableTuple`.
@@ -163,7 +151,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
     _ body: (UnsafePointers) -> R
   ) -> R {
     return variableAssignments
-      .contiguousStorage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
+      .storage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
       .withUnsafeRawPointerToElements { headBase in
         return Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
           return body(
@@ -174,7 +162,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   }
 
   public static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {
-    variableAssignments.contiguousStorage[ObjectIdentifier(Head.self)]!.ensureUniqueStorage()
+    variableAssignments.storage[ObjectIdentifier(Head.self)]!.ensureUniqueStorage()
     Tail.ensureUniqueStorage(&variableAssignments)
   }
 
