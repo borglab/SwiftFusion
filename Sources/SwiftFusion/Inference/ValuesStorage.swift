@@ -271,11 +271,13 @@ extension ArrayStorageImplementation where Element: EuclideanVector {
   /// Adds the vector starting at `otherStart` to `self`.
   ///
   /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s.
+  @_specialize(where Self == VectorArrayStorage<Vector3>)
   func add_(_ otherStart: UnsafeRawPointer) {
     add(UnsafeBufferPointer(start: otherStart.assumingMemoryBound(to: Element.self), count: count))
   }
   
   /// Scales each element of `self` by `scalar`.
+  @_specialize(where Self == VectorArrayStorage<Vector3>)
   func scale_(by scalar: Double) {
     withUnsafeMutableBufferPointer { b in
       b.indices.forEach { i in b[i] *= scalar }
@@ -287,6 +289,7 @@ extension ArrayStorageImplementation where Element: EuclideanVector {
   /// This is the sum of the dot products of corresponding elements.
   ///
   /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s.
+  @_specialize(where Self == VectorArrayStorage<Vector3>)
   func dot_(_ otherStart: UnsafeRawPointer) -> Double {
     return dot(
       UnsafeBufferPointer(start: otherStart.assumingMemoryBound(to: Element.self), count: count)

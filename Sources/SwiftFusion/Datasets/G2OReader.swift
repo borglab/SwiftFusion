@@ -46,6 +46,28 @@ public enum G2OReader {
     }
   }
 
+  /// A G2O problem expressed as a `GenericFactorGraph`.
+  public struct G2OGenericFactorGraph {
+    /// The initial guess.
+    public var initialGuess = VariableAssignments()
+
+    /// The factor graph representing the measurements.
+    public var graph = GenericFactorGraph()
+
+    /// Creates a problem from the given 2D file.
+    public init(g2oFile2D: URL) throws {
+      try G2OReader.read2D(file: g2oFile2D) { entry in
+        switch entry {
+        case .initialGuess(index: let id, pose: let guess):
+          let typedID = initialGuess.store(guess)
+          assert(typedID.perTypeID == id)
+        case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
+          graph.store(GenericBetweenFactor2(TypedID(id1), TypedID(id2), difference))
+        }
+      }
+    }
+  }
+
   /// An entry in a G2O file.
   public enum Entry<Pose> {
     /// An initial guess that vertex `index` has pose `pose`.

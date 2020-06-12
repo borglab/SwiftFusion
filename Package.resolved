@@ -5,8 +5,8 @@
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
-          "branch": "master",
-          "revision": "3081343f667134e6a7e43701c2c91e433567abea",
+          "branch": "marcrasi/arraybuffer_cast",
+          "revision": "fb901e91cabfdb8ff409020aea928ff4452ed3ab",
           "version": null
         }
       },
