@@ -6,7 +6,7 @@
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
           "branch": "marcrasi/arraybuffer_cast",
-          "revision": "fb901e91cabfdb8ff409020aea928ff4452ed3ab",
+          "revision": "932209d7249196469e3c96e700c587b2701c2f7e",
           "version": null
         }
       },
@@ -24,7 +24,7 @@
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
           "branch": "master",
-          "revision": "687068e9e7dae20a8c46e1e1a4d04c5873a7c373",
+          "revision": "29d059d2fecf8abc4dcbe70a85f2716dbbe4ab1d",
           "version": null
         }
       }
