@@ -14,7 +14,10 @@ extension Dictionary: Differentiable where Value: Differentiable {
       self[componentKey, default: fatalMissingComponent()].move(along: componentDirection)
     }
   }
-  public var zeroTangentVector: TangentVector { mapValues { _ in .zero } }
+
+  public var zeroTangentVectorInitializer: () -> TangentVector {
+    { mapValues { _ in .zero } }
+  }
 }
 
 /// Implements the `AdditiveArithmetic` requirements.
