@@ -41,6 +41,10 @@ extension Tuple: AdditiveArithmetic where Head: AdditiveArithmetic, Tail: Additi
 extension Empty: Differentiable {
   public typealias TangentVector = Self
   public mutating func move(along direction: TangentVector) {}
+  
+  public var zeroTangentVectorInitializer: () -> TangentVector {
+    { .zero }
+  }
 }
 
 extension Tuple: Differentiable
@@ -49,6 +53,9 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
   public mutating func move(along direction: TangentVector) {
     head.move(along: direction.head)
     tail.move(along: direction.tail)
+  }
+  public var zeroTangentVectorInitializer: () -> TangentVector {
+    { .zero }
   }
 }
 
