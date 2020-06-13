@@ -54,7 +54,7 @@ public struct VariableAssignments {
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
   public mutating func store<T: Differentiable>(_ value: T) -> TypedID<T, Int>
-    where T.TangentVector: EuclideanVector
+    where T.TangentVector: EuclideanVectorN
   {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
@@ -68,7 +68,7 @@ public struct VariableAssignments {
   }
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
-  public mutating func store<T: EuclideanVector>(_ value: T) -> TypedID<T, Int> {
+  public mutating func store<T: EuclideanVectorN>(_ value: T) -> TypedID<T, Int> {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
       default: AnyArrayBuffer(ArrayBuffer<VectorArrayStorage<T>>())

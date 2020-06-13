@@ -19,10 +19,10 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
-fileprivate typealias VectorArray<Element: EuclideanVector> =
+fileprivate typealias VectorArray<Element: EuclideanVectorN> =
   ArrayBuffer<VectorArrayStorage<Element>>
 fileprivate typealias DifferentiableArray<Element: Differentiable>
-  = ArrayBuffer<DifferentiableArrayStorage<Element>> where Element.TangentVector: EuclideanVector
+  = ArrayBuffer<DifferentiableArrayStorage<Element>> where Element.TangentVector: EuclideanVectorN
 
 class ValuesStorageTests: XCTestCase {
   
