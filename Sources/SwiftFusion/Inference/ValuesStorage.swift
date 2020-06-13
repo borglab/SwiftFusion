@@ -286,13 +286,27 @@ extension ArrayStorageImplementation where Element: EuclideanVectorN {
   /// Adds the vector starting at `otherStart` to `self`.
   ///
   /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s.
+  // For reasonable performance, this must be specialized for all vector types that are used in
+  // inner loops.
+  @_specialize(where Self == VectorArrayStorage<Vector1>)
+  @_specialize(where Self == VectorArrayStorage<Vector2>)
   @_specialize(where Self == VectorArrayStorage<Vector3>)
+  @_specialize(where Self == VectorArrayStorage<Vector4>)
+  @_specialize(where Self == VectorArrayStorage<Vector5>)
+  @_specialize(where Self == VectorArrayStorage<Vector6>)
   func add_(_ otherStart: UnsafeRawPointer) {
     add(UnsafeBufferPointer(start: otherStart.assumingMemoryBound(to: Element.self), count: count))
   }
   
   /// Scales each element of `self` by `scalar`.
+  // For reasonable performance, this must be specialized for all vector types that are used in
+  // inner loops.
+  @_specialize(where Self == VectorArrayStorage<Vector1>)
+  @_specialize(where Self == VectorArrayStorage<Vector2>)
   @_specialize(where Self == VectorArrayStorage<Vector3>)
+  @_specialize(where Self == VectorArrayStorage<Vector4>)
+  @_specialize(where Self == VectorArrayStorage<Vector5>)
+  @_specialize(where Self == VectorArrayStorage<Vector6>)
   func scale_(by scalar: Double) {
     withUnsafeMutableBufferPointer { b in
       b.indices.forEach { i in b[i] *= scalar }
@@ -304,7 +318,14 @@ extension ArrayStorageImplementation where Element: EuclideanVectorN {
   /// This is the sum of the dot products of corresponding elements.
   ///
   /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s.
+  // For reasonable performance, this must be specialized for all vector types that are used in
+  // inner loops.
+  @_specialize(where Self == VectorArrayStorage<Vector1>)
+  @_specialize(where Self == VectorArrayStorage<Vector2>)
   @_specialize(where Self == VectorArrayStorage<Vector3>)
+  @_specialize(where Self == VectorArrayStorage<Vector4>)
+  @_specialize(where Self == VectorArrayStorage<Vector5>)
+  @_specialize(where Self == VectorArrayStorage<Vector6>)
   func dot_(_ otherStart: UnsafeRawPointer) -> Double {
     return dot(
       UnsafeBufferPointer(start: otherStart.assumingMemoryBound(to: Element.self), count: count)
