@@ -64,4 +64,12 @@ extension AllVectors {
     })
     return VariableAssignments(storage: r)
   }
+
+  /// Returns the `ErrorVector` from the `perFactorID`-th factor of type `F`.
+  subscript<F: NewLinearizableFactor>(_ perFactorID: Int, factorType _: F.Type) -> F.ErrorVector {
+    return storage[ObjectIdentifier(F.self)]!
+      .withUnsafeBufferPointer(assumingElementType: F.ErrorVector.self) { b in
+        return b[perFactorID]
+      }
+  }
 }

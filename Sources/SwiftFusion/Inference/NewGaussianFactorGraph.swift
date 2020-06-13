@@ -22,6 +22,19 @@ public struct NewGaussianFactorGraph {
   /// Assignment of zero to all the variables in the factor graph.
   var zeroValues: VariableAssignments
 
+  /// For each variable, add a Jacobian factor that scales it by `scalar`.
+  ///
+  /// Precondition: `self` doesn't already contain scalar Jacobian factors. (Temporary limitation
+  /// that we can remove when necessary.)
+  public mutating func addScalarJacobians(_ scalar: Double) {
+    zeroValues.storage.values.forEach { value in
+      let (jacsKey, jacs) = value.cast(to: AnyVectorStorage.self)!.jacobians(scalar: scalar)
+      // TODO: Support adding more jacobians of the same type.
+      precondition(storage[jacsKey] == nil)
+      storage[jacsKey] = jacs
+    }
+  }
+
   /// Returns the error vectors, at `x`, of all the factors.
   func errorVectors(at x: AllVectors) -> AllVectors {
     return AllVectors(storage: storage.mapValues { factors in

@@ -30,7 +30,7 @@ public protocol NewFactor {
 public protocol NewLinearizableFactor: NewFactor {
   /// The type of the error vector.
   // TODO: Add a description of what an error vector is.
-  associatedtype ErrorVector: EuclideanVector
+  associatedtype ErrorVector: EuclideanVectorN
 
   /// Returns the error vector given the values of the adjacent variables.
   func errorVector(at x: Variables) -> ErrorVector
@@ -44,7 +44,7 @@ public protocol NewLinearizableFactor: NewFactor {
 }
 
 /// A factor whose `errorVector` is a linear function of the variables, plus a constant.
-public protocol NewGaussianFactor: NewLinearizableFactor where Variables: EuclideanVector {
+public protocol NewGaussianFactor: NewLinearizableFactor where Variables: EuclideanVectorN {
   /// The linear component of `errorVector`.
   func errorVector_linearComponent(_ x: Variables) -> ErrorVector
 

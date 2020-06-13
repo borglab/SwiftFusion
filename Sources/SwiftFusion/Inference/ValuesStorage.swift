@@ -85,7 +85,7 @@ protocol AnyDifferentiableStorageImplementation: AnyDifferentiableStorage {
 
 /// APIs that depend on `Differentiable` `Element` type.
 extension ArrayStorageImplementation
-  where Element: Differentiable, Element.TangentVector: EuclideanVector
+  where Element: Differentiable, Element.TangentVector: EuclideanVectorN
 {
   /// Identifies the values' `TangentVector`.
   var tangentIdentifier_: ObjectIdentifier {
@@ -124,7 +124,7 @@ extension ArrayStorageImplementation
   }
 }
 
-extension ArrayBuffer where Element: Differentiable, Element.TangentVector: EuclideanVector {
+extension ArrayBuffer where Element: Differentiable, Element.TangentVector: EuclideanVectorN {
   /// Moves each element of `self` along the corresponding element of `directions`.
   ///
   /// Precondition: `directions.count >= count`.
@@ -142,7 +142,7 @@ extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Eucl
 final class DifferentiableArrayStorage<Element: Differentiable>:
   AnyDifferentiableStorage, AnyDifferentiableStorageImplementation,
   ArrayStorageImplementation
-  where Element.TangentVector: EuclideanVector
+  where Element.TangentVector: EuclideanVectorN
 {
   override var implementation: AnyArrayStorageImplementation { self }
   override var differentiableImplementation: AnyDifferentiableStorageImplementation {
@@ -150,9 +150,9 @@ final class DifferentiableArrayStorage<Element: Differentiable>:
   }
 }
 
-// MARK: - Storage for contiguous arrays of `EuclideanVector` values.
+// MARK: - Storage for contiguous arrays of `EuclideanVectorN` values.
 
-/// Contiguous storage of homogeneous `EuclideanVector` values of statically unknown type.
+/// Contiguous storage of homogeneous `EuclideanVectorN` values of statically unknown type.
 class AnyVectorStorage: AnyDifferentiableStorage {
   typealias VectorImplementation = AnyVectorStorageImplementation
   var vectorImplementation: VectorImplementation {
@@ -195,6 +195,13 @@ class AnyVectorStorage: AnyDifferentiableStorage {
       return vectorImplementation.dot_(UnsafeRawPointer(base))
     }
   }
+
+  /// For each variable, a Jacobian factor that scales it by `scalar`.
+  final func jacobians(scalar: Double)
+    -> (ObjectIdentifier, AnyArrayBuffer<AnyGaussianFactorStorage>)
+  {
+    vectorImplementation.jacobians_(scalar: scalar)
+  }
 }
 
 extension AnyArrayBuffer where Storage: AnyVectorStorage {
@@ -222,9 +229,14 @@ extension AnyArrayBuffer where Storage: AnyVectorStorage {
       storage.dot(otherStart)
     }
   }
+
+  /// For each variable, a Jacobian factor that scales it by `scalar`.
+  func jacobians(scalar: Double) -> (ObjectIdentifier, AnyArrayBuffer<AnyGaussianFactorStorage>) {
+    storage.jacobians(scalar: scalar)
+  }
 }
 
-/// Contiguous storage of homogeneous `EuclideanVector` values of statically unknown type.
+/// Contiguous storage of homogeneous `EuclideanVectorN` values of statically unknown type.
 protocol AnyVectorStorageImplementation:
   AnyVectorStorage, AnyDifferentiableStorageImplementation
 {
@@ -244,10 +256,13 @@ protocol AnyVectorStorageImplementation:
   /// Precondition: `otherStart` points to memory with at least `count` initialized `Element`s,
   /// where `Element` is the element type of `self`.
   func dot_(_ otherStart: UnsafeRawPointer) -> Double
+
+  /// For each variable, a Jacobian factor that scales it by `scalar`.
+  func jacobians_(scalar: Double) -> (ObjectIdentifier, AnyArrayBuffer<AnyGaussianFactorStorage>)
 }
 
-/// APIs that depend on `EuclideanVector` `Element` type.
-extension ArrayStorageImplementation where Element: EuclideanVector {
+/// APIs that depend on `EuclideanVectorN` `Element` type.
+extension ArrayStorageImplementation where Element: EuclideanVectorN {
   /// Adds `others` to `self`.
   ///
   /// Precondition: `others.count >= count`.
@@ -295,9 +310,17 @@ extension ArrayStorageImplementation where Element: EuclideanVector {
       UnsafeBufferPointer(start: otherStart.assumingMemoryBound(to: Element.self), count: count)
     )
   }
+
+  /// For each variable, a Jacobian factor that scales it by `scalar`.
+  func jacobians_(scalar: Double) -> (ObjectIdentifier, AnyArrayBuffer<AnyGaussianFactorStorage>) {
+    let r = ArrayBuffer<GaussianFactorArrayStorage<ScalarJacobianFactor<Element>>>((0..<count).lazy.map { i in
+      ScalarJacobianFactor(edges: Tuple1(TypedID<Element, Int>(i)), scalar: scalar)
+    })
+    return (ObjectIdentifier(ScalarJacobianFactor<Element>.self), AnyArrayBuffer(r))
+  }
 }
 
-extension ArrayBuffer where Element: EuclideanVector {
+extension ArrayBuffer where Element: EuclideanVectorN {
   /// Adds `others` to `self`.
   ///
   /// Precondition: `others.count >= count`.
@@ -320,12 +343,17 @@ extension ArrayBuffer where Element: EuclideanVector {
   func dot<Others: Collection>(_ others: Others) -> Double where Others.Element == Element {
     storage.dot(others)
   }
+
+  /// For each variable, a Jacobian factor that scales it by `scalar`.
+  func jacobians_(scalar: Double) -> (ObjectIdentifier, AnyArrayBuffer<AnyGaussianFactorStorage>) {
+    storage.jacobians_(scalar: scalar)
+  }
 }
 
-/// Type-erasable storage for contiguous `EuclideanVector` `Element` instances.
+/// Type-erasable storage for contiguous `EuclideanVectorN` `Element` instances.
 ///
 /// Note: instances have reference semantics.
-final class VectorArrayStorage<Element: EuclideanVector>:
+final class VectorArrayStorage<Element: EuclideanVectorN>:
   AnyVectorStorage, AnyVectorStorageImplementation,
   ArrayStorageImplementation
 {  
