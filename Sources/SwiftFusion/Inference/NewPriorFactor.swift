@@ -15,6 +15,10 @@
 import PenguinStructures
 
 /// A factor that specifies a prior on a pose.
+///
+/// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
+/// documentation on `NewJacobianFactor.jacobian` for more information. Use the typealiases below to
+/// avoid specifying this type parameter every time you create an instance.
 public struct NewPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
   NewLinearizableFactor
   where JacobianRows.Element == Tuple1<Pose.TangentVector>
@@ -51,4 +55,8 @@ public struct NewPriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
   }
 }
 
+/// A prior factor on a `Pose2`.
 public typealias NewPriorFactor2 = NewPriorFactor<Pose2, Array3<Tuple1<Vector3>>>
+
+/// A prior factor on a `Pose3`.
+public typealias NewPriorFactor3 = NewPriorFactor<Pose3, Array6<Tuple1<Vector6>>>

@@ -275,8 +275,18 @@ extension ArrayStorageImplementation where Element: NewGaussianFactor {
   }
 
   /// Returns the results of the factors' linear functions at the given point.
+  // For reasonable performance, this must be specialized for all gaussian factor types that are
+  // used in inner loops.
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector1>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector2>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector3>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector4>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector5>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector6>>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_1>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_2>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_1>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_2>)
   func errorVector_linearComponent_(_ x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
     return AnyArrayBuffer(errorVector_linearComponent(x))
   }
@@ -286,8 +296,18 @@ extension ArrayStorageImplementation where Element: NewGaussianFactor {
   ///
   /// Precondition: `errorVectorsStart` points to memory with at least `count` initialized
   /// `Element.ErrorVector`s.
+  // For reasonable performance, this must be specialized for all gaussian factor types that are
+  // used in inner loops.
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector1>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector2>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector3>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector4>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector5>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector6>>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_1>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_2>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_1>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_2>)
   func errorVector_linearComponent_adjoint_(
     _ errorVectorsStart: UnsafeRawPointer,
     into result: inout VariableAssignments

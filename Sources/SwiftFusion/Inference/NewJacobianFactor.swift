@@ -23,6 +23,11 @@ public struct NewJacobianFactor<
   public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.
+  ///
+  /// The `jacobian` has one row per element of the `ErrorVector`, and each row is a vector in the
+  /// vector space of adjacent variables. For example, if `ErrorVector == Vector3` and
+  /// `Variables == Tuple2<Vector3, Vector3>`, then `Rows == Array3<Tuple2<Vector3, Vector3>>`. See
+  /// the typealiases below for more examples.
   public let jacobian: Rows
 
   /// The error vector.
@@ -79,3 +84,9 @@ public typealias JacobianFactor3x3_1 = NewJacobianFactor<Array3<Tuple1<Vector3>>
 
 /// A Jacobian factor with 2 3-dimensional inputs and a 3-dimensional error vector.
 public typealias JacobianFactor3x3_2 = NewJacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>
+
+/// A Jacobian factor with 1 6-dimensional input and a 6-dimensional error vector.
+public typealias JacobianFactor6x6_1 = NewJacobianFactor<Array6<Tuple1<Vector6>>, Vector6>
+
+/// A Jacobian factor with 2 6-dimensional inputs and a 6-dimensional error vector.
+public typealias JacobianFactor6x6_2 = NewJacobianFactor<Array6<Tuple2<Vector6, Vector6>>, Vector6>
