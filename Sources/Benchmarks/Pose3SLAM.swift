@@ -16,25 +16,6 @@
 
 import Benchmark
 import SwiftFusion
-import PenguinStructures
-
-import Foundation
-
-struct FileHandlerOutputStream: TextOutputStream {
-  private let fileHandle: FileHandle
-  let encoding: String.Encoding
-  
-  init(_ fileHandle: FileHandle, encoding: String.Encoding = .utf8) {
-    self.fileHandle = fileHandle
-    self.encoding = encoding
-  }
-  
-  mutating func write(_ string: String) {
-    if let data = string.data(using: encoding) {
-      fileHandle.write(data)
-    }
-  }
-}
 
 let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   
@@ -50,20 +31,6 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     "NewFactorGraph, sphere2500, 30 LM steps, max 6 G-N steps, 200 CGLS steps",
     settings: Iterations(1)
   ) {
-    let fileManager = FileManager.default
-    var filePath = URL(fileURLWithPath: fileManager.currentDirectoryPath)
-    filePath.appendPathComponent("./result_pose3.txt")
-    
-    print("Storing result at \(filePath.path)")
-    
-    if fileManager.fileExists(atPath: filePath.path) {
-      do {
-        try fileManager.removeItem(atPath: filePath.path)
-      } catch let error {
-        print("error occurred, here are the details:\n \(error)")
-      }
-    }
-    
     var val = gridDataset.initialGuess
     var graph = gridDataset.graph
     
@@ -75,15 +42,6 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
       try optimizer.optimize(graph: graph, initial: &val)
     } catch let error {
       print("The solver gave up, message: \(error.localizedDescription)")
-    }
-    
-    fileManager.createFile(atPath: filePath.path, contents: nil)
-    let fileHandle = try! FileHandle(forUpdating: URL(fileURLWithPath: filePath.path))
-    var output = FileHandlerOutputStream(fileHandle)
-    
-    for i in gridDataset.initialGuessId {
-      let t = val[i].t
-      output.write("\(t.x), \(t.y), \(t.z)\n")
     }
   }
 }
