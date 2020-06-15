@@ -19,8 +19,38 @@ import SwiftFusion
 
 let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   
-  var gridDataset =  // try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
-        try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("sphere2500.g2o"))
+  var gridDataset_old =
+    try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
+  // check(gridDataset_old.graph.error(gridDataset_old.initialGuess), near: 12.99, accuracy: 1e-2)
+  // Uses `NonlinearFactorGraph` on the Intel dataset.
+  // The solvers are configured to run for a constant number of steps.
+  // The nonlinear solver is 5 iterations of Gauss-Newton.
+  // The linear solver is 100 iterations of CGLS.
+  suite.benchmark(
+    "NonlinearFactorGraph, Pose3Example, 50 Gauss-Newton steps, 200 CGLS steps",
+    settings: Iterations(1)
+  ) {
+    var val = gridDataset_old.initialGuess
+    gridDataset_old.graph += PriorFactor(0, Pose3())
+    for _ in 0..<40 {
+      print("error = \(gridDataset_old.graph.error(val))")
+      let gfg = gridDataset_old.graph.linearize(val)
+      let optimizer = CGLS(precision: 0, max_iteration: 200)
+      var dx = VectorValues()
+      for i in 0..<val.count {
+        dx.insert(i, Vector(zeros: 6))
+      }
+      optimizer.optimize(gfg: gfg, initial: &dx)
+      print("gfg error = \(gfg.residual(dx).norm)")
+      val.move(along: dx)
+    }
+    for i in val.keys.sorted() {
+      print(val[i, as: Pose3.self].t)
+    }
+  }
+  
+  var gridDataset =  try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
+        // try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("sphere2500.g2o"))
   //  check(gridDataset.graph.error(gridDataset.initialGuess), near: 12.99, accuracy: 1e-2)
   
   // Uses `NonlinearFactorGraph` on the Intel dataset.

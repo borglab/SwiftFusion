@@ -72,6 +72,7 @@ func main() {
   graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
   
   var optimizer = LM()
+  optimizer.verbosity = .TRYLAMBDA
   
   do {
     try optimizer.optimize(graph: graph, initial: &val)
