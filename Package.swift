@@ -37,6 +37,10 @@ let package = Package(
       name: "Pose2SLAMG2O",
       dependencies: ["SwiftFusion"],
       path: "Examples/Pose2SLAMG2O"),
+    .target(
+      name: "Pose3SLAMG2O",
+      dependencies: ["SwiftFusion"],
+      path: "Examples/Pose3SLAMG2O"),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: ["SwiftFusion"]),

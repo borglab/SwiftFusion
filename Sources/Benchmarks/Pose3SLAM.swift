@@ -47,7 +47,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   // The nonlinear solver is 5 iterations of Gauss-Newton.
   // The linear solver is 100 iterations of CGLS.
   suite.benchmark(
-    "NonlinearFactorGraph, Pose3Example, 30 LM steps, max 6 G-N steps, 200 CGLS steps",
+    "NewFactorGraph, sphere2500, 30 LM steps, max 6 G-N steps, 200 CGLS steps",
     settings: Iterations(1)
   ) {
     let fileManager = FileManager.default
@@ -69,72 +69,13 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     
     graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
     
-    var old_error = graph.error(at: val)
-    print("[LM OUTER] initial error = \(old_error)")
+    var optimizer = LM()
     
-    var lambda = 1e-6
-    var inner_iter_step = 0
-    var inner_success = false
-    
-    for _ in 0..<30 { // outer loop
-      print("[LM OUTER] outer loop start, error = \(graph.error(at: val))")
-      let gfg = graph.linearized(at: val)
-      var dx = val.tangentVectorZeros
-      
-      for _ in 0..<6 {
-        print("[LM INNER] starting one iteration, lambda = \(lambda)")
-        var damped = gfg
-        
-        damped.addScalarJacobians(lambda)
-        
-        let old_linear_error = damped.errorVectors(at: dx).squaredNorm
-        
-        var dx_t = dx
-        var optimizer = GenericCGLS(precision: 0, max_iteration: 200)
-        optimizer.optimize(gfg: damped, initial: &dx_t)
-        print("[LM INNER] damped error = \(damped.errorVectors(at: dx_t).squaredNorm), lambda = \(lambda)")
-        var oldval = val
-        val.move(along: -1 * dx_t)
-        let this_error = graph.error(at: val)
-        let delta_error = old_error - this_error
-        print("[LM INNER] nonlinear error = \(this_error), delta error = \(delta_error)")
-        
-        let new_linear_error = damped.errorVectors(at: dx_t).squaredNorm
-        let model_fidelity = delta_error / (old_linear_error - new_linear_error)
-        
-        print("[LM INNER] linear error = \(new_linear_error), delta error = \(old_linear_error - new_linear_error)")
-        print("[LM INNER] model fidelity = \(model_fidelity)")
-        
-        inner_success = false
-        if delta_error > .ulpOfOne && model_fidelity > 0.01 {
-          old_error = this_error
-          
-          // Success, decrease lambda
-          if lambda > 1e-10 {
-            lambda = lambda / 10
-          } else {
-            break
-          }
-          inner_success = true
-        } else {
-          print("[LM INNER] fail, trying to increase lambda")
-          // increase lambda and retry
-          val = oldval
-          if lambda > 1e20 {
-            print("[LM INNER] giving up in lambda search")
-            break
-          }
-          lambda = lambda * 10
-        }
-        
-        inner_iter_step += 1
-        if inner_iter_step > 5 || inner_success {
-          break
-        }
-      }
+    do {
+      try optimizer.optimize(graph: graph, initial: &val)
+    } catch let error {
+      print("The solver gave up, message: \(error.localizedDescription)")
     }
-    
-    print("[FINAL   ] final error = \(graph.error(at: val))")
     
     fileManager.createFile(atPath: filePath.path, contents: nil)
     let fileHandle = try! FileHandle(forUpdating: URL(fileURLWithPath: filePath.path))
