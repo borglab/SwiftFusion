@@ -62,7 +62,7 @@ public struct NewJacobianFactor<
   }
 
   public func errorVector(at x: Variables) -> ErrorVector {
-    return errorVector_linearComponent(x) + error
+    return error - errorVector_linearComponent(x)
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {

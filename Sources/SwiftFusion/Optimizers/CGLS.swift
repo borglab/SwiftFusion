@@ -45,6 +45,7 @@ public class CGLS {
     var gamma = s.norm // γ(0) = ||s(0)||^2
     
     while step < max_iteration {
+      print("[CGLS    ] residual = \(r.norm), true = \(gfg.residual(x).norm)")
       let q = gfg * p // q(k) = A * p(k)
       let alpha: Double = gamma / q.norm // α(k) = γ(k)/||q(k)||^2
       x = x + (alpha * p) // x(k+1) = x(k) + α(k) * p(k)
@@ -93,6 +94,7 @@ public struct GenericCGLS {
     var gamma = s.squaredNorm // γ(0) = ||s(0)||^2
 
     while step < max_iteration {
+      // print("[CGLS    ] residual = \(r.squaredNorm), true = \(gfg.errorVectors(at: x).squaredNorm)")
       let q = gfg.errorVectors_linearComponent(at: p) // q(k) = A * p(k)
       let alpha: Double = gamma / q.squaredNorm // α(k) = γ(k)/||q(k)||^2
       x = x + (alpha * p) // x(k+1) = x(k) + α(k) * p(k)

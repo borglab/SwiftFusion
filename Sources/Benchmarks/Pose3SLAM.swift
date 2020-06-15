@@ -39,7 +39,7 @@ struct FileHandlerOutputStream: TextOutputStream {
 let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   
   var gridDataset =  // try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
-        try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("sphere_bignoise_vertex3.g2o"))
+        try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("sphere2500.g2o"))
   //  check(gridDataset.graph.error(gridDataset.initialGuess), near: 12.99, accuracy: 1e-2)
   
   // Uses `NonlinearFactorGraph` on the Intel dataset.
@@ -47,7 +47,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   // The nonlinear solver is 5 iterations of Gauss-Newton.
   // The linear solver is 100 iterations of CGLS.
   suite.benchmark(
-    "NonlinearFactorGraph, Pose3Example, 50 Gauss-Newton steps, 200 CGLS steps",
+    "NonlinearFactorGraph, Pose3Example, 30 LM steps, max 6 G-N steps, 200 CGLS steps",
     settings: Iterations(1)
   ) {
     let fileManager = FileManager.default
@@ -76,7 +76,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     var inner_iter_step = 0
     var inner_success = false
     
-    for _ in 0..<20 { // outer loop
+    for _ in 0..<30 { // outer loop
       print("[LM OUTER] outer loop start, error = \(graph.error(at: val))")
       let gfg = graph.linearized(at: val)
       var dx = val.tangentVectorZeros
@@ -90,7 +90,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
         let old_linear_error = damped.errorVectors(at: dx).squaredNorm
         
         var dx_t = dx
-        var optimizer = GenericCGLS(precision: 0, max_iteration: 50)
+        var optimizer = GenericCGLS(precision: 0, max_iteration: 200)
         optimizer.optimize(gfg: damped, initial: &dx_t)
         print("[LM INNER] damped error = \(damped.errorVectors(at: dx_t).squaredNorm), lambda = \(lambda)")
         var oldval = val
@@ -102,7 +102,10 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
         let new_linear_error = damped.errorVectors(at: dx_t).squaredNorm
         let model_fidelity = delta_error / (old_linear_error - new_linear_error)
         
+        print("[LM INNER] linear error = \(new_linear_error), delta error = \(old_linear_error - new_linear_error)")
         print("[LM INNER] model fidelity = \(model_fidelity)")
+        
+        inner_success = false
         if delta_error > .ulpOfOne && model_fidelity > 0.01 {
           old_error = this_error
           
@@ -125,7 +128,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
         }
         
         inner_iter_step += 1
-        if inner_iter_step > 5 && inner_success {
+        if inner_iter_step > 5 || inner_success {
           break
         }
       }
