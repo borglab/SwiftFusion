@@ -28,7 +28,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   // The nonlinear solver is 5 iterations of Gauss-Newton.
   // The linear solver is 100 iterations of CGLS.
   suite.benchmark(
-    "NewFactorGraph, sphere2500, 30 LM steps, max 6 G-N steps, 200 CGLS steps",
+    "NewFactorGraph, sphere2500, 30 LM steps, 200 CGLS steps",
     settings: Iterations(1)
   ) {
     var val = gridDataset.initialGuess
@@ -37,6 +37,9 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
     
     var optimizer = LM()
+    optimizer.verbosity = .SUMMARY
+    optimizer.max_iteration = 30
+    optimizer.max_inner_iteration = 200
     
     do {
       try optimizer.optimize(graph: graph, initial: &val)

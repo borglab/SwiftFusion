@@ -87,7 +87,7 @@ public struct LM {
         let old_linear_error = damped.errorVectors(at: dx).squaredNorm
         
         var dx_t = dx
-        var optimizer = GenericCGLS(precision: 0, max_iteration: 200)
+        var optimizer = GenericCGLS(precision: 0, max_iteration: max_inner_iteration)
         optimizer.optimize(gfg: damped, initial: &dx_t)
         if verbosity >= .TRYLAMBDA {
           print("[LM INNER] damped error = \(damped.errorVectors(at: dx_t).squaredNorm), lambda = \(lambda)")
@@ -136,7 +136,7 @@ public struct LM {
         }
         
         inner_iter_step += 1
-        if inner_iter_step > 5 || inner_success {
+        if inner_success {
           break
         }
       }
