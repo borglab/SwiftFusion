@@ -64,6 +64,7 @@ public struct LM {
     var lambda = 1e-6
     var inner_iter_step = 0
     var inner_success = false
+    var all_done = false
     
     for _ in 0..<max_iteration { // outer loop
       
@@ -122,8 +123,16 @@ public struct LM {
           inner_success = true
         } else {
           if verbosity >= .TRYLAMBDA {
-            print("[LM INNER] fail, trying to increase lambda")
+            print("[LM INNER] fail, trying to increase lambda or give up")
           }
+          
+          if model_fidelity > 0.1 && delta_error < precision {
+            print("[LM INNER] reached the target precision, exiting")
+            inner_success = true
+            all_done = true
+            break
+          }
+          
           // increase lambda and retry
           val = oldval
           if lambda > 1e20 {
@@ -139,6 +148,10 @@ public struct LM {
         if inner_success {
           break
         }
+      }
+      
+      if all_done {
+        break
       }
       
       step += 1

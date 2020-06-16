@@ -84,7 +84,7 @@ func main() {
   let fileHandle = try! FileHandle(forUpdating: URL(fileURLWithPath: filePath.path))
   var output = FileHandlerOutputStream(fileHandle)
   
-  for i in problem.initialGuessId {
+  for i in problem.variableId {
     let t = val[i].t
     output.write("\(t.x), \(t.y), \(t.z)\n")
   }
