@@ -58,37 +58,38 @@ class NewFactorGraphTests: XCTestCase {
   /// |    |
   /// z-->xZ--> Y  (z pointing towards viewer, Z pointing away from viewer)
   /// Vehicle at p0 is looking towards y axis (X-axis points towards world y)
-  func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> Values {
-    var values = Values()
+  func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> (Array<TypedID<Pose3, Int>>, VariableAssignments) {
+    var ids: Array<TypedID<Pose3, Int>> = []
+    var values = VariableAssignments()
     var theta = 0.0
     let dtheta = 2.0 * .pi / Double(numPoses)
     let gRo = Rot3(0, 1, 0, 1, 0, 0, 0, 0, -1)
-    for i in 0..<numPoses {
-      let key = 0 + i
+    for _ in 0..<numPoses {
       let gti = Vector3(radius * cos(theta), radius * sin(theta), 0)
       let oRi = Rot3.fromTangent(Vector3(0, 0, -theta))  // negative yaw goes counterclockwise, with Z down !
       let gTi = Pose3(gRo * oRi, gti)
-      values.insert(key, gTi)
+      let id = values.store(gTi)
+      ids.append(id)
       theta = theta + dtheta
     }
-    return values
+    return (ids, values)
   }
   
   func testGtsamPose3SLAMExample() {
     // Create a hexagon of poses
-    let hexagon = circlePose3(numPoses: 6, radius: 1.0)
-    let p0 = hexagon[0, as: Pose3.self]
-    let p1 = hexagon[1, as: Pose3.self]
+    let (hexagonId, hexagon) = circlePose3(numPoses: 6, radius: 1.0)
+    let p0 = hexagon[hexagonId[0]]
+    let p1 = hexagon[hexagonId[1]]
     
     var x = VariableAssignments()
     
     let s = 0.10
     let id0 = x.store(p0)
-    let id1 = x.store(hexagon[1, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id2 = x.store(hexagon[2, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id3 = x.store(hexagon[3, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id4 = x.store(hexagon[4, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id5 = x.store(hexagon[5, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     
     var fg = NewFactorGraph()
     fg.store(NewPriorFactor3(id0, p0))

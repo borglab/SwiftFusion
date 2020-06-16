@@ -21,13 +21,12 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   
   var gridDataset_old =
     try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
-  // check(gridDataset_old.graph.error(gridDataset_old.initialGuess), near: 12.99, accuracy: 1e-2)
-  // Uses `NonlinearFactorGraph` on the Intel dataset.
+  // Uses `NonlinearFactorGraph` on the GTSAM pose3example dataset.
   // The solvers are configured to run for a constant number of steps.
-  // The nonlinear solver is 5 iterations of Gauss-Newton.
-  // The linear solver is 100 iterations of CGLS.
+  // The nonlinear solver is 40 iterations of Gauss-Newton.
+  // The linear solver is 200 iterations of CGLS.
   suite.benchmark(
-    "NonlinearFactorGraph, Pose3Example, 50 Gauss-Newton steps, 200 CGLS steps",
+    "NonlinearFactorGraph, Pose3Example, 40 Gauss-Newton steps, 200 CGLS steps",
     settings: Iterations(1)
   ) {
     var val = gridDataset_old.initialGuess
@@ -50,13 +49,10 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   }
   
   var gridDataset =  try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
-        // try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("sphere2500.g2o"))
-  //  check(gridDataset.graph.error(gridDataset.initialGuess), near: 12.99, accuracy: 1e-2)
-  
-  // Uses `NonlinearFactorGraph` on the Intel dataset.
-  // The solvers are configured to run for a constant number of steps.
-  // The nonlinear solver is 5 iterations of Gauss-Newton.
-  // The linear solver is 100 iterations of CGLS.
+  // Uses `NewFactorGraph` on the GTSAM pose3example dataset.
+  // The solvers are configured to run for a constant number of *LM steps*, except when the LM solver is
+  // unable to progress even with maximum lambda.
+  // The linear solver is 200 iterations of CGLS.
   suite.benchmark(
     "NewFactorGraph, sphere2500, 30 LM steps, 200 CGLS steps",
     settings: Iterations(1)
