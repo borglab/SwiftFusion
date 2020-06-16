@@ -36,7 +36,7 @@ public struct NewGaussianFactorGraph {
   }
 
   /// Returns the error vectors, at `x`, of all the factors.
-  func errorVectors(at x: AllVectors) -> AllVectors {
+  public func errorVectors(at x: AllVectors) -> AllVectors {
     return AllVectors(storage: storage.mapValues { factors in
       AnyArrayBuffer(factors.errorVectors(at: x))
     })

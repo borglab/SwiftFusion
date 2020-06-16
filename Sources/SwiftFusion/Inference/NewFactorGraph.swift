@@ -57,7 +57,7 @@ public struct NewFactorGraph {
   }
 
   /// Returns the error vectors, at `x`, of all the linearizable factors.
-  func errorVectors(at x: VariableAssignments) -> AllVectors {
+  public func errorVectors(at x: VariableAssignments) -> AllVectors {
     return AllVectors(storage: storage.compactMapValues { factors in
       guard let linearizableFactors = factors.cast(to: AnyLinearizableFactorStorage.self) else {
         return nil

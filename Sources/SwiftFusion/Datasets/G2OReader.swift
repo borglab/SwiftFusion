@@ -47,22 +47,39 @@ public enum G2OReader {
   }
 
   /// A G2O problem expressed as a `NewFactorGraph`.
-  public struct G2ONewFactorGraph {
+  public struct G2ONewFactorGraph<Pose: LieGroup> {
     /// The initial guess.
     public var initialGuess = VariableAssignments()
 
+    public var variableId = Array<TypedID<Pose, Int>>()
+    
     /// The factor graph representing the measurements.
     public var graph = NewFactorGraph()
 
     /// Creates a problem from the given 2D file.
-    public init(g2oFile2D: URL) throws {
+    public init(g2oFile2D: URL) throws where Pose == Pose2 {
       try G2OReader.read2D(file: g2oFile2D) { entry in
         switch entry {
         case .initialGuess(index: let id, pose: let guess):
           let typedID = initialGuess.store(guess)
           assert(typedID.perTypeID == id)
+          variableId.append(typedID)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
           graph.store(NewBetweenFactor2(TypedID(id1), TypedID(id2), difference))
+        }
+      }
+    }
+    
+    /// Creates a problem from the given 3D file.
+    public init(g2oFile3D: URL) throws where Pose == Pose3 {
+      try G2OReader.read3D(file: g2oFile3D) { entry in
+        switch entry {
+        case .initialGuess(index: let id, pose: let guess):
+          let typedID = initialGuess.store(guess)
+          assert(typedID.perTypeID == id)
+          variableId.append(typedID)
+        case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
+          graph.store(NewBetweenFactor3(TypedID(id1), TypedID(id2), difference))
         }
       }
     }

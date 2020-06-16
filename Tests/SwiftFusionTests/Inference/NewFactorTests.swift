@@ -183,9 +183,8 @@ class NewFactorTests: XCTestCase {
     ))
 
     let errorVectors = factors.errorVectors(at: variableAssignments)
-    XCTAssertEqual(errorVectors[0], Vector2(3, 2))  // matrix1 * [1 2] + [0 0]
-    XCTAssertEqual(errorVectors[1], Vector2(106, 207))  // matrix2 * [1 2] + [100 200]
-
+    XCTAssertEqual(errorVectors[0], Vector2(-3, -2))  // zero - matrix1 * [1 2]
+    XCTAssertEqual(errorVectors[1], Vector2(94, 193))  // [100 200] - matrix2 * [1 2]
     let forwardResult = factors.errorVector_linearComponent(variableAssignments)
     XCTAssertEqual(forwardResult[0], Vector2(3, 2))  // matrix1 * [1 2]
     XCTAssertEqual(forwardResult[1], Vector2(6, 7))  // matrix2 * [1 2]

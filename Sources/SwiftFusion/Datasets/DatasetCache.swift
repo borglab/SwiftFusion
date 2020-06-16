@@ -24,7 +24,11 @@ fileprivate let datasets = [
   "sphere_bignoise_vertex3.g2o":
     "https://github.com/HeYijia/GraphSLAM_tutorials_code/raw/master/g2o_test/data/sphere_bignoise_vertex3.g2o",
   "pose3example.txt":
-    "https://github.com/borglab/gtsam/raw/master/examples/Data/pose3example.txt"
+    "https://github.com/borglab/gtsam/raw/master/examples/Data/pose3example.txt",
+  "parking-garage.g2o":
+    "https://github.com/david-m-rosen/SE-Sync/raw/master/data/parking-garage.g2o",
+  "sphere2500.g2o":
+    "https://github.com/david-m-rosen/SE-Sync/raw/master/data/sphere2500.g2o"
 ]
 
 /// Returns a dataset cached on the local system.
