@@ -48,8 +48,8 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     }
   }
   
-  var gridDataset =  try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
-  // Uses `NewFactorGraph` on the GTSAM pose3example dataset.
+  var sphere2500Dataset =  try! G2OReader.G2ONewFactorGraph(g2oFile3D: try! cachedDataset("sphere2500.g2o"))
+  // Uses `NewFactorGraph` on the GTSAM sphere2500 dataset.
   // The solvers are configured to run for a constant number of *LM steps*, except when the LM solver is
   // unable to progress even with maximum lambda.
   // The linear solver is 200 iterations of CGLS.
@@ -57,8 +57,8 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     "NewFactorGraph, sphere2500, 30 LM steps, 200 CGLS steps",
     settings: Iterations(1)
   ) {
-    var val = gridDataset.initialGuess
-    var graph = gridDataset.graph
+    var val = sphere2500Dataset.initialGuess
+    var graph = sphere2500Dataset.graph
     
     graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
     
