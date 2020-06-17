@@ -186,6 +186,31 @@ extension Pose3Coordinate: ManifoldCoordinate {
 
 }
 
+/// Methods related to the Lie group structure.
+extension Pose3Coordinate {
+  @differentiable(wrt: v)
+  public func Adjoint(_ v: Vector6) -> Vector6 {
+    let d = Pose3Coordinate.decomposed(tangentVector: v)
+    let rotW = rot.rotate(d.w)
+    return Pose3Coordinate.tangentVector(
+      DecomposedTangentVector(
+        w: rotW,
+        v: t.cross(rotW) + rot.rotate(d.v)
+      )
+    )
+  }
+
+  public func AdjointTranspose(_ v: Vector6) -> Vector6 {
+    let d = Pose3Coordinate.decomposed(tangentVector: v)
+    return Pose3Coordinate.tangentVector(
+      DecomposedTangentVector(
+        w: rot.unrotate(d.w - t.cross(d.v)),
+        v: rot.unrotate(d.v)
+      )
+    )
+  }
+}
+
 extension Pose3: CustomStringConvertible {
   public var description: String {
     "Pose3(rot: \(coordinate.rot), t: \(coordinate.t))"

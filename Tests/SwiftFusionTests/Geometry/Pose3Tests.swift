@@ -128,4 +128,32 @@ final class Pose3Tests: XCTestCase {
     let pose_1 = val[1, as: Pose3.self]
     assertAllKeyPathEqual(pose_1, p1, accuracy: 1e-2)
   }
+
+  /// Tests that the custom implementation of `Adjoint` is correct.
+  func testAdjoint() {
+    for _ in 0..<10 {
+      let pose = Pose3.fromTangent(Vector6(Tensor<Double>(randomNormal: [6])))
+      for v in Pose3.TangentVector.standardBasis {
+        assertEqual(
+          pose.Adjoint(v).tensor,
+          pose.coordinate.defaultAdjoint(v).tensor,
+          accuracy: 1e-10
+        )
+      }
+    }
+  }
+
+  /// Tests that the custom implementation of `AdjointTranspose` is correct.
+  func testAdjointTranspose() {
+    for _ in 0..<10 {
+      let pose = Pose3.fromTangent(Vector6(Tensor<Double>(randomNormal: [6])))
+      for v in Pose3.TangentVector.standardBasis {
+        assertEqual(
+          pose.AdjointTranspose(v).tensor,
+          pose.coordinate.defaultAdjointTranspose(v).tensor,
+          accuracy: 1e-10
+        )
+      }
+    }
+  }
 }
