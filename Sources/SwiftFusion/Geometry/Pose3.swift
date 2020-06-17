@@ -204,7 +204,7 @@ extension Pose3Coordinate {
     let d = Pose3Coordinate.decomposed(tangentVector: v)
     return Pose3Coordinate.tangentVector(
       DecomposedTangentVector(
-        w: rot.unrotate(d.w) - rot.unrotate(t.cross(d.v)),
+        w: rot.unrotate(d.w - t.cross(d.v)),
         v: rot.unrotate(d.v)
       )
     )
