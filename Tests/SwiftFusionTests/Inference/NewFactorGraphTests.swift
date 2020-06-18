@@ -120,10 +120,11 @@ class NewFactorGraphTests: XCTestCase {
     let (hexagonId, hexagon) = circlePose3(numPoses: 6, radius: 1.0)
     let p0 = hexagon[hexagonId[0]]
     let p1 = hexagon[hexagonId[1]]
+    let p2 = hexagon[hexagonId[2]]
     
     var x = VariableAssignments()
     
-    let s = 0.10
+    let s = 0.90
     let id0 = x.store(p0)
     let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
@@ -151,7 +152,7 @@ class NewFactorGraphTests: XCTestCase {
       x.move(along: (-1) * dx)
     }
 
-    let pose_1 = x[id1]
-    assertAllKeyPathEqual(pose_1, p1, accuracy: 1e-2)
+    let pose_2 = x[id2]
+    assertAllKeyPathEqual(pose_2, p2, accuracy: 1e-2)
   }
 }
