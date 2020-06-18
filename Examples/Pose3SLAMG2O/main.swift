@@ -49,6 +49,7 @@ func main() {
   var inputFilename = ""
   var outputFilename = ""
   var loggingFolder: String? = nil
+  var useChordal = false
   // Parse commandline.
   do {
     let parser = ArgumentParser(
@@ -73,11 +74,21 @@ func main() {
           kind: String.self,
           usage: "Tensorboard log folder",
           completion: .filename)
+    let chordal = parser.add(
+          option: "--chordal",
+          shortName: "-c",
+          kind: Bool.self,
+          usage: "Use Chordal norm in BetweenFactor",
+          completion: ShellCompletion.none)
     let parguments = try parser.parse(argsv)
     
     inputFilename = parguments.get(input)!
     outputFilename = parguments.get(output)!
     loggingFolder = parguments.get(logging)
+    if let c = parguments.get(chordal) {
+      print("Using Chordal norm in BetweenFactor")
+      useChordal = c
+    }
   } catch ArgumentParserError.expectedValue(let value) {
     print("Missing value for argument \(value).")
     exit(1)
@@ -117,7 +128,7 @@ func main() {
   }
   
   // Load .g2o file.
-  let problem = try! G2OReader.G2ONewFactorGraph(g2oFile3D: g2oURL)
+  let problem = try! G2OReader.G2ONewFactorGraph(g2oFile3D: g2oURL, chordal: useChordal)
 
   var val = problem.initialGuess
   var graph = problem.graph
@@ -127,6 +138,7 @@ func main() {
   var optimizer = LM(precision: 1e-2, max_iteration: 100)
   
   optimizer.verbosity = .TRYLAMBDA
+  optimizer.max_iteration = 100
   
   do {
     var hook: ((NewFactorGraph, VariableAssignments, Double, Int) -> Void)? = nil
@@ -139,6 +151,9 @@ func main() {
     }
     try optimizer.optimize(graph: graph, initial: &val, hook: hook)
   } catch let error {
+    if doTracing {
+      logFileWriter!.addText(tag: "optimizer/message", text: "The solver gave up, message: \(error.localizedDescription)")
+    }
     print("The solver gave up, message: \(error.localizedDescription)")
   }
   

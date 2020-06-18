@@ -71,7 +71,7 @@ public enum G2OReader {
     }
     
     /// Creates a problem from the given 3D file.
-    public init(g2oFile3D: URL) throws where Pose == Pose3 {
+    public init(g2oFile3D: URL, chordal: Bool = false) throws where Pose == Pose3 {
       try G2OReader.read3D(file: g2oFile3D) { entry in
         switch entry {
         case .initialGuess(index: let id, pose: let guess):
@@ -79,7 +79,11 @@ public enum G2OReader {
           assert(typedID.perTypeID == id)
           variableId.append(typedID)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
-          graph.store(NewBetweenFactorAlternative3(TypedID(id1), TypedID(id2), difference))
+          if chordal {
+            graph.store(NewBetweenFactorAlternative3(TypedID(id1), TypedID(id2), difference))
+          } else {
+            graph.store(NewBetweenFactor3(TypedID(id1), TypedID(id2), difference))
+          }
         }
       }
     }
