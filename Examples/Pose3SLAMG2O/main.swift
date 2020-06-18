@@ -26,6 +26,7 @@
 import Foundation
 import SwiftFusion
 import TensorFlow
+import KrakenKit
 
 struct FileHandlerOutputStream: TextOutputStream {
   private let fileHandle: FileHandle
@@ -45,10 +46,13 @@ struct FileHandlerOutputStream: TextOutputStream {
 
 func main() {
   // Parse commandline.
-  guard CommandLine.arguments.count == 3 else {
+  guard CommandLine.arguments.count > 3 else {
     print("Usage: Pose3SLAMG2O [path to .g2o file] [path to output csv file]")
     return
   }
+  
+  let doTracing = CommandLine.arguments.count == 4
+  
   let g2oURL = URL(fileURLWithPath: CommandLine.arguments[1])
   let fileManager = FileManager.default
   let filePath = URL(fileURLWithPath: CommandLine.arguments[2])
@@ -60,6 +64,16 @@ func main() {
       try fileManager.removeItem(atPath: filePath.path)
     } catch let error {
       print("error occurred, here are the details:\n \(error)")
+    }
+  }
+  
+  var logFileWriter: FileWriter? = nil
+  
+  if doTracing {
+    let fileWriterURL = URL(string: CommandLine.arguments[3])
+    
+    if let _f = fileWriterURL {
+      logFileWriter = try? FileWriter(folder: _f, identifier: g2oURL.deletingPathExtension().lastPathComponent)
     }
   }
   
@@ -75,7 +89,14 @@ func main() {
   optimizer.verbosity = .TRYLAMBDA
   
   do {
-    try optimizer.optimize(graph: graph, initial: &val)
+    var hook: ((NewFactorGraph, VariableAssignments, Int) -> Void)? = nil
+    if doTracing {
+      hook = { fg, val, step in
+        let summary = Summary()
+        try! logFileWriter!.add(summary: summary, step: step)
+      }
+    }
+    try optimizer.optimize(graph: graph, initial: &val, hook: hook)
   } catch let error {
     print("The solver gave up, message: \(error.localizedDescription)")
   }

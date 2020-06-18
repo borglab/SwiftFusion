@@ -2,6 +2,24 @@
   "object": {
     "pins": [
       {
+        "package": "KrakenKit",
+        "repositoryURL": "https://github.com/ProfFan/KrakenKit.git",
+        "state": {
+          "branch": "master",
+          "revision": "c027033081b2500f4cc0e3267071aa82b054a066",
+          "version": null
+        }
+      },
+      {
+        "package": "LibPNG",
+        "repositoryURL": "https://github.com/KrakenCL/LibPNG.git",
+        "state": {
+          "branch": null,
+          "revision": "9941abff1c1683f0da3358a12f614bd7ce3b5780",
+          "version": "0.0.3"
+        }
+      },
+      {
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
@@ -26,6 +44,15 @@
           "branch": "master",
           "revision": "29d059d2fecf8abc4dcbe70a85f2716dbbe4ab1d",
           "version": null
+        }
+      },
+      {
+        "package": "SwiftProtobuf",
+        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
+        "state": {
+          "branch": null,
+          "revision": "7f36441e3372665b1b414f8ac93b5905cc42a405",
+          "version": "1.9.0"
         }
       }
     ]

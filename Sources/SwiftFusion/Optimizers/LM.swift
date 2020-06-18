@@ -54,7 +54,8 @@ public struct LM {
     self.step = 0
   }
   
-  public mutating func optimize(graph: NewFactorGraph, initial val: inout VariableAssignments) throws {
+  public mutating func optimize(graph: NewFactorGraph, initial val: inout VariableAssignments,
+                                hook: ((NewFactorGraph, VariableAssignments, Int) -> Void)? = nil) throws {
     var old_error = graph.error(at: val)
     
     if verbosity >= .SUMMARY {
@@ -148,6 +149,10 @@ public struct LM {
         if inner_success {
           break
         }
+      }
+      
+      if let h = hook {
+        h(graph, val, step)
       }
       
       if all_done {
