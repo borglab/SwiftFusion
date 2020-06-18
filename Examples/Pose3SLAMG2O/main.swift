@@ -135,7 +135,7 @@ func main() {
   
   graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
   
-  var optimizer = LM(precision: 1e-2, max_iteration: 100)
+  var optimizer = LM(precision: 1e-1, max_iteration: 100)
   
   optimizer.verbosity = .TRYLAMBDA
   optimizer.max_iteration = 100
