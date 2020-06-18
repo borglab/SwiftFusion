@@ -5,6 +5,30 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
+/// A factor on two discrete labels evaluation the transition probability
+struct DiscreteTransitionFactor {
+  /// The number of states.
+  let stateCount: Int
+
+  /// Entry `i * stateCount + j` is the probability of transitioning from state `j` to state `i`.
+  let transitionMatrix: [Double]
+
+  init(
+    _ inputId1: TypedID<Int, Int>,
+    _ inputId2: TypedID<Int, Int>,
+    _ stateCount: Int,
+    _ transitionMatrix: [Double]
+  ) {
+    precondition(transitionMatrix.count == stateCount * stateCount)
+    self.stateCount = stateCount
+    self.transitionMatrix = transitionMatrix
+  }
+
+  func error(at label1: Int, _ label2: Int) -> Double {
+    return -log(transitionMatrix[label2 * stateCount + label1])
+  }
+}
+
 /// A factor with a switchable motion model.
 ///
 /// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
@@ -104,6 +128,13 @@ class Scratch: XCTestCase {
     let q1 = variables.store(0)
     let q2 = variables.store(0)
 
+    // Model parameters.
+    let labelCount = 3
+    let transitionMatrix: [Double] = [
+      0.8, 0.1, 0.1,
+      0.1, 0.8, 0.1,
+      0.1, 0.1, 0.8
+    ]
     let movements = [
       Pose2(1, 0, 0),       // go forwards
       Pose2(1, 0, .pi / 4), // turn left
@@ -117,6 +148,7 @@ class Scratch: XCTestCase {
     graph.store(NewPriorFactor2(x3, Pose2(12, 0, 0)))
     graph.store(NewSwitchingBetweenFactor2(x1, q1, x2, movements))
     graph.store(NewSwitchingBetweenFactor2(x2, q2, x3, movements))
+    graph.store(DiscreteTransitionFactor(q1, q2, labelCount, transitionMatrix))
 
     return (graph, variables)
   }
