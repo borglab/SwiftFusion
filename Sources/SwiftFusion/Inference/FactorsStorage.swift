@@ -283,10 +283,13 @@ extension ArrayStorageImplementation where Element: NewGaussianFactor {
   @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector4>>)
   @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector5>>)
   @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector6>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector12>>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_1>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_2>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_1>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_2>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor12x6_1>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor12x6_2>)
   func errorVector_linearComponent_(_ x: VariableAssignments) -> AnyArrayBuffer<AnyVectorStorage> {
     return AnyArrayBuffer(errorVector_linearComponent(x))
   }
@@ -304,10 +307,13 @@ extension ArrayStorageImplementation where Element: NewGaussianFactor {
   @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector4>>)
   @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector5>>)
   @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector6>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector12>>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_1>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_2>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_1>)
   @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_2>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor12x6_1>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor12x6_2>)
   func errorVector_linearComponent_adjoint_(
     _ errorVectorsStart: UnsafeRawPointer,
     into result: inout VariableAssignments

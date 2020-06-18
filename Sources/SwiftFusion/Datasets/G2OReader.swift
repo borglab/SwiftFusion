@@ -79,7 +79,7 @@ public enum G2OReader {
           assert(typedID.perTypeID == id)
           variableId.append(typedID)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
-          graph.store(NewBetweenFactor3(TypedID(id1), TypedID(id2), difference))
+          graph.store(NewBetweenFactorAlternative3(TypedID(id1), TypedID(id2), difference))
         }
       }
     }

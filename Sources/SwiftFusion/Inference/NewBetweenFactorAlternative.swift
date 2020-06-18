@@ -1,8 +1,74 @@
+// Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
 //
-//  NewBetweenFactorAlternative.swift
-//  SwiftFusion
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//  Created by Fan Jiang on 2020/6/17.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-import Foundation
+import PenguinStructures
+
+/// A factor that specifies a difference between two poses.
+///
+/// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
+/// documentation on `NewJacobianFactor.jacobian` for more information. Use the typealiases below to
+/// avoid specifying this type parameter every time you create an instance.
+public struct NewBetweenFactorAlternative<JacobianRows: FixedSizeArray>:
+  NewLinearizableFactor
+  where JacobianRows.Element == Tuple2<Pose3.TangentVector, Pose3.TangentVector>
+{
+  public typealias Variables = Tuple2<Pose3, Pose3>
+
+  public let edges: Variables.Indices
+  public let difference: Pose3
+
+  public init(_ startId: TypedID<Pose3, Int>, _ endId: TypedID<Pose3, Int>, _ difference: Pose3) {
+    self.edges = Tuple2(startId, endId)
+    self.difference = difference
+  }
+
+  public typealias ErrorVector = Vector12
+  public func errorVector(_ start: Pose3, _ end: Pose3) -> ErrorVector {
+    let actualMotion = between(start, end)
+    let R = actualMotion.coordinate.rot.coordinate.R
+    let t = actualMotion.t
+    return Vector12(R.s00 - 1, R.s01, R.s02, R.s10, R.s11 - 1, R.s12, R.s20, R.s21, R.s22 - 1, t.x, t.y, t.z)
+  }
+
+  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
+  // with sugar.
+  
+  public func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
+  }
+
+  public func errorVector(at x: Variables) -> ErrorVector {
+    return errorVector(x.head, x.tail.head)
+  }
+
+  public typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearization {
+    Linearization(linearizing: errorVector, at: x, edges: edges)
+  }
+}
+
+public typealias Array8<T> = ArrayN<Array7<T>>
+public typealias Array9<T> = ArrayN<Array8<T>>
+public typealias Array10<T> = ArrayN<Array9<T>>
+public typealias Array11<T> = ArrayN<Array10<T>>
+public typealias Array12<T> = ArrayN<Array11<T>>
+
+/// A Jacobian factor with 1 6-dimensional input and a 12-dimensional error vector.
+public typealias JacobianFactor12x6_1 = NewJacobianFactor<Array12<Tuple1<Vector6>>, Vector12>
+
+/// A Jacobian factor with 2 6-dimensional inputs and a 12-dimensional error vector.
+public typealias JacobianFactor12x6_2 = NewJacobianFactor<Array12<Tuple2<Vector6, Vector6>>, Vector12>
+
+/// A between factor on `Pose3`.
+public typealias NewBetweenFactorAlternative3 = NewBetweenFactorAlternative<Array12<Tuple2<Vector6, Vector6>>>
