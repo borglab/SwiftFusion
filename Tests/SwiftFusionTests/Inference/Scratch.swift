@@ -6,7 +6,12 @@ import PenguinStructures
 @testable import SwiftFusion
 
 /// A factor on two discrete labels evaluation the transition probability
-struct DiscreteTransitionFactor {
+struct DiscreteTransitionFactor : NewFactor {  
+  typealias Variables = Tuple2<Int, Int>
+  
+  /// The IDs of the variables adjacent to this factor.
+  public let edges: Variables.Indices
+
   /// The number of states.
   let stateCount: Int
 
@@ -20,11 +25,13 @@ struct DiscreteTransitionFactor {
     _ transitionMatrix: [Double]
   ) {
     precondition(transitionMatrix.count == stateCount * stateCount)
+    self.edges = Tuple2(inputId1, inputId2)
     self.stateCount = stateCount
     self.transitionMatrix = transitionMatrix
   }
 
-  func error(at label1: Int, _ label2: Int) -> Double {
+  func error(at q: Variables) -> Double {
+    let (label1, label2) = (q.head, q.tail.head)
     return -log(transitionMatrix[label2 * stateCount + label1])
   }
 }
@@ -74,7 +81,18 @@ public struct NewSwitchingBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeA
 
   public typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
   public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
+    let (start, label, end) = (x.head, x.tail.head, x.tail.tail.head)
+    let (startEdge, endEdge) = (edges.head, edges.tail.tail.head)
+    let differentiableVariables = Tuple2(start, end)
+    let differentiableEdges = Tuple2(startEdge, endEdge)
+    return Linearization(
+      linearizing: { differentiableVariables in
+        let (start, end) = (differentiableVariables.head, differentiableVariables.tail.head)
+        return errorVector(start, label, end)
+      },
+      at: differentiableVariables,
+      edges: differentiableEdges
+    )
   }
 }
 
@@ -114,7 +132,7 @@ class Scratch: XCTestCase {
     var opt = LM()
     try! opt.optimize(graph: graph, initial: &variables)
 
-    // check results
+    // check number of factor types
     print(variables[TypedID<Pose2, Int>(0)])
     print(variables[TypedID<Pose2, Int>(1)])
     print(variables[TypedID<Pose2, Int>(2)])
@@ -138,11 +156,10 @@ class Scratch: XCTestCase {
     let movements = [
       Pose2(1, 0, 0),       // go forwards
       Pose2(1, 0, .pi / 4), // turn left
-      Pose2(1, 0, -.pi / 4)  // turn right
+      Pose2(1, 0, -.pi / 4) // turn right
     ]
 
     var graph = NewFactorGraph()
-    graph.store(NewPriorFactor2(x1, Pose2(10, 0, 0)))
     graph.store(NewPriorFactor2(x1, Pose2(10, 0, 0)))
     graph.store(NewPriorFactor2(x2, Pose2(11, 0, 0)))
     graph.store(NewPriorFactor2(x3, Pose2(12, 0, 0)))
@@ -159,7 +176,8 @@ class Scratch: XCTestCase {
     var (graph, variables) = createSwitchingFactorGraph()
     _ = graph as NewFactorGraph
 
-    XCTAssertEqual(graph.storage.count, 2)
+    // check number of factor types
+    XCTAssertEqual(graph.storage.count, 3)
 
     // optimize
     var opt = LM()
