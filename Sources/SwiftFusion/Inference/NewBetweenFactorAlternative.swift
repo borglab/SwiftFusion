@@ -38,7 +38,7 @@ public struct NewBetweenFactorAlternative<JacobianRows: FixedSizeArray>:
     let actualMotion = between(start, end)
     let R = actualMotion.coordinate.rot.coordinate.R + (-1) * difference.rot.coordinate.R
     let t = actualMotion.t - difference.t
-    return Vector12(R.s00 - 1, R.s01, R.s02, R.s10, R.s11 - 1, R.s12, R.s20, R.s21, R.s22 - 1, t.x, t.y, t.z)
+    return Vector12(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22, t.x, t.y, t.z)
   }
 
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
