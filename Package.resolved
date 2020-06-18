@@ -29,6 +29,15 @@
         }
       },
       {
+        "package": "swift-tools-support-core",
+        "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
+        "state": {
+          "branch": "swift-5.2-branch",
+          "revision": "7ecf17a83eab20cbd700d7e45d66c03409bc72d0",
+          "version": null
+        }
+      },
+      {
         "package": "TensorBoardX",
         "repositoryURL": "https://github.com/ProfFan/tensorboardx-s4tf.git",
         "state": {

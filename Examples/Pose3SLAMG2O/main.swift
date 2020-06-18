@@ -27,6 +27,7 @@ import Foundation
 import SwiftFusion
 import TensorFlow
 import TensorBoardX
+import TSCUtility
 
 struct FileHandlerOutputStream: TextOutputStream {
   private let fileHandle: FileHandle
@@ -45,17 +46,54 @@ struct FileHandlerOutputStream: TextOutputStream {
 }
 
 func main() {
+  var inputFilename = ""
+  var outputFilename = ""
+  var loggingFolder: String? = nil
   // Parse commandline.
-  guard CommandLine.arguments.count > 3 else {
-    print("Usage: Pose3SLAMG2O [path to .g2o file] [path to output csv file]")
-    return
+  do {
+    let parser = ArgumentParser(
+          commandName: "Pose3SLAMG2O",
+          usage: "[path to .g2o file] [path to output csv file] [path to logging folder]",
+          overview: "The command is used for argument parsing",
+          seeAlso: "getopt(1)")
+    let argsv = Array(CommandLine.arguments.dropFirst())
+    let input = parser.add(
+          positional: "input",
+          kind: String.self,
+          usage: "Input g2o file",
+          completion: .filename)
+    let output = parser.add(
+          positional: "output",
+          kind: String.self,
+          usage: "Output csv file",
+          completion: .filename)
+    let logging = parser.add(
+          option: "--logging",
+          shortName: "-l",
+          kind: String.self,
+          usage: "Tensorboard log folder",
+          completion: .filename)
+    let parguments = try parser.parse(argsv)
+    
+    inputFilename = parguments.get(input)!
+    outputFilename = parguments.get(output)!
+    loggingFolder = parguments.get(logging)
+  } catch ArgumentParserError.expectedValue(let value) {
+    print("Missing value for argument \(value).")
+    exit(1)
+  } catch ArgumentParserError.expectedArguments(let parser, let stringArray) {
+    print("Parser: \(parser) Missing arguments: \(stringArray.joined()).")
+    exit(1)
+  } catch {
+    print(error.localizedDescription)
+    exit(1)
   }
   
-  let doTracing = CommandLine.arguments.count == 4
+  let doTracing = loggingFolder == nil
   
-  let g2oURL = URL(fileURLWithPath: CommandLine.arguments[1])
+  let g2oURL = URL(fileURLWithPath: inputFilename)
   let fileManager = FileManager.default
-  let filePath = URL(fileURLWithPath: CommandLine.arguments[2])
+  let filePath = URL(fileURLWithPath: outputFilename)
   
   print("Storing result at \(filePath.path)")
   
@@ -71,7 +109,7 @@ func main() {
   let datasetName = g2oURL.deletingPathExtension().lastPathComponent
   
   if doTracing {
-    let fileWriterURL = URL(string: CommandLine.arguments[3])
+    let fileWriterURL = URL(string: loggingFolder!)
     
     if let _f = fileWriterURL {
       logFileWriter = SummaryWriter(logdir: _f, suffix: datasetName)
