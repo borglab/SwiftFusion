@@ -89,7 +89,7 @@ func main() {
     exit(1)
   }
   
-  let doTracing = loggingFolder == nil
+  let doTracing = loggingFolder != nil
   
   let g2oURL = URL(fileURLWithPath: inputFilename)
   let fileManager = FileManager.default
