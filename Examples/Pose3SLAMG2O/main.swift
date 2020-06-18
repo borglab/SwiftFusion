@@ -26,7 +26,7 @@
 import Foundation
 import SwiftFusion
 import TensorFlow
-import KrakenKit
+import TensorBoardX
 
 struct FileHandlerOutputStream: TextOutputStream {
   private let fileHandle: FileHandle
@@ -67,13 +67,14 @@ func main() {
     }
   }
   
-  var logFileWriter: FileWriter? = nil
+  var logFileWriter: SummaryWriter? = nil
+  let datasetName = g2oURL.deletingPathExtension().lastPathComponent
   
   if doTracing {
     let fileWriterURL = URL(string: CommandLine.arguments[3])
     
     if let _f = fileWriterURL {
-      logFileWriter = try? FileWriter(folder: _f, identifier: g2oURL.deletingPathExtension().lastPathComponent)
+      logFileWriter = SummaryWriter(logdir: _f, suffix: datasetName)
     }
   }
   
@@ -85,17 +86,17 @@ func main() {
   
   graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
   
-  var optimizer = LM()
+  var optimizer = LM(precision: 1e-2, max_iteration: 100)
+  
   optimizer.verbosity = .TRYLAMBDA
   
   do {
-    var hook: ((NewFactorGraph, VariableAssignments, Int) -> Void)? = nil
+    var hook: ((NewFactorGraph, VariableAssignments, Double, Int) -> Void)? = nil
     if doTracing {
-      hook = { fg, val, step in
-        let summary = Summary()
-        summary.add(scalar: fg.error(at: val), tag: "error")
-        
-        try! logFileWriter!.add(summary: summary, step: step)
+      hook = { fg, val, lambda, step in
+        logFileWriter!.addScalar(tag: "optimizer/loss", scalar: fg.error(at: val), globalStep: step)
+        logFileWriter!.addScalar(tag: "optimizer/lambda", scalar: lambda, globalStep: step)
+        logFileWriter!.flush()
       }
     }
     try optimizer.optimize(graph: graph, initial: &val, hook: hook)

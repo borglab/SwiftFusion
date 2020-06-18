@@ -23,7 +23,7 @@ let package = Package(
     // .package(url: /* package url */, from: "1.0.0"),
     .package(url: "https://github.com/google/swift-benchmark.git", .branch("master")),
     .package(url: "https://github.com/saeta/penguin.git", .branch("master")),
-    .package(url: "https://github.com/ProfFan/KrakenKit.git", .branch("master")),
+    .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", .branch("master")),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -43,7 +43,7 @@ let package = Package(
       path: "Examples/Pose2SLAMG2O"),
     .target(
       name: "Pose3SLAMG2O",
-      dependencies: ["SwiftFusion", "KrakenKit"],
+      dependencies: ["SwiftFusion", "TensorBoardX"],
       path: "Examples/Pose3SLAMG2O"),
     .testTarget(
       name: "SwiftFusionTests",

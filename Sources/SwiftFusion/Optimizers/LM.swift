@@ -41,7 +41,7 @@ public struct LM {
     
     // Implement Comparable
     public static func < (a: Verbosity, b: Verbosity) -> Bool {
-        return a.rawValue < b.rawValue
+      return a.rawValue < b.rawValue
     }
   }
   
@@ -55,7 +55,7 @@ public struct LM {
   }
   
   public mutating func optimize(graph: NewFactorGraph, initial val: inout VariableAssignments,
-                                hook: ((NewFactorGraph, VariableAssignments, Int) -> Void)? = nil) throws {
+                                hook: ((NewFactorGraph, VariableAssignments, Double, Int) -> Void)? = nil) throws {
     var old_error = graph.error(at: val)
     
     if verbosity >= .SUMMARY {
@@ -68,6 +68,10 @@ public struct LM {
     var all_done = false
     
     for _ in 0..<max_iteration { // outer loop
+      // Do logging first
+      if let h = hook {
+        h(graph, val, lambda, step)
+      }
       
       if verbosity >= .SUMMARY {
         print("[LM OUTER] outer loop start, error = \(graph.error(at: val))")
@@ -118,20 +122,12 @@ public struct LM {
           // Success, decrease lambda
           if lambda > 1e-10 {
             lambda = lambda / 10
-          } else {
-            break
           }
+          
           inner_success = true
         } else {
           if verbosity >= .TRYLAMBDA {
             print("[LM INNER] fail, trying to increase lambda or give up")
-          }
-          
-          if model_fidelity > 0.1 && delta_error < precision {
-            print("[LM INNER] reached the target precision, exiting")
-            inner_success = true
-            all_done = true
-            break
           }
           
           // increase lambda and retry
@@ -145,21 +141,29 @@ public struct LM {
           lambda = lambda * 10
         }
         
+        if model_fidelity > 0.1 && delta_error < precision {
+          print("[LM INNER] reached the target precision, exiting")
+          inner_success = true
+          all_done = true
+          break
+        }
+        
         inner_iter_step += 1
         if inner_success {
           break
         }
       }
       
-      if let h = hook {
-        h(graph, val, step)
-      }
+      step += 1
       
       if all_done {
+        // Log before exit
+        if let h = hook {
+          h(graph, val, lambda, step)
+        }
+        
         break
       }
-      
-      step += 1
     }
     
     if verbosity >= .SUMMARY {
