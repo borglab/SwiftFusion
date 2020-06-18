@@ -36,8 +36,8 @@ public struct NewBetweenFactorAlternative<JacobianRows: FixedSizeArray>:
   public typealias ErrorVector = Vector12
   public func errorVector(_ start: Pose3, _ end: Pose3) -> ErrorVector {
     let actualMotion = between(start, end)
-    let R = actualMotion.coordinate.rot.coordinate.R
-    let t = actualMotion.t
+    let R = actualMotion.coordinate.rot.coordinate.R + (-1) * difference.rot.coordinate.R
+    let t = actualMotion.t - difference.t
     return Vector12(R.s00 - 1, R.s01, R.s02, R.s10, R.s11 - 1, R.s12, R.s20, R.s21, R.s22 - 1, t.x, t.y, t.z)
   }
 
