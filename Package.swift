@@ -28,7 +28,7 @@ let package = Package(
       name: "SwiftFusion",
       dependencies: ["PenguinStructures"]),
     .target(
-      name: "Benchmarks",
+      name: "SwiftFusionBenchmarks",
       dependencies: [
         "Benchmark",
         "SwiftFusion",
