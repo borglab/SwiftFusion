@@ -93,6 +93,8 @@ func main() {
     if doTracing {
       hook = { fg, val, step in
         let summary = Summary()
+        summary.add(scalar: fg.error(at: val), tag: "error")
+        
         try! logFileWriter!.add(summary: summary, step: step)
       }
     }
