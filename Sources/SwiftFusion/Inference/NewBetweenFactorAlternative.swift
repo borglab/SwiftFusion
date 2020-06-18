@@ -14,11 +14,7 @@
 
 import PenguinStructures
 
-/// A factor that specifies a difference between two poses.
-///
-/// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
-/// documentation on `NewJacobianFactor.jacobian` for more information. Use the typealiases below to
-/// avoid specifying this type parameter every time you create an instance.
+/// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Pose3
 public struct NewBetweenFactorAlternative<JacobianRows: FixedSizeArray>:
   NewLinearizableFactor
   where JacobianRows.Element == Tuple2<Pose3.TangentVector, Pose3.TangentVector>
