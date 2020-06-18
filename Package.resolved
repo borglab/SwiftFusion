@@ -32,9 +32,9 @@
         "package": "TensorBoardX",
         "repositoryURL": "https://github.com/ProfFan/tensorboardx-s4tf.git",
         "state": {
-          "branch": "master",
-          "revision": "aba044f3e0a4998d5fe6f99aa9d12d9a52e60ccd",
-          "version": null
+          "branch": null,
+          "revision": "02838220694f4236ba84a83856581b76ee9cf1bc",
+          "version": "0.1.3"
         }
       }
     ]
