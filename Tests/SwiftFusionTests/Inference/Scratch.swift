@@ -103,19 +103,30 @@ public typealias NewSwitchingBetweenFactor2 = NewSwitchingBetweenFactor<Pose2, A
 public typealias NewSwitchingBetweenFactor3 = NewSwitchingBetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>
 
 class Scratch: XCTestCase {
+  let origin = Pose2(0,0,0)
+  let forwardMove = Pose2(1,0,0)
+  let (z1, z2, z3) = (Pose2(10, 0, 0),Pose2(11, 0, 0),Pose2(12, 0, 0))
+  var expectedTrackingError : Double = 0.0
+  override func setUp() {
+    super.setUp()
+    expectedTrackingError = 2 * origin.localCoordinate(z1).squaredNorm
+      +  origin.localCoordinate(z2).squaredNorm
+      +  origin.localCoordinate(z3).squaredNorm
+      +  2 * origin.localCoordinate(forwardMove).squaredNorm
+  }
   func createTrackingFactorGraph() -> (NewFactorGraph, VariableAssignments) {
     var variables = VariableAssignments()
-    let x1 = variables.store(Pose2(0, 0, 0))
-    let x2 = variables.store(Pose2(0, 0, 0))
-    let x3 = variables.store(Pose2(0, 0, 0))
+    let x1 = variables.store(origin)
+    let x2 = variables.store(origin)
+    let x3 = variables.store(origin)
 
     var graph = NewFactorGraph()
-    graph.store(NewPriorFactor2(x1, Pose2(10, 0, 0)))
-    graph.store(NewPriorFactor2(x1, Pose2(10, 0, 0)))
-    graph.store(NewPriorFactor2(x2, Pose2(11, 0, 0)))
-    graph.store(NewPriorFactor2(x3, Pose2(12, 0, 0)))
-    graph.store(NewBetweenFactor2(x1, x2, Pose2(1, 0, 0)))
-    graph.store(NewBetweenFactor2(x2, x3, Pose2(1, 0, 0)))
+    graph.store(NewPriorFactor2(x1, z1)) // prior
+    graph.store(NewPriorFactor2(x1, z1))
+    graph.store(NewPriorFactor2(x2, z2))
+    graph.store(NewPriorFactor2(x3, z3))
+    graph.store(NewBetweenFactor2(x1, x2, forwardMove))
+    graph.store(NewBetweenFactor2(x2, x3, forwardMove))
 
     return (graph, variables)
   }
@@ -126,8 +137,12 @@ class Scratch: XCTestCase {
     var (graph, variables) = createTrackingFactorGraph()
     _ = graph as NewFactorGraph
 
+    // check number of factor types
     XCTAssertEqual(graph.storage.count, 2)
 
+    // check error at initial estimate
+    XCTAssertEqual(graph.error(at: variables), expectedTrackingError)
+    
     // optimize
     var opt = LM()
     try! opt.optimize(graph: graph, initial: &variables)
@@ -140,9 +155,9 @@ class Scratch: XCTestCase {
 
   func createSwitchingFactorGraph() -> (NewFactorGraph, VariableAssignments) {
     var variables = VariableAssignments()
-    let x1 = variables.store(Pose2(0, 0, 0))
-    let x2 = variables.store(Pose2(0, 0, 0))
-    let x3 = variables.store(Pose2(0, 0, 0))
+    let x1 = variables.store(origin)
+    let x2 = variables.store(origin)
+    let x3 = variables.store(origin)
     let q1 = variables.store(0)
     let q2 = variables.store(0)
 
@@ -154,15 +169,16 @@ class Scratch: XCTestCase {
       0.1, 0.1, 0.8
     ]
     let movements = [
-      Pose2(1, 0, 0),       // go forwards
+      forwardMove,          // go forwards
       Pose2(1, 0, .pi / 4), // turn left
       Pose2(1, 0, -.pi / 4) // turn right
     ]
 
     var graph = NewFactorGraph()
-    graph.store(NewPriorFactor2(x1, Pose2(10, 0, 0)))
-    graph.store(NewPriorFactor2(x2, Pose2(11, 0, 0)))
-    graph.store(NewPriorFactor2(x3, Pose2(12, 0, 0)))
+    graph.store(NewPriorFactor2(x1, z1)) // prior
+    graph.store(NewPriorFactor2(x1, z1))
+    graph.store(NewPriorFactor2(x2, z2))
+    graph.store(NewPriorFactor2(x3, z3))
     graph.store(NewSwitchingBetweenFactor2(x1, q1, x2, movements))
     graph.store(NewSwitchingBetweenFactor2(x2, q2, x3, movements))
     graph.store(DiscreteTransitionFactor(q1, q2, labelCount, transitionMatrix))
@@ -178,11 +194,14 @@ class Scratch: XCTestCase {
 
     // check number of factor types
     XCTAssertEqual(graph.storage.count, 3)
-
+    
+    // check error at initial estimate, allow slack to account for discrete transition
+    XCTAssertEqual(graph.error(at: variables), 467.0, accuracy:0.3)
+    
     // optimize
     var opt = LM()
     try! opt.optimize(graph: graph, initial: &variables)
-
+    
     // check results
     print(variables[TypedID<Pose2, Int>(0)])
     print(variables[TypedID<Pose2, Int>(1)])
