@@ -56,7 +56,7 @@ public struct LM {
   
   public mutating func optimize(graph: NewFactorGraph, initial val: inout VariableAssignments,
                                 hook: ((NewFactorGraph, VariableAssignments, Double, Int) -> Void)? = nil) throws {
-    var old_error = graph.error(at: val)
+    var old_error = graph.linearizableError(at: val)
     
     if verbosity >= .SUMMARY {
       print("[LM OUTER] initial error = \(old_error)")
@@ -74,7 +74,7 @@ public struct LM {
       }
       
       if verbosity >= .SUMMARY {
-        print("[LM OUTER] outer loop start, error = \(graph.error(at: val))")
+        print("[LM OUTER] outer loop start, error = \(graph.linearizableError(at: val))")
       }
       
       let gfg = graph.linearized(at: val)
@@ -93,14 +93,14 @@ public struct LM {
         let old_linear_error = damped.errorVectors(at: dx).squaredNorm
         
         var dx_t = dx
-        var optimizer = GenericCGLS(precision: 0, max_iteration: max_inner_iteration)
+        var optimizer = GenericCGLS(precision: 1e-10, max_iteration: max_inner_iteration)
         optimizer.optimize(gfg: damped, initial: &dx_t)
         if verbosity >= .TRYLAMBDA {
           print("[LM INNER] damped error = \(damped.errorVectors(at: dx_t).squaredNorm), lambda = \(lambda)")
         }
         let oldval = val
         val.move(along: -1 * dx_t)
-        let this_error = graph.error(at: val)
+        let this_error = graph.linearizableError(at: val)
         let delta_error = old_error - this_error
         
         if verbosity >= .TRYLAMBDA {

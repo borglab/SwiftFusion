@@ -56,6 +56,16 @@ public struct NewFactorGraph {
     return storage.values.lazy.map { $0.errors(at: x).reduce(0, +) }.reduce(0, +)
   }
 
+  /// Returns the total error, at `x`, of all the linearizable factors.
+  public func linearizableError(at x: VariableAssignments) -> Double {
+    return storage.values.reduce(0) { (result, factors) in
+      guard let linearizableFactors = factors.cast(to: AnyLinearizableFactorStorage.self) else {
+        return result
+      }
+      return result + linearizableFactors.errors(at: x).reduce(0, +)
+    }
+  }
+
   /// Returns the error vectors, at `x`, of all the linearizable factors.
   public func errorVectors(at x: VariableAssignments) -> AllVectors {
     return AllVectors(storage: storage.compactMapValues { factors in
