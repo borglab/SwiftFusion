@@ -1,6 +1,6 @@
 import TensorFlow
 
-% dims = range(1, 10)
+% dims = range(1, 13)
 % for dim in dims:
 % if dim <= 3:
 %   coordinates = ['x', 'y', 'z'][0:dim]

@@ -6,7 +6,7 @@
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
           "branch": "master",
-          "revision": "3eeeaed55c23247f6322cb1c3da5125acf826ca9",
+          "revision": "1586b9b88628fb772e7b1d6e79185dcf5e3d2c6d",
           "version": null
         }
       },
@@ -24,8 +24,26 @@
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
           "branch": "master",
-          "revision": "29d059d2fecf8abc4dcbe70a85f2716dbbe4ab1d",
+          "revision": "66262f4f85cc2cd319f4aaae33368a14ea1c1dd9",
           "version": null
+        }
+      },
+      {
+        "package": "swift-tools-support-core",
+        "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
+        "state": {
+          "branch": "swift-5.2-branch",
+          "revision": "7ecf17a83eab20cbd700d7e45d66c03409bc72d0",
+          "version": null
+        }
+      },
+      {
+        "package": "TensorBoardX",
+        "repositoryURL": "https://github.com/ProfFan/tensorboardx-s4tf.git",
+        "state": {
+          "branch": null,
+          "revision": "02838220694f4236ba84a83856581b76ee9cf1bc",
+          "version": "0.1.3"
         }
       }
     ]
