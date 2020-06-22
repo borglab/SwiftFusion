@@ -32,13 +32,13 @@ public struct TypedID<Value, PerTypeID: Equatable> {
 /// Assignments of values to factor graph variables.
 public struct VariableAssignments {
   /// Dictionary from variable type to contiguous storage for that type.
-  var storage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>] = [:]
+  var storage: [ObjectIdentifier: AnyElementArrayBuffer] = [:]
 
   /// Creates an empty instance.
   public init() {}
 
   /// Creates an instance backed by the given `storage`.
-  internal init(storage: [ObjectIdentifier: AnyArrayBuffer<AnyArrayStorage>]) {
+  internal init(storage: [ObjectIdentifier: AnyElementArrayBuffer]) {
     self.storage = storage
   }
 
@@ -46,9 +46,8 @@ public struct VariableAssignments {
   public mutating func store<T>(_ value: T) -> TypedID<T, Int> {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
-      default: AnyArrayBuffer(ArrayBuffer<ArrayStorage<T>>())
-    ].append(value)
-    assert(type(of: storage[ObjectIdentifier(T.self)]!.storage) == ArrayStorage<T>.self)
+      default: AnyElementArrayBuffer(ArrayBuffer<T>())
+    ].unsafelyAppend(value)
     return TypedID(perTypeID)
   }
 
@@ -58,12 +57,10 @@ public struct VariableAssignments {
   {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
-      default: AnyArrayBuffer(ArrayBuffer<DifferentiableArrayStorage<T>>())
-    ].append(value)
-    assert(
-      type(of: storage[ObjectIdentifier(T.self)]!.storage)
-        == DifferentiableArrayStorage<T>.self
-    )
+      // Note: This is a safe upcast.
+      default: AnyElementArrayBuffer(
+        unsafelyCasting: AnyDifferentiableArrayBuffer(ArrayBuffer<T>()))
+    ].unsafelyAppend(value)
     return TypedID(perTypeID)
   }
 
@@ -71,36 +68,24 @@ public struct VariableAssignments {
   public mutating func store<T: EuclideanVectorN>(_ value: T) -> TypedID<T, Int> {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
-      default: AnyArrayBuffer(ArrayBuffer<VectorArrayStorage<T>>())
-    ].append(value)
-    assert(
-      type(of: storage[ObjectIdentifier(T.self)]!.storage)
-        == VectorArrayStorage<T>.self
-    )
+      // Note: This is a safe upcast.
+      default: AnyElementArrayBuffer(unsafelyCasting: AnyVectorArrayBuffer(ArrayBuffer<T>()))
+    ].unsafelyAppend(value)
     return TypedID(perTypeID)
   }
 
   /// Traps with an error indicating that an attempt was made to access a stored
   /// variable of a type that is not represented in `self`.
-  private static var noSuchType: AnyArrayBuffer<AnyArrayStorage> {
+  private static var noSuchType: AnyElementArrayBuffer {
     fatalError("No such stored variable type")
   }
 
   /// Accesses the stored value with the given ID.
   public subscript<T>(id: TypedID<T, Int>) -> T {
     _read {
-      yield storage[ObjectIdentifier(T.self), default: Self.noSuchType]
-        .withUnsafeRawPointerToElements { p in
-          p.assumingMemoryBound(to: T.self).advanced(by: id.perTypeID).pointee
-        }
-    }
-    _modify {
-      defer { _fixLifetime(self) }
-      yield &storage[ObjectIdentifier(T.self), default: Self.noSuchType]
-        .withUnsafeMutableRawPointerToElements { p in
-          p.assumingMemoryBound(to: T.self).advanced(by: id.perTypeID)
-        }
-        .pointee
+      let array = storage[ObjectIdentifier(T.self), default: Self.noSuchType]
+      yield ArrayBuffer<T>(unsafelyDowncasting: array)
+        .withUnsafeBufferPointer { b in b[id.perTypeID] }
     }
   }
 }
@@ -112,13 +97,14 @@ extension VariableAssignments {
   /// For each differentiable value in `self`, the zero value of its tangent vector.
   public var tangentVectorZeros: AllVectors {
     let r = Dictionary(uniqueKeysWithValues: storage.compactMap {
-      (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>)? in
-      guard let differentiableValue = value.cast(to: AnyDifferentiableStorage.self) else {
+      (key, value) -> (ObjectIdentifier, AnyElementArrayBuffer)? in
+      guard let differentiableValue = AnyArrayBuffer<DifferentiableArrayDispatch>(value) else {
         return nil
       }
       return (
-        differentiableValue.tangentIdentifier,
-        AnyArrayBuffer(differentiableValue.zeroTangent)
+        ObjectIdentifier(differentiableValue.tangentVectorType),
+        // Note: This is a safe upcast.
+        AnyElementArrayBuffer(unsafelyCasting: differentiableValue.tangentVectorZeros)
       )
     })
     return AllVectors(storage: r)
@@ -130,14 +116,15 @@ extension VariableAssignments {
   /// differentiable variables and their linearizations.
   public mutating func move(along direction: AllVectors) {
     storage = storage.mapValues { value in
-      guard var diffVal = value.cast(to: AnyDifferentiableStorage.self) else {
+      guard var diffVal = AnyArrayBuffer<DifferentiableArrayDispatch>(value) else {
         return value
       }
-      guard let dirElem = direction.storage[diffVal.tangentIdentifier] else {
+      guard let dirElem = direction.storage[ObjectIdentifier(diffVal.tangentVectorType)] else {
         return value
       }
       diffVal.move(along: dirElem)
-      return AnyArrayBuffer(diffVal)
+      // Note: This is a safe upcast.
+      return AnyElementArrayBuffer(unsafelyCasting: diffVal)
     }
   }
 

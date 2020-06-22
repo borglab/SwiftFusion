@@ -31,10 +31,9 @@ extension AllVectors {
   ///
   /// Precondition: All the variables in `self` are vectors.
   public var squaredNorm: Double {
-    return storage.values.lazy
-      .map { $0.storage as! AnyVectorStorage }
-      .map { $0.dot($0) }
-      .reduce(0, +)
+    return storage.values.reduce(into: 0) { (result, value) in
+      result += AnyVectorArrayBuffer(unsafelyCasting: value).dot(value)
+    }
   }
 
   /// Returns the scalar product of `lhs` with `rhs`, where `rhs` is viewed as a vector in the
@@ -43,9 +42,10 @@ extension AllVectors {
   /// Precondition: All the variables in `rhs` are vectors.
   public static func * (_ lhs: Double, _ rhs: Self) -> Self {
     VariableAssignments(storage: rhs.storage.mapValues { value in
-      var vector = value.cast(to: AnyVectorStorage.self)!
+      var vector = AnyArrayBuffer<VectorArrayDispatch>(unsafelyCasting: value)
       vector.scale(by: lhs)
-      return AnyArrayBuffer(vector)
+      // Note: This is a safe upcast.
+      return AnyElementArrayBuffer(unsafelyCasting: vector)
     })
   }
 
@@ -56,20 +56,21 @@ extension AllVectors {
   /// assignments for exactly the same sets of variables.
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     let r = Dictionary(uniqueKeysWithValues: lhs.storage.map {
-      (key, value) -> (ObjectIdentifier, AnyArrayBuffer<AnyArrayStorage>) in
-      var resultVector = value.cast(to: AnyVectorStorage.self)!
-      let rhsVector = rhs.storage[key]!.cast(to: AnyVectorStorage.self)!
+      (key, value) -> (ObjectIdentifier, AnyElementArrayBuffer) in
+      var resultVector = AnyArrayBuffer<VectorArrayDispatch>(unsafelyCasting: value)
+      let rhsVector = rhs.storage[key].unsafelyUnwrapped
       resultVector.add(rhsVector)
-      return (key, AnyArrayBuffer(resultVector))
+      // Note: This is a safe upcast.
+      return (key, AnyElementArrayBuffer(unsafelyCasting: resultVector))
     })
     return VariableAssignments(storage: r)
   }
 
   /// Returns the `ErrorVector` from the `perFactorID`-th factor of type `F`.
   subscript<F: NewLinearizableFactor>(_ perFactorID: Int, factorType _: F.Type) -> F.ErrorVector {
-    return storage[ObjectIdentifier(F.self)]!
-      .withUnsafeBufferPointer(assumingElementType: F.ErrorVector.self) { b in
-        return b[perFactorID]
-      }
+    let array = storage[ObjectIdentifier(F.self)].unsafelyUnwrapped
+    return ArrayBuffer<F.ErrorVector>(unsafelyDowncasting: array).withUnsafeBufferPointer { b in
+      b[perFactorID]
+    }
   }
 }

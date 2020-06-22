@@ -150,12 +150,15 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
     _ variableAssignments: VariableAssignments,
     _ body: (UnsafePointers) -> R
   ) -> R {
-    return variableAssignments
-      .storage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
-      .withUnsafeRawPointerToElements { headBase in
-        return Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
-          return body(
-            UnsafePointers(head: headBase.assumingMemoryBound(to: Head.self), tail: tailBase)
+    let headArray = variableAssignments.storage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
+    return ArrayBuffer<Head>(unsafelyDowncasting: headArray)
+      .withUnsafeBufferPointer { headBuffer in
+        Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
+          body(
+            UnsafePointers(
+              head: headBuffer.baseAddress ?? UnsafePointer(bitPattern: -1)!,
+              tail: tailBase
+            )
           )
         }
       }

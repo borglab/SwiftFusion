@@ -17,13 +17,13 @@ import PenguinStructures
 /// A factor graph.
 public struct NewFactorGraph {
   /// Dictionary from factor type to contiguous storage for that type.
-  var storage: [ObjectIdentifier: AnyArrayBuffer<AnyFactorStorage>] = [:]
+  var storage: [ObjectIdentifier: AnyFactorArrayBuffer] = [:]
 
   /// Creates an empty instance.
   public init() {}
 
   /// Creates an instance backed by the given `storage`.
-  internal init(storage: [ObjectIdentifier: AnyArrayBuffer<AnyFactorStorage>]) {
+  internal init(storage: [ObjectIdentifier: AnyFactorArrayBuffer]) {
     self.storage = storage
   }
 
@@ -31,24 +31,28 @@ public struct NewFactorGraph {
   public mutating func store<T: NewFactor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
-      default: AnyArrayBuffer(ArrayBuffer<FactorArrayStorage<T>>())
-    ].append(factor)
+      default: AnyFactorArrayBuffer(ArrayBuffer<T>())
+    ].unsafelyAppend(factor)
   }
 
   /// Stores `factor` in the graph.
   public mutating func store<T: NewLinearizableFactor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
-      default: AnyArrayBuffer(ArrayBuffer<LinearizableFactorArrayStorage<T>>())
-    ].append(factor)
+      default: AnyFactorArrayBuffer(
+        // Note: This is a safe upcast.
+        unsafelyCasting: AnyLinearizableFactorArrayBuffer(ArrayBuffer<T>()))
+    ].unsafelyAppend(factor)
   }
 
   /// Stores `factor` in the graph.
   public mutating func store<T: NewGaussianFactor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
-      default: AnyArrayBuffer(ArrayBuffer<GaussianFactorArrayStorage<T>>())
-    ].append(factor)
+      default: AnyFactorArrayBuffer(
+        // Note: This is a safe upcast.
+        unsafelyCasting: AnyGaussianFactorArrayBuffer(ArrayBuffer<T>()))
+    ].unsafelyAppend(factor)
   }
 
   /// Returns the total error, at `x`, of all the factors.
@@ -59,7 +63,7 @@ public struct NewFactorGraph {
   /// Returns the total error, at `x`, of all the linearizable factors.
   public func linearizableError(at x: VariableAssignments) -> Double {
     return storage.values.reduce(0) { (result, factors) in
-      guard let linearizableFactors = factors.cast(to: AnyLinearizableFactorStorage.self) else {
+      guard let linearizableFactors = AnyLinearizableFactorArrayBuffer(factors) else {
         return result
       }
       return result + linearizableFactors.errors(at: x).reduce(0, +)
@@ -69,7 +73,7 @@ public struct NewFactorGraph {
   /// Returns the error vectors, at `x`, of all the linearizable factors.
   public func errorVectors(at x: VariableAssignments) -> AllVectors {
     return AllVectors(storage: storage.compactMapValues { factors in
-      guard let linearizableFactors = factors.cast(to: AnyLinearizableFactorStorage.self) else {
+      guard let linearizableFactors = AnyLinearizableFactorArrayBuffer(factors) else {
         return nil
       }
       return AnyArrayBuffer(linearizableFactors.errorVectors(at: x))
@@ -91,7 +95,7 @@ public struct NewFactorGraph {
   public func linearized(at x: VariableAssignments) -> NewGaussianFactorGraph {
     return NewGaussianFactorGraph(
       storage: storage.compactMapValues { factors in
-        factors.cast(to: AnyLinearizableFactorStorage.self)?.linearized(at: x)
+        AnyLinearizableFactorArrayBuffer(factors)?.linearized(at: x)
       },
       zeroValues: x.tangentVectorZeros
     )
