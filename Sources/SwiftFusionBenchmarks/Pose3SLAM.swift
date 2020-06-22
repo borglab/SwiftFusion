@@ -27,7 +27,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   // The linear solver is 200 iterations of CGLS.
   suite.benchmark(
     "NonlinearFactorGraph, Pose3Example, 40 Gauss-Newton steps, 200 CGLS steps",
-    settings: Iterations(1)
+    settings: Iterations(1), TimeUnit(.ms)
   ) {
     var val = gridDataset_old.initialGuess
     gridDataset_old.graph += PriorFactor(0, Pose3())
@@ -55,7 +55,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
   // The linear solver is 200 iterations of CGLS.
   suite.benchmark(
     "NewFactorGraph, sphere2500, 30 LM steps, 200 CGLS steps",
-    settings: Iterations(1)
+    settings: Iterations(1), TimeUnit(.ms)
   ) {
     var val = sphere2500Dataset.initialGuess
     var graph = sphere2500Dataset.graph

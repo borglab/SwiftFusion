@@ -118,6 +118,20 @@ protocol AnyLinearizableFactorStorageImplementation: AnyLinearizableFactorStorag
 /// APIs that depend on `LinearizableFactor` `Element` type.
 extension ArrayStorageImplementation where Element: NewLinearizableFactor {
   /// Returns the error vectors of the factors given the values of the adjacent variables.
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewPriorFactor2>)
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewPriorFactor3>)
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewBetweenFactor2>)
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewBetweenFactor3>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector1>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector2>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector3>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector4>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector5>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<ScalarJacobianFactor<Vector6>>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_1>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor3x3_2>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_1>)
+  @_specialize(where Self == GaussianFactorArrayStorage<JacobianFactor6x6_2>)
   func errorVectors(at x: VariableAssignments)
     -> ArrayBuffer<VectorArrayStorage<Element.ErrorVector>>
   {
@@ -131,6 +145,10 @@ extension ArrayStorageImplementation where Element: NewLinearizableFactor {
   }
 
   /// Returns the linearized factors at the given values.
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewPriorFactor2>)
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewPriorFactor3>)
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewBetweenFactor2>)
+  @_specialize(where Self == LinearizableFactorArrayStorage<NewBetweenFactor3>)
   func linearized(at x: VariableAssignments)
     -> ArrayBuffer<GaussianFactorArrayStorage<Element.Linearization>>
   {
@@ -248,8 +266,8 @@ extension ArrayStorageImplementation where Element: NewGaussianFactor {
   {
     Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
       withUnsafeMutableBufferPointer { factors in
-        ArrayBuffer(factors.map { factor in
-          factor.errorVector_linearComponent(Element.Variables(varsBufs, indices: factor.edges))
+        ArrayBuffer(factors.lazy.map { f in
+          f.errorVector_linearComponent(Element.Variables(varsBufs, indices: f.edges))
         })
       }
     }
