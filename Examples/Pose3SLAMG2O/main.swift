@@ -26,6 +26,8 @@
 import Foundation
 import SwiftFusion
 import TensorFlow
+import TensorBoardX
+import TSCUtility
 
 struct FileHandlerOutputStream: TextOutputStream {
   private let fileHandle: FileHandle
@@ -44,14 +46,65 @@ struct FileHandlerOutputStream: TextOutputStream {
 }
 
 func main() {
+  var inputFilename = ""
+  var outputFilename = ""
+  var loggingFolder: String? = nil
+  var useChordal = false
   // Parse commandline.
-  guard CommandLine.arguments.count == 3 else {
-    print("Usage: Pose3SLAMG2O [path to .g2o file] [path to output csv file]")
-    return
+  do {
+    let parser = ArgumentParser(
+          commandName: "Pose3SLAMG2O",
+          usage: "[path to .g2o file] [path to output csv file] [path to logging folder]",
+          overview: "The command is used for argument parsing",
+          seeAlso: "getopt(1)")
+    let argsv = Array(CommandLine.arguments.dropFirst())
+    let input = parser.add(
+          positional: "input",
+          kind: String.self,
+          usage: "Input g2o file",
+          completion: .filename)
+    let output = parser.add(
+          positional: "output",
+          kind: String.self,
+          usage: "Output csv file",
+          completion: .filename)
+    let logging = parser.add(
+          option: "--logging",
+          shortName: "-l",
+          kind: String.self,
+          usage: "Tensorboard log folder",
+          completion: .filename)
+    let chordal = parser.add(
+          option: "--chordal",
+          shortName: "-c",
+          kind: Bool.self,
+          usage: "Use Chordal norm in BetweenFactor",
+          completion: ShellCompletion.none)
+    let parguments = try parser.parse(argsv)
+    
+    inputFilename = parguments.get(input)!
+    outputFilename = parguments.get(output)!
+    loggingFolder = parguments.get(logging)
+    if let c = parguments.get(chordal) {
+      print("Using Chordal norm in BetweenFactor")
+      useChordal = c
+    }
+  } catch ArgumentParserError.expectedValue(let value) {
+    print("Missing value for argument \(value).")
+    exit(1)
+  } catch ArgumentParserError.expectedArguments(let parser, let stringArray) {
+    print("Parser: \(parser) Missing arguments: \(stringArray.joined()).")
+    exit(1)
+  } catch {
+    print(error.localizedDescription)
+    exit(1)
   }
-  let g2oURL = URL(fileURLWithPath: CommandLine.arguments[1])
+  
+  let doTracing = loggingFolder != nil
+  
+  let g2oURL = URL(fileURLWithPath: inputFilename)
   let fileManager = FileManager.default
-  let filePath = URL(fileURLWithPath: CommandLine.arguments[2])
+  let filePath = URL(fileURLWithPath: outputFilename)
   
   print("Storing result at \(filePath.path)")
   
@@ -63,20 +116,44 @@ func main() {
     }
   }
   
+  var logFileWriter: SummaryWriter? = nil
+  let datasetName = g2oURL.deletingPathExtension().lastPathComponent
+  
+  if doTracing {
+    let fileWriterURL = URL(string: loggingFolder!)
+    
+    if let _f = fileWriterURL {
+      logFileWriter = SummaryWriter(logdir: _f, suffix: datasetName)
+    }
+  }
+  
   // Load .g2o file.
-  let problem = try! G2OReader.G2ONewFactorGraph(g2oFile3D: g2oURL)
+  let problem = try! G2OReader.G2ONewFactorGraph(g2oFile3D: g2oURL, chordal: useChordal)
 
   var val = problem.initialGuess
   var graph = problem.graph
   
   graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
   
-  var optimizer = LM()
+  var optimizer = LM(precision: 1e-1, max_iteration: 100)
+  
   optimizer.verbosity = .TRYLAMBDA
+  optimizer.max_iteration = 100
   
   do {
-    try optimizer.optimize(graph: graph, initial: &val)
+    var hook: ((NewFactorGraph, VariableAssignments, Double, Int) -> Void)? = nil
+    if doTracing {
+      hook = { fg, val, lambda, step in
+        logFileWriter!.addScalar(tag: "optimizer/loss", scalar: fg.error(at: val), globalStep: step)
+        logFileWriter!.addScalar(tag: "optimizer/lambda", scalar: lambda, globalStep: step)
+        logFileWriter!.flush()
+      }
+    }
+    try optimizer.optimize(graph: graph, initial: &val, hook: hook)
   } catch let error {
+    if doTracing {
+      logFileWriter!.addText(tag: "optimizer/message", text: "The solver gave up, message: \(error.localizedDescription)")
+    }
     print("The solver gave up, message: \(error.localizedDescription)")
   }
   
