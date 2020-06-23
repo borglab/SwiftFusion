@@ -206,5 +206,29 @@ class Scratch: XCTestCase {
     print(variables[TypedID<Pose2, Int>(0)])
     print(variables[TypedID<Pose2, Int>(1)])
     print(variables[TypedID<Pose2, Int>(2)])
+    
+    // Create initial state for MCMC sampler
+    let current_state = [0,1].map {i in variables[TypedID<Int, Int>(i)]}
+    
+    // Do MCMC the tfp way
+    let num_results = 50
+    let num_burnin_steps = 30
+    
+    typealias State = [Int]
+
+    let kernel = RandomWalkMetropolis(
+      target_log_prob_fn: {(x:State) in 0.0}, //  tfd.Normal(loc=dtype(0), scale=dtype(1))
+      new_state_fn: {(x:State) in x}
+    )
+    
+    let states = sampleChain(
+      num_results,
+      current_state,
+      kernel,
+      num_burnin_steps
+    )
+    _ = states as Array
+    XCTAssertEqual(states.count, num_results)
+    print(states)
   }
 }
