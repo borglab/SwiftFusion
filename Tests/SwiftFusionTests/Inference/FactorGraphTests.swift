@@ -26,29 +26,29 @@ class FactorGraphTests: XCTestCase {
     let pose2ID = TypedID<Pose2, Int>(1)
 
     var graph = FactorGraph()
-    graph.store(PriorFactor2(pose1ID, Pose2(1, 2, 3)))
-    graph.store(PriorFactor2(pose2ID, Pose2(4, 5, 6)))
-    graph.store(BetweenFactor2(pose1ID, pose2ID, Pose2(7, 8, 9)))
+    graph.store(PriorFactor(pose1ID, Pose2(1, 2, 3)))
+    graph.store(PriorFactor(pose2ID, Pose2(4, 5, 6)))
+    graph.store(BetweenFactor(pose1ID, pose2ID, Pose2(7, 8, 9)))
 
     XCTAssertEqual(
-      graph.factors(type: PriorFactor2.self).map { $0.edges },
+      graph.factors(type: PriorFactor<Pose2>.self).map { $0.edges },
       [Tuple1(pose1ID), Tuple1(pose2ID)]
     )
     XCTAssertEqual(
-      graph.factors(type: PriorFactor2.self).map { $0.prior },
+      graph.factors(type: PriorFactor<Pose2>.self).map { $0.prior },
       [Pose2(1, 2, 3), Pose2(4, 5, 6)]
     )
 
     XCTAssertEqual(
-      graph.factors(type: BetweenFactor2.self).map { $0.edges },
+      graph.factors(type: BetweenFactor<Pose2>.self).map { $0.edges },
       [Tuple2(pose1ID, pose2ID)]
     )
     XCTAssertEqual(
-      graph.factors(type: BetweenFactor2.self).map { $0.difference },
+      graph.factors(type: BetweenFactor<Pose2>.self).map { $0.difference },
       [Pose2(7, 8, 9)]
     )
 
-    XCTAssertEqual(graph.factors(type: PriorFactor3.self).count, 0)
+    XCTAssertEqual(graph.factors(type: PriorFactor<Pose3>.self).count, 0)
   }
 
   func testSimplePose2SLAM() {
@@ -60,11 +60,11 @@ class FactorGraphTests: XCTestCase {
     let pose5ID = x.store(Pose2(Rot2(-.pi / 2), Vector2(2.1, 2.1)))
 
     var graph = FactorGraph()
-    graph.store(BetweenFactor2(pose2ID, pose1ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(BetweenFactor2(pose3ID, pose2ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(BetweenFactor2(pose4ID, pose3ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(BetweenFactor2(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(PriorFactor2(pose1ID, Pose2(0, 0, 0)))
+    graph.store(BetweenFactor(pose2ID, pose1ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor(pose3ID, pose2ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor(pose4ID, pose3ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(PriorFactor(pose1ID, Pose2(0, 0, 0)))
 
     for _ in 0..<3 {
       let linearized = graph.linearized(at: x)
@@ -123,15 +123,15 @@ class FactorGraphTests: XCTestCase {
     let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     
     var fg = FactorGraph()
-    fg.store(PriorFactor3(id0, p0))
+    fg.store(PriorFactor(id0, p0))
     let delta: Pose3 = between(p0, p1)
 
-    fg.store(BetweenFactor3(id0, id1, delta))
-    fg.store(BetweenFactor3(id1, id2, delta))
-    fg.store(BetweenFactor3(id2, id3, delta))
-    fg.store(BetweenFactor3(id3, id4, delta))
-    fg.store(BetweenFactor3(id4, id5, delta))
-    fg.store(BetweenFactor3(id5, id0, delta))
+    fg.store(BetweenFactor(id0, id1, delta))
+    fg.store(BetweenFactor(id1, id2, delta))
+    fg.store(BetweenFactor(id2, id3, delta))
+    fg.store(BetweenFactor(id3, id4, delta))
+    fg.store(BetweenFactor(id4, id5, delta))
+    fg.store(BetweenFactor(id5, id0, delta))
 
     // optimize
     for _ in 0..<16 {
@@ -168,15 +168,15 @@ class FactorGraphTests: XCTestCase {
       let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor(randomNormal: [6]))))
       
       var fg = FactorGraph()
-      fg.store(PriorFactor3(id0, p0))
+      fg.store(PriorFactor(id0, p0))
       let delta: Pose3 = between(p0, p1)
 
-      fg.store(BetweenFactorAlternative3(id0, id1, delta))
-      fg.store(BetweenFactorAlternative3(id1, id2, delta))
-      fg.store(BetweenFactorAlternative3(id2, id3, delta))
-      fg.store(BetweenFactorAlternative3(id3, id4, delta))
-      fg.store(BetweenFactorAlternative3(id4, id5, delta))
-      fg.store(BetweenFactorAlternative3(id5, id0, delta))
+      fg.store(BetweenFactorAlternative(id0, id1, delta))
+      fg.store(BetweenFactorAlternative(id1, id2, delta))
+      fg.store(BetweenFactorAlternative(id2, id3, delta))
+      fg.store(BetweenFactorAlternative(id3, id4, delta))
+      fg.store(BetweenFactorAlternative(id4, id5, delta))
+      fg.store(BetweenFactorAlternative(id5, id0, delta))
 
       // optimize
       for _ in 0..<16 {

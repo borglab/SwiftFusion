@@ -133,7 +133,7 @@ func main() {
   var val = problem.initialGuess
   var graph = problem.graph
   
-  graph.store(PriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
+  graph.store(PriorFactor(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
   
   var optimizer = LM(precision: 1e-1, max_iteration: 100)
   

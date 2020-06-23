@@ -19,7 +19,7 @@ import PenguinStructures
 public struct JacobianFactor<
   Rows: FixedSizeArray,
   ErrorVector: EuclideanVectorN
->: GaussianFactor where Rows.Element: EuclideanVectorN & VariableTuple {
+>: LinearApproximationFactor where Rows.Element: EuclideanVectorN & DifferentiableVariableTuple {
   public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.
@@ -43,26 +43,29 @@ public struct JacobianFactor<
     self.edges = edges
   }
 
-  /// Creates a Jacobian factor that linearizes `f` at `x`, and is adjacent to the variables
-  /// identifed by edges.
-  init<Input: Differentiable & DifferentiableVariableTuple>(
-    linearizing f: @differentiable (Input) -> ErrorVector,
-    at x: Input,
-    edges: Input.Indices
-  ) where Input.TangentVector == Variables, Input.TangentIndices == Variables.Indices {
-    let (value, pb) = valueWithPullback(at: x, in: f)
+  /// Creates a factor that linearly approximates `f` at `x`.
+  public init<F: LinearizableFactor>(linearizing f: F, at x: F.Variables)
+  where F.Variables.TangentVector == Variables, F.ErrorVector == ErrorVector {
+    let (value, pb) = valueWithPullback(at: x, in: f.errorVector)
     let rows = Rows(ErrorVector.standardBasis.lazy.map(pb))
     self.jacobian = rows
     self.error = value
-    self.edges = Input.linearized(edges)
+    self.edges = F.Variables.linearized(f.edges)
   }
 
   public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }
 
+  @differentiable
   public func errorVector(at x: Variables) -> ErrorVector {
     return error - errorVector_linearComponent(x)
+  }
+
+  @usableFromInline
+  @derivative(of: errorVector)
+  func vjpErrorVector(at x: Variables) -> (value: ErrorVector, pullback: (ErrorVector) -> Variables) {
+    return (errorVector(at: x), errorVector_linearComponent_adjoint)
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {
@@ -86,11 +89,6 @@ public struct JacobianFactor<
         }
       }
     }
-  }
-
-  public typealias Linearization = Self
-  public func linearized(at x: Variables) -> Self {
-    return self
   }
 }
 

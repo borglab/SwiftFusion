@@ -21,6 +21,12 @@ public struct ScalarJacobianFactor<ErrorVector: EuclideanVectorN>: GaussianFacto
   public let edges: Variables.Indices
   public let scalar: Double
 
+  public init(edges: Variables.Indices, scalar: Double) {
+    self.edges = edges
+    self.scalar = scalar
+  }
+
+  @differentiable
   public func errorVector(at x: Variables) -> ErrorVector {
     return scalar * x.head
   }
@@ -35,10 +41,5 @@ public struct ScalarJacobianFactor<ErrorVector: EuclideanVectorN>: GaussianFacto
 
   public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {
     return Tuple1(scalar * y)
-  }
-
-  public typealias Linearization = Self
-  public func linearized(at x: Tuple1<ErrorVector>) -> ScalarJacobianFactor<ErrorVector> {
-    return self
   }
 }
