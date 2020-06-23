@@ -36,12 +36,12 @@ public struct FactorGraph {
   }
 
   /// Stores `factor` in the graph.
-  public mutating func store<T: LinearizableFactor>(_ factor: T) {
+  public mutating func store<T: VectorFactor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
       default: AnyFactorArrayBuffer(
         // Note: This is a safe upcast.
-        unsafelyCasting: AnyLinearizableFactorArrayBuffer(ArrayBuffer<T>()))
+        unsafelyCasting: AnyVectorFactorArrayBuffer(ArrayBuffer<T>()))
     ].unsafelyAppend(factor)
   }
 
@@ -71,7 +71,7 @@ public struct FactorGraph {
   /// Returns the total error, at `x`, of all the linearizable factors.
   public func linearizableError(at x: VariableAssignments) -> Double {
     return storage.values.reduce(0) { (result, factors) in
-      guard let linearizableFactors = AnyLinearizableFactorArrayBuffer(factors) else {
+      guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
         return result
       }
       return result + linearizableFactors.errors(at: x).reduce(0, +)
@@ -81,7 +81,7 @@ public struct FactorGraph {
   /// Returns the error vectors, at `x`, of all the linearizable factors.
   public func errorVectors(at x: VariableAssignments) -> AllVectors {
     return AllVectors(storage: storage.compactMapValues { factors in
-      guard let linearizableFactors = AnyLinearizableFactorArrayBuffer(factors) else {
+      guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
         return nil
       }
       return AnyArrayBuffer(linearizableFactors.errorVectors(at: x))
@@ -103,7 +103,7 @@ public struct FactorGraph {
   public func linearized(at x: VariableAssignments) -> GaussianFactorGraph {
     return GaussianFactorGraph(
       storage: storage.compactMapValues { factors in
-        AnyLinearizableFactorArrayBuffer(factors)?.linearized(at: x)
+        AnyVectorFactorArrayBuffer(factors)?.linearized(at: x)
       },
       zeroValues: x.tangentVectorZeros
     )

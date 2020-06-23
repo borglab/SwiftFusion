@@ -47,13 +47,9 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
     return 0.5 * errorVector(at: x).squaredNorm
   }
   
+  @differentiable
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head)
-  }
-  
-  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
@@ -72,6 +68,8 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   }
   
   public typealias ErrorVector = Vector9
+
+  @differentiable
   public func errorVector(_ val: Matrix3) -> ErrorVector {
     (val - prior).vec
   }
@@ -83,13 +81,9 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
     return 0.5 * errorVector(at: x).squaredNorm
   }
   
+  @differentiable
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head)
-  }
-  
-  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
@@ -113,12 +107,12 @@ public struct ChordalInitialization {
   public func buildPose3graph(graph: FactorGraph) -> FactorGraph {
     var pose3Graph = FactorGraph()
     
-    for factor in graph.factors(type: BetweenFactor3.self) {
+    for factor in graph.factors(type: BetweenFactor<Pose3>.self) {
       pose3Graph.store(factor)
     }
     
-    for factor in graph.factors(type: PriorFactor3.self) {
-      pose3Graph.store(BetweenFactor3(anchorId, factor.edges.head, factor.prior))
+    for factor in graph.factors(type: PriorFactor<Pose3>.self) {
+      pose3Graph.store(BetweenFactor(anchorId, factor.edges.head, factor.prior))
     }
     
     return pose3Graph
@@ -150,7 +144,7 @@ public struct ChordalInitialization {
     associations[anchorId.perTypeID] = orientations.store(Matrix3.zero)
     
     // iterate the pose3 graph and make corresponding relaxed factors
-    for factor in g.factors(type: BetweenFactor3.self) {
+    for factor in g.factors(type: BetweenFactor<Pose3>.self) {
       let R = factor.difference.rot.coordinate.R
       let frob_factor = RelaxedRotationFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R)
       orientationGraph.store(frob_factor)
@@ -211,7 +205,7 @@ public struct ChordalInitialization {
       let _ = val.store(Pose3(orientations[TypedID<Rot3>(v.perTypeID)], Vector3(0,0,0)))
     }
     
-    g.store(PriorFactor3(anchorId, Pose3()))
+    g.store(PriorFactor(anchorId, Pose3()))
     let anchor_id = val.store(Pose3(Rot3(), Vector3(0,0,0)))
     assert(anchor_id == anchorId)
     

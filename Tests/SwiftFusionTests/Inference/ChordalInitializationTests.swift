@@ -48,12 +48,12 @@ let pose3 = Pose3(R3,p3)
 /// simple test graph for the chordal initialization
 func graph1() -> FactorGraph {
   var g = FactorGraph()
-  g.store(BetweenFactor3(x0, x1, between(pose0, pose1)))
-  g.store(BetweenFactor3(x1, x2, between(pose1, pose2)))
-  g.store(BetweenFactor3(x2, x3, between(pose2, pose3)))
-  g.store(BetweenFactor3(x2, x0, between(pose2, pose0)))
-  g.store(BetweenFactor3(x0, x3, between(pose0, pose3)))
-  g.store(PriorFactor3(x0, pose0))
+  g.store(BetweenFactor(x0, x1, between(pose0, pose1)))
+  g.store(BetweenFactor(x1, x2, between(pose1, pose2)))
+  g.store(BetweenFactor(x2, x3, between(pose2, pose3)))
+  g.store(BetweenFactor(x2, x0, between(pose2, pose0)))
+  g.store(BetweenFactor(x0, x3, between(pose0, pose3)))
+  g.store(PriorFactor(x0, pose0))
   return g
 }
 
@@ -69,7 +69,7 @@ class ChordalInitializationTests: XCTestCase {
     
     let frf = RelaxedRotationFactorRot3(p0, p1, Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
     
-    let frf_j = frf.linearized(at: Tuple2(val[p0], val[p1]))
+    let frf_j = JacobianFactor9x3x3_2(linearizing: frf, at: Tuple2(val[p0], val[p1]))
     
     let Rij = Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2)
     let M9: Jacobian9x3x3_2 = Array9([
@@ -96,14 +96,14 @@ class ChordalInitializationTests: XCTestCase {
     )
     
     let frf_zero = RelaxedRotationFactorRot3(p0, p1, Matrix3.identity)
-    let frf_zero_j = frf_zero.linearized(at: Tuple2(val[p0], val[p1]))
+    let frf_zero_j = JacobianFactor9x3x3_2(linearizing: frf_zero, at: Tuple2(val[p0], val[p1]))
     
     // assert the zero error is correct
     assertAllKeyPathEqual(frf_zero_j.error, jf.error, accuracy: 1e-5)
     
     let fpf = RelaxedAnchorFactorRot3(p0, Matrix3.identity)
     
-    let fpf_j = fpf.linearized(at: Tuple1(Matrix3.zero))
+    let fpf_j = JacobianFactor9x3x3_1(linearizing: fpf, at: Tuple1(Matrix3.zero))
     
     let I_9x9: Jacobian9x3x3_1 = Array9([
       Tuple1(Matrix3(1,0,0,0,0,0,0,0,0)),

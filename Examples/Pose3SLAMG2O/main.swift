@@ -144,7 +144,7 @@ func main() {
   var val = problem.initialGuess
   var graph = problem.graph
   
-  graph.store(PriorFactor3(TypedID(0), Pose3()))
+  graph.store(PriorFactor(TypedID(0), Pose3()))
   
   if useChordalInitialization {
     val = ChordalInitialization.GetInitializations(graph: graph, ids: problem.variableId)

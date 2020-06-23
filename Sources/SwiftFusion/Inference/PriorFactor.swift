@@ -15,14 +15,7 @@
 import PenguinStructures
 
 /// A factor that specifies a prior on a pose.
-///
-/// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
-/// documentation on `JacobianFactor.jacobian` for more information. Use the typealiases below to
-/// avoid specifying this type parameter every time you create an instance.
-public struct PriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  LinearizableFactor
-  where JacobianRows.Element == Tuple1<Pose.TangentVector>
-{
+public struct PriorFactor<Pose: LieGroup>: LinearizableFactor {
   public typealias Variables = Tuple1<Pose>
 
   public let edges: Variables.Indices
@@ -45,18 +38,8 @@ public struct PriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
     return 0.5 * errorVector(at: x).squaredNorm
   }
 
+  @differentiable
   public func errorVector(at x: Variables) -> Pose.TangentVector {
     return errorVector(x.head)
   }
-
-  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
-  }
 }
-
-/// A prior factor on a `Pose2`.
-public typealias PriorFactor2 = PriorFactor<Pose2, Array3<Tuple1<Vector3>>>
-
-/// A prior factor on a `Pose3`.
-public typealias PriorFactor3 = PriorFactor<Pose3, Array6<Tuple1<Vector6>>>

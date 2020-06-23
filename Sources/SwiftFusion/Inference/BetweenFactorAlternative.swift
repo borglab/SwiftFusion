@@ -15,10 +15,7 @@
 import PenguinStructures
 
 /// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Pose3
-public struct BetweenFactorAlternative<JacobianRows: FixedSizeArray>:
-  LinearizableFactor
-  where JacobianRows.Element == Tuple2<Pose3.TangentVector, Pose3.TangentVector>
-{
+public struct BetweenFactorAlternative: LinearizableFactor {
   public typealias Variables = Tuple2<Pose3, Pose3>
 
   public let edges: Variables.Indices
@@ -47,13 +44,9 @@ public struct BetweenFactorAlternative<JacobianRows: FixedSizeArray>:
     return 0.5 * errorVector(at: x).squaredNorm
   }
 
+  @differentiable
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head)
-  }
-
-  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
@@ -68,6 +61,3 @@ public typealias JacobianFactor12x6_1 = JacobianFactor<Array12<Tuple1<Vector6>>,
 
 /// A Jacobian factor with 2 6-dimensional inputs and a 12-dimensional error vector.
 public typealias JacobianFactor12x6_2 = JacobianFactor<Array12<Tuple2<Vector6, Vector6>>, Vector12>
-
-/// A between factor on `Pose3`.
-public typealias BetweenFactorAlternative3 = BetweenFactorAlternative<Array12<Tuple2<Vector6, Vector6>>>

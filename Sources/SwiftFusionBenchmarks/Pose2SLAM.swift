@@ -62,7 +62,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
   ) {
     var x = intelDataset.initialGuess
     var graph = intelDataset.graph
-    graph.store(PriorFactor2(TypedID(0), Pose2(0, 0, 0)))
+    graph.store(PriorFactor(TypedID(0), Pose2(0, 0, 0)))
 
     for _ in 0..<10 {
       let linearized = graph.linearized(at: x)

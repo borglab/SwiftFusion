@@ -60,7 +60,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     var val = sphere2500Dataset.initialGuess
     var graph = sphere2500Dataset.graph
     
-    graph.store(PriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
+    graph.store(PriorFactor(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
     
     var optimizer = LM()
     optimizer.verbosity = .SUMMARY
