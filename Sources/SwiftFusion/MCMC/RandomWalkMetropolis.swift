@@ -17,20 +17,20 @@ import Foundation
 /// Runs one step of the RWM algorithm with symmetric proposal.
 /// Inspired by tfp [RandomWalkMetropolis](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc/RandomWalkMetropolis)
 /// TODO(frank): currently does Double only, should be generic
-class RandomWalkMetropolis<State> : TransitionKernel {
-  typealias Results = Double // target_log_prob_fn of previously accepted state
+public class RandomWalkMetropolis<State> : TransitionKernel {
+  public typealias Results = Double // target_log_prob_fn of previously accepted state
   
   let target_log_prob_fn: (State) -> Double
   let new_state_fn : (State)->State
   
-  init(target_log_prob_fn: @escaping (State) -> Double, new_state_fn : @escaping (State)->State) {
+  public init(target_log_prob_fn: @escaping (State) -> Double, new_state_fn : @escaping (State)->State) {
     self.target_log_prob_fn = target_log_prob_fn
     self.new_state_fn = new_state_fn
   }
   
   /// Runs one iteration of Random Walk Metropolis.
   /// TODO(frank): should this be done with inout params in Value-semantics world?
-  func one_step(_ current_state: State, _ previous_kernel_results: Results) -> (State, Results) {
+  public func one_step(_ current_state: State, _ previous_kernel_results: Results) -> (State, Results) {
     
     // calculate next state, and new log probability
     let new_state = new_state_fn(current_state)
@@ -52,7 +52,7 @@ class RandomWalkMetropolis<State> : TransitionKernel {
   }
   
   /// Initializes side information
-  func bootstrap_results(_ init_state: State) -> Results {
+  public func bootstrap_results(_ init_state: State) -> Results {
     return target_log_prob_fn(init_state)
   }
 }

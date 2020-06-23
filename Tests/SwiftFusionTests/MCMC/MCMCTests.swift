@@ -6,6 +6,7 @@
 //
 
 import TensorFlow
+import SwiftFusion
 
 import XCTest
 
