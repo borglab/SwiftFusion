@@ -14,16 +14,15 @@
 
 /// Implements Markov chain Monte Carlo via repeated TransitionKernel steps
 /// Inspired by tfp [sample_chain](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc/sample_chain)
-public func sampleChain<State, Kernel:TransitionKernel>(_ num_results:Int,
-                                                        _ init_state:State,
-                                                        _ kernel:Kernel,
-                                                        _ num_burnin_steps:Int) -> Array<State>
-where Kernel.State==State {
+public func sampleChain<Kernel:TransitionKernel>(_ num_results:Int,
+                                                 _ init_state:Kernel.State,
+                                                 _ kernel:Kernel,
+                                                 _ num_burnin_steps:Int) -> Array<Kernel.State> {
   // Initialize kernel side information
   var results = kernel.bootstrap_results(init_state)
   
   // Allocate result
-  var states : [State] = [init_state]
+  var states = [init_state]
   states.reserveCapacity(num_burnin_steps + num_results)
   
   // Run sampler
