@@ -66,11 +66,26 @@ public struct NewJacobianFactor<
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {
-    return ErrorVector(jacobian.lazy.map { $0.dot(x) })
+    // The compiler isn't able to optimize the closure away if we map `jacobian`, but it is able
+    // to optimize the closure away if we map `jacobian`'s `UnsafeBufferPointer`.
+    jacobian.withUnsafeBufferPointer { rows in
+      ErrorVector(rows.lazy.map { $0.dot(x) })
+    }
   }
 
   public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {
-    return zip(y.scalars, jacobian).lazy.map(*).reduce(Variables.zero, +)
+    // We use `UnsafeBufferPointer`s to avoid forming collections that can't be optimized away.
+    y.withUnsafeBufferPointer { scalars in
+      jacobian.withUnsafeBufferPointer { rows in
+        // We reduce the range `0..<ErrorVector.dimension` instead of `zip(scalars, rows)`, to
+        // avoid forming collections that can't be optimized away.
+        // TODO: This is not getting unrolled after `ErrorVector` is specialized. Convincing the
+        // optimizer to unroll it might speed things up.
+        (0..<ErrorVector.dimension).reduce(into: Variables.zero) { (result, i) in
+          result += scalars[i] * rows[i]
+        }
+      }
+    }
   }
 
   public typealias Linearization = Self

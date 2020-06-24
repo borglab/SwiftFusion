@@ -29,7 +29,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
   // The linear solver is 100 iterations of CGLS.
   suite.benchmark(
     "NonlinearFactorGraph, Intel, 5 Gauss-Newton steps, 100 CGLS steps",
-    settings: Iterations(1)
+    settings: Iterations(1), TimeUnit(.ms)
   ) {
     var val = intelDataset.initialGuess
     for _ in 0..<5 {
@@ -58,7 +58,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
   // The linear solver is 500 iterations of CGLS.
   suite.benchmark(
     "NewFactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
-    settings: Iterations(1)
+    settings: Iterations(1), TimeUnit(.ms)
   ) {
     var x = intelDatasetNew.initialGuess
     var graph = intelDatasetNew.graph

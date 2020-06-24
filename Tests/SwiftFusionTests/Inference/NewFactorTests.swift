@@ -74,8 +74,8 @@ fileprivate struct ExampleFactorGraph {
   var motionLabelIDs = [TypedID<Int, Int>]()
   var poseIDs = [TypedID<Pose2, Int>]()
 
-  var priorFactors = ArrayBuffer<FactorArrayStorage<NewPriorFactor2>>()
-  var motionFactors = ArrayBuffer<FactorArrayStorage<SwitchingMotionModelFactor2>>()
+  var priorFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<NewPriorFactor2>())
+  var motionFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<SwitchingMotionModelFactor2>())
 
   init() {
     // Set up the initial guess.
@@ -89,13 +89,13 @@ fileprivate struct ExampleFactorGraph {
 
     // Set up the factor graph.
 
-    _ = priorFactors.append(NewPriorFactor(poseIDs[0], Pose2(0, 0, 0)))
+    _ = priorFactors.unsafelyAppend(NewPriorFactor2(poseIDs[0], Pose2(0, 0, 0)))
 
-    _ = motionFactors.append(SwitchingMotionModelFactor(
+    _ = motionFactors.unsafelyAppend(SwitchingMotionModelFactor2(
       edges: Tuple3(motionLabelIDs[0], poseIDs[0], poseIDs[1]),
       motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
     ))
-    _ = motionFactors.append(SwitchingMotionModelFactor(
+    _ = motionFactors.unsafelyAppend(SwitchingMotionModelFactor2(
       edges: Tuple3(motionLabelIDs[1], poseIDs[1], poseIDs[2]),
       motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
     ))
@@ -115,11 +115,26 @@ class NewFactorTests: XCTestCase {
     XCTAssertEqual(motionErrors[1], Vector3(0.1, 0, 0).squaredNorm, accuracy: 1e-6)
   }
 
+  /// Test the error vectors from the example factor graph.
+  func testErrorVectors() {
+    let graph = ExampleFactorGraph()
+
+    let priorErrorVectors = ArrayBuffer<Vector3>(
+      unsafelyDowncasting: graph.priorFactors.errorVectors(at: graph.initialGuess))
+    XCTAssertEqual(priorErrorVectors[0], Vector3(0, 0, 0))
+
+    let motionErrorVectors = ArrayBuffer<Vector3>(
+      unsafelyDowncasting: graph.motionFactors.errorVectors(at: graph.initialGuess))
+    XCTAssertEqual(motionErrorVectors[0], Vector3(0, 0, 0))
+    assertAllKeyPathEqual(motionErrorVectors[1], Vector3(-0.1, 0, 0), accuracy: 1e-6)
+  }
+
   /// Test linearizing the example factor graph.
   func testLinearized() {
     let graph = ExampleFactorGraph()
 
-    let priorsLinearized = graph.priorFactors.linearized(at: graph.initialGuess)
+    let priorsLinearized = ArrayBuffer<JacobianFactor3x3_1>(
+      unsafelyDowncasting: graph.priorFactors.linearized(at: graph.initialGuess))
     XCTAssertEqual(priorsLinearized[0].jacobian, Array3(
       Tuple1(Vector3(1, 0, 0)),
       Tuple1(Vector3(0, 1, 0)),
@@ -127,7 +142,8 @@ class NewFactorTests: XCTestCase {
     ))
     XCTAssertEqual(priorsLinearized[0].error, Vector3(0, 0, 0))
 
-    let motionsLinearized = graph.motionFactors.linearized(at: graph.initialGuess)
+    let motionsLinearized = ArrayBuffer<JacobianFactor3x3_2>(
+      unsafelyDowncasting: graph.motionFactors.linearized(at: graph.initialGuess))
     XCTAssertEqual(motionsLinearized[0].jacobian, Array3(
       Tuple2(Vector3(-1, 0, 0), Vector3(1, 0, 0)),
       Tuple2(Vector3(1, -1, 0), Vector3(0, 1, 0)),
@@ -161,13 +177,13 @@ class NewFactorTests: XCTestCase {
     var variableAssignments = VariableAssignments()
     let vectorVar1ID = variableAssignments.store(Vector2(1, 2))
 
-    var factors =
-      ArrayBuffer<GaussianFactorArrayStorage<NewJacobianFactor<Array2<Tuple1<Vector2>>, Vector2>>>()
+    var factors = AnyGaussianFactorArrayBuffer(
+      ArrayBuffer<NewJacobianFactor<Array2<Tuple1<Vector2>>, Vector2>>())
     let matrix1 = Array2(
       Tuple1(Vector2(1, 1)),
       Tuple1(Vector2(0, 1))
     )
-    _ = factors.append(NewJacobianFactor(
+    _ = factors.unsafelyAppend(NewJacobianFactor(
       jacobian: matrix1,
       error: Vector2(0, 0),
       edges: Tuple1(vectorVar1ID)
@@ -176,22 +192,25 @@ class NewFactorTests: XCTestCase {
       Tuple1(Vector2(0, 3)),
       Tuple1(Vector2(7, 0))
     )
-    _ = factors.append(NewJacobianFactor(
+    _ = factors.unsafelyAppend(NewJacobianFactor(
       jacobian: matrix2,
       error: Vector2(100, 200),
       edges: Tuple1(vectorVar1ID)
     ))
 
-    let errorVectors = factors.errorVectors(at: variableAssignments)
+    let errorVectors = ArrayBuffer<Vector2>(
+      unsafelyDowncasting: factors.errorVectors(at: variableAssignments))
     XCTAssertEqual(errorVectors[0], Vector2(-3, -2))  // zero - matrix1 * [1 2]
     XCTAssertEqual(errorVectors[1], Vector2(94, 193))  // [100 200] - matrix2 * [1 2]
-    let forwardResult = factors.errorVector_linearComponent(variableAssignments)
+    let forwardResult = ArrayBuffer<Vector2>(
+      unsafelyDowncasting: factors.errorVectors_linearComponent(variableAssignments))
     XCTAssertEqual(forwardResult[0], Vector2(3, 2))  // matrix1 * [1 2]
     XCTAssertEqual(forwardResult[1], Vector2(6, 7))  // matrix2 * [1 2]
 
     var adjointResult = VariableAssignments()
     let adjointResultId = adjointResult.store(Vector2(0, 0))
-    factors.errorVector_linearComponent_adjoint(forwardResult, into: &adjointResult)
+    factors.errorVectors_linearComponent_adjoint(
+      AnyElementArrayBuffer(forwardResult), into: &adjointResult)
 
     // matrix1^T * [3 2] + matrix2^T * [6 7]
     XCTAssertEqual(adjointResult[adjointResultId], Vector2(52, 23))

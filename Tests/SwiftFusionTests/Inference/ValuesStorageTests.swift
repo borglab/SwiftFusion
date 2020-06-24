@@ -19,51 +19,70 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
-fileprivate typealias VectorArray<Element: EuclideanVectorN> =
-  ArrayBuffer<VectorArrayStorage<Element>>
-fileprivate typealias DifferentiableArray<Element: Differentiable>
-  = ArrayBuffer<DifferentiableArrayStorage<Element>> where Element.TangentVector: EuclideanVectorN
-
 class ValuesStorageTests: XCTestCase {
-  
-  func testDifferentiableMove() {
-    var values = DifferentiableArray((0..<5).map { _ in Pose2(0, 0, 0) })
-    let directions = VectorArray((0..<5).map { _ in Vector3(1, 0, 0) })
-    values.move(along: directions)
-    for i in 0..<5 {
-      XCTAssertEqual(values[i], Pose2(0, 0, 1))
-    }
+  func testDifferentiableTangentVectorType() {
+    let values = AnyDifferentiableArrayBuffer(ArrayBuffer([Pose2(0, 0, 0), Pose2(1, 0, 0)]))
+    XCTAssertEqual(
+      ObjectIdentifier(values.tangentVectorType), ObjectIdentifier(Pose2.TangentVector.self))
   }
-  
-  func testVectorMove() {
-    var values = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
-    let directions = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
+
+  func testDifferentiableTangentVectorZeros() {
+    let values = AnyDifferentiableArrayBuffer(ArrayBuffer([Pose2(0, 0, 0), Pose2(1, 0, 0)]))
+    assertElementsEqual(values.tangentVectorZeros, (0..<2).map { _ in Vector3.zero })
+  }
+
+  func testDifferentiableMove() {
+    var values = AnyDifferentiableArrayBuffer(ArrayBuffer([Pose2(0, 0, 0), Pose2(1, 0, 0)]))
+    let directions = AnyElementArrayBuffer(ArrayBuffer([Vector3(0, 0, 0), Vector3(0, 0, 1)]))
     values.move(along: directions)
-    for i in 0..<5 {
-      XCTAssertEqual(values[i], Vector3(11, 22, 33))
-    }
+    assertElementsEqual(values, [Pose2(0, 0, 0), Pose2(1, 1, 0)])
+  }
+
+  func testVectorTangentVectorZeros() {
+    let v1 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 2, 3), Vector3(4, 5, 6)]))
+    assertElementsEqual(v1.tangentVectorZeros, (0..<2).map { _ in Vector3(0, 0, 0) })
+  }
+
+  func testVectorMove() {
+    var v1 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 2, 3), Vector3(4, 5, 6)]))
+    let v2 = AnyElementArrayBuffer(ArrayBuffer([Vector3(1, 1, 1), Vector3(2, 2, 2)]))
+    v1.move(along: v2)
+    assertElementsEqual(v1, [Vector3(2, 3, 4), Vector3(6, 7, 8)])
   }
 
   func testVectorAdd() {
-    var a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
-    let b = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
-    a.add(b)
-    for i in 0..<5 {
-      XCTAssertEqual(a[i], Vector3(11, 22, 33))
-    }
+    var v1 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 2, 3), Vector3(4, 5, 6)]))
+    let v2 = AnyElementArrayBuffer(ArrayBuffer([Vector3(1, 1, 1), Vector3(2, 2, 2)]))
+    v1.add(v2)
+    assertElementsEqual(v1, [Vector3(2, 3, 4), Vector3(6, 7, 8)])
   }
 
   func testVectorScale() {
-    var a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
-    a.scale(by: 10)
-    for i in 0..<5 {
-      XCTAssertEqual(a[i], Vector3(10, 20, 30))
-    }
+    var v1 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 2, 3), Vector3(4, 5, 6)]))
+    v1.scale(by: 10)
+    assertElementsEqual(v1, [Vector3(10, 20, 30), Vector3(40, 50, 60)])
   }
 
   func testVectorDot() {
-    let a = VectorArray((0..<5).map { _ in Vector3(1, 2, 3) })
-    let b = VectorArray((0..<5).map { _ in Vector3(10, 20, 30) })
-    XCTAssertEqual(a.dot(b), 5 * (Double(1 * 10 + 2 * 20 + 3 * 30)))
+    let v1 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 2, 3), Vector3(4, 5, 6)]))
+    let v2 = AnyElementArrayBuffer(ArrayBuffer([Vector3(1, 1, 1), Vector3(2, 2, 2)]))
+    XCTAssertEqual(v1.dot(v2), 36)
+  }
+
+  func assertElementsEqual<Dispatch, Elements>(
+    _ actual: AnyArrayBuffer<Dispatch>,
+    _ expected: Elements,
+    file: StaticString = #file,
+    line: UInt = #line
+  ) where Elements: Collection, Elements.Element: Equatable {
+    guard let typedActual = ArrayBuffer<Elements.Element>(actual) else {
+      XCTFail(
+        """
+        Type-erased buffer has element type `\(actual.elementType)`, but expected element type \
+        `\(Elements.Element.self)`
+        """, file: file, line: line)
+      return
+    }
+    XCTAssertEqual(Array(typedActual), Array(expected), file: file, line: line)
   }
 }

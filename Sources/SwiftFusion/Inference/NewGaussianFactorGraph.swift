@@ -17,7 +17,7 @@ import PenguinStructures
 /// A factor graph whose factors are all `NewGaussianFactor`s.
 public struct NewGaussianFactorGraph {
   /// Dictionary from factor type to contiguous storage for that type.
-  var storage: [ObjectIdentifier: AnyArrayBuffer<AnyGaussianFactorStorage>]
+  var storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer]
 
   /// Assignment of zero to all the variables in the factor graph.
   var zeroValues: VariableAssignments
@@ -28,24 +28,27 @@ public struct NewGaussianFactorGraph {
   /// that we can remove when necessary.)
   public mutating func addScalarJacobians(_ scalar: Double) {
     zeroValues.storage.values.forEach { value in
-      let (jacsKey, jacs) = value.cast(to: AnyVectorStorage.self)!.jacobians(scalar: scalar)
+      let vectors = AnyVectorArrayBuffer(unsafelyCasting: value)
+      let key = ObjectIdentifier(vectors.scalarJacobianType)
       // TODO: Support adding more jacobians of the same type.
-      precondition(storage[jacsKey] == nil)
-      storage[jacsKey] = jacs
+      precondition(storage[key] == nil)
+      storage[key] = vectors.jacobians(scalar: scalar)
     }
   }
 
   /// Returns the error vectors, at `x`, of all the factors.
   public func errorVectors(at x: AllVectors) -> AllVectors {
     return AllVectors(storage: storage.mapValues { factors in
-      AnyArrayBuffer(factors.errorVectors(at: x))
+      // Note: This is a safe upcast.
+      AnyElementArrayBuffer(unsafelyCasting: factors.errorVectors(at: x))
     })
   }
 
   /// Returns the linear component of `errorVectors`, evaluated at `x`.
   func errorVectors_linearComponent(at x: AllVectors) -> AllVectors {
     return AllVectors(storage: storage.mapValues { factors in
-      AnyArrayBuffer(factors.errorVector_linearComponent(x))
+      // Note: This is a safe upcast.
+      AnyElementArrayBuffer(unsafelyCasting: factors.errorVectors_linearComponent(x))
     })
   }
 
@@ -53,7 +56,7 @@ public struct NewGaussianFactorGraph {
   func errorVectors_linearComponent_adjoint(_ y: AllVectors) -> AllVectors {
     var x = zeroValues
     storage.forEach { (key, factor) in
-      factor.errorVector_linearComponent_adjoint(y.storage[key].unsafelyUnwrapped, into: &x)
+      factor.errorVectors_linearComponent_adjoint(y.storage[key].unsafelyUnwrapped, into: &x)
     }
     return x
   }
