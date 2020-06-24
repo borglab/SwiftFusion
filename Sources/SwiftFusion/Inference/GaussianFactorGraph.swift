@@ -16,10 +16,10 @@ import TensorFlow
 /// A factor graph for linear problems
 /// Factors are the Jacobians between the corresponding variables and measurements
 /// TODO(fan): Add noise model
-public struct GaussianFactorGraph {
+public struct OldGaussianFactorGraph {
   public typealias KeysType = Array<Int>
   
-  public typealias FactorsType = Array<JacobianFactor>
+  public typealias FactorsType = Array<OldJacobianFactor>
   
   public var keys: KeysType = []
   public var factors: FactorsType = []
@@ -34,7 +34,7 @@ public struct GaussianFactorGraph {
   public init() { }
   
   /// This calculates `A*x`, where x is the collection of key-values
-  public static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
+  public static func * (lhs: OldGaussianFactorGraph, rhs: VectorValues) -> Errors {
     Array(lhs.factors.map { $0 * rhs })
   }
   
@@ -44,7 +44,7 @@ public struct GaussianFactorGraph {
   }
   
   /// Convenience operator for adding factor
-  public static func += (lhs: inout Self, rhs: JacobianFactor) {
+  public static func += (lhs: inout Self, rhs: OldJacobianFactor) {
     lhs.factors.append(rhs)
   }
   

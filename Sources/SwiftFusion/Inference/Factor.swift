@@ -14,7 +14,7 @@
 import TensorFlow
 
 /// The most general factor protocol.
-public protocol Factor {
+public protocol OldFactor {
   var keys: Array<Int> { get }
 }
 
@@ -27,7 +27,7 @@ public protocol Factor {
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public protocol LinearFactor: Factor {
+public protocol LinearFactor: OldFactor {
   typealias ScalarType = Double
   
   /// TODO: `Dictionary` still does not conform to `Differentiable`
@@ -47,7 +47,7 @@ public protocol LinearFactor: Factor {
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public protocol NonlinearFactor: Factor {
+public protocol NonlinearFactor: OldFactor {
   typealias ScalarType = Double
   
   /// TODO: `Dictionary` still does not conform to `Differentiable`
@@ -58,5 +58,5 @@ public protocol NonlinearFactor: Factor {
   @differentiable(wrt: values)
   func error(_ values: Values) -> ScalarType
   
-  func linearize(_ values: Values) -> JacobianFactor
+  func linearize(_ values: Values) -> OldJacobianFactor
 }

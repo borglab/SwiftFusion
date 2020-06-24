@@ -22,7 +22,7 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
+public struct OldBetweenFactor<T: LieGroup>: NonlinearFactor {
   
   var key1: Int
   var key2: Int
@@ -84,7 +84,7 @@ public struct BetweenFactor<T: LieGroup>: NonlinearFactor {
     return error
   }
   
-  public func linearize(_ values: Values) -> JacobianFactor {
-    return JacobianFactor(of: self.errorVector, at: values)
+  public func linearize(_ values: Values) -> OldJacobianFactor {
+    return OldJacobianFactor(of: self.errorVector, at: values)
   }
 }

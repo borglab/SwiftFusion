@@ -41,7 +41,7 @@ public enum G2OReader {
       case .initialGuess(index: let index, pose: let pose):
         initialGuess.insert(index, pose)
       case .measurement(frameIndex: let frameIndex, measuredIndex: let measuredIndex, pose: let pose):
-        graph += BetweenFactor(frameIndex, measuredIndex, pose)
+        graph += OldBetweenFactor(frameIndex, measuredIndex, pose)
       }
     }
   }

@@ -30,7 +30,7 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     settings: Iterations(1), TimeUnit(.ms)
   ) {
     var val = gridDataset_old.initialGuess
-    gridDataset_old.graph += PriorFactor(0, Pose3())
+    gridDataset_old.graph += OldPriorFactor(0, Pose3())
     for _ in 0..<40 {
       print("error = \(gridDataset_old.graph.error(val))")
       let gfg = gridDataset_old.graph.linearize(val)

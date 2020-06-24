@@ -35,7 +35,7 @@
 /// `GaussianFactorGraph`, so it becomes a question whether we should do the same?
 /// I am considering making `JacobianLikeFactor` a protocol and make `JacobianFactor`
 /// and `HessianFactor` conform to this protocol instead.
-public struct JacobianFactor: LinearFactor {
+public struct OldJacobianFactor: LinearFactor {
   
   // TODO(fan): correct this and add a unit test
   public func error(_ values: VectorValues) -> ScalarType {
@@ -66,7 +66,7 @@ public struct JacobianFactor: LinearFactor {
   /// [ J1 J2 J3 ] *  x2 = [ J1*x1 J2*x2 J3*x3 ]
   ///                 x3
   /// ```
-  static func * (lhs: JacobianFactor, rhs: VectorValues) -> Self.Output {
+  static func * (lhs: OldJacobianFactor, rhs: VectorValues) -> Self.Output {
     var result = Vector(zeros: lhs.dimension)
     for i in lhs.keys.indices {
       result += matvec(lhs.jacobians[i], rhs[lhs.keys[i]])
@@ -105,8 +105,8 @@ public struct JacobianFactor: LinearFactor {
   }
 }
 
-extension JacobianFactor {
-  /// Creates a `JacobianFactor` by linearizing the error function `f` at `p`.
+extension OldJacobianFactor {
+  /// Creates a `OldJacobianFactor` by linearizing the error function `f` at `p`.
   public init<R: EuclideanVectorN>(
     of f: @differentiable (Values) -> R,
     at p: Values
@@ -133,7 +133,7 @@ extension JacobianFactor {
 
     // Return the jacobian factor with the matrices and value.
     let orderedKeys = Array(matrices.keys)
-    self = JacobianFactor(
+    self = OldJacobianFactor(
       orderedKeys,
       orderedKeys.map { matrices[$0]! },
       // TODO: remove this negative sign

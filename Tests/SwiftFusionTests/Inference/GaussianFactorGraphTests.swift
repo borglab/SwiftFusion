@@ -2,7 +2,7 @@ import SwiftFusion
 import TensorFlow
 import XCTest
 
-final class GaussianFactorGraphTests: XCTestCase {  
+final class OldGaussianFactorGraphTests: XCTestCase {  
   /// test ATr
   func testTransposeMultiplication() {
     let A = SimpleGaussianFactorGraph.create()

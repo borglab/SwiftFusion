@@ -22,7 +22,7 @@ import TensorFlow
 /// ================
 /// `Input`: the input values as key-value pairs
 ///
-public struct PriorFactor<T: LieGroup>: NonlinearFactor {
+public struct OldPriorFactor<T: LieGroup>: NonlinearFactor {
   @noDerivative
   public var keys: Array<Int> = []
   public var difference: T
@@ -49,7 +49,7 @@ public struct PriorFactor<T: LieGroup>: NonlinearFactor {
     return difference.localCoordinate(values[keys[0], as: T.self])
   }
 
-  public func linearize(_ values: Values) -> JacobianFactor {
-    return JacobianFactor(of: self.errorVector, at: values)
+  public func linearize(_ values: Values) -> OldJacobianFactor {
+    return OldJacobianFactor(of: self.errorVector, at: values)
   }
 }

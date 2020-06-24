@@ -32,8 +32,8 @@ public struct NonlinearFactorGraph {
   }
   
   /// linearize the nonlinear factor graph to a linear factor graph
-  public func linearize(_ values: Values) -> GaussianFactorGraph {
-    var gfg = GaussianFactorGraph()
+  public func linearize(_ values: Values) -> OldGaussianFactorGraph {
+    var gfg = OldGaussianFactorGraph()
     for i in factors {
       gfg += i.linearize(values)
     }
