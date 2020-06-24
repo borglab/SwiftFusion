@@ -6,7 +6,7 @@ import PenguinStructures
 @testable import SwiftFusion
 
 /// A factor on two discrete labels evaluation the transition probability
-struct DiscreteTransitionFactor : NewFactor {  
+struct DiscreteTransitionFactor : Factor {
   typealias Variables = Tuple2<Int, Int>
   
   /// The IDs of the variables adjacent to this factor.
@@ -39,10 +39,10 @@ struct DiscreteTransitionFactor : NewFactor {
 /// A factor with a switchable motion model.
 ///
 /// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
-/// documentation on `NewJacobianFactor.jacobian` for more information. Use the typealiases below to
+/// documentation on `JacobianFactor.jacobian` for more information. Use the typealiases below to
 /// avoid specifying this type parameter every time you create an instance.
-public struct NewSwitchingBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  NewLinearizableFactor
+public struct SwitchingBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+  LinearizableFactor
 where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 {
   public typealias Variables = Tuple3<Pose, Int, Pose>
@@ -79,7 +79,7 @@ where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
     return errorVector(x.head, x.tail.head, x.tail.tail.head)
   }
   
-  public typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
+  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
   public func linearized(at x: Variables) -> Linearization {
     let (start, label, end) = (x.head, x.tail.head, x.tail.tail.head)
     let (startEdge, endEdge) = (edges.head, edges.tail.tail.head)
@@ -97,10 +97,10 @@ where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 }
 
 /// A between factor on `Pose2`.
-public typealias NewSwitchingBetweenFactor2 = NewSwitchingBetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
+public typealias SwitchingBetweenFactor2 = SwitchingBetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
 
 /// A between factor on `Pose3`.
-public typealias NewSwitchingBetweenFactor3 = NewSwitchingBetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>
+public typealias SwitchingBetweenFactor3 = SwitchingBetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>
 
 class Scratch: XCTestCase {
   let origin = Pose2(0,0,0)
@@ -114,28 +114,34 @@ class Scratch: XCTestCase {
       +  origin.localCoordinate(z3).squaredNorm
       +  2 * origin.localCoordinate(forwardMove).squaredNorm
   }
-  func createTrackingFactorGraph() -> (NewFactorGraph, VariableAssignments) {
+  func createTrackingFactorGraph() -> (FactorGraph, VariableAssignments) {
     var variables = VariableAssignments()
     let x1 = variables.store(origin)
     let x2 = variables.store(origin)
     let x3 = variables.store(origin)
     
-    var graph = NewFactorGraph()
-    graph.store(NewPriorFactor2(x1, z1)) // prior
-    graph.store(NewPriorFactor2(x1, z1))
-    graph.store(NewPriorFactor2(x2, z2))
-    graph.store(NewPriorFactor2(x3, z3))
-    graph.store(NewBetweenFactor2(x1, x2, forwardMove))
-    graph.store(NewBetweenFactor2(x2, x3, forwardMove))
+    var graph = FactorGraph()
+    graph.store(PriorFactor2(x1, z1)) // prior
+    graph.store(PriorFactor2(x1, z1))
+    graph.store(PriorFactor2(x2, z2))
+    graph.store(PriorFactor2(x3, z3))
+    graph.store(BetweenFactor2(x1, x2, forwardMove))
+    graph.store(BetweenFactor2(x2, x3, forwardMove))
     
     return (graph, variables)
+  }
+  
+  func printPoses(_ variables : VariableAssignments) {
+    print(variables[TypedID<Pose2, Int>(0)])
+    print(variables[TypedID<Pose2, Int>(1)])
+    print(variables[TypedID<Pose2, Int>(2)])
   }
   
   /// Tracking example from Figure 2.a
   func testTrackingExample() {
     // create a factor graph
     var (graph, variables) = createTrackingFactorGraph()
-    _ = graph as NewFactorGraph
+    _ = graph as FactorGraph
     
     // check number of factor types
     XCTAssertEqual(graph.storage.count, 2)
@@ -147,13 +153,11 @@ class Scratch: XCTestCase {
     var opt = LM()
     try! opt.optimize(graph: graph, initial: &variables)
     
-    // check number of factor types
-    print(variables[TypedID<Pose2, Int>(0)])
-    print(variables[TypedID<Pose2, Int>(1)])
-    print(variables[TypedID<Pose2, Int>(2)])
+    // print
+    printPoses(variables)
   }
   
-  func createSwitchingFactorGraph() -> (NewFactorGraph, VariableAssignments) {
+  func createSwitchingFactorGraph() -> (FactorGraph, VariableAssignments) {
     var variables = VariableAssignments()
     let x1 = variables.store(origin)
     let x2 = variables.store(origin)
@@ -174,23 +178,28 @@ class Scratch: XCTestCase {
       Pose2(1, 0, -.pi / 4) // turn right
     ]
     
-    var graph = NewFactorGraph()
-    graph.store(NewPriorFactor2(x1, z1)) // prior
-    graph.store(NewPriorFactor2(x1, z1))
-    graph.store(NewPriorFactor2(x2, z2))
-    graph.store(NewPriorFactor2(x3, z3))
-    graph.store(NewSwitchingBetweenFactor2(x1, q1, x2, movements))
-    graph.store(NewSwitchingBetweenFactor2(x2, q2, x3, movements))
+    var graph = FactorGraph()
+    graph.store(PriorFactor2(x1, z1)) // prior
+    graph.store(PriorFactor2(x1, z1))
+    graph.store(PriorFactor2(x2, z2))
+    graph.store(PriorFactor2(x3, z3))
+    graph.store(SwitchingBetweenFactor2(x1, q1, x2, movements))
+    graph.store(SwitchingBetweenFactor2(x2, q2, x3, movements))
     graph.store(DiscreteTransitionFactor(q1, q2, labelCount, transitionMatrix))
     
     return (graph, variables)
+  }
+  
+  func printLabels(_ variables : VariableAssignments) {
+    print(variables[TypedID<Int, Int>(0)])
+    print(variables[TypedID<Int, Int>(1)])
   }
   
   /// Tracking switching from Figure 2.b
   func testSwitchingExample() {
     // create a factor graph
     var (graph, variables) = createSwitchingFactorGraph()
-    _ = graph as NewFactorGraph
+    _ = graph as FactorGraph
     _ = variables as VariableAssignments
     
     // check number of factor types
@@ -203,11 +212,11 @@ class Scratch: XCTestCase {
     var opt = LM()
     try! opt.optimize(graph: graph, initial: &variables)
     
-    // check results
-    print(variables[TypedID<Pose2, Int>(0)])
-    print(variables[TypedID<Pose2, Int>(1)])
-    print(variables[TypedID<Pose2, Int>(2)])
     
+    // print
+    printLabels(variables)
+    printPoses(variables)
+
     // Create initial state for MCMC sampler
     let current_state = variables
     
@@ -219,7 +228,7 @@ class Scratch: XCTestCase {
     let flipAndOptimize = {(x:VariableAssignments) -> VariableAssignments in
       let labelVars = x.storage[ObjectIdentifier(Int.self)]
       let positionVars = x.storage[ObjectIdentifier(Pose2.self)]
-
+      
       // Randomly change one label.
       let i = Int.random(in: 0..<labelVars!.count)
       let id = TypedID<Int, Int>(i)
@@ -230,9 +239,13 @@ class Scratch: XCTestCase {
       for i in 0..<positionVars!.count {
         y[TypedID<Pose2,Int>(i)] = Pose2(0, 0, 0)
       }
-
+      
       // Pose2SLAM to find new proposed positions.
+      self.printLabels(y)
+      self.printPoses(y)
       try! opt.optimize(graph: graph, initial: &y)
+      self.printLabels(y)
+      self.printPoses(y)
       return y
     }
     
