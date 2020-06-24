@@ -67,7 +67,7 @@ extension AllVectors {
   }
 
   /// Returns the `ErrorVector` from the `perFactorID`-th factor of type `F`.
-  subscript<F: NewLinearizableFactor>(_ perFactorID: Int, factorType _: F.Type) -> F.ErrorVector {
+  subscript<F: LinearizableFactor>(_ perFactorID: Int, factorType _: F.Type) -> F.ErrorVector {
     let array = storage[ObjectIdentifier(F.self)].unsafelyUnwrapped
     return ArrayBuffer<F.ErrorVector>(unsafelyDowncasting: array).withUnsafeBufferPointer { b in
       b[perFactorID]

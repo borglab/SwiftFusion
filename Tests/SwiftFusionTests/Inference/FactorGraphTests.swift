@@ -19,7 +19,7 @@ import XCTest
 import PenguinStructures
 import SwiftFusion
 
-class NewFactorGraphTests: XCTestCase {
+class FactorGraphTests: XCTestCase {
   func testSimplePose2SLAM() {
     var x = VariableAssignments()
     let pose1ID = x.store(Pose2(Rot2(0.2), Vector2(0.5, 0.0)))
@@ -28,12 +28,12 @@ class NewFactorGraphTests: XCTestCase {
     let pose4ID = x.store(Pose2(Rot2(.pi), Vector2(4.0, 2.0)))
     let pose5ID = x.store(Pose2(Rot2(-.pi / 2), Vector2(2.1, 2.1)))
 
-    var graph = NewFactorGraph()
-    graph.store(NewBetweenFactor2(pose2ID, pose1ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewBetweenFactor2(pose3ID, pose2ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewBetweenFactor2(pose4ID, pose3ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewBetweenFactor2(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewPriorFactor2(pose1ID, Pose2(0, 0, 0)))
+    var graph = FactorGraph()
+    graph.store(BetweenFactor2(pose2ID, pose1ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor2(pose3ID, pose2ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor2(pose4ID, pose3ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor2(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(PriorFactor2(pose1ID, Pose2(0, 0, 0)))
 
     for _ in 0..<3 {
       let linearized = graph.linearized(at: x)
@@ -91,16 +91,16 @@ class NewFactorGraphTests: XCTestCase {
     let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     
-    var fg = NewFactorGraph()
-    fg.store(NewPriorFactor3(id0, p0))
+    var fg = FactorGraph()
+    fg.store(PriorFactor3(id0, p0))
     let delta: Pose3 = between(p0, p1)
 
-    fg.store(NewBetweenFactor3(id0, id1, delta))
-    fg.store(NewBetweenFactor3(id1, id2, delta))
-    fg.store(NewBetweenFactor3(id2, id3, delta))
-    fg.store(NewBetweenFactor3(id3, id4, delta))
-    fg.store(NewBetweenFactor3(id4, id5, delta))
-    fg.store(NewBetweenFactor3(id5, id0, delta))
+    fg.store(BetweenFactor3(id0, id1, delta))
+    fg.store(BetweenFactor3(id1, id2, delta))
+    fg.store(BetweenFactor3(id2, id3, delta))
+    fg.store(BetweenFactor3(id3, id4, delta))
+    fg.store(BetweenFactor3(id4, id5, delta))
+    fg.store(BetweenFactor3(id5, id0, delta))
 
     // optimize
     for _ in 0..<16 {
@@ -132,16 +132,16 @@ class NewFactorGraphTests: XCTestCase {
     let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     
-    var fg = NewFactorGraph()
-    fg.store(NewPriorFactor3(id0, p0))
+    var fg = FactorGraph()
+    fg.store(PriorFactor3(id0, p0))
     let delta: Pose3 = between(p0, p1)
 
-    fg.store(NewBetweenFactorAlternative3(id0, id1, delta))
-    fg.store(NewBetweenFactorAlternative3(id1, id2, delta))
-    fg.store(NewBetweenFactorAlternative3(id2, id3, delta))
-    fg.store(NewBetweenFactorAlternative3(id3, id4, delta))
-    fg.store(NewBetweenFactorAlternative3(id4, id5, delta))
-    fg.store(NewBetweenFactorAlternative3(id5, id0, delta))
+    fg.store(BetweenFactorAlternative3(id0, id1, delta))
+    fg.store(BetweenFactorAlternative3(id1, id2, delta))
+    fg.store(BetweenFactorAlternative3(id2, id3, delta))
+    fg.store(BetweenFactorAlternative3(id3, id4, delta))
+    fg.store(BetweenFactorAlternative3(id4, id5, delta))
+    fg.store(BetweenFactorAlternative3(id5, id0, delta))
 
     // optimize
     for _ in 0..<16 {

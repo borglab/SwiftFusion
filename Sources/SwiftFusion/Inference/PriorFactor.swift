@@ -1,4 +1,4 @@
-// Copyright 2019 The SwiftFusion Authors. All Rights Reserved.
+// Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,45 +11,52 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import TensorFlow
 
-/// A `NonlinearFactor` that returns the difference of value and desired value
-///
-/// Input is a dictionary of `Key` to `Value` pairs, and the output is the scalar
-/// error value
-///
-/// Interpretation
-/// ================
-/// `Input`: the input values as key-value pairs
-///
-public struct PriorFactor<T: LieGroup>: NonlinearFactor {
-  @noDerivative
-  public var keys: Array<Int> = []
-  public var difference: T
-  public typealias Output = Error
-  
-  public init (_ key: Int, _ difference: T) {
-    keys = [key]
-    self.difference = difference
-  }
-  typealias ScalarType = Double
-  
-  /// TODO: `Dictionary` still does not conform to `Differentiable`
-  /// Tracking issue: https://bugs.swift.org/browse/TF-899
-  // typealias Input = Dictionary<UInt, Tensor<ScalarType>>
+import PenguinStructures
 
-  /// Returns the `error` of the factor.
-  @differentiable(wrt: values)
-  public func error(_ values: Values) -> Double {
-    return errorVector(values).squaredNorm
-  }
-  
-  @differentiable(wrt: values)
-  public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
-    return difference.localCoordinate(values[keys[0], as: T.self])
+/// A factor that specifies a prior on a pose.
+///
+/// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
+/// documentation on `JacobianFactor.jacobian` for more information. Use the typealiases below to
+/// avoid specifying this type parameter every time you create an instance.
+public struct PriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+  LinearizableFactor
+  where JacobianRows.Element == Tuple1<Pose.TangentVector>
+{
+  public typealias Variables = Tuple1<Pose>
+
+  public let edges: Variables.Indices
+  public let prior: Pose
+
+  public init(_ id: TypedID<Pose, Int>, _ prior: Pose) {
+    self.edges = Tuple1(id)
+    self.prior = prior
   }
 
-  public func linearize(_ values: Values) -> JacobianFactor {
-    return JacobianFactor(of: self.errorVector, at: values)
+  public typealias ErrorVector = Pose.TangentVector
+  public func errorVector(_ x: Pose) -> ErrorVector {
+    return prior.localCoordinate(x)
+  }
+
+  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
+  // with sugar.
+  
+  public func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
+  }
+
+  public func errorVector(at x: Variables) -> Pose.TangentVector {
+    return errorVector(x.head)
+  }
+
+  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearization {
+    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
+
+/// A prior factor on a `Pose2`.
+public typealias PriorFactor2 = PriorFactor<Pose2, Array3<Tuple1<Vector3>>>
+
+/// A prior factor on a `Pose3`.
+public typealias PriorFactor3 = PriorFactor<Pose3, Array6<Tuple1<Vector6>>>

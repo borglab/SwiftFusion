@@ -160,7 +160,7 @@ where BearingRangeFunction.Base.TangentVector: EuclideanVectorN,
     return BearingRangeError(bearing: error_bearing, range: error_range)
   }
 
-  public func linearize(_ values: Values) -> JacobianFactor {
-    return JacobianFactor(of: self.errorVector, at: values)
+  public func linearize(_ values: Values) -> OldJacobianFactor {
+    return OldJacobianFactor(of: self.errorVector, at: values)
   }
 }

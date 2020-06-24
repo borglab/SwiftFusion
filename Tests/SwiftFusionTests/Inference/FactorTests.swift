@@ -21,7 +21,7 @@ import PenguinStructures
 
 /// A factor that switches between different linear motions based on an integer label.
 fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  NewLinearizableFactor
+  LinearizableFactor
   where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 {
   typealias Variables = Tuple3<Int, Pose, Pose>
@@ -47,7 +47,7 @@ fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: Fixe
     return errorVector(x.head, x.tail.head, x.tail.tail.head)
   }
 
-  typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
+  typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
   func linearized(at x: Variables) -> Linearization {
     Linearization(
       linearizing: { errorVector(x.head, $0.head, $0.tail.head) },
@@ -74,7 +74,7 @@ fileprivate struct ExampleFactorGraph {
   var motionLabelIDs = [TypedID<Int, Int>]()
   var poseIDs = [TypedID<Pose2, Int>]()
 
-  var priorFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<NewPriorFactor2>())
+  var priorFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<PriorFactor2>())
   var motionFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<SwitchingMotionModelFactor2>())
 
   init() {
@@ -89,7 +89,7 @@ fileprivate struct ExampleFactorGraph {
 
     // Set up the factor graph.
 
-    _ = priorFactors.unsafelyAppend(NewPriorFactor2(poseIDs[0], Pose2(0, 0, 0)))
+    _ = priorFactors.unsafelyAppend(PriorFactor2(poseIDs[0], Pose2(0, 0, 0)))
 
     _ = motionFactors.unsafelyAppend(SwitchingMotionModelFactor2(
       edges: Tuple3(motionLabelIDs[0], poseIDs[0], poseIDs[1]),
@@ -102,7 +102,7 @@ fileprivate struct ExampleFactorGraph {
   }
 }
 
-class NewFactorTests: XCTestCase {
+class FactorTests: XCTestCase {
   /// Tests errors in the example factor graph.
   func testErrors() {
     let graph = ExampleFactorGraph()
@@ -178,12 +178,12 @@ class NewFactorTests: XCTestCase {
     let vectorVar1ID = variableAssignments.store(Vector2(1, 2))
 
     var factors = AnyGaussianFactorArrayBuffer(
-      ArrayBuffer<NewJacobianFactor<Array2<Tuple1<Vector2>>, Vector2>>())
+      ArrayBuffer<JacobianFactor<Array2<Tuple1<Vector2>>, Vector2>>())
     let matrix1 = Array2(
       Tuple1(Vector2(1, 1)),
       Tuple1(Vector2(0, 1))
     )
-    _ = factors.unsafelyAppend(NewJacobianFactor(
+    _ = factors.unsafelyAppend(JacobianFactor(
       jacobian: matrix1,
       error: Vector2(0, 0),
       edges: Tuple1(vectorVar1ID)
@@ -192,7 +192,7 @@ class NewFactorTests: XCTestCase {
       Tuple1(Vector2(0, 3)),
       Tuple1(Vector2(7, 0))
     )
-    _ = factors.unsafelyAppend(NewJacobianFactor(
+    _ = factors.unsafelyAppend(JacobianFactor(
       jacobian: matrix2,
       error: Vector2(100, 200),
       edges: Tuple1(vectorVar1ID)

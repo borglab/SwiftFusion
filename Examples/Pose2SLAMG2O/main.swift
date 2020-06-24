@@ -39,7 +39,7 @@ func main() {
   var problem = try! G2OReader.G2ONonlinearFactorGraph(g2oFile2D: g2oURL)
 
   // Add prior on the pose with key 0.
-  problem.graph += PriorFactor(0, Pose2(0, 0, 0))
+  problem.graph += OldPriorFactor(0, Pose2(0, 0, 0))
 
   // Run inference.
   // TODO: Change this to use a general purpose solver instead of iterating ourselves, when a

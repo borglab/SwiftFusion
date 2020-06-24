@@ -1,4 +1,4 @@
-// Copyright 2019 The SwiftFusion Authors. All Rights Reserved.
+// Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,52 +11,53 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import TensorFlow
 
-/// A factor graph for linear problems
-/// Factors are the Jacobians between the corresponding variables and measurements
-/// TODO(fan): Add noise model
+import PenguinStructures
+
+/// A factor graph whose factors are all `GaussianFactor`s.
 public struct GaussianFactorGraph {
-  public typealias KeysType = Array<Int>
-  
-  public typealias FactorsType = Array<JacobianFactor>
-  
-  public var keys: KeysType = []
-  public var factors: FactorsType = []
-  
-  public var b: Errors {
-    get {
-      factors.map { $0.b }
+  /// Dictionary from factor type to contiguous storage for that type.
+  var storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer]
+
+  /// Assignment of zero to all the variables in the factor graph.
+  var zeroValues: VariableAssignments
+
+  /// For each variable, add a Jacobian factor that scales it by `scalar`.
+  ///
+  /// Precondition: `self` doesn't already contain scalar Jacobian factors. (Temporary limitation
+  /// that we can remove when necessary.)
+  public mutating func addScalarJacobians(_ scalar: Double) {
+    zeroValues.storage.values.forEach { value in
+      let vectors = AnyVectorArrayBuffer(unsafelyCasting: value)
+      let key = ObjectIdentifier(vectors.scalarJacobianType)
+      // TODO: Support adding more jacobians of the same type.
+      precondition(storage[key] == nil)
+      storage[key] = vectors.jacobians(scalar: scalar)
     }
   }
-  
-  /// Default initializer
-  public init() { }
-  
-  /// This calculates `A*x`, where x is the collection of key-values
-  public static func * (lhs: GaussianFactorGraph, rhs: VectorValues) -> Errors {
-    Array(lhs.factors.map { $0 * rhs })
+
+  /// Returns the error vectors, at `x`, of all the factors.
+  public func errorVectors(at x: AllVectors) -> AllVectors {
+    return AllVectors(storage: storage.mapValues { factors in
+      // Note: This is a safe upcast.
+      AnyElementArrayBuffer(unsafelyCasting: factors.errorVectors(at: x))
+    })
   }
-  
-  /// This calculates `A*x - b`, where x is the collection of key-values
-  public func residual (_ val: VectorValues) -> Errors {
-    Array(self.factors.map { $0 * val - $0.b })
+
+  /// Returns the linear component of `errorVectors`, evaluated at `x`.
+  func errorVectors_linearComponent(at x: AllVectors) -> AllVectors {
+    return AllVectors(storage: storage.mapValues { factors in
+      // Note: This is a safe upcast.
+      AnyElementArrayBuffer(unsafelyCasting: factors.errorVectors_linearComponent(x))
+    })
   }
-  
-  /// Convenience operator for adding factor
-  public static func += (lhs: inout Self, rhs: JacobianFactor) {
-    lhs.factors.append(rhs)
-  }
-  
-  /// This calculates `A^T * r`, where r is the residual (error)
-  public func atr(_ r: Errors) -> VectorValues {
-    var vv = VectorValues()
-    for i in r.indices {
-      let JTr = factors[i].atr(r[i])
-      
-      vv = vv + JTr
+
+  /// Returns the adjoint of the linear component of `errorVectors`, evaluated at `y`.
+  func errorVectors_linearComponent_adjoint(_ y: AllVectors) -> AllVectors {
+    var x = zeroValues
+    storage.forEach { (key, factor) in
+      factor.errorVectors_linearComponent_adjoint(y.storage[key].unsafelyUnwrapped, into: &x)
     }
-    
-    return vv
+    return x
   }
 }

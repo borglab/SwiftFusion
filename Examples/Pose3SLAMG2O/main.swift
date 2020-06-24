@@ -128,12 +128,12 @@ func main() {
   }
   
   // Load .g2o file.
-  let problem = try! G2OReader.G2ONewFactorGraph(g2oFile3D: g2oURL, chordal: useChordal)
+  let problem = try! G2OReader.G2OFactorGraph(g2oFile3D: g2oURL, chordal: useChordal)
 
   var val = problem.initialGuess
   var graph = problem.graph
   
-  graph.store(NewPriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
+  graph.store(PriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
   
   var optimizer = LM(precision: 1e-1, max_iteration: 100)
   
@@ -141,7 +141,7 @@ func main() {
   optimizer.max_iteration = 100
   
   do {
-    var hook: ((NewFactorGraph, VariableAssignments, Double, Int) -> Void)? = nil
+    var hook: ((FactorGraph, VariableAssignments, Double, Int) -> Void)? = nil
     if doTracing {
       hook = { fg, val, lambda, step in
         logFileWriter!.addScalar(tag: "optimizer/loss", scalar: fg.error(at: val), globalStep: step)
