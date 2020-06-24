@@ -215,9 +215,24 @@ class Scratch: XCTestCase {
     let num_results = 50
     let num_burnin_steps = 30
     
+    /// Proposal to change one label, and re-optimize
+    let flipAndOptimize = {(x:VariableAssignments) -> VariableAssignments in
+      let labelVars = x.storage[ObjectIdentifier(Int.self)]
+      
+      // Randomly change one label.
+      let i = Int.random(in: 0..<labelVars!.count)
+      let id = TypedID<Int, Int>(i)
+      var y = x
+      //      y[id] = Int.random(in: 0..<3)
+      
+      // Pose2SLAM to find new proposed positions.
+      try! opt.optimize(graph: graph, initial: &y)
+      return y
+    }
+    
     let kernel = RandomWalkMetropolis(
       target_log_prob_fn: {(x:VariableAssignments) in 0.0},
-      new_state_fn: {(x:VariableAssignments) in x}
+      new_state_fn: flipAndOptimize
     )
     
     let states = sampleChain(
