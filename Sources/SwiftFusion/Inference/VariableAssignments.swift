@@ -87,6 +87,13 @@ public struct VariableAssignments {
       yield ArrayBuffer<T>(unsafelyDowncasting: array)
         .withUnsafeBufferPointer { b in b[id.perTypeID] }
     }
+    _modify {
+      defer { _fixLifetime(self) }
+      let array = storage[ObjectIdentifier(T.self), default: Self.noSuchType]
+      yield &(array.storage as! ArrayStorage<T>)
+        .withUnsafeMutableBufferPointer { b in b.baseAddress.unsafelyUnwrapped + id.perTypeID }
+        .pointee
+    }
   }
 }
 
