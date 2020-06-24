@@ -15,7 +15,7 @@
 import PenguinStructures
 
 /// A factor in a factor graph.
-public protocol NewFactor {
+public protocol Factor {
   /// A tuple of the variable types of variables adjacent to this factor.
   associatedtype Variables: VariableTuple
 
@@ -27,7 +27,7 @@ public protocol NewFactor {
 }
 
 /// A factor with an error vector, which can be linearized around any point.
-public protocol NewLinearizableFactor: NewFactor {
+public protocol LinearizableFactor: Factor {
   /// The type of the error vector.
   // TODO: Add a description of what an error vector is.
   associatedtype ErrorVector: EuclideanVectorN
@@ -36,7 +36,7 @@ public protocol NewLinearizableFactor: NewFactor {
   func errorVector(at x: Variables) -> ErrorVector
 
   /// The type of the linearized factor.
-  associatedtype Linearization: NewGaussianFactor
+  associatedtype Linearization: GaussianFactor
 
   /// Returns a factor whose `errorVector` linearly approximates `self`'s `errorVector` around the
   /// given point.
@@ -44,7 +44,7 @@ public protocol NewLinearizableFactor: NewFactor {
 }
 
 /// A factor whose `errorVector` is a linear function of the variables, plus a constant.
-public protocol NewGaussianFactor: NewLinearizableFactor where Variables: EuclideanVectorN {
+public protocol GaussianFactor: LinearizableFactor where Variables: EuclideanVectorN {
   /// The linear component of `errorVector`.
   func errorVector_linearComponent(_ x: Variables) -> ErrorVector
 

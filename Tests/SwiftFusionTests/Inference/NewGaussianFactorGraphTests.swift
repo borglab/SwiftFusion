@@ -19,7 +19,7 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
-class NewGaussianFactorGraphTests: XCTestCase {
+class GaussianFactorGraphTests: XCTestCase {
   /// Adds some scalar jacobians and tests that the resulting graph produces the correct error
   /// vectors.
   func testAddScalarJacobians() {
@@ -28,7 +28,7 @@ class NewGaussianFactorGraphTests: XCTestCase {
     let id2 = x.store(Vector2(3, 4))
     let id3 = x.store(Vector3(5, 6, 7))
 
-    var jacobians = NewGaussianFactorGraph(storage: [:], zeroValues: x.tangentVectorZeros)
+    var jacobians = GaussianFactorGraph(storage: [:], zeroValues: x.tangentVectorZeros)
     jacobians.addScalarJacobians(10)
 
     let errorVectors = jacobians.errorVectors(at: x)

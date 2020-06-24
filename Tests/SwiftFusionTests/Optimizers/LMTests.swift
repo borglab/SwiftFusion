@@ -14,12 +14,12 @@ final class LMTests: XCTestCase {
     let pose4ID = x.store(Pose2(Rot2(.pi), Vector2(4.0, 2.0)))
     let pose5ID = x.store(Pose2(Rot2(-.pi / 2), Vector2(2.1, 2.1)))
 
-    var graph = NewFactorGraph()
-    graph.store(NewBetweenFactor2(pose2ID, pose1ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewBetweenFactor2(pose3ID, pose2ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewBetweenFactor2(pose4ID, pose3ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewBetweenFactor2(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
-    graph.store(NewPriorFactor2(pose1ID, Pose2(0, 0, 0)))
+    var graph = FactorGraph()
+    graph.store(BetweenFactor2(pose2ID, pose1ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor2(pose3ID, pose2ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor2(pose4ID, pose3ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(BetweenFactor2(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
+    graph.store(PriorFactor2(pose1ID, Pose2(0, 0, 0)))
 
     var optimizer = LM(precision: 1e-3, max_iteration: 10)
     optimizer.verbosity = .TRYLAMBDA

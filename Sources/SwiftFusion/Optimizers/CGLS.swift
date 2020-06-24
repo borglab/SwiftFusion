@@ -85,7 +85,7 @@ public struct GenericCGLS {
   /// Optimize the Gaussian Factor Graph with a initial estimate
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
-  public mutating func optimize(gfg: NewGaussianFactorGraph, initial x: inout VariableAssignments) {
+  public mutating func optimize(gfg: GaussianFactorGraph, initial x: inout VariableAssignments) {
     step += 1
 
     var r = gfg.errorVectors(at: x) // r(0) = b - A * x(0), the residual

@@ -17,10 +17,10 @@ import PenguinStructures
 /// A factor that specifies a difference between two poses.
 ///
 /// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
-/// documentation on `NewJacobianFactor.jacobian` for more information. Use the typealiases below to
+/// documentation on `JacobianFactor.jacobian` for more information. Use the typealiases below to
 /// avoid specifying this type parameter every time you create an instance.
-public struct NewBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  NewLinearizableFactor
+public struct BetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+  LinearizableFactor
   where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 {
   public typealias Variables = Tuple2<Pose, Pose>
@@ -50,14 +50,14 @@ public struct NewBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
     return errorVector(x.head, x.tail.head)
   }
 
-  public typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
+  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
   public func linearized(at x: Variables) -> Linearization {
     Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
 /// A between factor on `Pose2`.
-public typealias NewBetweenFactor2 = NewBetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
+public typealias BetweenFactor2 = BetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
 
 /// A between factor on `Pose3`.
-public typealias NewBetweenFactor3 = NewBetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>
+public typealias BetweenFactor3 = BetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>

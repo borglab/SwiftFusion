@@ -15,7 +15,7 @@
 import PenguinStructures
 
 /// A factor graph.
-public struct NewFactorGraph {
+public struct FactorGraph {
   /// Dictionary from factor type to contiguous storage for that type.
   var storage: [ObjectIdentifier: AnyFactorArrayBuffer] = [:]
 
@@ -28,7 +28,7 @@ public struct NewFactorGraph {
   }
 
   /// Stores `factor` in the graph.
-  public mutating func store<T: NewFactor>(_ factor: T) {
+  public mutating func store<T: Factor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
       default: AnyFactorArrayBuffer(ArrayBuffer<T>())
@@ -36,7 +36,7 @@ public struct NewFactorGraph {
   }
 
   /// Stores `factor` in the graph.
-  public mutating func store<T: NewLinearizableFactor>(_ factor: T) {
+  public mutating func store<T: LinearizableFactor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
       default: AnyFactorArrayBuffer(
@@ -46,7 +46,7 @@ public struct NewFactorGraph {
   }
 
   /// Stores `factor` in the graph.
-  public mutating func store<T: NewGaussianFactor>(_ factor: T) {
+  public mutating func store<T: GaussianFactor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
       default: AnyFactorArrayBuffer(
@@ -92,8 +92,8 @@ public struct NewFactorGraph {
   /// The linear approximation satisfies the approximate equality:
   ///   `self.linearized(at: x).errorVectors(dx)` ≈ `self.errorVectors(at: x.moved(along: dx))`
   /// where the equality is exact when `dx == x.linearizedZero`.
-  public func linearized(at x: VariableAssignments) -> NewGaussianFactorGraph {
-    return NewGaussianFactorGraph(
+  public func linearized(at x: VariableAssignments) -> GaussianFactorGraph {
+    return GaussianFactorGraph(
       storage: storage.compactMapValues { factors in
         AnyLinearizableFactorArrayBuffer(factors)?.linearized(at: x)
       },

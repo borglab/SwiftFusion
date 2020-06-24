@@ -14,8 +14,8 @@
 
 import PenguinStructures
 
-/// A factor graph whose factors are all `NewGaussianFactor`s.
-public struct NewGaussianFactorGraph {
+/// A factor graph whose factors are all `GaussianFactor`s.
+public struct GaussianFactorGraph {
   /// Dictionary from factor type to contiguous storage for that type.
   var storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer]
 

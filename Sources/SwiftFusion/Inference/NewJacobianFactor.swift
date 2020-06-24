@@ -16,10 +16,10 @@ import PenguinStructures
 
 /// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and
 /// materialized error vector.
-public struct NewJacobianFactor<
+public struct JacobianFactor<
   Rows: FixedSizeArray,
   ErrorVector: EuclideanVectorN
->: NewGaussianFactor where Rows.Element: EuclideanVectorN & VariableTuple {
+>: GaussianFactor where Rows.Element: EuclideanVectorN & VariableTuple {
   public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.
@@ -95,13 +95,13 @@ public struct NewJacobianFactor<
 }
 
 /// A Jacobian factor with 1 3-dimensional input and a 3-dimensional error vector.
-public typealias JacobianFactor3x3_1 = NewJacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
+public typealias JacobianFactor3x3_1 = JacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
 
 /// A Jacobian factor with 2 3-dimensional inputs and a 3-dimensional error vector.
-public typealias JacobianFactor3x3_2 = NewJacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>
+public typealias JacobianFactor3x3_2 = JacobianFactor<Array3<Tuple2<Vector3, Vector3>>, Vector3>
 
 /// A Jacobian factor with 1 6-dimensional input and a 6-dimensional error vector.
-public typealias JacobianFactor6x6_1 = NewJacobianFactor<Array6<Tuple1<Vector6>>, Vector6>
+public typealias JacobianFactor6x6_1 = JacobianFactor<Array6<Tuple1<Vector6>>, Vector6>
 
 /// A Jacobian factor with 2 6-dimensional inputs and a 6-dimensional error vector.
-public typealias JacobianFactor6x6_2 = NewJacobianFactor<Array6<Tuple2<Vector6, Vector6>>, Vector6>
+public typealias JacobianFactor6x6_2 = JacobianFactor<Array6<Tuple2<Vector6, Vector6>>, Vector6>

@@ -119,7 +119,7 @@ extension VariableAssignments {
 
   /// Moves each differentiable variable along the corresponding element of `direction`.
   ///
-  /// See `NewFactorGraph.linearized(at:)` for documentation about the correspondence between
+  /// See `FactorGraph.linearized(at:)` for documentation about the correspondence between
   /// differentiable variables and their linearizations.
   public mutating func move(along direction: AllVectors) {
     storage = storage.mapValues { value in
