@@ -218,13 +218,19 @@ class Scratch: XCTestCase {
     /// Proposal to change one label, and re-optimize
     let flipAndOptimize = {(x:VariableAssignments) -> VariableAssignments in
       let labelVars = x.storage[ObjectIdentifier(Int.self)]
-      
+      let positionVars = x.storage[ObjectIdentifier(Pose2.self)]
+
       // Randomly change one label.
       let i = Int.random(in: 0..<labelVars!.count)
       let id = TypedID<Int, Int>(i)
       var y = x
-      //      y[id] = Int.random(in: 0..<3)
+      y[id] = Int.random(in: 0..<3)
       
+      // Initialize trajectory to zero before optimizing
+      for i in 0..<positionVars!.count {
+        y[TypedID<Pose2,Int>(i)] = Pose2(0, 0, 0)
+      }
+
       // Pose2SLAM to find new proposed positions.
       try! opt.optimize(graph: graph, initial: &y)
       return y
