@@ -1,4 +1,4 @@
-// Copyright 2019 The SwiftFusion Authors. All Rights Reserved.
+// Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,80 +11,53 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import TensorFlow
 
-/// A `NonlinearFactor` that calculates the difference of two Values of the same type
+import PenguinStructures
+
+/// A factor that specifies a difference between two poses.
 ///
-/// Input is a dictionary of `Key` to `Value` pairs, and the output is the scalar
-/// error value
-///
-/// Interpretation
-/// ================
-/// `Input`: the input values as key-value pairs
-///
-public struct OldBetweenFactor<T: LieGroup>: NonlinearFactor {
-  
-  var key1: Int
-  var key2: Int
-  @noDerivative
-  public var keys: Array<Int> {
-    get {
-      [key1, key2]
-    }
-  }
-  public var difference: T
-  public typealias Output = Error
-  
-  public init (_ key1: Int, _ key2: Int, _ difference: T) {
-    self.key1 = key1
-    self.key2 = key2
+/// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
+/// documentation on `JacobianFactor.jacobian` for more information. Use the typealiases below to
+/// avoid specifying this type parameter every time you create an instance.
+public struct BetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
+  LinearizableFactor
+  where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
+{
+  public typealias Variables = Tuple2<Pose, Pose>
+
+  public let edges: Variables.Indices
+  public let difference: Pose
+
+  public init(_ startId: TypedID<Pose, Int>, _ endId: TypedID<Pose, Int>, _ difference: Pose) {
+    self.edges = Tuple2(startId, endId)
     self.difference = difference
   }
-  typealias ScalarType = Double
-  
-  /// TODO: `Dictionary` still does not conform to `Differentiable`
-  /// Tracking issue: https://bugs.swift.org/browse/TF-899
-//  typealias Input = Dictionary<UInt, Tensor<ScalarType>>
 
-// I want to build a general differentiable dot product
-//  @differentiable(wrt: (a, b))
-//  static func dot<T: Differentiable & KeyPathIterable>(_ a: T, _ b: T) -> Double {
-//    let squared = a.recursivelyAllKeyPaths(to: Double.self).map { a[keyPath: $0] * b[keyPath: $0] }
-//
-//    return squared.differentiableReduce(0.0, {$0 + $1})
-//  }
-//
-//  @derivative(of: dot)
-//  static func _vjpDot<T: Differentiable & KeyPathIterable>(_ a: T, _ b: T) -> (
-//    value: Double,
-//    pullback: (Double) -> (T.TangentVector, T.TangentVector)
-//  ) {
-//    return (value: dot(a, b), pullback: { v in
-//      ((at.scaled(by: v), bt.scaled(by: v)))
-//    })
-//  }
-  
-  /// Returns the `error` of the factor.
-  @differentiable(wrt: values)
-  public func error(_ values: Values) -> Double {
-    let actual = values[key1, as: T.self].inverse() * values[key2, as: T.self]
-    let error = difference.localCoordinate(actual)
-    // TODO: It would be faster to call `error.squaredNorm` because then we don't have to pay
-    // the cost of a conversion to `Vector`. To do this, we need a protocol
-    // with a `squaredNorm` requirement.
-    return error.squaredNorm
+  public typealias ErrorVector = Pose.TangentVector
+  public func errorVector(_ start: Pose, _ end: Pose) -> ErrorVector {
+    let actualMotion = between(start, end)
+    return difference.localCoordinate(actualMotion)
   }
+
+  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
+  // with sugar.
   
-  @differentiable(wrt: values)
-  public func errorVector(_ values: Values) -> T.Coordinate.LocalCoordinate {
-    let error = difference.localCoordinate(
-      values[key1, as: T.self].inverse() * values[key2, as: T.self]
-    )
-    
-    return error
+  public func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
   }
-  
-  public func linearize(_ values: Values) -> OldJacobianFactor {
-    return OldJacobianFactor(of: self.errorVector, at: values)
+
+  public func errorVector(at x: Variables) -> Pose.TangentVector {
+    return errorVector(x.head, x.tail.head)
+  }
+
+  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearization {
+    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
+
+/// A between factor on `Pose2`.
+public typealias BetweenFactor2 = BetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
+
+/// A between factor on `Pose3`.
+public typealias BetweenFactor3 = BetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>
