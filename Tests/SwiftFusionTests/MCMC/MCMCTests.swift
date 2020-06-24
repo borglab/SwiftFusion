@@ -24,7 +24,7 @@ class MCMCTests: XCTestCase {
       new_state_fn: {(x:Double) in x + Double.random(in: -1..<1)}
     )
     
-    // Run the sampler for 2500 steps, discarding tthe first 500 asa burn-in
+    // Run the sampler for 2500 steps, discarding the first 500 asa burn-in
     let num_results = 2000
     let initial_state = 1.0
     let num_burnin_steps = 500

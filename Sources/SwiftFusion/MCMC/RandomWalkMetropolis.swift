@@ -16,7 +16,6 @@ import Foundation
 
 /// Runs one step of the RWM algorithm with symmetric proposal.
 /// Inspired by tfp [RandomWalkMetropolis](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc/RandomWalkMetropolis)
-/// TODO(frank): currently does Double only, should be generic
 public class RandomWalkMetropolis<State> : TransitionKernel {
   public typealias Results = Double // target_log_prob_fn of previously accepted state
   
@@ -40,8 +39,8 @@ public class RandomWalkMetropolis<State> : TransitionKernel {
     let current_log_prob = previous_kernel_results
     let log_accept_ratio = new_log_prob - current_log_prob
     
-    // If p(x')/log p(x) >= 1 , i.e., log_accept_ratio >= 0, we always accept
-    // otherwise we accept randomly with probability p(x')/log p(x).
+    // If p(x')/p(x) >= 1 , i.e., log_accept_ratio >= 0, we always accept
+    // otherwise we accept randomly with probability p(x')/p(x).
     // We do this by randomly sampling u from [0,1], and comparing log(u) with log_accept_ratio.
     let u = Double.random(in: 0..<1)
     if (log(u) <= log_accept_ratio) {
