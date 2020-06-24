@@ -39,20 +39,20 @@ func assertAllKeyPathEqual<T: KeyPathIterable>(
 
 /// Factor graph with 2 2D factors on 3 2D variables
 public final class SimpleGaussianFactorGraph {
-  public static func create() -> GaussianFactorGraph {
-    var fg = GaussianFactorGraph()
+  public static func create() -> OldGaussianFactorGraph {
+    var fg = OldGaussianFactorGraph()
     
     let I_2x2 = Matrix(eye: 2)
     let x1 = 2, x2 = 0, l1 = 1
     
     // linearized prior on x1: c[_x1_]+x1=0 i.e. x1=-c[_x1_]
-    fg += JacobianFactor([x1], [10 * I_2x2], -1.0 * Vector([1.0, 1.0]))
+    fg += OldJacobianFactor([x1], [10 * I_2x2], -1.0 * Vector([1.0, 1.0]))
     // odometry between x1 and x2: x2-x1=[0.2;-0.1]
-    fg += JacobianFactor([x2, x1], [10 * I_2x2, -10 * I_2x2], Vector([2.0, -1.0]))
+    fg += OldJacobianFactor([x2, x1], [10 * I_2x2, -10 * I_2x2], Vector([2.0, -1.0]))
     // measurement between x1 and l1: l1-x1=[0.0;0.2]
-    fg += JacobianFactor([l1, x1], [5 * I_2x2, -5 * I_2x2], Vector([0.0, 1.0]))
+    fg += OldJacobianFactor([l1, x1], [5 * I_2x2, -5 * I_2x2], Vector([0.0, 1.0]))
     // measurement between x2 and l1: l1-x2=[-0.2;0.3]
-    fg += JacobianFactor([x2, l1], [-5 * I_2x2, 5 * I_2x2], Vector([-1.0, 1.5]))
+    fg += OldJacobianFactor([x2, l1], [-5 * I_2x2, 5 * I_2x2], Vector([-1.0, 1.5]))
     return fg;
   }
 

@@ -19,9 +19,9 @@ import SwiftFusion
 
 let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
 
-  let intelDataset =
+  let intelDatasetOld =
     try! G2OReader.G2ONonlinearFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
-  check(intelDataset.graph.error(intelDataset.initialGuess), near: 73565.64, accuracy: 1e-2)
+  check(intelDatasetOld.graph.error(intelDatasetOld.initialGuess), near: 73565.64, accuracy: 1e-2)
 
   // Uses `NonlinearFactorGraph` on the Intel dataset.
   // The solvers are configured to run for a constant number of steps.
@@ -31,9 +31,9 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     "NonlinearFactorGraph, Intel, 5 Gauss-Newton steps, 100 CGLS steps",
     settings: Iterations(1), TimeUnit(.ms)
   ) {
-    var val = intelDataset.initialGuess
+    var val = intelDatasetOld.initialGuess
     for _ in 0..<5 {
-      let gfg = intelDataset.graph.linearize(val)
+      let gfg = intelDatasetOld.graph.linearize(val)
       let optimizer = CGLS(precision: 0, max_iteration: 100)
       var dx = VectorValues()
       for i in 0..<val.count {
@@ -42,27 +42,27 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
       optimizer.optimize(gfg: gfg, initial: &dx)
       val.move(along: dx)
     }
-//    check(intelDataset.graph.error(val), near: 35.59, accuracy: 1e-2)
+//    check(intelDatasetOld.graph.error(val), near: 35.59, accuracy: 1e-2)
   }
 
-  let intelDatasetNew =
-    try! G2OReader.G2ONewFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
+  let intelDataset =
+    try! G2OReader.G2OFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
   check(
-    intelDatasetNew.graph.error(at: intelDatasetNew.initialGuess),
+    intelDataset.graph.error(at: intelDataset.initialGuess),
     near: 73565.64,
     accuracy: 1e-2)
 
-  // Uses `NewFactorGraph` on the Intel dataset.
+  // Uses `FactorGraph` on the Intel dataset.
   // The solvers are configured to run for a constant number of steps.
   // The nonlinear solver is 10 iterations of Gauss-Newton.
   // The linear solver is 500 iterations of CGLS.
   suite.benchmark(
-    "NewFactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
+    "FactorGraph, Intel, 10 Gauss-Newton steps, 500 CGLS steps",
     settings: Iterations(1), TimeUnit(.ms)
   ) {
-    var x = intelDatasetNew.initialGuess
-    var graph = intelDatasetNew.graph
-    graph.store(NewPriorFactor2(TypedID(0), Pose2(0, 0, 0)))
+    var x = intelDataset.initialGuess
+    var graph = intelDataset.graph
+    graph.store(PriorFactor2(TypedID(0), Pose2(0, 0, 0)))
 
     for _ in 0..<10 {
       let linearized = graph.linearized(at: x)

@@ -16,9 +16,9 @@
 
 import PenguinStructures
 
-// MARK: - Algorithms on arrays of `NewFactor`s.
+// MARK: - Algorithms on arrays of `Factor`s.
 
-extension ArrayStorage where Element: NewFactor {
+extension ArrayStorage where Element: Factor {
   /// Returns the errors, at `x`, of the factors.
   func errors(at x: VariableAssignments) -> [Double] {
     Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
@@ -29,9 +29,9 @@ extension ArrayStorage where Element: NewFactor {
   }
 }
 
-// MARK: - Algorithms on arrays of `NewLinearizableFactor`s.
+// MARK: - Algorithms on arrays of `LinearizableFactor`s.
 
-extension ArrayStorage where Element: NewLinearizableFactor {
+extension ArrayStorage where Element: LinearizableFactor {
   /// Returns the error vectors, at `x`, of the factors.
   func errorVectors(at x: VariableAssignments) -> ArrayBuffer<Element.ErrorVector> {
     Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
@@ -51,9 +51,9 @@ extension ArrayStorage where Element: NewLinearizableFactor {
   }
 }
 
-// MARK: - Algorithms on arrays of `NewGaussianFactor`s.
+// MARK: - Algorithms on arrays of `GaussianFactor`s.
 
-extension ArrayStorage where Element: NewGaussianFactor {
+extension ArrayStorage where Element: GaussianFactor {
   /// Returns the linear component of `errorVectors` at `x`.
   func errorVectors_linearComponent(_ x: VariableAssignments) -> ArrayBuffer<Element.ErrorVector> {
     Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
@@ -102,25 +102,25 @@ extension ArrayStorage where Element: NewGaussianFactor {
   }
 }
 
-// MARK: - Type-erased arrays of `NewFactor`s.
+// MARK: - Type-erased arrays of `Factor`s.
 
 typealias AnyFactorArrayBuffer = AnyArrayBuffer<FactorArrayDispatch>
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `NewFactor`
+/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Factor`
 /// elements.
 class FactorArrayDispatch: AnyElementDispatch {
   /// Returns the errors, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `NewLinearizableFactor` type.
+  ///   subclass-specific `LinearizableFactor` type.
   class func errors(_ storage: UnsafeRawPointer, at x: VariableAssignments) -> [Double] {
     fatalError("implement as in FactorArrayDispatch_")
   }
 }
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `NewFactor` element type.
-class FactorArrayDispatch_<Element: NewFactor>
+/// specific `Factor` element type.
+class FactorArrayDispatch_<Element: Factor>
   : FactorArrayDispatch, AnyArrayDispatch
 {
   /// Returns the errors, at `x`, of the factors in `storage`.
@@ -133,7 +133,7 @@ class FactorArrayDispatch_<Element: NewFactor>
 
 extension AnyArrayBuffer where Dispatch == FactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Dispatch: NewFactor>(_ src: ArrayBuffer<Dispatch>) {
+  init<Dispatch: Factor>(_ src: ArrayBuffer<Dispatch>) {
     self.init(
       storage: src.storage,
       dispatch: FactorArrayDispatch_<Dispatch>.self)
@@ -147,17 +147,17 @@ extension AnyArrayBuffer where Dispatch: FactorArrayDispatch {
   }
 }
 
-// MARK: - Type-erased arrays of `NewLinearizableFactor`s.
+// MARK: - Type-erased arrays of `LinearizableFactor`s.
 
 typealias AnyLinearizableFactorArrayBuffer = AnyArrayBuffer<LinearizableFactorArrayDispatch>
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `NewLinearizableFactor`
+/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `LinearizableFactor`
 /// elements.
 class LinearizableFactorArrayDispatch: FactorArrayDispatch {
   /// Returns the error vectors, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `NewLinearizableFactor` type.
+  ///   subclass-specific `LinearizableFactor` type.
   class func errorVectors(_ storage: UnsafeRawPointer, at x: VariableAssignments)
     -> AnyVectorArrayBuffer
   {
@@ -167,7 +167,7 @@ class LinearizableFactorArrayDispatch: FactorArrayDispatch {
   /// Returns the linearizations, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `NewLinearizableFactor` type.
+  ///   subclass-specific `LinearizableFactor` type.
   class func linearized(_ storage: UnsafeRawPointer, at x: VariableAssignments)
     -> AnyGaussianFactorArrayBuffer
   {
@@ -176,18 +176,18 @@ class LinearizableFactorArrayDispatch: FactorArrayDispatch {
 }
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `NewLinearizableFactor` element type.
-class LinearizableFactorArrayDispatch_<Element: NewLinearizableFactor>
+/// specific `LinearizableFactor` element type.
+class LinearizableFactorArrayDispatch_<Element: LinearizableFactor>
   : LinearizableFactorArrayDispatch, AnyArrayDispatch
 {
   /// Returns the errors, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == NewBetweenFactor2)
-  @_specialize(where Element == NewBetweenFactor3)
-  @_specialize(where Element == NewBetweenFactorAlternative3)
-  @_specialize(where Element == NewPriorFactor2)
-  @_specialize(where Element == NewPriorFactor3)
+  @_specialize(where Element == BetweenFactor2)
+  @_specialize(where Element == BetweenFactor3)
+  @_specialize(where Element == BetweenFactorAlternative3)
+  @_specialize(where Element == PriorFactor2)
+  @_specialize(where Element == PriorFactor3)
   override class func errors(_ storage: UnsafeRawPointer, at x: VariableAssignments) -> [Double] {
     asStorage(storage).errors(at: x)
   }
@@ -195,11 +195,11 @@ class LinearizableFactorArrayDispatch_<Element: NewLinearizableFactor>
   /// Returns the error vectors, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == NewBetweenFactor2)
-  @_specialize(where Element == NewBetweenFactor3)
-  @_specialize(where Element == NewBetweenFactorAlternative3)
-  @_specialize(where Element == NewPriorFactor2)
-  @_specialize(where Element == NewPriorFactor3)
+  @_specialize(where Element == BetweenFactor2)
+  @_specialize(where Element == BetweenFactor3)
+  @_specialize(where Element == BetweenFactorAlternative3)
+  @_specialize(where Element == PriorFactor2)
+  @_specialize(where Element == PriorFactor3)
   override class func errorVectors(_ storage: UnsafeRawPointer, at x: VariableAssignments)
     -> AnyVectorArrayBuffer
   {
@@ -209,11 +209,11 @@ class LinearizableFactorArrayDispatch_<Element: NewLinearizableFactor>
   /// Returns the linearizations, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == NewBetweenFactor2)
-  @_specialize(where Element == NewBetweenFactor3)
-  @_specialize(where Element == NewBetweenFactorAlternative3)
-  @_specialize(where Element == NewPriorFactor2)
-  @_specialize(where Element == NewPriorFactor3)
+  @_specialize(where Element == BetweenFactor2)
+  @_specialize(where Element == BetweenFactor3)
+  @_specialize(where Element == BetweenFactorAlternative3)
+  @_specialize(where Element == PriorFactor2)
+  @_specialize(where Element == PriorFactor3)
   override class func linearized(_ storage: UnsafeRawPointer, at x: VariableAssignments)
     -> AnyGaussianFactorArrayBuffer
   {
@@ -223,7 +223,7 @@ class LinearizableFactorArrayDispatch_<Element: NewLinearizableFactor>
 
 extension AnyArrayBuffer where Dispatch == LinearizableFactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: NewLinearizableFactor>(_ src: ArrayBuffer<Element>) {
+  init<Element: LinearizableFactor>(_ src: ArrayBuffer<Element>) {
     self.init(
       storage: src.storage,
       dispatch: LinearizableFactorArrayDispatch_<Element>.self)
@@ -242,17 +242,17 @@ extension AnyArrayBuffer where Dispatch: LinearizableFactorArrayDispatch {
   }
 }
 
-// MARK: - Type-erased arrays of `NewGaussianFactor`s.
+// MARK: - Type-erased arrays of `GaussianFactor`s.
 
 typealias AnyGaussianFactorArrayBuffer = AnyArrayBuffer<GaussianFactorArrayDispatch>
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `NewGaussianFactor`
+/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `GaussianFactor`
 /// elements.
 class GaussianFactorArrayDispatch: LinearizableFactorArrayDispatch {
   /// Returns the linear component of `errorVectors` at `x`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `NewGaussianFactor` type.
+  ///   subclass-specific `GaussianFactor` type.
   class func errorVectors_linearComponent(
     _ storage: UnsafeRawPointer,
     _ x: VariableAssignments
@@ -263,7 +263,7 @@ class GaussianFactorArrayDispatch: LinearizableFactorArrayDispatch {
   /// Accumulates the adjoint (aka "transpose" or "dual") of `errorVectors` at `y` into `result`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `NewGaussianFactor` type.
+  ///   subclass-specific `GaussianFactor` type.
   /// - Requires: `y.elementType == Element.ErrorVector.self`.
   /// - Requires: `result` contains elements at all of `self`'s elements' inputs.
   class func errorVectors_linearComponent_adjoint(
@@ -276,8 +276,8 @@ class GaussianFactorArrayDispatch: LinearizableFactorArrayDispatch {
 }
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `NewGaussianFactor` element type.
-class GaussianFactorArrayDispatch_<Element: NewGaussianFactor>
+/// specific `GaussianFactor` element type.
+class GaussianFactorArrayDispatch_<Element: GaussianFactor>
   : GaussianFactorArrayDispatch, AnyArrayDispatch
 {
   /// Returns the errors, at `x`, of the factors in `storage`.
@@ -365,7 +365,7 @@ class GaussianFactorArrayDispatch_<Element: NewGaussianFactor>
   /// Returns the linear component of `errorVectors` at `x`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `NewGaussianFactor` type.
+  ///   subclass-specific `GaussianFactor` type.
   @_specialize(where Element == JacobianFactor3x3_1)
   @_specialize(where Element == JacobianFactor3x3_2)
   @_specialize(where Element == JacobianFactor6x6_1)
@@ -395,7 +395,7 @@ class GaussianFactorArrayDispatch_<Element: NewGaussianFactor>
   /// Accumulates the adjoint (aka "transpose" or "dual") of `errorVectors` at `y` into `result`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `NewGaussianFactor` type.
+  ///   subclass-specific `GaussianFactor` type.
   /// - Requires: `y.elementType == Element.ErrorVector.self`.
   /// - Requires: `result` contains elements at all of `self`'s elements' inputs.
   @_specialize(where Element == JacobianFactor3x3_1)
@@ -431,7 +431,7 @@ class GaussianFactorArrayDispatch_<Element: NewGaussianFactor>
 
 extension AnyArrayBuffer where Dispatch == GaussianFactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: NewGaussianFactor>(_ src: ArrayBuffer<Element>) {
+  init<Element: GaussianFactor>(_ src: ArrayBuffer<Element>) {
     self.init(
       storage: src.storage,
       dispatch: GaussianFactorArrayDispatch_<Element>.self)

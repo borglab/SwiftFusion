@@ -54,8 +54,8 @@ public struct LM {
     self.step = 0
   }
   
-  public mutating func optimize(graph: NewFactorGraph, initial val: inout VariableAssignments,
-                                hook: ((NewFactorGraph, VariableAssignments, Double, Int) -> Void)? = nil) throws {
+  public mutating func optimize(graph: FactorGraph, initial val: inout VariableAssignments,
+                                hook: ((FactorGraph, VariableAssignments, Double, Int) -> Void)? = nil) throws {
     var old_error = graph.linearizableError(at: val)
     
     if verbosity >= .SUMMARY {

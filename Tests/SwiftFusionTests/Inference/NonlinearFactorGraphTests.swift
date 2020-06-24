@@ -7,7 +7,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
   func testBasicOps() {
     var fg = NonlinearFactorGraph()
     
-    let bf1 = BetweenFactor(0, 1, Pose2(0.0,0.0, 0.0))
+    let bf1 = OldBetweenFactor(0, 1, Pose2(0.0,0.0, 0.0))
     
     fg += bf1
     
@@ -42,11 +42,11 @@ final class NonlinearFactorGraphTests: XCTestCase {
 
     var fg = NonlinearFactorGraph()
     
-    fg += BetweenFactor(1, 0, Pose2(2.0, 0.0, .pi / 2))
-    fg += BetweenFactor(2, 1, Pose2(2.0, 0.0, .pi / 2))
-    fg += BetweenFactor(3, 2, Pose2(2.0, 0.0, .pi / 2))
-    fg += BetweenFactor(4, 3, Pose2(2.0, 0.0, .pi / 2))
-    fg += PriorFactor(0, Pose2(0.0, 0.0, 0.0))
+    fg += OldBetweenFactor(1, 0, Pose2(2.0, 0.0, .pi / 2))
+    fg += OldBetweenFactor(2, 1, Pose2(2.0, 0.0, .pi / 2))
+    fg += OldBetweenFactor(3, 2, Pose2(2.0, 0.0, .pi / 2))
+    fg += OldBetweenFactor(4, 3, Pose2(2.0, 0.0, .pi / 2))
+    fg += OldPriorFactor(0, Pose2(0.0, 0.0, 0.0))
     
     var val = Values()
     
@@ -103,12 +103,12 @@ final class NonlinearFactorGraphTests: XCTestCase {
     let L2 = 4
 
     // Add a prior on pose X1 at the origin. A prior factor consists of a mean and a noise model
-    fg += PriorFactor(X1, Pose2(0.0, 0.0, 0.0))
+    fg += OldPriorFactor(X1, Pose2(0.0, 0.0, 0.0))
 
     // Add odometry factors between X1,X2 and X2,X3, respectively
-    fg += BetweenFactor(
+    fg += OldBetweenFactor(
         X1, X2, Pose2(2.0, 0.0, 0.0))
-    fg += BetweenFactor(
+    fg += OldBetweenFactor(
         X2, X3, Pose2(2.0, 0.0, 0.0))
 
     // Add Range-Bearing measurements to two different landmarks L1 and L2

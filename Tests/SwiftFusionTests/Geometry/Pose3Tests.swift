@@ -42,7 +42,7 @@ final class Pose3Tests: XCTestCase {
     let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
     let t1 = Pose3(R, P)
     let I: Tensor<Double> = eye(rowCount: 6)
-    let prior_factor = PriorFactor(0, t1)
+    let prior_factor = OldPriorFactor(0, t1)
     
     var vals = Values()
     vals.insert(0, t1) // should be identity matrix
@@ -88,15 +88,15 @@ final class Pose3Tests: XCTestCase {
     
     // create a Pose graph with one equality constraint and one measurement
     var fg = NonlinearFactorGraph()
-    fg += PriorFactor(0, p0)
+    fg += OldPriorFactor(0, p0)
     let delta = between(p0, p1)
 
-    fg += BetweenFactor(0, 1, delta)
-    fg += BetweenFactor(1, 2, delta)
-    fg += BetweenFactor(2, 3, delta)
-    fg += BetweenFactor(3, 4, delta)
-    fg += BetweenFactor(4, 5, delta)
-    fg += BetweenFactor(5, 0, delta)
+    fg += OldBetweenFactor(0, 1, delta)
+    fg += OldBetweenFactor(1, 2, delta)
+    fg += OldBetweenFactor(2, 3, delta)
+    fg += OldBetweenFactor(3, 4, delta)
+    fg += OldBetweenFactor(4, 5, delta)
+    fg += OldBetweenFactor(5, 0, delta)
 
     // Create initial config
     var val = Values()
