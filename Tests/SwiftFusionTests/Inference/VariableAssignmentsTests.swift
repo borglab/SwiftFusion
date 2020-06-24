@@ -26,6 +26,9 @@ class VariableAssignmentsTests: XCTestCase {
     let intID = x.store(1)
     XCTAssertEqual(x[intID], 1)
 
+    x[intID] = 2
+    XCTAssertEqual(x[intID], 2)
+
     let doubleID = x.store(2.0)
     XCTAssertEqual(x[doubleID], 2.0)
 
