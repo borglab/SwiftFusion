@@ -11,13 +11,13 @@ struct DiscreteTransitionFactor : NewFactor {
   
   /// The IDs of the variables adjacent to this factor.
   public let edges: Variables.Indices
-
+  
   /// The number of states.
   let stateCount: Int
-
+  
   /// Entry `i * stateCount + j` is the probability of transitioning from state `j` to state `i`.
   let transitionMatrix: [Double]
-
+  
   init(
     _ inputId1: TypedID<Int, Int>,
     _ inputId2: TypedID<Int, Int>,
@@ -29,7 +29,7 @@ struct DiscreteTransitionFactor : NewFactor {
     self.stateCount = stateCount
     self.transitionMatrix = transitionMatrix
   }
-
+  
   func error(at q: Variables) -> Double {
     let (label1, label2) = (q.head, q.tail.head)
     return -log(transitionMatrix[label2 * stateCount + label1])
@@ -43,15 +43,15 @@ struct DiscreteTransitionFactor : NewFactor {
 /// avoid specifying this type parameter every time you create an instance.
 public struct NewSwitchingBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
   NewLinearizableFactor
-  where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
+where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
 {
   public typealias Variables = Tuple3<Pose, Int, Pose>
-
+  
   public let edges: Variables.Indices
   
   /// Movement temmplates for each label.
   let movements: [Pose]
-
+  
   public init(_ from: TypedID<Pose, Int>,
               _ label: TypedID<Int, Int>,
               _ to: TypedID<Pose, Int>,
@@ -59,26 +59,26 @@ public struct NewSwitchingBetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeA
     self.edges = Tuple3(from, label, to)
     self.movements = movements
   }
-
+  
   public typealias ErrorVector = Pose.TangentVector
-
+  
   @differentiable(wrt: (start, end))
   public func errorVector(_ start: Pose, _ label: Int, _ end: Pose) -> ErrorVector {
     let actualMotion = between(start, end)
     return movements[label].localCoordinate(actualMotion)
   }
-
+  
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
   
   public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }
-
+  
   public func errorVector(at x: Variables) -> Pose.TangentVector {
     return errorVector(x.head, x.tail.head, x.tail.tail.head)
   }
-
+  
   public typealias Linearization = NewJacobianFactor<JacobianRows, ErrorVector>
   public func linearized(at x: Variables) -> Linearization {
     let (start, label, end) = (x.head, x.tail.head, x.tail.tail.head)
@@ -119,7 +119,7 @@ class Scratch: XCTestCase {
     let x1 = variables.store(origin)
     let x2 = variables.store(origin)
     let x3 = variables.store(origin)
-
+    
     var graph = NewFactorGraph()
     graph.store(NewPriorFactor2(x1, z1)) // prior
     graph.store(NewPriorFactor2(x1, z1))
@@ -127,32 +127,32 @@ class Scratch: XCTestCase {
     graph.store(NewPriorFactor2(x3, z3))
     graph.store(NewBetweenFactor2(x1, x2, forwardMove))
     graph.store(NewBetweenFactor2(x2, x3, forwardMove))
-
+    
     return (graph, variables)
   }
-
+  
   /// Tracking example from Figure 2.a
   func testTrackingExample() {
     // create a factor graph
     var (graph, variables) = createTrackingFactorGraph()
     _ = graph as NewFactorGraph
-
+    
     // check number of factor types
     XCTAssertEqual(graph.storage.count, 2)
-
+    
     // check error at initial estimate
     XCTAssertEqual(graph.error(at: variables), expectedTrackingError)
     
     // optimize
     var opt = LM()
     try! opt.optimize(graph: graph, initial: &variables)
-
+    
     // check number of factor types
     print(variables[TypedID<Pose2, Int>(0)])
     print(variables[TypedID<Pose2, Int>(1)])
     print(variables[TypedID<Pose2, Int>(2)])
   }
-
+  
   func createSwitchingFactorGraph() -> (NewFactorGraph, VariableAssignments) {
     var variables = VariableAssignments()
     let x1 = variables.store(origin)
@@ -160,7 +160,7 @@ class Scratch: XCTestCase {
     let x3 = variables.store(origin)
     let q1 = variables.store(0)
     let q2 = variables.store(0)
-
+    
     // Model parameters.
     let labelCount = 3
     let transitionMatrix: [Double] = [
@@ -173,7 +173,7 @@ class Scratch: XCTestCase {
       Pose2(1, 0, .pi / 4), // turn left
       Pose2(1, 0, -.pi / 4) // turn right
     ]
-
+    
     var graph = NewFactorGraph()
     graph.store(NewPriorFactor2(x1, z1)) // prior
     graph.store(NewPriorFactor2(x1, z1))
@@ -182,16 +182,17 @@ class Scratch: XCTestCase {
     graph.store(NewSwitchingBetweenFactor2(x1, q1, x2, movements))
     graph.store(NewSwitchingBetweenFactor2(x2, q2, x3, movements))
     graph.store(DiscreteTransitionFactor(q1, q2, labelCount, transitionMatrix))
-
+    
     return (graph, variables)
   }
-
+  
   /// Tracking switching from Figure 2.b
   func testSwitchingExample() {
     // create a factor graph
     var (graph, variables) = createSwitchingFactorGraph()
     _ = graph as NewFactorGraph
-
+    _ = variables as VariableAssignments
+    
     // check number of factor types
     XCTAssertEqual(graph.storage.count, 3)
     
@@ -208,17 +209,15 @@ class Scratch: XCTestCase {
     print(variables[TypedID<Pose2, Int>(2)])
     
     // Create initial state for MCMC sampler
-    let current_state = [0,1].map {i in variables[TypedID<Int, Int>(i)]}
+    let current_state = variables
     
     // Do MCMC the tfp way
     let num_results = 50
     let num_burnin_steps = 30
     
-    typealias State = [Int]
-
     let kernel = RandomWalkMetropolis(
-      target_log_prob_fn: {(x:State) in 0.0}, //  tfd.Normal(loc=dtype(0), scale=dtype(1))
-      new_state_fn: {(x:State) in x}
+      target_log_prob_fn: {(x:VariableAssignments) in 0.0},
+      new_state_fn: {(x:VariableAssignments) in x}
     )
     
     let states = sampleChain(
