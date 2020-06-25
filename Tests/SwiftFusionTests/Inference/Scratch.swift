@@ -194,6 +194,18 @@ class Scratch: XCTestCase {
     print(variables[TypedID<Int, Int>(0)])
     print(variables[TypedID<Int, Int>(1)])
   }
+
+  /// Returns the gradient of the error function of `graph` at `x`.
+  func errorGradient(_ graph: FactorGraph, _ x: VariableAssignments) -> AllVectors {
+    let l = graph.linearized(at: x)
+    return l.errorVectors_linearComponent_adjoint(l.errorVectors(at: x.tangentVectorZeros))
+  }
+
+  func printGradient(_ grad: AllVectors) {
+    for i in 0..<3 {
+      print("  \(grad[TypedID<Vector3, Int>(i)])")
+    }
+  }
   
   /// Tracking switching from Figure 2.b
   func testSwitchingExample() {
@@ -235,17 +247,28 @@ class Scratch: XCTestCase {
       var y = x
       y[id] = Int.random(in: 0..<3)
       
-      // Initialize trajectory to zero before optimizing
-      for i in 0..<positionVars!.count {
-        y[TypedID<Pose2,Int>(i)] = Pose2(0, 0, 0)
-      }
-      
       // Pose2SLAM to find new proposed positions.
+      print("Pose2SLAM starting at:")
       self.printLabels(y)
       self.printPoses(y)
-      try! opt.optimize(graph: graph, initial: &y)
+      do {
+        try opt.optimize(graph: graph, initial: &y)
+      } catch {
+        // TODO: Investigate why the optimizer fails to make progress when it's near the solution.
+        print("ignoring optimizer error")
+      }
+
+      // Check that we found a local minimum by asserting that the gradient is 0. The optimizer
+      // isn't good at getting precisely to the minimum, so the assertion has a pretty big
+      // `accuracy` argument.
+      let grad = self.errorGradient(graph, y)
+      XCTAssertEqual(grad.squaredNorm, 0, accuracy: 0.1)
+
+      print("Pose2SLAM solution:")
       self.printLabels(y)
       self.printPoses(y)
+      print("Gradient of error function at solution:")
+      self.printGradient(grad)
       return y
     }
     
