@@ -17,9 +17,33 @@ import TensorFlow
 import XCTest
 
 import PenguinStructures
-@testable import SwiftFusion
+import SwiftFusion
 
 class GaussianFactorGraphTests: XCTestCase {
+  /// Stores a factor in the graph and evaluates the graph error vector.
+  func testStoreFactors() {
+    var x = VariableAssignments()
+    let id1 = x.store(Vector1(1))
+    let id2 = x.store(Vector2(2, 3))
+
+    let A = Array2(
+      Tuple2(Vector1(10), Vector2(100, 1000)),
+      Tuple2(Vector1(-10), Vector2(-100, -1000))
+    )
+    let b = Vector2(8, 9)
+
+    var graph = GaussianFactorGraph(zeroValues: x.tangentVectorZeros)
+    let f1 = JacobianFactor(jacobian: A, error: b, edges: Tuple2(id1, id2))
+    graph.store(f1)
+
+    // `b - A * x`
+    let expected = Vector2(
+      8 - (3210),
+      9 - (-3210)
+    )
+    XCTAssertEqual(graph.errorVectors(at: x)[0, factorType: type(of: f1)], expected)
+  }
+
   /// Adds some scalar jacobians and tests that the resulting graph produces the correct error
   /// vectors.
   func testAddScalarJacobians() {
@@ -28,7 +52,7 @@ class GaussianFactorGraphTests: XCTestCase {
     let id2 = x.store(Vector2(3, 4))
     let id3 = x.store(Vector3(5, 6, 7))
 
-    var jacobians = GaussianFactorGraph(storage: [:], zeroValues: x.tangentVectorZeros)
+    var jacobians = GaussianFactorGraph(zeroValues: x.tangentVectorZeros)
     jacobians.addScalarJacobians(10)
 
     let errorVectors = jacobians.errorVectors(at: x)
