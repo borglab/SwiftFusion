@@ -121,38 +121,49 @@ class FactorGraphTests: XCTestCase {
     let p0 = hexagon[hexagonId[0]]
     let p1 = hexagon[hexagonId[1]]
     let p2 = hexagon[hexagonId[2]]
-    
-    var x = VariableAssignments()
-    
-    let s = 0.90
-    let id0 = x.store(p0)
-    let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    
-    var fg = FactorGraph()
-    fg.store(PriorFactor3(id0, p0))
-    let delta: Pose3 = between(p0, p1)
 
-    fg.store(BetweenFactorAlternative3(id0, id1, delta))
-    fg.store(BetweenFactorAlternative3(id1, id2, delta))
-    fg.store(BetweenFactorAlternative3(id2, id3, delta))
-    fg.store(BetweenFactorAlternative3(id3, id4, delta))
-    fg.store(BetweenFactorAlternative3(id4, id5, delta))
-    fg.store(BetweenFactorAlternative3(id5, id0, delta))
+    // Sometimes this optimization gets stuck in a local minimum, so attempt until we find the
+    // global minimum, with a maximum of `attemptCount` attempts.
+    let attemptCount = 10
+    for _ in 0..<attemptCount {
+      var x = VariableAssignments()
+      
+      let s = 0.9
+      let id0 = x.store(p0)
+      let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      
+      var fg = FactorGraph()
+      fg.store(PriorFactor3(id0, p0))
+      let delta: Pose3 = between(p0, p1)
 
-    // optimize
-    for _ in 0..<16 {
-      let gfg = fg.linearized(at: x)
-      var dx = x.tangentVectorZeros
-      var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
-      optimizer.optimize(gfg: gfg, initial: &dx)
-      x.move(along: (-1) * dx)
+      fg.store(BetweenFactorAlternative3(id0, id1, delta))
+      fg.store(BetweenFactorAlternative3(id1, id2, delta))
+      fg.store(BetweenFactorAlternative3(id2, id3, delta))
+      fg.store(BetweenFactorAlternative3(id3, id4, delta))
+      fg.store(BetweenFactorAlternative3(id4, id5, delta))
+      fg.store(BetweenFactorAlternative3(id5, id0, delta))
+
+      // optimize
+      for _ in 0..<16 {
+        let gfg = fg.linearized(at: x)
+        var dx = x.tangentVectorZeros
+        var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
+        optimizer.optimize(gfg: gfg, initial: &dx)
+        x.move(along: (-1) * dx)
+      }
+
+      if fg.error(at: x) < 1e-5 {
+        // Successfully found the global minimum.
+        let pose_2 = x[id2]
+        assertAllKeyPathEqual(pose_2, p2, accuracy: 1e-2)
+        return
+      }
     }
 
-    let pose_2 = x[id2]
-    assertAllKeyPathEqual(pose_2, p2, accuracy: 1e-2)
+    XCTFail("failed to find the global minimum after \(attemptCount) attempts")
   }
 }
