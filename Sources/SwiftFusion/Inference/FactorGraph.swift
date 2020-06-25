@@ -55,6 +55,14 @@ public struct FactorGraph {
     ].unsafelyAppend(factor)
   }
 
+  /// Returns the factors of type `T`.
+  public func factors<T>(type _: T.Type) -> ArrayBuffer<T> {
+    guard let anyArrayBuffer = storage[ObjectIdentifier(T.self)] else {
+      return ArrayBuffer<T>()
+    }
+    return ArrayBuffer(unsafelyDowncasting: anyArrayBuffer)
+  }
+
   /// Returns the total error, at `x`, of all the factors.
   public func error(at x: VariableAssignments) -> Double {
     return storage.values.lazy.map { $0.errors(at: x).reduce(0, +) }.reduce(0, +)
