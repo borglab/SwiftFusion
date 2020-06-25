@@ -20,6 +20,37 @@ import PenguinStructures
 import SwiftFusion
 
 class FactorGraphTests: XCTestCase {
+  /// Tests that we can read factors from a factor graph.
+  func testGetFactors() {
+    let pose1ID = TypedID<Pose2, Int>(0)
+    let pose2ID = TypedID<Pose2, Int>(1)
+
+    var graph = FactorGraph()
+    graph.store(PriorFactor2(pose1ID, Pose2(1, 2, 3)))
+    graph.store(PriorFactor2(pose2ID, Pose2(4, 5, 6)))
+    graph.store(BetweenFactor2(pose1ID, pose2ID, Pose2(7, 8, 9)))
+
+    XCTAssertEqual(
+      graph.factors(type: PriorFactor2.self).map { $0.edges },
+      [Tuple1(pose1ID), Tuple1(pose2ID)]
+    )
+    XCTAssertEqual(
+      graph.factors(type: PriorFactor2.self).map { $0.prior },
+      [Pose2(1, 2, 3), Pose2(4, 5, 6)]
+    )
+
+    XCTAssertEqual(
+      graph.factors(type: BetweenFactor2.self).map { $0.edges },
+      [Tuple2(pose1ID, pose2ID)]
+    )
+    XCTAssertEqual(
+      graph.factors(type: BetweenFactor2.self).map { $0.difference },
+      [Pose2(7, 8, 9)]
+    )
+
+    XCTAssertEqual(graph.factors(type: PriorFactor3.self).count, 0)
+  }
+
   func testSimplePose2SLAM() {
     var x = VariableAssignments()
     let pose1ID = x.store(Pose2(Rot2(0.2), Vector2(0.5, 0.0)))

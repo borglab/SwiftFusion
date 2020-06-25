@@ -21,7 +21,7 @@ import PenguinStructures
 ///   logical value of that type.
 ///
 /// Note: This is just a temporary placeholder until we get the real `TypedID` in penguin.
-public struct TypedID<Value, PerTypeID: Equatable> {
+public struct TypedID<Value, PerTypeID: Equatable>: Equatable {
   /// A specifier of which logical value of type `value` is being identified.
   public let perTypeID: PerTypeID
 
