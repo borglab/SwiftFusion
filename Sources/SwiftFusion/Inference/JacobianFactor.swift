@@ -37,7 +37,7 @@ public struct JacobianFactor<
   public let edges: Variables.Indices
 
   /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
-  init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
+  public init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
     self.jacobian = jacobian
     self.error = error
     self.edges = edges
