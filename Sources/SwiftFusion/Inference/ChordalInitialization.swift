@@ -42,7 +42,11 @@ public struct ChordalInitialization {
     return pose3Graph
   }
   
-  func buildLinearOrientationGraph(g: FactorGraph, v: VariableAssignments) -> GaussianFactorGraph {
+  func buildLinearOrientationGraph(
+    g: FactorGraph,
+    v: VariableAssignments,
+    associations: Dictionary<Int, TypedID<Vector9, Int>>
+  ) -> GaussianFactorGraph {
     
     let initial = v.tangentVectorZeros
     var linearGraph = GaussianFactorGraph(storage: [:], zeroValues: initial)
@@ -52,8 +56,8 @@ public struct ChordalInitialization {
 
       Rij = pose3Between.difference.rot.coordinate.R
       
-      let key1 = TypedID<Vector9, Int>(pose3Between.edges.head.perTypeID)
-      let key2 = TypedID<Vector9, Int>(pose3Between.edges.tail.head.perTypeID)
+      let key1 = associations[pose3Between.edges.head.perTypeID]!
+      let key2 = associations[pose3Between.edges.tail.head.perTypeID]!
       
       let M9: Jacobian9x9_2 = Array9([
         Tuple2(Vector9(-1,0,0,0,0,0,0,0,0), Vector9(Rij.s00,Rij.s01,Rij.s02,0,0,0,0,0,0)),
@@ -87,7 +91,7 @@ public struct ChordalInitialization {
     // prior on the anchor orientation
     linearGraph.store(JacobianFactor9x9_1(jacobian: I_9x9,
                                           error: Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
-                                          edges: Tuple1(TypedID<Vector9, Int>(anchorId.perTypeID))))
+                                          edges: Tuple1(associations[anchorId.perTypeID]!)))
     
     return linearGraph
   }
@@ -120,14 +124,29 @@ public struct ChordalInitialization {
   }
   
   func computeOrientationsChordal(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+    var relaxedRot3 = VariableAssignments()
+    var associations = Dictionary<Int, TypedID<Vector9, Int>>()
+    
+    for v in ids {
+      let R = val[v].rot.coordinate.R
+      associations[v.perTypeID] = relaxedRot3.store(
+        Vector9(R.s00, R.s01, R.s02,
+        R.s10, R.s11, R.s12,
+        R.s20, R.s21, R.s22))
+    }
+    
+    let R_a = val[anchorId].rot.coordinate.R
+    associations[anchorId.perTypeID] = relaxedRot3.store(Vector9(R_a.s00, R_a.s01, R_a.s02,
+    R_a.s10, R_a.s11, R_a.s12,
+    R_a.s20, R_a.s21, R_a.s22))
+    
     // regularize measurements and plug everything in a factor graph
-    let relaxedGraph: GaussianFactorGraph = buildLinearOrientationGraph(g: graph, v: val)
+    let relaxedGraph: GaussianFactorGraph = buildLinearOrientationGraph(g: graph, v: val, associations: associations)
 
     // Solve the LFG
-    var relaxedRot3: VariableAssignments = relaxedGraph.zeroValues
-    
     print("Graph: \(relaxedGraph)")
-    print("Rots: \(relaxedRot3[anchorId])")
+    print("Rots: \(relaxedRot3[associations[anchorId.perTypeID]!])")
+    print("error: \(relaxedGraph.errorVectors(at: relaxedRot3))")
     var optimizer = GenericCGLS()
     optimizer.optimize(gfg: relaxedGraph, initial: &relaxedRot3)
 
