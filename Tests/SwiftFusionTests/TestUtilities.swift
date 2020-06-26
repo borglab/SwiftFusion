@@ -27,9 +27,16 @@ func assertEqual<T: TensorFlowFloatingPoint>(
 func assertAllKeyPathEqual<T: KeyPathIterable>(
   _ x: T, _ y: T, accuracy: Double, file: StaticString = #file, line: UInt = #line
 ) {
-  let _ = x.recursivelyAllKeyPaths(to: Double.self).map {
+  let result: [Bool] = x.recursivelyAllKeyPaths(to: Double.self).map {
+    if !(abs(x[keyPath: $0] - y[keyPath: $0]) < accuracy) {
+      return false
+    } else {
+      return true
+    }
+  }
+  if !result.allSatisfy({ x in x == true }) {
     XCTAssert(
-      abs(x[keyPath: $0] - y[keyPath: $0]) < accuracy,
+      false,
       "value mismatch:\n\(x)\nis not equal to\n\(y)\nwith accuracy \(accuracy)",
       file: file,
       line: line

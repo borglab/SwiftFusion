@@ -22,13 +22,13 @@ public typealias JacobianFactor9x9_2 = JacobianFactor<Jacobian9x9_2, Vector9>
 
 /// Chordal Initialization for Pose3s
 public struct ChordalInitialization {
-  var anchorId: TypedID<Pose3, Int>
+  public var anchorId: TypedID<Pose3, Int>
   
   public init() {
     anchorId = TypedID<Pose3, Int>(0)
   }
   
-  func buildPose3graph(graph: FactorGraph) -> FactorGraph {
+  public func buildPose3graph(graph: FactorGraph) -> FactorGraph {
     var pose3Graph = FactorGraph()
 
     for factor in graph.factors(type: BetweenFactor3.self) {
@@ -42,7 +42,7 @@ public struct ChordalInitialization {
     return pose3Graph
   }
   
-  func buildLinearOrientationGraph(
+  public func buildLinearOrientationGraph(
     g: FactorGraph,
     v: VariableAssignments,
     v_linear: VariableAssignments,
@@ -95,7 +95,7 @@ public struct ChordalInitialization {
     return linearGraph
   }
   
-  func normalizeRelaxedRotations(_ relaxedRot3: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+  public func normalizeRelaxedRotations(_ relaxedRot3: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var validRot3 = VariableAssignments()
     
     for v in ids {
@@ -122,7 +122,7 @@ public struct ChordalInitialization {
     return validRot3;
   }
   
-  func computeOrientationsChordal(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+  public func computeOrientationsChordal(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var relaxedRot3 = VariableAssignments()
     var associations = Dictionary<Int, TypedID<Vector9, Int>>()
     
@@ -144,16 +144,27 @@ public struct ChordalInitialization {
 
     // Solve the LFG
     var optimizer = GenericCGLS()
+    print("[COC BEFORE] \(relaxedGraph.errorVectors(at: relaxedRot3).squaredNorm)")
     optimizer.optimize(gfg: relaxedGraph, initial: &relaxedRot3)
-
+    print("[COC AFTER ] \(relaxedGraph.errorVectors(at: relaxedRot3).squaredNorm)")
+    
     // normalize and compute Rot3
     return normalizeRelaxedRotations(relaxedRot3, ids: ids)
   }
   
-  func computePoses(graph: FactorGraph, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
-    var val = VariableAssignments()
+  public func computePoses(graph: FactorGraph, original_initialization: VariableAssignments, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+    var val = original_initialization
     for v in ids {
-      val.store(Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0)))
+      val[v]=Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0))
+    }
+    
+    // optimize
+    for _ in 0..<1 {
+      let gfg = graph.linearized(at: val)
+      var dx = val.tangentVectorZeros
+      var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
+      optimizer.optimize(gfg: gfg, initial: &dx)
+      val.move(along: (-1) * dx)
     }
     return val
   }
@@ -169,6 +180,6 @@ public struct ChordalInitialization {
     let orientations = computeOrientationsChordal(graph: pose3Graph, val: val_copy, ids: ids)
 
     // Compute the full poses (1 GN iteration on full poses)
-    return computePoses(graph: pose3Graph, orientations: orientations, ids: ids)
+    return computePoses(graph: pose3Graph, original_initialization: val_copy, orientations: orientations, ids: ids)
   }
 }
