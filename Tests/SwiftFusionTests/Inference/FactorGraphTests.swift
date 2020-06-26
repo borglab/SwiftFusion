@@ -49,6 +49,24 @@ class FactorGraphTests: XCTestCase {
     )
 
     XCTAssertEqual(graph.factors(type: PriorFactor3.self).count, 0)
+
+    print(graph)
+    // We desire something pretty like:
+    //   [
+    //     PriorFactor(0, Pose2(1, 2, 3)),
+    //     PriorFactor(1, Pose2(4, 5, 6)),
+    //     BetweenFactor(0, 1, Pose2(7, 8, 9))
+    //   ]
+    //
+    // Or even better, with named variables:
+    //   [
+    //     PriorFactor("x1", Pose2(1, 2, 3)),
+    //     PriorFactor("x2", Pose2(4, 5, 6)),
+    //     BetweenFactor("x1", "x2", Pose2(7, 8, 9))
+    //   ]
+    //
+    // But we get this instead:
+    //   FactorGraph(storage: [ObjectIdentifier(0x000055bd674c3930): PenguinStructures.AnyArrayBuffer<SwiftFusion.FactorArrayDispatch>(storage: Optional(PenguinStructures.ArrayStorage<SwiftFusion.BetweenFactor<SwiftFusion.Pose2, PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.Array0<PenguinStructures.Tuple<SwiftFusion.Vector3, PenguinStructures.Tuple<SwiftFusion.Vector3, PenguinStructures.Empty>>>>>>>>), dispatch: SwiftFusion.LinearizableFactorArrayDispatch_<SwiftFusion.BetweenFactor<SwiftFusion.Pose2, PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.Array0<PenguinStructures.Tuple<SwiftFusion.Vector3, PenguinStructures.Tuple<SwiftFusion.Vector3, PenguinStructures.Empty>>>>>>>>), ObjectIdentifier(0x00007f28951de878): PenguinStructures.AnyArrayBuffer<SwiftFusion.FactorArrayDispatch>(storage: Optional(PenguinStructures.ArrayStorage<SwiftFusion.PriorFactor<SwiftFusion.Pose2, PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.Array0<PenguinStructures.Tuple<SwiftFusion.Vector3, PenguinStructures.Empty>>>>>>>), dispatch: SwiftFusion.LinearizableFactorArrayDispatch_<SwiftFusion.PriorFactor<SwiftFusion.Pose2, PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.ArrayN<PenguinStructures.Array0<PenguinStructures.Tuple<SwiftFusion.Vector3, PenguinStructures.Empty>>>>>>>)])
   }
 
   func testSimplePose2SLAM() {

@@ -34,6 +34,24 @@ class VariableAssignmentsTests: XCTestCase {
 
     let vectorID = x.store(Vector2(3, 4))
     XCTAssertEqual(x[vectorID], Vector2(3, 4))
+
+    print(x)
+    // We desire something pretty like:
+    //   [
+    //     2,
+    //     2.0,
+    //     [3, 4]
+    //   ]
+    //
+    // Or even better, named variables:
+    //   [
+    //     x1: 2,
+    //     x2: 2.0,
+    //     x3: [3, 4]
+    //   ]
+    //
+    // But we get this instead:
+    //   VariableAssignments(storage: [ObjectIdentifier(0x00007fcf9b7ea198): PenguinStructures.AnyArrayBuffer<SwiftFusion.AnyElementDispatch>(storage: Optional(PenguinStructures.ArrayStorage<Swift.Double>), dispatch: SwiftFusion.AnyElementDispatch), ObjectIdentifier(0x0000557603e35218): PenguinStructures.AnyArrayBuffer<SwiftFusion.AnyElementDispatch>(storage: Optional(PenguinStructures.ArrayStorage<SwiftFusion.Vector2>), dispatch: SwiftFusion.VectorArrayDispatch_<SwiftFusion.Vector2>), ObjectIdentifier(0x00007fcf9b7ea538): PenguinStructures.AnyArrayBuffer<SwiftFusion.AnyElementDispatch>(storage: Optional(PenguinStructures.ArrayStorage<Swift.Int>), dispatch: SwiftFusion.AnyElementDispatch)])
   }
 
   func testTangentVectorZeros() {

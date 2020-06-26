@@ -42,6 +42,19 @@ class GaussianFactorGraphTests: XCTestCase {
       9 - (-3210)
     )
     XCTAssertEqual(graph.errorVectors(at: x)[0, factorType: type(of: f1)], expected)
+
+    print(graph)
+    // We desire something pretty like this:
+    //   [
+    //     JacobianFactor(
+    //       jacobian:
+    //         [([ 10], [ 100,  1000]),
+    //          ([-10], [-100, -1000])]
+    //       error:
+    //         [8,
+    //          9]
+    //       edges: (0, 1))
+    //   ]
   }
 
   /// Adds some scalar jacobians and tests that the resulting graph produces the correct error
