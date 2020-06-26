@@ -95,11 +95,14 @@ public struct ChordalInitialization {
     return linearGraph
   }
   
-  public func normalizeRelaxedRotations(_ relaxedRot3: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+  public func normalizeRelaxedRotations(
+    _ relaxedRot3: VariableAssignments,
+    associations: Dictionary<Int, TypedID<Vector9, Int>>,
+    ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var validRot3 = VariableAssignments()
     
     for v in ids {
-      let M_v: Vector9 = relaxedRot3[TypedID<Vector9, Int>(v.perTypeID)]
+      let M_v: Vector9 = relaxedRot3[associations[v.perTypeID]!]
       
       let M = M_v.tensor.reshaped(to: [3, 3])
       
@@ -110,7 +113,7 @@ public struct ChordalInitialization {
                  - UVT[1, 0].scalar! * (UVT[0, 1].scalar! * UVT[2, 2].scalar! - UVT[2, 1].scalar! * UVT[0, 2].scalar!)
                  + UVT[2, 0].scalar! * (UVT[0, 1].scalar! * UVT[1, 2].scalar! - UVT[1, 1].scalar! * UVT[0, 2].scalar!))
       
-      let R = matmul(matmul(U!, Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()), V!.transposed())
+      let R = matmul(matmul(U!, Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()), V!.transposed()).transposed()
       // ClosestTo finds rotation matrix closest to H in Frobenius sense
       let initRot = Rot3(coordinate:
                           Matrix3Coordinate(Matrix3(R[0, 0].scalar!, R[0, 1].scalar!, R[0, 2].scalar!,
@@ -148,8 +151,15 @@ public struct ChordalInitialization {
     optimizer.optimize(gfg: relaxedGraph, initial: &relaxedRot3)
     print("[COC AFTER ] \(relaxedGraph.errorVectors(at: relaxedRot3).squaredNorm)")
     
+    for i in associations.sorted(by: { $0.0 < $1.0 }) {
+      print("\(i.key): \(relaxedRot3[i.value])")
+    }
+    
+    print("\(ids)")
+    let result = normalizeRelaxedRotations(relaxedRot3, associations: associations, ids: ids)
+    
     // normalize and compute Rot3
-    return normalizeRelaxedRotations(relaxedRot3, ids: ids)
+    return result
   }
   
   public func computePoses(graph: FactorGraph, original_initialization: VariableAssignments, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
