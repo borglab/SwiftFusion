@@ -232,6 +232,13 @@ class FactorGraphTests: XCTestCase {
 
       var initializer = ChordalInitialization()
       let chordal_init = initializer.GetInitializations(graph: fg, val: x, ids: [id0, id1, id2, id3, id4, id5])
+      print("Chordal Result:")
+      
+      for cv in [id0, id1, id2, id3, id4, id5] {
+        print("V: \(chordal_init[cv])")
+      }
+      
+      x = chordal_init
       
       // optimize
       for _ in 0..<16 {

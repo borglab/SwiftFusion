@@ -45,11 +45,10 @@ public struct ChordalInitialization {
   func buildLinearOrientationGraph(
     g: FactorGraph,
     v: VariableAssignments,
+    v_linear: VariableAssignments,
     associations: Dictionary<Int, TypedID<Vector9, Int>>
   ) -> GaussianFactorGraph {
-    
-    let initial = v.tangentVectorZeros
-    var linearGraph = GaussianFactorGraph(storage: [:], zeroValues: initial)
+    var linearGraph = GaussianFactorGraph(zeroValues: v_linear.tangentVectorZeros)
 
     for pose3Between in g.factors(type: BetweenFactor3.self) {
       var Rij = Matrix3.Identity
@@ -111,7 +110,7 @@ public struct ChordalInitialization {
                  - UVT[1, 0].scalar! * (UVT[0, 1].scalar! * UVT[2, 2].scalar! - UVT[2, 1].scalar! * UVT[0, 2].scalar!)
                  + UVT[2, 0].scalar! * (UVT[0, 1].scalar! * UVT[1, 2].scalar! - UVT[1, 1].scalar! * UVT[0, 2].scalar!))
       
-      let R = matmul(matmul(U!, Tensor<Double>(shape: [3, 1], scalars: [1, 1, det]).diagonal()), V!.transposed())
+      let R = matmul(matmul(U!, Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()), V!.transposed())
       // ClosestTo finds rotation matrix closest to H in Frobenius sense
       let initRot = Rot3(coordinate:
                           Matrix3Coordinate(Matrix3(R[0, 0].scalar!, R[0, 1].scalar!, R[0, 2].scalar!,
@@ -141,12 +140,9 @@ public struct ChordalInitialization {
     R_a.s20, R_a.s21, R_a.s22))
     
     // regularize measurements and plug everything in a factor graph
-    let relaxedGraph: GaussianFactorGraph = buildLinearOrientationGraph(g: graph, v: val, associations: associations)
+    let relaxedGraph: GaussianFactorGraph = buildLinearOrientationGraph(g: graph, v: val, v_linear: relaxedRot3, associations: associations)
 
     // Solve the LFG
-    print("Graph: \(relaxedGraph)")
-    print("Rots: \(relaxedRot3[associations[anchorId.perTypeID]!])")
-    print("error: \(relaxedGraph.errorVectors(at: relaxedRot3))")
     var optimizer = GenericCGLS()
     optimizer.optimize(gfg: relaxedGraph, initial: &relaxedRot3)
 
@@ -163,7 +159,6 @@ public struct ChordalInitialization {
   }
   
   public mutating func GetInitializations(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
-    let last = ids.endIndex
     var val_copy = val
     anchorId = val_copy.store(Pose3())
     // We "extract" the Pose3 subgraph of the original graph: this
@@ -171,7 +166,7 @@ public struct ChordalInitialization {
     let pose3Graph = buildPose3graph(graph: graph)
 
     // Get orientations from relative orientation measurements
-    var orientations = computeOrientationsChordal(graph: pose3Graph, val: val_copy, ids: ids)
+    let orientations = computeOrientationsChordal(graph: pose3Graph, val: val_copy, ids: ids)
 
     // Compute the full poses (1 GN iteration on full poses)
     return computePoses(graph: pose3Graph, orientations: orientations, ids: ids)
