@@ -33,4 +33,23 @@ extension EuclideanVectorN {
               count: Self.dimension))
     }
   }
+
+  /// Accesses the scalar at `i`.
+  subscript(i: Int) -> Double {
+    _read {
+      boundsCheck(i)
+      yield withUnsafeBufferPointer { $0.baseAddress.unsafelyUnwrapped[i] }
+    }
+    _modify {
+      boundsCheck(i)
+      defer { _fixLifetime(self) }
+      yield &withUnsafeMutableBufferPointer { $0.baseAddress }.unsafelyUnwrapped[i]
+    }
+  }
+
+  /// Traps with a suitable error message if `i` is not the position of an
+  /// element in `self`.
+  private func boundsCheck(_ i: Int) {
+    precondition(i >= 0 && i < Self.dimension, "index out of range")
+  }
 }
