@@ -28,6 +28,7 @@ public struct ChordalInitialization {
     anchorId = TypedID<Pose3, Int>(0)
   }
   
+  /// Extract a subgraph of the original graph with only Pose3s.
   public func buildPose3graph(graph: FactorGraph) -> FactorGraph {
     var pose3Graph = FactorGraph()
 
@@ -42,6 +43,7 @@ public struct ChordalInitialization {
     return pose3Graph
   }
   
+  /// Construct the orientation graph (unconstrained version of the between in Frobenius norm).
   public func buildLinearOrientationGraph(
     g: FactorGraph,
     v: VariableAssignments,
@@ -95,6 +97,8 @@ public struct ChordalInitialization {
     return linearGraph
   }
   
+  /// This function finds the closest Rot3 to the unconstrained 3x3 matrix with SVD.
+  /// TODO(fan): replace this with a 3x3 specialized SVD instead of this generic SVD (slow)
   public func normalizeRelaxedRotations(
     _ relaxedRot3: VariableAssignments,
     associations: Dictionary<Int, TypedID<Vector9, Int>>,
@@ -114,17 +118,20 @@ public struct ChordalInitialization {
                  + UVT[2, 0].scalar! * (UVT[0, 1].scalar! * UVT[1, 2].scalar! - UVT[1, 1].scalar! * UVT[0, 2].scalar!))
       
       let R = matmul(matmul(U!, Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()), V!.transposed()).transposed()
-      // ClosestTo finds rotation matrix closest to H in Frobenius sense
+      
       let initRot = Rot3(coordinate:
                           Matrix3Coordinate(Matrix3(R[0, 0].scalar!, R[0, 1].scalar!, R[0, 2].scalar!,
                                                     R[1, 0].scalar!, R[1, 1].scalar!, R[1, 2].scalar!,
                                                     R[2, 0].scalar!, R[2, 1].scalar!, R[2, 2].scalar!))
       )
-      let id = validRot3.store(initRot)
+      
+      // TODO(fan): relies on the assumption of continous and ordered allocation
+      let _ = validRot3.store(initRot)
     }
     return validRot3;
   }
   
+  /// This function computes the rotations
   public func computeOrientationsChordal(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var relaxedRot3 = VariableAssignments()
     var associations = Dictionary<Int, TypedID<Vector9, Int>>()
@@ -162,13 +169,14 @@ public struct ChordalInitialization {
     return result
   }
   
+  /// This function computes the inital poses given the chordal initialized rotations.
   public func computePoses(graph: FactorGraph, original_initialization: VariableAssignments, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var val = original_initialization
     for v in ids {
       val[v]=Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0))
     }
     
-    // optimize
+    // optimize for 1 G-N iteration
     for _ in 0..<1 {
       let gfg = graph.linearized(at: val)
       var dx = val.tangentVectorZeros
@@ -179,6 +187,7 @@ public struct ChordalInitialization {
     return val
   }
   
+  /// This function computes the chordal initialization. Normally this is what the user needs to call.
   public mutating func GetInitializations(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var val_copy = val
     anchorId = val_copy.store(Pose3())
