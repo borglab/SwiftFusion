@@ -103,6 +103,7 @@ public typealias JacobianFactor9x9_2 = JacobianFactor<Jacobian9x9_2, Vector9>
 
 /// Chordal Initialization for Pose3s
 public struct ChordalInitialization {
+  /// ID of the anchor used in chordal initialization, should only be used if not using `GetInitializations`.
   public var anchorId: TypedID<Pose3, Int>
   
   public init() {
@@ -124,7 +125,11 @@ public struct ChordalInitialization {
     return pose3Graph
   }
   
-  /// Construct the orientation graph with FrobeniusFactor s.
+  /// Solves the unconstrained chordal graph given the original Pose3 graph.
+  /// - Parameters:
+  ///   - g: The factor graph with only `BetweenFactor<Pose3>` and `PriorFactor<Pose3>`
+  ///   - v: the current pose priors
+  ///   - ids: the `TypedID`s of the poses
   public func solveOrientationGraph(
     g: FactorGraph,
     v: VariableAssignments,
@@ -157,6 +162,11 @@ public struct ChordalInitialization {
   }
   
   /// This function finds the closest Rot3 to the unconstrained 3x3 matrix with SVD.
+  /// - Parameters:
+  ///   - relaxedRot3: the results of the unconstrained chordal optimization
+  ///   - associations: mapping from the index of the pose to the index of the corresponding rotation
+  ///   - ids: the IDs of the poses
+  ///
   /// TODO(fan): replace this with a 3x3 specialized SVD instead of this generic SVD (slow)
   public func normalizeRelaxedRotations(
     _ relaxedRot3: VariableAssignments,
@@ -178,6 +188,10 @@ public struct ChordalInitialization {
   }
   
   /// This function computes the inital poses given the chordal initialized rotations.
+  /// - Parameters:
+  ///   - graph: The factor graph with only `BetweenFactor<Pose3>` and `PriorFactor<Pose3>`
+  ///   - orientations: The orientations returned by the chordal initialization for `Rot3`s
+  ///   - ids: the `TypedID`s of the poses
   public func computePoses(graph: FactorGraph, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var val = VariableAssignments()
     for v in ids {
@@ -196,18 +210,24 @@ public struct ChordalInitialization {
   }
   
   /// This function computes the chordal initialization. Normally this is what the user needs to call.
-  /// TODO(fan): This function builds upon the assumption that all variables stored are Pose3s, could fail if that is not the case.
-  public mutating func GetInitializations(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+  /// - Parameters:
+  ///   - graph: The factor graph with only `BetweenFactor<Pose3>` and `PriorFactor<Pose3>`
+  ///   - val: the current pose priors
+  ///   - ids: the `TypedID`s of the poses
+  ///
+  /// NOTE: This function builds upon the assumption that all variables stored are Pose3s, will fail if that is not the case.
+  public static func GetInitializations(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+    var ci = ChordalInitialization()
     var val_copy = val
-    anchorId = val_copy.store(Pose3())
+    ci.anchorId = val_copy.store(Pose3())
     // We "extract" the Pose3 subgraph of the original graph: this
     // is done to properly model priors and avoiding operating on a larger graph
-    let pose3Graph = buildPose3graph(graph: graph)
+    let pose3Graph = ci.buildPose3graph(graph: graph)
 
     // Get orientations from relative orientation measurements
-    let orientations = solveOrientationGraph(g: pose3Graph, v: val_copy, ids: ids)
+    let orientations = ci.solveOrientationGraph(g: pose3Graph, v: val_copy, ids: ids)
     
     // Compute the full poses (1 GN iteration on full poses)
-    return computePoses(graph: pose3Graph, orientations: orientations, ids: ids)
+    return ci.computePoses(graph: pose3Graph, orientations: orientations, ids: ids)
   }
 }
