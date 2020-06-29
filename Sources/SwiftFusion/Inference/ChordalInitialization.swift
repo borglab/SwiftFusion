@@ -16,6 +16,8 @@ import PenguinStructures
 import TensorFlow
 
 /// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Rot3
+/// Please refer to Carlone15icra (Initialization Techniques for 3D SLAM: a Survey on Rotation Estimation and its Use in Pose Graph Optimization)
+/// for explanation.
 public struct FrobeniusFactorRot3: LinearizableFactor
 {
   public typealias Variables = Tuple2<Vector9, Vector9>
