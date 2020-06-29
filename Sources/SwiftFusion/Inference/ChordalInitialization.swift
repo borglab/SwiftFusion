@@ -176,10 +176,10 @@ public struct ChordalInitialization {
   }
   
   /// This function computes the inital poses given the chordal initialized rotations.
-  public func computePoses(graph: FactorGraph, original_initialization: VariableAssignments, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
-    var val = original_initialization
+  public func computePoses(graph: FactorGraph, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+    var val = VariableAssignments()
     for v in ids {
-      val[v]=Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0))
+      let _ = val.store(Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0)))
     }
     
     // optimize for 1 G-N iteration
@@ -194,6 +194,7 @@ public struct ChordalInitialization {
   }
   
   /// This function computes the chordal initialization. Normally this is what the user needs to call.
+  /// TODO(fan): This function builds upon the assumption that all variables stored are Pose3s, could fail if that is not the case.
   public mutating func GetInitializations(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var val_copy = val
     anchorId = val_copy.store(Pose3())
@@ -205,6 +206,6 @@ public struct ChordalInitialization {
     let orientations = solveOrientationGraph(g: pose3Graph, v: val_copy, ids: ids)
     
     // Compute the full poses (1 GN iteration on full poses)
-    return computePoses(graph: pose3Graph, original_initialization: val_copy, orientations: orientations, ids: ids)
+    return computePoses(graph: pose3Graph, orientations: orientations, ids: ids)
   }
 }
