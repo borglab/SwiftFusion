@@ -183,7 +183,11 @@ extension EuclideanVectorTests {
   func testDot() {
     let v1 = makeVector(from: 1, stride: 1)
     let v2 = makeVector(from: 2, stride: 1)
-    let expectedDot = (0..<Self.dimension).map { Double(($0 + 1) * ($0 + 2)) }.reduce(0, +)
+    let expectedDot = (0..<Self.dimension).reduce(into: 0) { (r: inout Double, i: Int) in
+      let x = Double(i) + 1
+      let y = Double(i) + 2
+      r += x * y
+    }
     XCTAssertEqual(v1.dot(v2), expectedDot)
 
     let (value, g) = valueWithGradient(at: v1, v2) { $0.dot($1) }
@@ -207,7 +211,10 @@ extension EuclideanVectorTests {
   /// Tests the value and derivative of `squaredNorm`.
   func testSquaredNorm() {
     let v1 = makeVector(from: 1, stride: 1)
-    let expectedSquaredNorm = (0..<Self.dimension).map { Double(($0 + 1) * ($0 + 1)) }.reduce(0, +)
+    let expectedSquaredNorm = (0..<Self.dimension).reduce(into: 0) { (r: inout Double, i: Int) in
+      let x = Double(i) + 1
+      r += x * x
+    }
     XCTAssertEqual(v1.squaredNorm, expectedSquaredNorm)
 
     let (value, g) = valueWithGradient(at: v1) { $0.squaredNorm }
@@ -218,7 +225,10 @@ extension EuclideanVectorTests {
   /// Tests the value and derivative of `norm`.
   func testNorm() {
     let v1 = makeVector(from: 1, stride: 1)
-    let expectedNorm = (0..<Self.dimension).map { Double(($0 + 1) * ($0 + 1)) }.reduce(0, +).squareRoot()
+    let expectedNorm = (0..<Self.dimension).reduce(into: 0) { (r: inout Double, i: Int) in
+      let x = Double(i) + 1
+      r += x * x
+    }.squareRoot()
     XCTAssertEqual(v1.norm, expectedNorm)
 
     let (value, g) = valueWithGradient(at: v1) { $0.norm }
