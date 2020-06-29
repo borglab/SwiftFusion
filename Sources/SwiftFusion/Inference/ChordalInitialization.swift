@@ -184,6 +184,18 @@ public struct ChordalInitialization {
       // TODO(fan): relies on the assumption of continous and ordered allocation
       let _ = validRot3.store(initRot)
     }
+    
+    let M_v_anchor: Vector9 = relaxedRot3[associations[anchorId.perTypeID]!]
+    
+    let M_anchor = Matrix3(M_v_anchor.s0, M_v_anchor.s1, M_v_anchor.s2,
+                           M_v_anchor.s3, M_v_anchor.s4, M_v_anchor.s5,
+                           M_v_anchor.s6, M_v_anchor.s7, M_v_anchor.s8)
+    
+    let initRot_anchor = Rot3.ClosestTo(mat: M_anchor)
+    
+    // TODO(fan): relies on the assumption of continous and ordered allocation
+    let _ = validRot3.store(initRot_anchor)
+    
     return validRot3;
   }
   
@@ -198,11 +210,12 @@ public struct ChordalInitialization {
       let _ = val.store(Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0)))
     }
     
+    let _ = val.store(Pose3(orientations[TypedID<Rot3, Int>(anchorId.perTypeID)], Vector3(0,0,0)))
     // optimize for 1 G-N iteration
     for _ in 0..<1 {
       let gfg = graph.linearized(at: val)
       var dx = val.tangentVectorZeros
-      var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
+      var optimizer = GenericCGLS(precision: 1e-1, max_iteration: 100)
       optimizer.optimize(gfg: gfg, initial: &dx)
       val.move(along: (-1) * dx)
     }
@@ -212,21 +225,26 @@ public struct ChordalInitialization {
   /// This function computes the chordal initialization. Normally this is what the user needs to call.
   /// - Parameters:
   ///   - graph: The factor graph with only `BetweenFactor<Pose3>` and `PriorFactor<Pose3>`
-  ///   - val: the current pose priors
   ///   - ids: the `TypedID`s of the poses
   ///
   /// NOTE: This function builds upon the assumption that all variables stored are Pose3s, will fail if that is not the case.
-  public static func GetInitializations(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+  public static func GetInitializations(graph: FactorGraph, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var ci = ChordalInitialization()
-    var val_copy = val
-    ci.anchorId = val_copy.store(Pose3())
+    var val = VariableAssignments()
+    for _ in ids {
+      let _ = val.store(Pose3())
+    }
+    ci.anchorId = val.store(Pose3())
     // We "extract" the Pose3 subgraph of the original graph: this
     // is done to properly model priors and avoiding operating on a larger graph
+    // TODO(fan): This does not work yet as we have not yet reached concensus on how should we
+    // handle associations
     let pose3Graph = ci.buildPose3graph(graph: graph)
 
     // Get orientations from relative orientation measurements
-    let orientations = ci.solveOrientationGraph(g: pose3Graph, v: val_copy, ids: ids)
+    let orientations = ci.solveOrientationGraph(g: pose3Graph, v: val, ids: ids)
     
+    print("Pose3Graph = \(pose3Graph.factors(type: BetweenFactor3.self).map { ($0.edges.head.perTypeID, $0.edges.tail.head.perTypeID) })")
     // Compute the full poses (1 GN iteration on full poses)
     return ci.computePoses(graph: pose3Graph, orientations: orientations, ids: ids)
   }

@@ -230,12 +230,7 @@ class FactorGraphTests: XCTestCase {
       fg.store(BetweenFactor3(id4, id5, delta))
       fg.store(BetweenFactor3(id5, id0, delta))
 
-      let chordal_init = ChordalInitialization.GetInitializations(graph: fg, val: x, ids: [id0, id1, id2, id3, id4, id5])
-      print("Chordal Result:")
-      
-      for cv in [id0, id1, id2, id3, id4, id5] {
-        print("V: \(chordal_init[cv])")
-      }
+      let chordal_init = ChordalInitialization.GetInitializations(graph: fg, ids: [id0, id1, id2, id3, id4, id5])
       
       x = chordal_init
       

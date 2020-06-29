@@ -147,7 +147,7 @@ func main() {
   graph.store(PriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
   
   if useChordalInitialization {
-    val = ChordalInitialization.GetInitializations(graph: graph, val: val, ids: problem.variableId)
+    val = ChordalInitialization.GetInitializations(graph: graph, ids: problem.variableId)
   }
   
   var optimizer = LM(precision: 1e-1, max_iteration: 100)
