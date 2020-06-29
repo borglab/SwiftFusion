@@ -72,6 +72,28 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   }
 }
 
+public extension Rot3 {
+  /// Regularize a 3x3 matrix to find the closest rotation matrix in a Frobenius sense
+  static func ClosestTo(mat: Matrix3) -> Rot3 {
+    let M = Tensor<Double>(shape: [3, 3], scalars: [mat.s00, mat.s01, mat.s02, mat.s10, mat.s11, mat.s12, mat.s20, mat.s21, mat.s22])
+    
+    let (_, U, V) = M.transposed().svd(computeUV: true, fullMatrices: true)
+    let UVT: Tensor<Double> = matmul(U!, V!.transposed())
+    
+    let det = (UVT[0, 0].scalar! * (UVT[1, 1].scalar! * UVT[2, 2].scalar! - UVT[2, 1].scalar! * UVT[1, 2].scalar!)
+               - UVT[1, 0].scalar! * (UVT[0, 1].scalar! * UVT[2, 2].scalar! - UVT[2, 1].scalar! * UVT[0, 2].scalar!)
+               + UVT[2, 0].scalar! * (UVT[0, 1].scalar! * UVT[1, 2].scalar! - UVT[1, 1].scalar! * UVT[0, 2].scalar!))
+    
+    let R = matmul(matmul(U!, Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()), V!.transposed()).transposed()
+    
+    return Rot3(coordinate:
+                        Matrix3Coordinate(Matrix3(R[0, 0].scalar!, R[0, 1].scalar!, R[0, 2].scalar!,
+                                                  R[1, 0].scalar!, R[1, 1].scalar!, R[1, 2].scalar!,
+                                                  R[2, 0].scalar!, R[2, 1].scalar!, R[2, 2].scalar!))
+    )
+  }
+}
+
 public struct Matrix3Coordinate: Equatable, KeyPathIterable {
   public var R: Matrix3
   

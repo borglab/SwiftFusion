@@ -15,6 +15,44 @@
 import PenguinStructures
 import TensorFlow
 
+/// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Rot3
+public struct FrobeniusFactorRot3<JacobianRows: FixedSizeArray>:
+  LinearizableFactor
+  where JacobianRows.Element == Tuple2<Rot3.TangentVector, Rot3.TangentVector>
+{
+  public typealias Variables = Tuple2<Rot3, Rot3>
+
+  public let edges: Variables.Indices
+  public let difference: Rot3
+
+  public init(_ startId: TypedID<Rot3, Int>, _ endId: TypedID<Rot3, Int>, _ difference: Rot3) {
+    self.edges = Tuple2(startId, endId)
+    self.difference = difference
+  }
+
+  public typealias ErrorVector = Vector9
+  public func errorVector(_ start: Rot3, _ end: Rot3) -> ErrorVector {
+    let R = between(start, end).coordinate.R
+    return Vector9(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22)
+  }
+
+  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
+  // with sugar.
+  
+  public func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
+  }
+
+  public func errorVector(at x: Variables) -> ErrorVector {
+    return errorVector(x.head, x.tail.head)
+  }
+
+  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearization {
+    Linearization(linearizing: errorVector, at: x, edges: edges)
+  }
+}
+
 /// Type shorthands used in the relaxed pose graph
 public typealias Jacobian9x9_1 = Array9<Tuple1<Vector9>>
 public typealias Jacobian9x9_2 = Array9<Tuple2<Vector9, Vector9>>
@@ -109,22 +147,9 @@ public struct ChordalInitialization {
     for v in ids {
       let M_v: Vector9 = relaxedRot3[associations[v.perTypeID]!]
       
-      let M = M_v.tensor.reshaped(to: [3, 3])
+      let M = Matrix3(M_v.s0, M_v.s1, M_v.s2, M_v.s3, M_v.s4, M_v.s5, M_v.s6, M_v.s7, M_v.s8)
       
-      let (_, U, V) = M.transposed().svd(computeUV: true, fullMatrices: true)
-      let UVT: Tensor<Double> = matmul(U!, V!.transposed())
-      
-      let det = (UVT[0, 0].scalar! * (UVT[1, 1].scalar! * UVT[2, 2].scalar! - UVT[2, 1].scalar! * UVT[1, 2].scalar!)
-                 - UVT[1, 0].scalar! * (UVT[0, 1].scalar! * UVT[2, 2].scalar! - UVT[2, 1].scalar! * UVT[0, 2].scalar!)
-                 + UVT[2, 0].scalar! * (UVT[0, 1].scalar! * UVT[1, 2].scalar! - UVT[1, 1].scalar! * UVT[0, 2].scalar!))
-      
-      let R = matmul(matmul(U!, Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()), V!.transposed()).transposed()
-      
-      let initRot = Rot3(coordinate:
-                          Matrix3Coordinate(Matrix3(R[0, 0].scalar!, R[0, 1].scalar!, R[0, 2].scalar!,
-                                                    R[1, 0].scalar!, R[1, 1].scalar!, R[1, 2].scalar!,
-                                                    R[2, 0].scalar!, R[2, 1].scalar!, R[2, 2].scalar!))
-      )
+      let initRot = Rot3.ClosestTo(mat: M)
       
       // TODO(fan): relies on the assumption of continous and ordered allocation
       let _ = validRot3.store(initRot)
