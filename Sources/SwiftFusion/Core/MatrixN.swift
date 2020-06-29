@@ -1,7 +1,7 @@
 public struct Matrix3: Differentiable & Equatable & KeyPathIterable {
-  var s00, s01, s02: Double
-  var s10, s11, s12: Double
-  var s20, s21, s22: Double
+  public var s00, s01, s02: Double
+  public var s10, s11, s12: Double
+  public var s20, s21, s22: Double
 
   public var columnCount: Int {
     3

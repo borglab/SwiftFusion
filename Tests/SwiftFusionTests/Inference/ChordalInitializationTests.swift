@@ -50,26 +50,87 @@ func graph1() -> FactorGraph {
 }
 
 class ChordalInitializationTests: XCTestCase {
+  func testFrobeniusRot3BetweenJacobians() {
+    var val = VariableAssignments()
+    let p0 = val.store(Vector9(1,0,0,0,1,0,0,0,1))
+    let p1 = val.store(Vector9(1,0,0,0,1,0,0,0,1))
+    
+    let frf = FrobeniusFactorRot3(p0, p1, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
+    
+    let frf_j = frf.linearized(at: Tuple2(val[p0], val[p1]))
+    
+    let Rij = Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2)
+    let M9: Jacobian9x9_2 = Array9([
+      Tuple2(Vector9(-1,0,0,0,0,0,0,0,0), Vector9(Rij.s00,Rij.s01,Rij.s02,0,0,0,0,0,0)),
+      Tuple2(Vector9(0,-1,0,0,0,0,0,0,0), Vector9(Rij.s10,Rij.s11,Rij.s12,0,0,0,0,0,0)),
+      Tuple2(Vector9(0,0,-1,0,0,0,0,0,0), Vector9(Rij.s20,Rij.s21,Rij.s22,0,0,0,0,0,0)),
+      Tuple2(Vector9(0,0,0,-1,0,0,0,0,0), Vector9(0,0,0,Rij.s00,Rij.s01,Rij.s02,0,0,0)),
+      Tuple2(Vector9(0,0,0,0,-1,0,0,0,0), Vector9(0,0,0,Rij.s10,Rij.s11,Rij.s12,0,0,0)),
+      Tuple2(Vector9(0,0,0,0,0,-1,0,0,0), Vector9(0,0,0,Rij.s20,Rij.s21,Rij.s22,0,0,0)),
+      Tuple2(Vector9(0,0,0,0,0,0,-1,0,0), Vector9(0,0,0,0,0,0,Rij.s00,Rij.s01,Rij.s02)),
+      Tuple2(Vector9(0,0,0,0,0,0,0,-1,0), Vector9(0,0,0,0,0,0,Rij.s10,Rij.s11,Rij.s12)),
+      Tuple2(Vector9(0,0,0,0,0,0,0,0,-1), Vector9(0,0,0,0,0,0,Rij.s20,Rij.s21,Rij.s22))
+    ])
+    
+    let b = Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0)
+    
+    let jf = JacobianFactor9x9_2(jacobian: M9, error: b, edges: Tuple2(TypedID<Vector9, Int>(0), TypedID<Vector9, Int>(1)))
+    
+    assertEqual(
+      Tensor<Double>(stacking: frf_j.jacobian.map { $0.tensor }),
+      Tensor<Double>(stacking: jf.jacobian.map { $0.tensor })
+      , accuracy: 1e-4
+    )
+    
+    let fpf = FrobeniusAnchorFactorRot3(p0, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
+    
+    let fpf_j = fpf.linearized(at: Tuple1(val[p0]))
+    
+    let I_9x9: Jacobian9x9_1 = Array9([
+      Tuple1(Vector9(1,0,0,0,0,0,0,0,0)),
+      Tuple1(Vector9(0,1,0,0,0,0,0,0,0)),
+      Tuple1(Vector9(0,0,1,0,0,0,0,0,0)),
+      Tuple1(Vector9(0,0,0,1,0,0,0,0,0)),
+      Tuple1(Vector9(0,0,0,0,1,0,0,0,0)),
+      Tuple1(Vector9(0,0,0,0,0,1,0,0,0)),
+      Tuple1(Vector9(0,0,0,0,0,0,1,0,0)),
+      Tuple1(Vector9(0,0,0,0,0,0,0,1,0)),
+      Tuple1(Vector9(0,0,0,0,0,0,0,0,1))
+    ])
+    
+    // prior on the anchor orientation
+    let jf_p = JacobianFactor9x9_1(jacobian: I_9x9,
+                                          error: Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
+                                          edges: Tuple1(TypedID<Vector9, Int>(0)))
+    
+    assertEqual(
+      Tensor<Double>(stacking: fpf_j.jacobian.map { $0.tensor }),
+      Tensor<Double>(stacking: jf_p.jacobian.map { $0.tensor })
+      , accuracy: 1e-4
+    )
+  }
+  
   func testChordalOrientation() {
     var ci = ChordalInitialization()
     
     var val = VariableAssignments()
-    val.store(pose0)
-    val.store(pose1)
-    val.store(pose2)
-    val.store(pose3)
+    let _ = val.store(pose0)
+    let _ = val.store(pose0)
+    let _ = val.store(pose0)
+    let _ = val.store(pose0)
     
     var val_copy = val
     ci.anchorId = val_copy.store(Pose3())
     
     let pose3Graph = ci.buildPose3graph(graph: graph1())
-
-    let initial = ci.computeOrientationsChordal(graph: pose3Graph, val: val_copy, ids: [x0, x1, x2, x3])
-
+    
+    // let initial = ci.computeOrientationsChordal(graph: pose3Graph, val: val_copy, ids: [x0, x1, x2, x3])
+    let initial = ci.solveOrientationGraph(g: pose3Graph, v: val_copy, ids: [x0, x1, x2, x3])
+    
     // comparison is up to M_PI, that's why we add some multiples of 2*M_PI
-    assertAllKeyPathEqual( R0, initial[TypedID<Rot3, Int>(x0.perTypeID)], accuracy: 1e-6)
-    assertAllKeyPathEqual( R1, initial[TypedID<Rot3, Int>(x1.perTypeID)], accuracy: 1e-6)
-    assertAllKeyPathEqual( R2, initial[TypedID<Rot3, Int>(x2.perTypeID)], accuracy: 1e-6)
-    assertAllKeyPathEqual( R3, initial[TypedID<Rot3, Int>(x3.perTypeID)], accuracy: 1e-6)
+    assertAllKeyPathEqual( R0, initial[TypedID<Rot3, Int>(x0.perTypeID)], accuracy: 1e-5)
+    assertAllKeyPathEqual( R1, initial[TypedID<Rot3, Int>(x1.perTypeID)], accuracy: 1e-5)
+    assertAllKeyPathEqual( R2, initial[TypedID<Rot3, Int>(x2.perTypeID)], accuracy: 1e-5)
+    assertAllKeyPathEqual( R3, initial[TypedID<Rot3, Int>(x3.perTypeID)], accuracy: 1e-5)
   }
 }

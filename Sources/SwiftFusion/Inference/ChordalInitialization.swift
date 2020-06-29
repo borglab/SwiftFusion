@@ -16,24 +16,28 @@ import PenguinStructures
 import TensorFlow
 
 /// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Rot3
-public struct FrobeniusFactorRot3<JacobianRows: FixedSizeArray>:
-  LinearizableFactor
-  where JacobianRows.Element == Tuple2<Rot3.TangentVector, Rot3.TangentVector>
+public struct FrobeniusFactorRot3: LinearizableFactor
 {
-  public typealias Variables = Tuple2<Rot3, Rot3>
-
+  public typealias Variables = Tuple2<Vector9, Vector9>
+  public typealias JacobianRows = Array9<Tuple2<Vector9.TangentVector, Vector9.TangentVector>>
+  
   public let edges: Variables.Indices
-  public let difference: Rot3
+  public let difference: Vector9
 
-  public init(_ startId: TypedID<Rot3, Int>, _ endId: TypedID<Rot3, Int>, _ difference: Rot3) {
+  public init(_ startId: TypedID<Vector9, Int>, _ endId: TypedID<Vector9, Int>, _ difference: Vector9) {
     self.edges = Tuple2(startId, endId)
     self.difference = difference
   }
 
   public typealias ErrorVector = Vector9
-  public func errorVector(_ start: Rot3, _ end: Rot3) -> ErrorVector {
-    let R = between(start, end).coordinate.R
-    return Vector9(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22)
+  
+  @differentiable
+  public func errorVector(_ start: Vector9, _ end: Vector9) -> ErrorVector {
+    let R2 = Matrix3(end.s0, end.s1, end.s2, end.s3, end.s4, end.s5, end.s6, end.s7, end.s8)
+    let R12 = Matrix3(difference.s0, difference.s1, difference.s2, difference.s3, difference.s4, difference.s5, difference.s6, difference.s7, difference.s8)
+    let R = matmul(R12, R2.transposed()).transposed()
+    let R_v = Vector9(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22)
+    return R_v - start
   }
 
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -45,6 +49,42 @@ public struct FrobeniusFactorRot3<JacobianRows: FixedSizeArray>:
 
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head)
+  }
+
+  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
+  public func linearized(at x: Variables) -> Linearization {
+    Linearization(linearizing: errorVector, at: x, edges: edges)
+  }
+}
+
+/// A factor for the anchor in chordal initialization
+public struct FrobeniusAnchorFactorRot3: LinearizableFactor
+{
+  public typealias Variables = Tuple1<Vector9>
+  public typealias JacobianRows = Array9<Tuple1<Vector9.TangentVector>>
+  
+  public let edges: Variables.Indices
+  public let prior: Vector9
+
+  public init(_ id: TypedID<Vector9, Int>, _ val: Vector9) {
+    self.edges = Tuple1(id)
+    self.prior = val
+  }
+
+  public typealias ErrorVector = Vector9
+  public func errorVector(_ val: Vector9) -> ErrorVector {
+    val + prior
+  }
+
+  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
+  // with sugar.
+  
+  public func error(at x: Variables) -> Double {
+    return errorVector(at: x).squaredNorm
+  }
+
+  public func errorVector(at x: Variables) -> ErrorVector {
+    return errorVector(x.head)
   }
 
   public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
@@ -82,58 +122,36 @@ public struct ChordalInitialization {
     return pose3Graph
   }
   
-  /// Construct the orientation graph (unconstrained version of the between in Frobenius norm).
-  public func buildLinearOrientationGraph(
+  /// Construct the orientation graph with FrobeniusFactor s.
+  public func solveOrientationGraph(
     g: FactorGraph,
     v: VariableAssignments,
-    v_linear: VariableAssignments,
-    associations: Dictionary<Int, TypedID<Vector9, Int>>
-  ) -> GaussianFactorGraph {
-    var linearGraph = GaussianFactorGraph(zeroValues: v_linear.tangentVectorZeros)
-
-    for pose3Between in g.factors(type: BetweenFactor3.self) {
-      var Rij = Matrix3.Identity
-
-      Rij = pose3Between.difference.rot.coordinate.R
-      
-      let key1 = associations[pose3Between.edges.head.perTypeID]!
-      let key2 = associations[pose3Between.edges.tail.head.perTypeID]!
-      
-      let M9: Jacobian9x9_2 = Array9([
-        Tuple2(Vector9(-1,0,0,0,0,0,0,0,0), Vector9(Rij.s00,Rij.s01,Rij.s02,0,0,0,0,0,0)),
-        Tuple2(Vector9(0,-1,0,0,0,0,0,0,0), Vector9(Rij.s10,Rij.s11,Rij.s12,0,0,0,0,0,0)),
-        Tuple2(Vector9(0,0,-1,0,0,0,0,0,0), Vector9(Rij.s20,Rij.s21,Rij.s22,0,0,0,0,0,0)),
-        Tuple2(Vector9(0,0,0,-1,0,0,0,0,0), Vector9(0,0,0,Rij.s00,Rij.s01,Rij.s02,0,0,0)),
-        Tuple2(Vector9(0,0,0,0,-1,0,0,0,0), Vector9(0,0,0,Rij.s10,Rij.s11,Rij.s12,0,0,0)),
-        Tuple2(Vector9(0,0,0,0,0,-1,0,0,0), Vector9(0,0,0,Rij.s20,Rij.s21,Rij.s22,0,0,0)),
-        Tuple2(Vector9(0,0,0,0,0,0,-1,0,0), Vector9(0,0,0,0,0,0,Rij.s00,Rij.s01,Rij.s02)),
-        Tuple2(Vector9(0,0,0,0,0,0,0,-1,0), Vector9(0,0,0,0,0,0,Rij.s10,Rij.s11,Rij.s12)),
-        Tuple2(Vector9(0,0,0,0,0,0,0,0,-1), Vector9(0,0,0,0,0,0,Rij.s20,Rij.s21,Rij.s22))
-      ])
-      
-      let b = Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0)
-      
-      linearGraph.store(JacobianFactor9x9_2(jacobian: M9, error: b, edges: Tuple2(key1, key2)))
+    ids: Array<TypedID<Pose3, Int>>
+  ) -> VariableAssignments {
+    var orientationGraph = FactorGraph()
+    var orientations = VariableAssignments()
+    var associations = Dictionary<Int, TypedID<Vector9, Int>>()
+    for i in ids {
+      // let R = v[i].rot.coordinate.R
+      associations[i.perTypeID] = orientations.store(Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0))
     }
     
-    let I_9x9: Jacobian9x9_1 = Array9([
-      Tuple1(Vector9(1,0,0,0,0,0,0,0,0)),
-      Tuple1(Vector9(0,1,0,0,0,0,0,0,0)),
-      Tuple1(Vector9(0,0,1,0,0,0,0,0,0)),
-      Tuple1(Vector9(0,0,0,1,0,0,0,0,0)),
-      Tuple1(Vector9(0,0,0,0,1,0,0,0,0)),
-      Tuple1(Vector9(0,0,0,0,0,1,0,0,0)),
-      Tuple1(Vector9(0,0,0,0,0,0,1,0,0)),
-      Tuple1(Vector9(0,0,0,0,0,0,0,1,0)),
-      Tuple1(Vector9(0,0,0,0,0,0,0,0,1))
-    ])
+    associations[anchorId.perTypeID] = orientations.store(Vector9(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
     
-    // prior on the anchor orientation
-    linearGraph.store(JacobianFactor9x9_1(jacobian: I_9x9,
-                                          error: Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
-                                          edges: Tuple1(associations[anchorId.perTypeID]!)))
+    for factor in g.factors(type: BetweenFactor3.self) {
+      let R = factor.difference.rot.coordinate.R
+      let R_v = Vector9(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22)
+      let frob_factor = FrobeniusFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R_v)
+      orientationGraph.store(frob_factor)
+    }
     
-    return linearGraph
+    orientationGraph.store(FrobeniusAnchorFactorRot3(associations[anchorId.perTypeID]!, Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0)))
+    
+    var optimizer = GenericCGLS()
+    let linearGraph = orientationGraph.linearized(at: orientations)
+    optimizer.optimize(gfg: linearGraph, initial: &orientations)
+    
+    return normalizeRelaxedRotations(orientations, associations: associations, ids: ids)
   }
   
   /// This function finds the closest Rot3 to the unconstrained 3x3 matrix with SVD.
@@ -155,44 +173,6 @@ public struct ChordalInitialization {
       let _ = validRot3.store(initRot)
     }
     return validRot3;
-  }
-  
-  /// This function computes the rotations
-  public func computeOrientationsChordal(graph: FactorGraph, val: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
-    var relaxedRot3 = VariableAssignments()
-    var associations = Dictionary<Int, TypedID<Vector9, Int>>()
-    
-    for v in ids {
-      let R = val[v].rot.coordinate.R
-      associations[v.perTypeID] = relaxedRot3.store(
-        Vector9(R.s00, R.s01, R.s02,
-        R.s10, R.s11, R.s12,
-        R.s20, R.s21, R.s22))
-    }
-    
-    let R_a = val[anchorId].rot.coordinate.R
-    associations[anchorId.perTypeID] = relaxedRot3.store(Vector9(R_a.s00, R_a.s01, R_a.s02,
-    R_a.s10, R_a.s11, R_a.s12,
-    R_a.s20, R_a.s21, R_a.s22))
-    
-    // regularize measurements and plug everything in a factor graph
-    let relaxedGraph: GaussianFactorGraph = buildLinearOrientationGraph(g: graph, v: val, v_linear: relaxedRot3, associations: associations)
-
-    // Solve the LFG
-    var optimizer = GenericCGLS()
-    print("[COC BEFORE] \(relaxedGraph.errorVectors(at: relaxedRot3).squaredNorm)")
-    optimizer.optimize(gfg: relaxedGraph, initial: &relaxedRot3)
-    print("[COC AFTER ] \(relaxedGraph.errorVectors(at: relaxedRot3).squaredNorm)")
-    
-    for i in associations.sorted(by: { $0.0 < $1.0 }) {
-      print("\(i.key): \(relaxedRot3[i.value])")
-    }
-    
-    print("\(ids)")
-    let result = normalizeRelaxedRotations(relaxedRot3, associations: associations, ids: ids)
-    
-    // normalize and compute Rot3
-    return result
   }
   
   /// This function computes the inital poses given the chordal initialized rotations.
@@ -222,8 +202,8 @@ public struct ChordalInitialization {
     let pose3Graph = buildPose3graph(graph: graph)
 
     // Get orientations from relative orientation measurements
-    let orientations = computeOrientationsChordal(graph: pose3Graph, val: val_copy, ids: ids)
-
+    let orientations = solveOrientationGraph(g: pose3Graph, v: val_copy, ids: ids)
+    
     // Compute the full poses (1 GN iteration on full poses)
     return computePoses(graph: pose3Graph, original_initialization: val_copy, orientations: orientations, ids: ids)
   }
