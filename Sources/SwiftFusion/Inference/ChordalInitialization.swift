@@ -15,6 +15,7 @@
 import PenguinStructures
 import TensorFlow
 
+/// Type shorthands used in the relaxed pose graph
 public typealias Jacobian9x9_1 = Array9<Tuple1<Vector9>>
 public typealias Jacobian9x9_2 = Array9<Tuple2<Vector9, Vector9>>
 public typealias JacobianFactor9x9_1 = JacobianFactor<Jacobian9x9_1, Vector9>
