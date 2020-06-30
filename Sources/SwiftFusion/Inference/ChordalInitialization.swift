@@ -20,25 +20,25 @@ import TensorFlow
 /// for explanation.
 public struct RelaxedRotationFactorRot3: LinearizableFactor
 {
-  public typealias Variables = Tuple2<Vector9, Vector9>
-  public typealias JacobianRows = Array9<Tuple2<Vector9.TangentVector, Vector9.TangentVector>>
+  public typealias Variables = Tuple2<Matrix3, Matrix3>
+  public typealias JacobianRows = Array9<Tuple2<Matrix3.TangentVector, Matrix3.TangentVector>>
   
   public let edges: Variables.Indices
-  public let difference: Vector9
+  public let difference: Matrix3
   
-  public init(_ id1: TypedID<Vector9, Int>, _ id2: TypedID<Vector9, Int>, _ difference: Vector9) {
+  public init(_ id1: TypedID<Matrix3, Int>, _ id2: TypedID<Matrix3, Int>, _ difference: Matrix3) {
     self.edges = Tuple2(id1, id2)
     self.difference = difference
   }
   
-  public typealias ErrorVector = Vector9
+  public typealias ErrorVector = Matrix3
   
   @differentiable
-  public func errorVector(_ start: Vector9, _ end: Vector9) -> ErrorVector {
-    let R2 = Matrix3(end.s0, end.s1, end.s2, end.s3, end.s4, end.s5, end.s6, end.s7, end.s8)
-    let R12 = Matrix3(difference.s0, difference.s1, difference.s2, difference.s3, difference.s4, difference.s5, difference.s6, difference.s7, difference.s8)
+  public func errorVector(_ start: Matrix3, _ end: Matrix3) -> ErrorVector {
+    let R2 = end
+    let R12 = difference
     let R = matmul(R12, R2.transposed()).transposed()
-    return R.vec - start
+    return R - start
   }
   
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -61,19 +61,19 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
 /// A factor for the anchor in chordal initialization
 public struct RelaxedAnchorFactorRot3: LinearizableFactor
 {
-  public typealias Variables = Tuple1<Vector9>
-  public typealias JacobianRows = Array9<Tuple1<Vector9.TangentVector>>
+  public typealias Variables = Tuple1<Matrix3>
+  public typealias JacobianRows = Array9<Tuple1<Matrix3.TangentVector>>
   
   public let edges: Variables.Indices
-  public let prior: Vector9
+  public let prior: Matrix3
   
-  public init(_ id: TypedID<Vector9, Int>, _ val: Vector9) {
+  public init(_ id: TypedID<Matrix3, Int>, _ val: Matrix3) {
     self.edges = Tuple1(id)
     self.prior = val
   }
   
-  public typealias ErrorVector = Vector9
-  public func errorVector(_ val: Vector9) -> ErrorVector {
+  public typealias ErrorVector = Matrix3
+  public func errorVector(_ val: Matrix3) -> ErrorVector {
     val + prior
   }
   
@@ -96,10 +96,10 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
 
 /// Type shorthands used in the relaxed pose graph
 /// NOTE: Specializations are added in `FactorsStorage.swift`
-public typealias Jacobian9x9_1 = Array9<Tuple1<Vector9>>
-public typealias Jacobian9x9_2 = Array9<Tuple2<Vector9, Vector9>>
-public typealias JacobianFactor9x9_1 = JacobianFactor<Jacobian9x9_1, Vector9>
-public typealias JacobianFactor9x9_2 = JacobianFactor<Jacobian9x9_2, Vector9>
+public typealias Jacobian9x3x3_1 = Array9<Tuple1<Matrix3>>
+public typealias Jacobian9x3x3_2 = Array9<Tuple2<Matrix3, Matrix3>>
+public typealias JacobianFactor9x3x3_1 = JacobianFactor<Jacobian9x3x3_1, Matrix3>
+public typealias JacobianFactor9x3x3_2 = JacobianFactor<Jacobian9x3x3_2, Matrix3>
 
 /// Chordal Initialization for Pose3s
 public struct ChordalInitialization {
@@ -140,25 +140,25 @@ public struct ChordalInitialization {
     /// orientation storage
     var orientations = VariableAssignments()
     /// association to lookup the vector-based storage from the pose3 ID
-    var associations = Dictionary<Int, TypedID<Vector9, Int>>()
+    var associations = Dictionary<Int, TypedID<Matrix3, Int>>()
     
     // allocate the space for solved rotations, and memory the assocation
     for i in ids {
-      associations[i.perTypeID] = orientations.store(Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0))
+      associations[i.perTypeID] = orientations.store(Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0))
     }
     
     // allocate the space for anchor
-    associations[anchorId.perTypeID] = orientations.store(Vector9(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+    associations[anchorId.perTypeID] = orientations.store(Matrix3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
     
     // iterate the pose3 graph and make corresponding relaxed factors
     for factor in g.factors(type: BetweenFactor3.self) {
       let R = factor.difference.rot.coordinate.R
-      let frob_factor = RelaxedRotationFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R.vec)
+      let frob_factor = RelaxedRotationFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R)
       orientationGraph.store(frob_factor)
     }
     
     // make the anchor factor
-    orientationGraph.store(RelaxedAnchorFactorRot3(associations[anchorId.perTypeID]!, Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0)))
+    orientationGraph.store(RelaxedAnchorFactorRot3(associations[anchorId.perTypeID]!, Matrix3(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0)))
     
     // optimize
     var optimizer = GenericCGLS()
@@ -177,14 +177,12 @@ public struct ChordalInitialization {
   /// TODO(fan): replace this with a 3x3 specialized SVD instead of this generic SVD (slow)
   public func normalizeRelaxedRotations(
     _ relaxedRot3: VariableAssignments,
-    associations: Dictionary<Int, TypedID<Vector9, Int>>,
+    associations: Dictionary<Int, TypedID<Matrix3, Int>>,
     ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var validRot3 = VariableAssignments()
     
     for v in ids {
-      let M_v: Vector9 = relaxedRot3[associations[v.perTypeID]!]
-      
-      let M = Matrix3(M_v.s0, M_v.s1, M_v.s2, M_v.s3, M_v.s4, M_v.s5, M_v.s6, M_v.s7, M_v.s8)
+      let M: Matrix3 = relaxedRot3[associations[v.perTypeID]!]
       
       let initRot = Rot3.ClosestTo(mat: M)
       
@@ -192,11 +190,7 @@ public struct ChordalInitialization {
       let _ = validRot3.store(initRot)
     }
     
-    let M_v_anchor: Vector9 = relaxedRot3[associations[anchorId.perTypeID]!]
-    
-    let M_anchor = Matrix3(M_v_anchor.s0, M_v_anchor.s1, M_v_anchor.s2,
-                           M_v_anchor.s3, M_v_anchor.s4, M_v_anchor.s5,
-                           M_v_anchor.s6, M_v_anchor.s7, M_v_anchor.s8)
+    let M_anchor: Matrix3 = relaxedRot3[associations[anchorId.perTypeID]!]
     
     let initRot_anchor = Rot3.ClosestTo(mat: M_anchor)
     

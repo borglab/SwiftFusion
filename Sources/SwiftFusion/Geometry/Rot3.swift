@@ -194,7 +194,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     let nearZero = theta2 <= .ulpOfOne
     let (wx, wy, wz) = (local.x, local.y, local.z)
     let W = Matrix3(0.0, -wz, wy, wz, 0.0, -wx, -wy, wx, 0.0)
-    let I_3x3 = Matrix3.Identity
+    let I_3x3 = Matrix3.identity
     if !nearZero {
       let theta = sqrtWrap(theta2)
       let sin_theta = sin(theta)

@@ -57,30 +57,33 @@ func graph1() -> FactorGraph {
 class ChordalInitializationTests: XCTestCase {
   /// make sure the derivatives are correct
   func testFrobeniusRot3BetweenJacobians() {
-    var val = VariableAssignments()
-    let p0 = val.store(Vector9(1,0,0,0,1,0,0,0,1))
-    let p1 = val.store(Vector9(1,0,0,0,1,0,0,0,1))
     
-    let frf = RelaxedRotationFactorRot3(p0, p1, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
+    print(Matrix3.standardBasis)
+    
+    var val = VariableAssignments()
+    let p0 = val.store(Matrix3(1,0,0,0,1,0,0,0,1))
+    let p1 = val.store(Matrix3(1,0,0,0,1,0,0,0,1))
+    
+    let frf = RelaxedRotationFactorRot3(p0, p1, Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
     
     let frf_j = frf.linearized(at: Tuple2(val[p0], val[p1]))
     
     let Rij = Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2)
-    let M9: Jacobian9x9_2 = Array9([
-      Tuple2(Vector9(-1,0,0,0,0,0,0,0,0), Vector9(Rij[0, 0],Rij[0, 1],Rij[0, 2],0,0,0,0,0,0)),
-      Tuple2(Vector9(0,-1,0,0,0,0,0,0,0), Vector9(Rij[1, 0],Rij[1, 1],Rij[1, 2],0,0,0,0,0,0)),
-      Tuple2(Vector9(0,0,-1,0,0,0,0,0,0), Vector9(Rij[2, 0],Rij[2, 1],Rij[2, 2],0,0,0,0,0,0)),
-      Tuple2(Vector9(0,0,0,-1,0,0,0,0,0), Vector9(0,0,0,Rij[0, 0],Rij[0, 1],Rij[0, 2],0,0,0)),
-      Tuple2(Vector9(0,0,0,0,-1,0,0,0,0), Vector9(0,0,0,Rij[1, 0],Rij[1, 1],Rij[1, 2],0,0,0)),
-      Tuple2(Vector9(0,0,0,0,0,-1,0,0,0), Vector9(0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2],0,0,0)),
-      Tuple2(Vector9(0,0,0,0,0,0,-1,0,0), Vector9(0,0,0,0,0,0,Rij[0, 0],Rij[0, 1],Rij[0, 2])),
-      Tuple2(Vector9(0,0,0,0,0,0,0,-1,0), Vector9(0,0,0,0,0,0,Rij[1, 0],Rij[1, 1],Rij[1, 2])),
-      Tuple2(Vector9(0,0,0,0,0,0,0,0,-1), Vector9(0,0,0,0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2]))
+    let M9: Jacobian9x3x3_2 = Array9([
+      Tuple2(Matrix3(-1,0,0,0,0,0,0,0,0), Matrix3(Rij[0, 0],Rij[0, 1],Rij[0, 2],0,0,0,0,0,0)),
+      Tuple2(Matrix3(0,-1,0,0,0,0,0,0,0), Matrix3(Rij[1, 0],Rij[1, 1],Rij[1, 2],0,0,0,0,0,0)),
+      Tuple2(Matrix3(0,0,-1,0,0,0,0,0,0), Matrix3(Rij[2, 0],Rij[2, 1],Rij[2, 2],0,0,0,0,0,0)),
+      Tuple2(Matrix3(0,0,0,-1,0,0,0,0,0), Matrix3(0,0,0,Rij[0, 0],Rij[0, 1],Rij[0, 2],0,0,0)),
+      Tuple2(Matrix3(0,0,0,0,-1,0,0,0,0), Matrix3(0,0,0,Rij[1, 0],Rij[1, 1],Rij[1, 2],0,0,0)),
+      Tuple2(Matrix3(0,0,0,0,0,-1,0,0,0), Matrix3(0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2],0,0,0)),
+      Tuple2(Matrix3(0,0,0,0,0,0,-1,0,0), Matrix3(0,0,0,0,0,0,Rij[0, 0],Rij[0, 1],Rij[0, 2])),
+      Tuple2(Matrix3(0,0,0,0,0,0,0,-1,0), Matrix3(0,0,0,0,0,0,Rij[1, 0],Rij[1, 1],Rij[1, 2])),
+      Tuple2(Matrix3(0,0,0,0,0,0,0,0,-1), Matrix3(0,0,0,0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2]))
     ])
     
-    let b = Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0)
+    let b = Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0)
     
-    let jf = JacobianFactor9x9_2(jacobian: M9, error: b, edges: Tuple2(TypedID<Vector9, Int>(0), TypedID<Vector9, Int>(1)))
+    let jf = JacobianFactor9x3x3_2(jacobian: M9, error: b, edges: Tuple2(TypedID<Matrix3, Int>(0), TypedID<Matrix3, Int>(1)))
     
     assertEqual(
       Tensor<Double>(stacking: frf_j.jacobian.map { $0.tensor }),
@@ -88,26 +91,26 @@ class ChordalInitializationTests: XCTestCase {
       , accuracy: 1e-4
     )
     
-    let fpf = RelaxedAnchorFactorRot3(p0, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
+    let fpf = RelaxedAnchorFactorRot3(p0, Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
     
     let fpf_j = fpf.linearized(at: Tuple1(val[p0]))
     
-    let I_9x9: Jacobian9x9_1 = Array9([
-      Tuple1(Vector9(1,0,0,0,0,0,0,0,0)),
-      Tuple1(Vector9(0,1,0,0,0,0,0,0,0)),
-      Tuple1(Vector9(0,0,1,0,0,0,0,0,0)),
-      Tuple1(Vector9(0,0,0,1,0,0,0,0,0)),
-      Tuple1(Vector9(0,0,0,0,1,0,0,0,0)),
-      Tuple1(Vector9(0,0,0,0,0,1,0,0,0)),
-      Tuple1(Vector9(0,0,0,0,0,0,1,0,0)),
-      Tuple1(Vector9(0,0,0,0,0,0,0,1,0)),
-      Tuple1(Vector9(0,0,0,0,0,0,0,0,1))
+    let I_9x9: Jacobian9x3x3_1 = Array9([
+      Tuple1(Matrix3(1,0,0,0,0,0,0,0,0)),
+      Tuple1(Matrix3(0,1,0,0,0,0,0,0,0)),
+      Tuple1(Matrix3(0,0,1,0,0,0,0,0,0)),
+      Tuple1(Matrix3(0,0,0,1,0,0,0,0,0)),
+      Tuple1(Matrix3(0,0,0,0,1,0,0,0,0)),
+      Tuple1(Matrix3(0,0,0,0,0,1,0,0,0)),
+      Tuple1(Matrix3(0,0,0,0,0,0,1,0,0)),
+      Tuple1(Matrix3(0,0,0,0,0,0,0,1,0)),
+      Tuple1(Matrix3(0,0,0,0,0,0,0,0,1))
     ])
     
     // prior on the anchor orientation
-    let jf_p = JacobianFactor9x9_1(jacobian: I_9x9,
-                                          error: Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
-                                          edges: Tuple1(TypedID<Vector9, Int>(0)))
+    let jf_p = JacobianFactor9x3x3_1(jacobian: I_9x9,
+                                          error: Matrix3(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
+                                          edges: Tuple1(TypedID<Matrix3, Int>(0)))
     
     assertEqual(
       Tensor<Double>(stacking: fpf_j.jacobian.map { $0.tensor }),
