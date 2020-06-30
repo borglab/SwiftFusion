@@ -25,12 +25,14 @@ public struct TrappingDouble: AdditiveArithmetic, Differentiable, Equatable {
   }
 }
 
+#if TRAPPING_DOUBLE
 /// A wrapper for `Double` that traps instead of allowing `NaN`.
 ///
 /// This typealias makes it easier to use unmodified existing code with `TrappingDouble`.
 ///
 /// If you really need the normal Swift `Double`, use `Swift.Double` to circumvent this typealias.
 public typealias Double = TrappingDouble
+#endif
 
 // The rest of this file provides conformances and functions that make the interface to
 // `TrappingDouble` very close to the interface to `Double`.

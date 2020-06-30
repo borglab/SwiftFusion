@@ -20,8 +20,8 @@ import SwiftFusion
 class TrappingDoubleTests: XCTestCase {
   /// Tests simple `TrappingDouble` operations.
   func testOperations() {
-    let x: Double = 1.0
-    let y: Double = 2.0
+    let x: TrappingDouble = 1.0
+    let y: TrappingDouble = 2.0
     XCTAssertEqual(y + x, 3.0)
     XCTAssertEqual(y - x, 1.0)
   }
@@ -32,6 +32,6 @@ class TrappingDoubleTests: XCTestCase {
   /// `XCTSkipIf` line and run this test to manually verify the trapping behavior.
   func testTrap() throws {
     try XCTSkipIf(true)
-    let _: Double = .infinity - .infinity
+    let _: TrappingDouble = .infinity - .infinity
   }
 }
