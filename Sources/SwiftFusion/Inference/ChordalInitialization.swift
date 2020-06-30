@@ -18,19 +18,19 @@ import TensorFlow
 /// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Rot3
 /// Please refer to Carlone15icra (Initialization Techniques for 3D SLAM: a Survey on Rotation Estimation and its Use in Pose Graph Optimization)
 /// for explanation.
-public struct FrobeniusFactorRot3: LinearizableFactor
+public struct RelaxedRotationFactorRot3: LinearizableFactor
 {
   public typealias Variables = Tuple2<Vector9, Vector9>
   public typealias JacobianRows = Array9<Tuple2<Vector9.TangentVector, Vector9.TangentVector>>
   
   public let edges: Variables.Indices
   public let difference: Vector9
-
+  
   public init(_ id1: TypedID<Vector9, Int>, _ id2: TypedID<Vector9, Int>, _ difference: Vector9) {
     self.edges = Tuple2(id1, id2)
     self.difference = difference
   }
-
+  
   public typealias ErrorVector = Vector9
   
   @differentiable
@@ -40,18 +40,18 @@ public struct FrobeniusFactorRot3: LinearizableFactor
     let R = matmul(R12, R2.transposed()).transposed()
     return R.vec - start
   }
-
+  
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
   
   public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }
-
+  
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head)
   }
-
+  
   public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
   public func linearized(at x: Variables) -> Linearization {
     Linearization(linearizing: errorVector, at: x, edges: edges)
@@ -59,35 +59,35 @@ public struct FrobeniusFactorRot3: LinearizableFactor
 }
 
 /// A factor for the anchor in chordal initialization
-public struct FrobeniusAnchorFactorRot3: LinearizableFactor
+public struct RelaxedAnchorFactorRot3: LinearizableFactor
 {
   public typealias Variables = Tuple1<Vector9>
   public typealias JacobianRows = Array9<Tuple1<Vector9.TangentVector>>
   
   public let edges: Variables.Indices
   public let prior: Vector9
-
+  
   public init(_ id: TypedID<Vector9, Int>, _ val: Vector9) {
     self.edges = Tuple1(id)
     self.prior = val
   }
-
+  
   public typealias ErrorVector = Vector9
   public func errorVector(_ val: Vector9) -> ErrorVector {
     val + prior
   }
-
+  
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
   // with sugar.
   
   public func error(at x: Variables) -> Double {
     return errorVector(at: x).squaredNorm
   }
-
+  
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head)
   }
-
+  
   public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
   public func linearized(at x: Variables) -> Linearization {
     Linearization(linearizing: errorVector, at: x, edges: edges)
@@ -95,6 +95,7 @@ public struct FrobeniusAnchorFactorRot3: LinearizableFactor
 }
 
 /// Type shorthands used in the relaxed pose graph
+/// NOTE: Specializations are added in `FactorsStorage.swift`
 public typealias Jacobian9x9_1 = Array9<Tuple1<Vector9>>
 public typealias Jacobian9x9_2 = Array9<Tuple2<Vector9, Vector9>>
 public typealias JacobianFactor9x9_1 = JacobianFactor<Jacobian9x9_1, Vector9>
@@ -112,9 +113,9 @@ public struct ChordalInitialization {
   /// Extract a subgraph of the original graph with only Pose3s.
   public func buildPose3graph(graph: FactorGraph) -> FactorGraph {
     var pose3Graph = FactorGraph()
-
+    
     for factor in graph.factors(type: BetweenFactor3.self) {
-        pose3Graph.store(factor)
+      pose3Graph.store(factor)
     }
     
     for factor in graph.factors(type: PriorFactor3.self) {
@@ -134,24 +135,32 @@ public struct ChordalInitialization {
     v: VariableAssignments,
     ids: Array<TypedID<Pose3, Int>>
   ) -> VariableAssignments {
+    /// The orientation graph, with only unconstrained rotation factors
     var orientationGraph = FactorGraph()
+    /// orientation storage
     var orientations = VariableAssignments()
+    /// association to lookup the vector-based storage from the pose3 ID
     var associations = Dictionary<Int, TypedID<Vector9, Int>>()
+    
+    // allocate the space for solved rotations, and memory the assocation
     for i in ids {
-      // let R = v[i].rot.coordinate.R
       associations[i.perTypeID] = orientations.store(Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0))
     }
     
+    // allocate the space for anchor
     associations[anchorId.perTypeID] = orientations.store(Vector9(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
     
+    // iterate the pose3 graph and make corresponding relaxed factors
     for factor in g.factors(type: BetweenFactor3.self) {
       let R = factor.difference.rot.coordinate.R
-      let frob_factor = FrobeniusFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R.vec)
+      let frob_factor = RelaxedRotationFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R.vec)
       orientationGraph.store(frob_factor)
     }
     
-    orientationGraph.store(FrobeniusAnchorFactorRot3(associations[anchorId.perTypeID]!, Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0)))
+    // make the anchor factor
+    orientationGraph.store(RelaxedAnchorFactorRot3(associations[anchorId.perTypeID]!, Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0)))
     
+    // optimize
     var optimizer = GenericCGLS()
     let linearGraph = orientationGraph.linearized(at: orientations)
     optimizer.optimize(gfg: linearGraph, initial: &orientations)
@@ -238,7 +247,7 @@ public struct ChordalInitialization {
     // TODO(fan): This does not work yet as we have not yet reached concensus on how should we
     // handle associations
     let pose3Graph = ci.buildPose3graph(graph: graph)
-
+    
     // Get orientations from relative orientation measurements
     let orientations = ci.solveOrientationGraph(g: pose3Graph, v: val, ids: ids)
     

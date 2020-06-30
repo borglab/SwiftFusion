@@ -19,11 +19,15 @@ import XCTest
 import PenguinStructures
 import SwiftFusion
 
+// MARK: sample data
+
+// symbol shorthands
 let x0 = TypedID<Pose3, Int>(0)
 let x1 = TypedID<Pose3, Int>(1)
 let x2 = TypedID<Pose3, Int>(2)
 let x3 = TypedID<Pose3, Int>(3)
 
+// ground truth
 let  p0 = Vector3(0,0,0);
 let  R0 = Rot3.fromTangent(Vector3(0.0,0.0,0.0))
 let  p1 = Vector3(1,2,0)
@@ -38,6 +42,7 @@ let pose1 = Pose3(R1,p1)
 let pose2 = Pose3(R2,p2)
 let pose3 = Pose3(R3,p3)
 
+/// simple test graph for the chordal initialization
 func graph1() -> FactorGraph {
   var g = FactorGraph()
   g.store(BetweenFactor3(x0, x1, between(pose0, pose1)))
@@ -50,12 +55,13 @@ func graph1() -> FactorGraph {
 }
 
 class ChordalInitializationTests: XCTestCase {
+  /// make sure the derivatives are correct
   func testFrobeniusRot3BetweenJacobians() {
     var val = VariableAssignments()
     let p0 = val.store(Vector9(1,0,0,0,1,0,0,0,1))
     let p1 = val.store(Vector9(1,0,0,0,1,0,0,0,1))
     
-    let frf = FrobeniusFactorRot3(p0, p1, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
+    let frf = RelaxedRotationFactorRot3(p0, p1, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
     
     let frf_j = frf.linearized(at: Tuple2(val[p0], val[p1]))
     
@@ -82,7 +88,7 @@ class ChordalInitializationTests: XCTestCase {
       , accuracy: 1e-4
     )
     
-    let fpf = FrobeniusAnchorFactorRot3(p0, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
+    let fpf = RelaxedAnchorFactorRot3(p0, Vector9(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
     
     let fpf_j = fpf.linearized(at: Tuple1(val[p0]))
     
@@ -110,6 +116,7 @@ class ChordalInitializationTests: XCTestCase {
     )
   }
   
+  /// sanity test for the chordal initialization on `graph1`
   func testChordalOrientation() {
     var ci = ChordalInitialization()
     
@@ -124,10 +131,8 @@ class ChordalInitializationTests: XCTestCase {
     
     let pose3Graph = ci.buildPose3graph(graph: graph1())
     
-    // let initial = ci.computeOrientationsChordal(graph: pose3Graph, val: val_copy, ids: [x0, x1, x2, x3])
     let initial = ci.solveOrientationGraph(g: pose3Graph, v: val_copy, ids: [x0, x1, x2, x3])
     
-    // comparison is up to M_PI, that's why we add some multiples of 2*M_PI
     assertAllKeyPathEqual( R0, initial[TypedID<Rot3, Int>(x0.perTypeID)], accuracy: 1e-5)
     assertAllKeyPathEqual( R1, initial[TypedID<Rot3, Int>(x1.perTypeID)], accuracy: 1e-5)
     assertAllKeyPathEqual( R2, initial[TypedID<Rot3, Int>(x2.perTypeID)], accuracy: 1e-5)
