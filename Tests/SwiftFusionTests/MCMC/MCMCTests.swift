@@ -26,7 +26,7 @@ class MCMCTests: XCTestCase {
     
     // Run the sampler for 2500 steps, discarding the first 500 asa burn-in
     let num_results = 2000
-    let initial_state = 1.0
+    let initial_state: Double = 1.0
     let num_burnin_steps = 500
     let samples = sampleChain(num_results, initial_state, kernel, num_burnin_steps)
     

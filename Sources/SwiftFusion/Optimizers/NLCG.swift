@@ -47,9 +47,13 @@ public class NLCG<Model: Differentiable & KeyPathIterable>
 
     // perform the golden section search algorithm to decide the the optimal step size
     // detail refer to http://en.wikipedia.org/wiki/Golden_section_search
-    let phi = 0.5 * (1.0 + sqrt(5.0)), resphi = 2.0 - phi, tau = 1e-5
+    let phi: Double = 0.5 * (1.0 + sqrt(5.0))
+    let resphi: Double = 2.0 - phi
+    let tau: Double = 1e-5
     
-    var minStep = -1.0 / g, maxStep = 0.0, newStep = minStep + (maxStep - minStep) / (phi + 1.0);
+    var minStep: Double = -1.0 / g
+    var maxStep: Double = 0.0
+    var newStep: Double = minStep + (maxStep - minStep) / (phi + 1.0)
 
     var newValues = currentValues
     newValues.move(along: newStep * gradient)
