@@ -151,4 +151,24 @@ final class Rot3Tests: XCTestCase {
       }
     }
   }
+  
+  /// Tests that our derivatives will not fail when the rotation has slightly drifted away from the SO(3) manifold
+  func testExtreme() {
+    let R1 = Rot3()
+    
+    let R2 = Rot3.fromTangent(Vector3(0,0, .pi-0.01))
+    
+    let R2_drifted = Rot3(
+      -0.9999500004166653, -0.009999833334166574, 0.0,
+      0.009999833334166574, -0.9999500004166653, 0.0,
+      0.0, 0.0, 0.9999
+    )
+    
+    let diff = R1.localCoordinate(R2_drifted)
+    // First ensure we don't get NaNs
+    XCTAssert(!diff.x.isNaN)
+    
+    let diff_normal = R1.localCoordinate(R2)
+    assertAllKeyPathEqual(diff, diff_normal, accuracy: 1e-2)
+  }
 }

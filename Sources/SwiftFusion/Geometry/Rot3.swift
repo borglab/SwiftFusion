@@ -188,7 +188,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
 
     let tr = R11 + R22 + R33
 
-    if abs(tr + 1.0) < 1e-10 {
+    if tr + 1.0 < 1e-10 {
       if abs(R33 + 1.0) > 1e-10 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
       } else if abs(R22 + 1.0) > 1e-10 {
@@ -200,11 +200,6 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     } else {
       let tr_3 = tr - 3.0; // always negative
       if tr_3 < -1e-7 {
-        if tr <= -1.0 {
-          let theta = Double.pi
-          let magnitude = theta / (2.0 * sin(theta))
-          return magnitude * Vector3(R32 - R23, R13 - R31, R21 - R12)
-        }
         let theta = acos((tr - 1.0) / 2.0)
         let magnitude = theta / (2.0 * sin(theta))
         return magnitude * Vector3(R32 - R23, R13 - R31, R21 - R12)
