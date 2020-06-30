@@ -61,15 +61,15 @@ class ChordalInitializationTests: XCTestCase {
     
     let Rij = Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2)
     let M9: Jacobian9x9_2 = Array9([
-      Tuple2(Vector9(-1,0,0,0,0,0,0,0,0), Vector9(Rij.s00,Rij.s01,Rij.s02,0,0,0,0,0,0)),
-      Tuple2(Vector9(0,-1,0,0,0,0,0,0,0), Vector9(Rij.s10,Rij.s11,Rij.s12,0,0,0,0,0,0)),
-      Tuple2(Vector9(0,0,-1,0,0,0,0,0,0), Vector9(Rij.s20,Rij.s21,Rij.s22,0,0,0,0,0,0)),
-      Tuple2(Vector9(0,0,0,-1,0,0,0,0,0), Vector9(0,0,0,Rij.s00,Rij.s01,Rij.s02,0,0,0)),
-      Tuple2(Vector9(0,0,0,0,-1,0,0,0,0), Vector9(0,0,0,Rij.s10,Rij.s11,Rij.s12,0,0,0)),
-      Tuple2(Vector9(0,0,0,0,0,-1,0,0,0), Vector9(0,0,0,Rij.s20,Rij.s21,Rij.s22,0,0,0)),
-      Tuple2(Vector9(0,0,0,0,0,0,-1,0,0), Vector9(0,0,0,0,0,0,Rij.s00,Rij.s01,Rij.s02)),
-      Tuple2(Vector9(0,0,0,0,0,0,0,-1,0), Vector9(0,0,0,0,0,0,Rij.s10,Rij.s11,Rij.s12)),
-      Tuple2(Vector9(0,0,0,0,0,0,0,0,-1), Vector9(0,0,0,0,0,0,Rij.s20,Rij.s21,Rij.s22))
+      Tuple2(Vector9(-1,0,0,0,0,0,0,0,0), Vector9(Rij[0, 0],Rij[0, 1],Rij[0, 2],0,0,0,0,0,0)),
+      Tuple2(Vector9(0,-1,0,0,0,0,0,0,0), Vector9(Rij[1, 0],Rij[1, 1],Rij[1, 2],0,0,0,0,0,0)),
+      Tuple2(Vector9(0,0,-1,0,0,0,0,0,0), Vector9(Rij[2, 0],Rij[2, 1],Rij[2, 2],0,0,0,0,0,0)),
+      Tuple2(Vector9(0,0,0,-1,0,0,0,0,0), Vector9(0,0,0,Rij[0, 0],Rij[0, 1],Rij[0, 2],0,0,0)),
+      Tuple2(Vector9(0,0,0,0,-1,0,0,0,0), Vector9(0,0,0,Rij[1, 0],Rij[1, 1],Rij[1, 2],0,0,0)),
+      Tuple2(Vector9(0,0,0,0,0,-1,0,0,0), Vector9(0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2],0,0,0)),
+      Tuple2(Vector9(0,0,0,0,0,0,-1,0,0), Vector9(0,0,0,0,0,0,Rij[0, 0],Rij[0, 1],Rij[0, 2])),
+      Tuple2(Vector9(0,0,0,0,0,0,0,-1,0), Vector9(0,0,0,0,0,0,Rij[1, 0],Rij[1, 1],Rij[1, 2])),
+      Tuple2(Vector9(0,0,0,0,0,0,0,0,-1), Vector9(0,0,0,0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2]))
     ])
     
     let b = Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0)

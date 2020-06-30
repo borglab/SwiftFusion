@@ -1,7 +1,7 @@
 public struct Matrix3: Differentiable & Equatable & KeyPathIterable {
-  public var s00, s01, s02: Double
-  public var s10, s11, s12: Double
-  public var s20, s21, s22: Double
+  var s00, s01, s02: Double
+  var s10, s11, s12: Double
+  var s20, s21, s22: Double
 
   public var columnCount: Int {
     3
@@ -79,6 +79,41 @@ public struct Matrix3: Differentiable & Equatable & KeyPathIterable {
     Matrix3(s00, s10, s20,
             s01, s11, s21,
             s02, s12, s22)
+  }
+  
+  @differentiable
+  public var vec: Vector9 {
+    get {
+      Vector9(s00, s01, s02, s10, s11, s12, s20, s21, s22)
+    }
+  }
+  
+  @differentiable
+  public subscript (_ row: Int, _ col: Int) -> Double {
+    get {
+      switch (row, col) {
+      case (0, 0):
+        return s00
+      case (0, 1):
+        return s01
+      case (0, 2):
+        return s02
+      case (1, 0):
+        return s10
+      case (1, 1):
+        return s11
+      case (1, 2):
+        return s12
+      case (2, 0):
+        return s20
+      case (2, 1):
+        return s21
+      case (2, 2):
+        return s22
+      case (_, _):
+        fatalError("Index out of range")
+      }
+    }
   }
 }
 

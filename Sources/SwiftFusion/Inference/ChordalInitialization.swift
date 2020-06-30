@@ -26,8 +26,8 @@ public struct FrobeniusFactorRot3: LinearizableFactor
   public let edges: Variables.Indices
   public let difference: Vector9
 
-  public init(_ startId: TypedID<Vector9, Int>, _ endId: TypedID<Vector9, Int>, _ difference: Vector9) {
-    self.edges = Tuple2(startId, endId)
+  public init(_ id1: TypedID<Vector9, Int>, _ id2: TypedID<Vector9, Int>, _ difference: Vector9) {
+    self.edges = Tuple2(id1, id2)
     self.difference = difference
   }
 
@@ -38,8 +38,7 @@ public struct FrobeniusFactorRot3: LinearizableFactor
     let R2 = Matrix3(end.s0, end.s1, end.s2, end.s3, end.s4, end.s5, end.s6, end.s7, end.s8)
     let R12 = Matrix3(difference.s0, difference.s1, difference.s2, difference.s3, difference.s4, difference.s5, difference.s6, difference.s7, difference.s8)
     let R = matmul(R12, R2.transposed()).transposed()
-    let R_v = Vector9(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22)
-    return R_v - start
+    return R.vec - start
   }
 
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -147,8 +146,7 @@ public struct ChordalInitialization {
     
     for factor in g.factors(type: BetweenFactor3.self) {
       let R = factor.difference.rot.coordinate.R
-      let R_v = Vector9(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22)
-      let frob_factor = FrobeniusFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R_v)
+      let frob_factor = FrobeniusFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R.vec)
       orientationGraph.store(frob_factor)
     }
     
@@ -181,7 +179,7 @@ public struct ChordalInitialization {
       
       let initRot = Rot3.ClosestTo(mat: M)
       
-      // TODO(fan): relies on the assumption of continous and ordered allocation
+      // TODO(fan): relies on the assumption of continuous and ordered allocation
       let _ = validRot3.store(initRot)
     }
     
