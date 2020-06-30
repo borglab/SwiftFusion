@@ -66,7 +66,7 @@ final class Pose3Tests: XCTestCase {
   /// Vehicle at p0 is looking towards y axis (X-axis points towards world y)
   func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> Values {
     var values = Values()
-    var theta = 0.0
+    var theta: Double = 0.0
     let dtheta = 2.0 * .pi / Double(numPoses)
     let gRo = Rot3(0, 1, 0, 1, 0, 0, 0, 0, -1)
     for i in 0..<numPoses {
@@ -100,7 +100,7 @@ final class Pose3Tests: XCTestCase {
 
     // Create initial config
     var val = Values()
-    let s = 0.10
+    let s: Double = 0.10
     val.insert(0, p0)
     val.insert(1, hexagon[1, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     val.insert(2, hexagon[2, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))

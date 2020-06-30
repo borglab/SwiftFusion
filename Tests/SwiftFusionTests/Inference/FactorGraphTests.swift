@@ -92,7 +92,7 @@ class FactorGraphTests: XCTestCase {
   func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> (Array<TypedID<Pose3, Int>>, VariableAssignments) {
     var ids: Array<TypedID<Pose3, Int>> = []
     var values = VariableAssignments()
-    var theta = 0.0
+    var theta: Double = 0.0
     let dtheta = 2.0 * .pi / Double(numPoses)
     let gRo = Rot3(0, 1, 0, 1, 0, 0, 0, 0, -1)
     for _ in 0..<numPoses {
@@ -114,7 +114,7 @@ class FactorGraphTests: XCTestCase {
     
     var x = VariableAssignments()
     
-    let s = 0.10
+    let s: Double = 0.10
     let id0 = x.store(p0)
     let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
     let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
@@ -159,7 +159,7 @@ class FactorGraphTests: XCTestCase {
     for _ in 0..<attemptCount {
       var x = VariableAssignments()
       
-      let s = 0.9
+      let s: Double = 0.9
       let id0 = x.store(p0)
       let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(s * Tensor(randomNormal: [6]))))
       let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(s * Tensor(randomNormal: [6]))))

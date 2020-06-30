@@ -62,7 +62,7 @@ public struct LM {
       print("[LM OUTER] initial error = \(old_error)")
     }
     
-    var lambda = 1e-6
+    var lambda: Double = 1e-6
     var inner_iter_step = 0
     var inner_success = false
     var all_done = false
