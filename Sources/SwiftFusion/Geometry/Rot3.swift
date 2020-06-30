@@ -188,7 +188,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
 
     let tr = R11 + R22 + R33
 
-    if abs(tr + 1.0) < 1e-10 {
+    if tr + 1.0 < 1e-10 {
       if abs(R33 + 1.0) > 1e-10 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
       } else if abs(R22 + 1.0) > 1e-10 {
