@@ -143,11 +143,11 @@ public struct ChordalInitialization {
     
     // allocate the space for solved rotations, and memorize the assocation
     for i in ids {
-      associations[i.perTypeID] = orientations.store(Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0))
+      associations[i.perTypeID] = orientations.store(Matrix3.zero)
     }
     
     // allocate the space for anchor
-    associations[anchorId.perTypeID] = orientations.store(Matrix3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+    associations[anchorId.perTypeID] = orientations.store(Matrix3.zero)
     
     // iterate the pose3 graph and make corresponding relaxed factors
     for factor in g.factors(type: BetweenFactor3.self) {
@@ -244,7 +244,6 @@ public struct ChordalInitialization {
     // Get orientations from relative orientation measurements
     let orientations = ci.solveOrientationGraph(g: pose3Graph, v: val, ids: ids)
     
-    print("Pose3Graph = \(pose3Graph.factors(type: BetweenFactor3.self).map { ($0.edges.head.perTypeID, $0.edges.tail.head.perTypeID) })")
     // Compute the full poses (1 GN iteration on full poses)
     return ci.computePoses(graph: pose3Graph, orientations: orientations, ids: ids)
   }
