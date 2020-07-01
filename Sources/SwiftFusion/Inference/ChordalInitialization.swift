@@ -64,14 +64,16 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   public typealias JacobianRows = Array9<Tuple1<Matrix3.TangentVector>>
   
   public let edges: Variables.Indices
+  public let prior: Matrix3
   
-  public init(_ id: TypedID<Matrix3, Int>) {
+  public init(_ id: TypedID<Matrix3, Int>, _ prior: Matrix3) {
     self.edges = Tuple1(id)
+    self.prior = prior
   }
   
   public typealias ErrorVector = Vector9
   public func errorVector(_ val: Matrix3) -> ErrorVector {
-    (val + Matrix3.identity).vec
+    (val + prior).vec
   }
   
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -95,8 +97,8 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
 /// NOTE: Specializations are added in `FactorsStorage.swift`
 public typealias Jacobian9x3x3_1 = Array9<Tuple1<Matrix3>>
 public typealias Jacobian9x3x3_2 = Array9<Tuple2<Matrix3, Matrix3>>
-public typealias JacobianFactor9x3x3_1 = JacobianFactor<Jacobian9x3x3_1, Matrix3>
-public typealias JacobianFactor9x3x3_2 = JacobianFactor<Jacobian9x3x3_2, Matrix3>
+public typealias JacobianFactor9x3x3_1 = JacobianFactor<Jacobian9x3x3_1, Vector9>
+public typealias JacobianFactor9x3x3_2 = JacobianFactor<Jacobian9x3x3_2, Vector9>
 
 /// Chordal Initialization for Pose3s
 public struct ChordalInitialization {
@@ -155,7 +157,7 @@ public struct ChordalInitialization {
     }
     
     // make the anchor factor
-    orientationGraph.store(RelaxedAnchorFactorRot3(associations[anchorId.perTypeID]!))
+    orientationGraph.store(RelaxedAnchorFactorRot3(associations[anchorId.perTypeID]!, Matrix3.identity))
     
     // optimize
     var optimizer = GenericCGLS()

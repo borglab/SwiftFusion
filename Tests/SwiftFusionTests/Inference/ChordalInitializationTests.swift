@@ -81,7 +81,7 @@ class ChordalInitializationTests: XCTestCase {
       Tuple2(Matrix3(0,0,0,0,0,0,0,0,-1), Matrix3(0,0,0,0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2]))
     ])
     
-    let b = Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0)
+    let b = Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0)
     
     let jf = JacobianFactor9x3x3_2(jacobian: M9, error: b, edges: Tuple2(TypedID<Matrix3, Int>(0), TypedID<Matrix3, Int>(1)))
     
@@ -91,9 +91,9 @@ class ChordalInitializationTests: XCTestCase {
       , accuracy: 1e-4
     )
     
-    let fpf = RelaxedAnchorFactorRot3(p0)
+    let fpf = RelaxedAnchorFactorRot3(p0, Matrix3.identity)
     
-    let fpf_j = fpf.linearized(at: Tuple1(val[p0]))
+    let fpf_j = fpf.linearized(at: Tuple1(Matrix3.zero))
     
     let I_9x9: Jacobian9x3x3_1 = Array9([
       Tuple1(Matrix3(1,0,0,0,0,0,0,0,0)),
@@ -109,7 +109,7 @@ class ChordalInitializationTests: XCTestCase {
     
     // prior on the anchor orientation
     let jf_p = JacobianFactor9x3x3_1(jacobian: I_9x9,
-                                          error: Matrix3(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
+                                          error: Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
                                           edges: Tuple1(TypedID<Matrix3, Int>(0)))
     
     assertEqual(
@@ -117,6 +117,7 @@ class ChordalInitializationTests: XCTestCase {
       Tensor<Double>(stacking: jf_p.jacobian.map { $0.tensor })
       , accuracy: 1e-4
     )
+    assertAllKeyPathEqual(fpf_j.error, jf_p.error, accuracy: 1e-5)
   }
   
   /// sanity test for the chordal initialization on `graph1`
