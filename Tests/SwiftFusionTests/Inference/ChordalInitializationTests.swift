@@ -91,7 +91,7 @@ class ChordalInitializationTests: XCTestCase {
       , accuracy: 1e-4
     )
     
-    let fpf = RelaxedAnchorFactorRot3(p0, Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2))
+    let fpf = RelaxedAnchorFactorRot3(p0)
     
     let fpf_j = fpf.linearized(at: Tuple1(val[p0]))
     

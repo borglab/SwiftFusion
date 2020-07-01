@@ -36,8 +36,8 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
   @differentiable
   public func errorVector(_ R1: Matrix3, _ R2: Matrix3) -> ErrorVector {
     let R12 = difference
-    let R2R12T = matmul(R12, R2.transposed()).transposed()
-    return (R2R12T - R1).vec
+    let R1h = matmul(R12, R2.transposed()).transposed()
+    return (R1h - R1).vec
   }
   
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -64,16 +64,14 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   public typealias JacobianRows = Array9<Tuple1<Matrix3.TangentVector>>
   
   public let edges: Variables.Indices
-  public let prior: Matrix3
   
-  public init(_ id: TypedID<Matrix3, Int>, _ val: Matrix3) {
+  public init(_ id: TypedID<Matrix3, Int>) {
     self.edges = Tuple1(id)
-    self.prior = val
   }
   
   public typealias ErrorVector = Vector9
   public func errorVector(_ val: Matrix3) -> ErrorVector {
-    (val + prior).vec
+    (val + Matrix3.identity).vec
   }
   
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -157,7 +155,7 @@ public struct ChordalInitialization {
     }
     
     // make the anchor factor
-    orientationGraph.store(RelaxedAnchorFactorRot3(associations[anchorId.perTypeID]!, Matrix3(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0)))
+    orientationGraph.store(RelaxedAnchorFactorRot3(associations[anchorId.perTypeID]!))
     
     // optimize
     var optimizer = GenericCGLS()
