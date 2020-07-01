@@ -15,7 +15,7 @@
 import PenguinStructures
 import TensorFlow
 
-/// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Rot3
+/// A relaxed version of the Rot3 between that uses the Chordal (Frobenious) norm on rotation
 /// Please refer to Carlone15icra (Initialization Techniques for 3D SLAM: a Survey on Rotation Estimation and its Use in Pose Graph Optimization)
 /// for explanation.
 public struct RelaxedRotationFactorRot3: LinearizableFactor
@@ -31,14 +31,13 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
     self.difference = difference
   }
   
-  public typealias ErrorVector = Matrix3
+  public typealias ErrorVector = Vector9
   
   @differentiable
-  public func errorVector(_ start: Matrix3, _ end: Matrix3) -> ErrorVector {
-    let R2 = end
+  public func errorVector(_ R1: Matrix3, _ R2: Matrix3) -> ErrorVector {
     let R12 = difference
-    let R = matmul(R12, R2.transposed()).transposed()
-    return R - start
+    let R2R12T = matmul(R12, R2.transposed()).transposed()
+    return (R2R12T - R1).vec
   }
   
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -72,9 +71,9 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
     self.prior = val
   }
   
-  public typealias ErrorVector = Matrix3
+  public typealias ErrorVector = Vector9
   public func errorVector(_ val: Matrix3) -> ErrorVector {
-    val + prior
+    (val + prior).vec
   }
   
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -142,7 +141,7 @@ public struct ChordalInitialization {
     /// association to lookup the vector-based storage from the pose3 ID
     var associations = Dictionary<Int, TypedID<Matrix3, Int>>()
     
-    // allocate the space for solved rotations, and memory the assocation
+    // allocate the space for solved rotations, and memorize the assocation
     for i in ids {
       associations[i.perTypeID] = orientations.store(Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0))
     }
