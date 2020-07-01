@@ -17,16 +17,14 @@ import PenguinStructures
 /// An identifier of a given abstract value with the value's type attached
 ///
 /// - Parameter Value: the type of value this ID refers to.
-/// - Parameter PerTypeID: a type that, given `Value`, identifies a given
-///   logical value of that type.
 ///
 /// Note: This is just a temporary placeholder until we get the real `TypedID` in penguin.
-public struct TypedID<Value, PerTypeID: Equatable>: Equatable {
+public struct TypedID<Value>: Equatable {
   /// A specifier of which logical value of type `value` is being identified.
-  public let perTypeID: PerTypeID
+  public let perTypeID: Int
 
   /// Creates an instance indicating the given logical value of type `Value`.
-  public init(_ perTypeID: PerTypeID) { self.perTypeID = perTypeID }
+  public init(_ perTypeID: Int) { self.perTypeID = perTypeID }
 }
 
 /// Assignments of values to factor graph variables.
@@ -43,7 +41,7 @@ public struct VariableAssignments {
   }
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
-  public mutating func store<T>(_ value: T) -> TypedID<T, Int> {
+  public mutating func store<T>(_ value: T) -> TypedID<T> {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
       default: AnyElementArrayBuffer(ArrayBuffer<T>())
@@ -52,7 +50,7 @@ public struct VariableAssignments {
   }
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
-  public mutating func store<T: Differentiable>(_ value: T) -> TypedID<T, Int>
+  public mutating func store<T: Differentiable>(_ value: T) -> TypedID<T>
     where T.TangentVector: EuclideanVectorN
   {
     let perTypeID = storage[
@@ -65,7 +63,7 @@ public struct VariableAssignments {
   }
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
-  public mutating func store<T: EuclideanVectorN>(_ value: T) -> TypedID<T, Int> {
+  public mutating func store<T: EuclideanVectorN>(_ value: T) -> TypedID<T> {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
       // Note: This is a safe upcast.
@@ -81,7 +79,7 @@ public struct VariableAssignments {
   }
 
   /// Accesses the stored value with the given ID.
-  public subscript<T>(id: TypedID<T, Int>) -> T {
+  public subscript<T>(id: TypedID<T>) -> T {
     _read {
       let array = storage[ObjectIdentifier(T.self), default: Self.noSuchType]
       yield ArrayBuffer<T>(unsafelyDowncasting: array)

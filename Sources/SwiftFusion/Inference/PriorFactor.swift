@@ -28,7 +28,7 @@ public struct PriorFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
   public let edges: Variables.Indices
   public let prior: Pose
 
-  public init(_ id: TypedID<Pose, Int>, _ prior: Pose) {
+  public init(_ id: TypedID<Pose>, _ prior: Pose) {
     self.edges = Tuple1(id)
     self.prior = prior
   }

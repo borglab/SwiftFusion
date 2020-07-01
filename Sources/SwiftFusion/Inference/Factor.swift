@@ -144,7 +144,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   public typealias UnsafePointers = Tuple<UnsafePointer<Head>, Tail.UnsafePointers>
   public typealias UnsafeMutablePointers =
     Tuple<UnsafeMutablePointer<Head>, Tail.UnsafeMutablePointers>
-  public typealias Indices = Tuple<TypedID<Head, Int>, Tail.Indices>
+  public typealias Indices = Tuple<TypedID<Head>, Tail.Indices>
 
   public static func withVariableBufferBaseUnsafePointers<R>(
     _ variableAssignments: VariableAssignments,
@@ -211,10 +211,10 @@ extension Empty: DifferentiableVariableTuple {
 
 extension Tuple: DifferentiableVariableTuple
 where Head: Differentiable, Tail: DifferentiableVariableTuple {
-  typealias TangentIndices = Tuple<TypedID<Head.TangentVector, Int>, Tail.TangentIndices>
+  typealias TangentIndices = Tuple<TypedID<Head.TangentVector>, Tail.TangentIndices>
   static func linearized(_ indices: Indices) -> TangentIndices {
     TangentIndices(
-      head: TypedID<Head.TangentVector, Int>(indices.head.perTypeID),
+      head: TypedID<Head.TangentVector>(indices.head.perTypeID),
       tail: Tail.linearized(indices.tail)
     )
   }
