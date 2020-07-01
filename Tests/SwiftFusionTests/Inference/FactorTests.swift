@@ -20,36 +20,26 @@ import PenguinStructures
 @testable import SwiftFusion
 
 /// A factor that switches between different linear motions based on an integer label.
-fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup>: VectorFactor {
-  typealias Variables = Tuple3<Int, Pose, Pose>
+fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup>: VectorFactor3 {
+  typealias ErrorVector = Pose.TangentVector
+  typealias LinearizableComponent = BetweenFactor<Pose>
 
   let edges: Variables.Indices
 
   let motions: [Pose]
 
-  typealias ErrorVector = Pose.TangentVector
   func errorVector(_ motionLabel: Int, _ start: Pose, _ end: Pose) -> ErrorVector {
     let actualMotion = between(start, end)
     return motions[motionLabel].localCoordinate(actualMotion)
   }
 
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-
-  func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-
-  func errorVector(at x: Variables) -> Pose.TangentVector {
-    return errorVector(x.head, x.tail.head, x.tail.tail.head)
-  }
-
-  func linearizableComponent(at x: Variables)
-    -> (BetweenFactor<Pose>, BetweenFactor<Pose>.Variables)
+  func linearizableComponent(_ motionLabel: Int, _ start: Pose, _ end: Pose)
+    -> (LinearizableComponent, LinearizableComponent.Variables)
   {
-    let a = BetweenFactor(edges.tail.head, edges.tail.tail.head, motions[x.head])
-    let b = x.tail
-    return (a, b)
+    return (
+      BetweenFactor(input1ID, input2ID, motions[motionLabel]),
+      Tuple2(start, end)
+    )
   }
 }
 

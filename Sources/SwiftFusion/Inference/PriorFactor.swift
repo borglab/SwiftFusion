@@ -15,9 +15,7 @@
 import PenguinStructures
 
 /// A factor that specifies a prior on a pose.
-public struct PriorFactor<Pose: LieGroup>: LinearizableFactor {
-  public typealias Variables = Tuple1<Pose>
-
+public struct PriorFactor<Pose: LieGroup>: LinearizableFactor1 {
   public let edges: Variables.Indices
   public let prior: Pose
 
@@ -26,20 +24,8 @@ public struct PriorFactor<Pose: LieGroup>: LinearizableFactor {
     self.prior = prior
   }
 
-  public typealias ErrorVector = Pose.TangentVector
-  public func errorVector(_ x: Pose) -> ErrorVector {
-    return prior.localCoordinate(x)
-  }
-
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-
   @differentiable
-  public func errorVector(at x: Variables) -> Pose.TangentVector {
-    return errorVector(x.head)
+  public func errorVector(_ x: Pose) -> Pose.TangentVector {
+    return prior.localCoordinate(x)
   }
 }

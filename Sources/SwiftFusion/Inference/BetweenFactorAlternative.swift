@@ -15,9 +15,7 @@
 import PenguinStructures
 
 /// A BetweenFactor alternative that uses the Chordal (Frobenious) norm on rotation for Pose3
-public struct BetweenFactorAlternative: LinearizableFactor {
-  public typealias Variables = Tuple2<Pose3, Pose3>
-
+public struct BetweenFactorAlternative: LinearizableFactor2 {
   public let edges: Variables.Indices
   public let difference: Pose3
 
@@ -26,8 +24,8 @@ public struct BetweenFactorAlternative: LinearizableFactor {
     self.difference = difference
   }
 
-  public typealias ErrorVector = Vector12
-  public func errorVector(_ start: Pose3, _ end: Pose3) -> ErrorVector {
+  @differentiable
+  public func errorVector(_ start: Pose3, _ end: Pose3) -> Vector12 {
     let actualMotion = between(start, end)
     let R = actualMotion.coordinate.rot.coordinate.R + (-1) * difference.rot.coordinate.R
     let t = actualMotion.t - difference.t
@@ -35,18 +33,6 @@ public struct BetweenFactorAlternative: LinearizableFactor {
     // TODO(fan): Discuss with Marc why this would lead to failing CI
     // return Vector12(R[0, 0], R[0, 1], R[0, 2], R[1, 0], R[1, 1], R[1, 2], R[2, 0], R[2, 1], R[2, 2], t.x, t.y, t.z)
     return Vector12(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22, t.x, t.y, t.z)
-  }
-
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-
-  @differentiable
-  public func errorVector(at x: Variables) -> ErrorVector {
-    return errorVector(x.head, x.tail.head)
   }
 }
 

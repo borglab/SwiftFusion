@@ -15,9 +15,7 @@
 import PenguinStructures
 
 /// A factor that specifies a difference between two poses.
-public struct BetweenFactor<Pose: LieGroup>: LinearizableFactor {
-  public typealias Variables = Tuple2<Pose, Pose>
-
+public struct BetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
   public let edges: Variables.Indices
   public let difference: Pose
 
@@ -26,21 +24,9 @@ public struct BetweenFactor<Pose: LieGroup>: LinearizableFactor {
     self.difference = difference
   }
 
-  public typealias ErrorVector = Pose.TangentVector
-  public func errorVector(_ start: Pose, _ end: Pose) -> ErrorVector {
+  @differentiable
+  public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
     let actualMotion = between(start, end)
     return difference.localCoordinate(actualMotion)
-  }
-
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-
-  @differentiable
-  public func errorVector(at x: Variables) -> Pose.TangentVector {
-    return errorVector(x.head, x.tail.head)
   }
 }
