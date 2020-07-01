@@ -85,7 +85,7 @@ extension ArrayStorage where Element: EuclideanVectorN {
   /// Returns Jacobians that scale each element by `scalar`.
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
     AnyGaussianFactorArrayBuffer(ArrayBuffer(enumerated().lazy.map { (i, _) in
-      ScalarJacobianFactor(edges: Tuple1(TypedID<Element, Int>(i)), scalar: scalar)
+      ScalarJacobianFactor(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
     }))
   }
 }

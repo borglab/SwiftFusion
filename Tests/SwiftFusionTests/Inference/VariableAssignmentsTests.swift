@@ -44,8 +44,8 @@ class VariableAssignmentsTests: XCTestCase {
 
     let t = x.tangentVectorZeros
     // TODO: Assert that there are only 2 elements when there is some API for count.
-    XCTAssertEqual(t[TypedID<Vector1, Int>(0)], Vector1(0))
-    XCTAssertEqual(t[TypedID<Vector2, Int>(0)], Vector2(0, 0))
+    XCTAssertEqual(t[TypedID<Vector1>(0)], Vector1(0))
+    XCTAssertEqual(t[TypedID<Vector2>(0)], Vector2(0, 0))
   }
 
   func testMove() {
