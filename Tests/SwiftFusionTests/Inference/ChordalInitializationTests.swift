@@ -31,7 +31,10 @@ let x3 = TypedID<Pose3, Int>(3)
 let  p0 = Vector3(0,0,0);
 let  R0 = Rot3.fromTangent(Vector3(0.0,0.0,0.0))
 let  p1 = Vector3(1,2,0)
-let  R1 = Rot3.fromTangent(Vector3(0.0,0.0,1.570796))
+// let  R1 = Rot3.fromTangent(Vector3(0.0,0.0,1.570796))
+let R1 = Rot3(3.26795e-07, -1, 0,
+              1, 3.26795e-07,  0,
+              0,           0,  1)
 let  p2 = Vector3(0,2,0)
 let  R2 = Rot3.fromTangent(Vector3(0.0,0.0,3.141593))
 let  p3 = Vector3(-1,1,0)
@@ -85,11 +88,18 @@ class ChordalInitializationTests: XCTestCase {
     
     let jf = JacobianFactor9x3x3_2(jacobian: M9, error: b, edges: Tuple2(TypedID<Matrix3, Int>(0), TypedID<Matrix3, Int>(1)))
     
+    // assert the jacobian is correct
     assertEqual(
       Tensor<Double>(stacking: frf_j.jacobian.map { $0.tensor }),
       Tensor<Double>(stacking: jf.jacobian.map { $0.tensor })
       , accuracy: 1e-4
     )
+    
+    let frf_zero = RelaxedRotationFactorRot3(p0, p1, Matrix3.identity)
+    let frf_zero_j = frf_zero.linearized(at: Tuple2(val[p0], val[p1]))
+    
+    // assert the zero error is correct
+    assertAllKeyPathEqual(frf_zero_j.error, jf.error, accuracy: 1e-5)
     
     let fpf = RelaxedAnchorFactorRot3(p0, Matrix3.identity)
     
@@ -112,11 +122,14 @@ class ChordalInitializationTests: XCTestCase {
                                           error: Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
                                           edges: Tuple1(TypedID<Matrix3, Int>(0)))
     
+    // assert the Jacobian is correct
     assertEqual(
       Tensor<Double>(stacking: fpf_j.jacobian.map { $0.tensor }),
       Tensor<Double>(stacking: jf_p.jacobian.map { $0.tensor })
       , accuracy: 1e-4
     )
+    
+    // assert the error at zero is correct
     assertAllKeyPathEqual(fpf_j.error, jf_p.error, accuracy: 1e-5)
   }
   
@@ -136,6 +149,8 @@ class ChordalInitializationTests: XCTestCase {
     let pose3Graph = ci.buildPose3graph(graph: graph1())
     
     let initial = ci.solveOrientationGraph(g: pose3Graph, v: val_copy, ids: [x0, x1, x2, x3])
+    
+    assertAllKeyPathEqual(Matrix3.identity, initial[TypedID<Rot3, Int>(ci.anchorId.perTypeID)].coordinate.R, accuracy: 1e-5)
     
     assertAllKeyPathEqual( R0, initial[TypedID<Rot3, Int>(x0.perTypeID)], accuracy: 1e-5)
     assertAllKeyPathEqual( R1, initial[TypedID<Rot3, Int>(x1.perTypeID)], accuracy: 1e-5)

@@ -40,7 +40,7 @@ fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: Fixe
   // with sugar.
 
   func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
   func errorVector(at x: Variables) -> Pose.TangentVector {
@@ -112,7 +112,7 @@ class FactorTests: XCTestCase {
 
     let motionErrors = graph.motionFactors.errors(at: graph.initialGuess)
     XCTAssertEqual(motionErrors[0], 0)
-    XCTAssertEqual(motionErrors[1], Vector3(0.1, 0, 0).squaredNorm, accuracy: 1e-6)
+    XCTAssertEqual(motionErrors[1], 0.5 * Vector3(0.1, 0, 0).squaredNorm, accuracy: 1e-6)
   }
 
   /// Test the error vectors from the example factor graph.

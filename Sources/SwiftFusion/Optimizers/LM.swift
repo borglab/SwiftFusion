@@ -35,6 +35,18 @@ public struct LM {
   /// Maximum number of G-N iterations
   public var max_inner_iteration: Int = 400
   
+  /// Maximam Lambda
+  public var max_lambda: Double = 1e32
+  
+  /// Minimum Lambda
+  public var min_lambda: Double = 1e-16
+  
+  /// Initial Lambda
+  public var initial_lambda: Double = 1e-4
+  
+  /// Lambda Factor
+  public var lambda_factor: Double = 2
+  
   /// Type of the verbosity of the logging inside the optimizer
   public enum Verbosity: Int, Comparable {
     case SILENT = 0 , SUMMARY, TRYLAMBDA
@@ -62,7 +74,7 @@ public struct LM {
       print("[LM OUTER] initial error = \(old_error)")
     }
     
-    var lambda: Double = 1e-6
+    var lambda: Double = initial_lambda
     var inner_iter_step = 0
     var inner_success = false
     var all_done = false
@@ -120,8 +132,8 @@ public struct LM {
           old_error = this_error
           
           // Success, decrease lambda
-          if lambda > 1e-10 {
-            lambda = lambda / 10
+          if lambda > min_lambda {
+            lambda = lambda / lambda_factor
           }
           
           inner_success = true
@@ -132,16 +144,16 @@ public struct LM {
           
           // increase lambda and retry
           val = oldval
-          if lambda > 1e20 {
+          if lambda > max_lambda {
             if verbosity >= .TRYLAMBDA {
               print("[LM INNER] giving up in lambda search")
             }
             throw LevenbergMarquardtError(message: "maximum lambda reached, giving up")
           }
-          lambda = lambda * 10
+          lambda = lambda * lambda_factor
         }
         
-        if model_fidelity > 0.1 && delta_error < precision {
+        if model_fidelity > 0.5 && delta_error < precision {
           print("[LM INNER] reached the target precision, exiting")
           inner_success = true
           all_done = true

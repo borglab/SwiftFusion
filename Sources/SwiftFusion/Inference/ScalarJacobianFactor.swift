@@ -26,7 +26,7 @@ public struct ScalarJacobianFactor<ErrorVector: EuclideanVectorN>: GaussianFacto
   }
 
   public func error(at x: Tuple1<ErrorVector>) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {

@@ -144,15 +144,15 @@ func main() {
   var val = problem.initialGuess
   var graph = problem.graph
   
-  graph.store(PriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
+  graph.store(PriorFactor3(TypedID(0), Pose3()))
   
   if useChordalInitialization {
     val = ChordalInitialization.GetInitializations(graph: graph, ids: problem.variableId)
   }
   
-  var optimizer = LM(precision: 1e-1, max_iteration: 100)
+  var optimizer = LM(precision: 1e-6, max_iteration: 100)
   
-  optimizer.verbosity = .TRYLAMBDA
+  optimizer.verbosity = .SUMMARY
   optimizer.max_iteration = 100
   
   do {

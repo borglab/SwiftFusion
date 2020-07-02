@@ -223,9 +223,9 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     let tr = R11 + R22 + R33
 
     if tr + 1.0 < 1e-10 {
-      if abs(R33 + 1.0) > 1e-10 {
+      if abs(R33 + 1.0) > 1e-5 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
-      } else if abs(R22 + 1.0) > 1e-10 {
+      } else if abs(R22 + 1.0) > 1e-5 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R22)) * Vector3(R12, 1.0 + R22, R32)
       } else {
         // if(abs(R.r1_.x()+1.0) > 1e-10)  This is implicit

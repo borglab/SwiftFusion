@@ -44,7 +44,7 @@ public struct BetweenFactorAlternative<JacobianRows: FixedSizeArray>:
   // with sugar.
   
   public func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
   public func errorVector(at x: Variables) -> ErrorVector {

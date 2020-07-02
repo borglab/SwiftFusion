@@ -44,7 +44,7 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
   // with sugar.
   
   public func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
   
   public func errorVector(at x: Variables) -> ErrorVector {
@@ -80,7 +80,7 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   // with sugar.
   
   public func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
   
   public func errorVector(at x: Variables) -> ErrorVector {
@@ -206,14 +206,18 @@ public struct ChordalInitialization {
   ///   - ids: the `TypedID`s of the poses
   public func computePoses(graph: FactorGraph, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
     var val = VariableAssignments()
+    var g = graph
     for v in ids {
       let _ = val.store(Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0)))
     }
     
-    let _ = val.store(Pose3(orientations[TypedID<Rot3, Int>(anchorId.perTypeID)], Vector3(0,0,0)))
+    g.store(PriorFactor3(anchorId, Pose3()))
+    let anchor_id = val.store(Pose3(Rot3(), Vector3(0,0,0)))
+    assert(anchor_id == anchorId)
+    
     // optimize for 1 G-N iteration
     for _ in 0..<1 {
-      let gfg = graph.linearized(at: val)
+      let gfg = g.linearized(at: val)
       var dx = val.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 1e-1, max_iteration: 100)
       optimizer.optimize(gfg: gfg, initial: &dx)
