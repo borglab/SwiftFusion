@@ -77,7 +77,9 @@ Error1 = \((0..<3).map { r[$0, factorType: JacobianFactor<Array2<Tuple2<Vector2,
     print("""
     Error2 = \((0..<3).map { r[$0, factorType: JacobianFactor<Array2<Tuple1<Vector2>>, Vector2>.self] })
     """)
-    
+    // Error1 = [SwiftFusion.Vector2(x: 2.0, y: -1.0), SwiftFusion.Vector2(x: 0.0, y: 1.0), SwiftFusion.Vector2(x: -1.0, y: 1.5)]
+//    Error2 = [SwiftFusion.Vector2(x: -1.0, y: -1.0), SwiftFusion.Vector2(x: 0.0, y: 0.0), SwiftFusion.Vector2(x: 0.0, y: 0.0)]
+    // error = [SwiftFusion.Vector(scalarsStorage: [1.0, 1.0]), SwiftFusion.Vector(scalarsStorage: [-2.0, 1.0]), SwiftFusion.Vector(scalarsStorage: [0.0, -1.0]), SwiftFusion.Vector(scalarsStorage: [1.0, -1.5]), SwiftFusion.Vector(scalarsStorage: [0.0, 0.0]), SwiftFusion.Vector(scalarsStorage: [0.0, 0.0]), SwiftFusion.Vector(scalarsStorage: [0.0, 0.0])]
     // NOTE: Should be [25; -17.5; -5; 12.5; -30; -5];
   }
 }
