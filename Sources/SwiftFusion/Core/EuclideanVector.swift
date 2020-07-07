@@ -33,7 +33,7 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   @differentiable
   func dot(_ other: Self) -> Double
 
-  // MARK: - Conversion to/from collections of scalars.
+  // MARK: - Conversion from collections of scalars.
 
   /// Creates an instance whose elements are `scalars`.
   ///
@@ -42,9 +42,6 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   ///
   /// TODO: Maybe make this failable.
   init<Source: Collection>(_ scalars: Source) where Source.Element == Double
-
-  /// The scalars in `self`.
-  var scalars: [Double] { get }
 }
 
 /// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
@@ -65,24 +62,11 @@ extension EuclideanVector {
     return squaredNorm.squareRoot()
   }
 
-  /// Returns this vector as a `Vector`.
-  ///
-  /// Note: This is for backwards compatibility with existing code.
-  public var vector: Vector {
-    return Vector(Array(scalars))
-  }
-
   /// Creates a vector with the same elements as `vector`.
   ///
   /// Note: This is for backwards compatibility with existing code.
   public init(_ vector: Vector) {
     self.init(vector.scalars)
-  }
-
-  /// Returns this vector as a `Tensor<Double>`.
-  public var tensor: Tensor<Double> {
-    let scalars = self.vector.scalars
-    return Tensor<Double>(shape: [withoutDerivative(at: scalars).count], scalars: scalars)
   }
 
   /// Creates a vector with the same elements as `tensor`.

@@ -1,3 +1,5 @@
+import TensorFlow
+
 /// A vector in a Euclidean vector space whose dimension is fixed at compile time.
 public protocol EuclideanVectorN: EuclideanVector {
   /// The dimension of the vector.
@@ -51,5 +53,95 @@ extension EuclideanVectorN {
   /// element in `self`.
   private func boundsCheck(_ i: Int) {
     precondition(i >= 0 && i < Self.dimension, "index out of range")
+  }
+}
+
+extension EuclideanVectorN {
+  @differentiable
+  public init<V: EuclideanVectorN>(_ v: V) {
+    precondition(Self.dimension == V.dimension)
+    self = Self.zero
+    self.withUnsafeMutableBufferPointer { rBuf in
+      v.withUnsafeBufferPointer { vBuf in
+        for (i, s) in vBuf.enumerated() {
+          rBuf[i] = s
+        }
+      }
+    }
+  }
+
+  @derivative(of: init(_:))
+  @usableFromInline
+  static func vjpInit<V: EuclideanVectorN>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
+    return (
+      Self(v),
+      { t in V(t) }
+    )
+  }
+
+  @differentiable
+  public init<V1: EuclideanVectorN, V2: EuclideanVectorN>(concatenating v1: V1, _ v2: V2) {
+    precondition(Self.dimension == V1.dimension + V2.dimension)
+    self = Self.zero
+    self.withUnsafeMutableBufferPointer { rBuf in
+      v1.withUnsafeBufferPointer { v1Buf in
+        for (i, s) in v1Buf.enumerated() {
+          rBuf[i] = s
+        }
+      }
+      v2.withUnsafeBufferPointer { v2Buf in
+        for (i, s) in v2Buf.enumerated() {
+          rBuf[i + V1.dimension] = s
+        }
+      }
+    }
+  }
+
+  @derivative(of: init(concatenating:_:))
+  @usableFromInline
+  static func vjpInit<V1: EuclideanVectorN, V2: EuclideanVectorN>(concatenating v1: V1, _ v2: V2) -> (
+    value: Self,
+    pullback: (Self) -> (V1, V2)
+  ) {
+    return (
+      Self(concatenating: v1, v2),
+      { t in
+        t.withUnsafeBufferPointer { tBuf in
+          var t1 = V1.zero
+          t1.withUnsafeMutableBufferPointer { t1Buf in
+            for i in t1Buf.indices {
+              t1Buf[i] = tBuf[i]
+            }
+          }
+          var t2 = V2.zero
+          t2.withUnsafeMutableBufferPointer { t2Buf in
+            for i in t2Buf.indices {
+              t2Buf[i] = tBuf[i + V1.dimension]
+            }
+          }
+          return (t1, t2)
+        }
+      }
+    )
+  }
+}
+
+extension EuclideanVectorN {
+  /// Returns this vector as a `Vector`.
+  ///
+  /// Note: This is for backwards compatibility with existing code.
+  public var vector: Vector {
+    withUnsafeBufferPointer { b in
+      return Vector(Array(b))
+    }
+  }
+
+  /// Returns this vector as a `Tensor<Double>`.
+  ///
+  /// Note: This is for backwards compatibility with existing code.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
   }
 }

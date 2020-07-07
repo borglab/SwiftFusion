@@ -74,10 +74,6 @@ public struct BearingRangeError<BearingError: EuclideanVectorN>:
     self.range = scalars[bearingPrefix.endIndex]
   }
 
-  public var scalars: [Double] {
-    return bearing.scalars + [range]
-  }
-
   public static var dimension: Int {
     return BearingError.dimension + 1
   }
