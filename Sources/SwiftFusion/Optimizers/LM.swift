@@ -102,16 +102,16 @@ public struct LM {
         
         damped.addScalarJacobians(lambda)
         
-        let old_linear_error = damped.errorVectors(at: dx).squaredNorm
+        let old_linear_error = damped.error(at: dx)
         
         var dx_t = dx
         var optimizer = GenericCGLS(precision: 1e-10, max_iteration: max_inner_iteration)
         optimizer.optimize(gfg: damped, initial: &dx_t)
         if verbosity >= .TRYLAMBDA {
-          print("[LM INNER] damped error = \(damped.errorVectors(at: dx_t).squaredNorm), lambda = \(lambda)")
+          print("[LM INNER] damped error = \(damped.error(at: dx_t)), lambda = \(lambda)")
         }
         let oldval = val
-        val.move(along: -1 * dx_t)
+        val.move(along: dx_t)
         let this_error = graph.linearizableError(at: val)
         let delta_error = old_error - this_error
         
@@ -119,7 +119,7 @@ public struct LM {
           print("[LM INNER] nonlinear error = \(this_error), delta error = \(delta_error)")
         }
         
-        let new_linear_error = damped.errorVectors(at: dx_t).squaredNorm
+        let new_linear_error = damped.error(at: dx_t)
         let model_fidelity = delta_error / (old_linear_error - new_linear_error)
         
         if verbosity >= .TRYLAMBDA {
@@ -154,7 +154,9 @@ public struct LM {
         }
         
         if model_fidelity > 0.5 && delta_error < precision {
-          print("[LM INNER] reached the target precision, exiting")
+          if verbosity >= .SUMMARY {
+            print("[LM INNER] reached the target precision, exiting")
+          }
           inner_success = true
           all_done = true
           break

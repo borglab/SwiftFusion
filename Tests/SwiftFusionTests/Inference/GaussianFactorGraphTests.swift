@@ -38,8 +38,8 @@ class GaussianFactorGraphTests: XCTestCase {
 
     // `b - A * x`
     let expected = Vector2(
-      8 - (3210),
-      9 - (-3210)
+      3210 - 8,
+      -3210 - 9
     )
     XCTAssertEqual(graph.errorVectors(at: x)[0, factorType: type(of: f1)], expected)
   }
@@ -76,5 +76,26 @@ class GaussianFactorGraphTests: XCTestCase {
     XCTAssertEqual(linearComponent_adjoint[id1], Vector2(100, 200))
     XCTAssertEqual(linearComponent_adjoint[id2], Vector2(300, 400))
     XCTAssertEqual(linearComponent_adjoint[id3], Vector3(500, 600, 700))
+  }
+  
+  func testJacobianFactorSanity() {
+    var x = VariableAssignments()
+    let id0 = x.store(Vector3(1.0, 1.0, 1.0))
+    let id1 = x.store(Vector3(0.5, 0.5, 0.5))
+    let id2 = x.store(Vector3(1.0/3, 1.0/3, 1.0/3))
+    
+    // let terms = [Matrix3.identity, 2 * Matrix3.identity, 3 * Matrix3.identity]
+    let jf = JacobianFactor(jacobian: Array3(Tuple3(Vector3(1, 0, 0), Vector3(2, 0, 0), Vector3(3, 0, 0)),
+                                             Tuple3(Vector3(0, 1, 0), Vector3(0, 2, 0), Vector3(0, 3, 0)),
+                                             Tuple3(Vector3(0, 0, 1), Vector3(0, 0, 2), Vector3(0, 0, 3))),
+                            error: Vector3(1, 2, 3), edges: Tuple3(id0, id1, id2))
+    
+    var gfg = GaussianFactorGraph(zeroValues: x)
+    gfg.store(jf)
+    
+    let r = gfg.errorVectors(at: x)
+    
+    assertAllKeyPathEqual(r[0, factorType: JacobianFactor<Array3<Tuple3<Vector3, Vector3, Vector3>>, Vector3>.self],
+                          Vector3(2, 1, 0), accuracy: 1e-10)
   }
 }

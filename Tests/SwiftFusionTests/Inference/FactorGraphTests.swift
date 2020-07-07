@@ -71,7 +71,7 @@ class FactorGraphTests: XCTestCase {
       var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
       optimizer.optimize(gfg: linearized, initial: &dx)
-      x.move(along: (-1) * dx)
+      x.move(along: dx)
     }
 
     // Test condition: pose 5 should be identical to pose 1 (close loop).
@@ -139,7 +139,7 @@ class FactorGraphTests: XCTestCase {
       var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
       optimizer.optimize(gfg: gfg, initial: &dx)
-      x.move(along: (-1) * dx)
+      x.move(along: dx)
     }
 
     let pose_1 = x[id1]
@@ -184,7 +184,7 @@ class FactorGraphTests: XCTestCase {
         var dx = x.tangentVectorZeros
         var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
         optimizer.optimize(gfg: gfg, initial: &dx)
-        x.move(along: (-1) * dx)
+        x.move(along: dx)
       }
 
       if fg.error(at: x) < 1e-5 {
@@ -240,7 +240,7 @@ class FactorGraphTests: XCTestCase {
         var dx = x.tangentVectorZeros
         var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
         optimizer.optimize(gfg: gfg, initial: &dx)
-        x.move(along: (-1) * dx)
+        x.move(along: dx)
       }
 
       if fg.error(at: x) < 1e-5 {

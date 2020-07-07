@@ -73,7 +73,7 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   
   public typealias ErrorVector = Vector9
   public func errorVector(_ val: Matrix3) -> ErrorVector {
-    (val + prior).vec
+    (val - prior).vec
   }
   
   // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
@@ -221,7 +221,7 @@ public struct ChordalInitialization {
       var dx = val.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 1e-1, max_iteration: 100)
       optimizer.optimize(gfg: gfg, initial: &dx)
-      val.move(along: (-1) * dx)
+      val.move(along: dx)
     }
     return val
   }
