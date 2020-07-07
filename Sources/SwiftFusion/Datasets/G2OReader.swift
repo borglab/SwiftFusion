@@ -51,7 +51,7 @@ public enum G2OReader {
     /// The initial guess.
     public var initialGuess = VariableAssignments()
 
-    public var variableId = Array<TypedID<Pose, Int>>()
+    public var variableId = Array<TypedID<Pose>>()
     
     /// The factor graph representing the measurements.
     public var graph = FactorGraph()

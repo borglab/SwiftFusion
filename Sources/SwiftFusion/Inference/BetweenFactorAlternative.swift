@@ -24,7 +24,7 @@ public struct BetweenFactorAlternative<JacobianRows: FixedSizeArray>:
   public let edges: Variables.Indices
   public let difference: Pose3
 
-  public init(_ startId: TypedID<Pose3, Int>, _ endId: TypedID<Pose3, Int>, _ difference: Pose3) {
+  public init(_ startId: TypedID<Pose3>, _ endId: TypedID<Pose3>, _ difference: Pose3) {
     self.edges = Tuple2(startId, endId)
     self.difference = difference
   }

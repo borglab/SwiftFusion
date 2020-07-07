@@ -71,8 +71,8 @@ fileprivate typealias SwitchingMotionModelFactor2 =
 // - two motion factors with possible motions [Pose2(1, 1, 0), Pose2(0, 0, 1)]
 fileprivate struct ExampleFactorGraph {
   var initialGuess = VariableAssignments()
-  var motionLabelIDs = [TypedID<Int, Int>]()
-  var poseIDs = [TypedID<Pose2, Int>]()
+  var motionLabelIDs = [TypedID<Int>]()
+  var poseIDs = [TypedID<Pose2>]()
 
   var priorFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<PriorFactor2>())
   var motionFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<SwitchingMotionModelFactor2>())

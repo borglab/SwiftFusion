@@ -22,8 +22,8 @@ import SwiftFusion
 class FactorGraphTests: XCTestCase {
   /// Tests that we can read factors from a factor graph.
   func testGetFactors() {
-    let pose1ID = TypedID<Pose2, Int>(0)
-    let pose2ID = TypedID<Pose2, Int>(1)
+    let pose1ID = TypedID<Pose2>(0)
+    let pose2ID = TypedID<Pose2>(1)
 
     var graph = FactorGraph()
     graph.store(PriorFactor2(pose1ID, Pose2(1, 2, 3)))
@@ -89,8 +89,8 @@ class FactorGraphTests: XCTestCase {
   /// |    |
   /// z-->xZ--> Y  (z pointing towards viewer, Z pointing away from viewer)
   /// Vehicle at p0 is looking towards y axis (X-axis points towards world y)
-  func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> (Array<TypedID<Pose3, Int>>, VariableAssignments) {
-    var ids: Array<TypedID<Pose3, Int>> = []
+  func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> (Array<TypedID<Pose3>>, VariableAssignments) {
+    var ids: Array<TypedID<Pose3>> = []
     var values = VariableAssignments()
     var theta: Double = 0.0
     let dtheta = 2.0 * .pi / Double(numPoses)
