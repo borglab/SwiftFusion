@@ -22,10 +22,10 @@ import SwiftFusion
 // MARK: sample data
 
 // symbol shorthands
-let x0 = TypedID<Pose3, Int>(0)
-let x1 = TypedID<Pose3, Int>(1)
-let x2 = TypedID<Pose3, Int>(2)
-let x3 = TypedID<Pose3, Int>(3)
+let x0 = TypedID<Pose3>(0)
+let x1 = TypedID<Pose3>(1)
+let x2 = TypedID<Pose3>(2)
+let x3 = TypedID<Pose3>(3)
 
 // ground truth
 let  p0 = Vector3(0,0,0);
@@ -86,7 +86,7 @@ class ChordalInitializationTests: XCTestCase {
     
     let b = Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0)
     
-    let jf = JacobianFactor9x3x3_2(jacobian: M9, error: b, edges: Tuple2(TypedID<Matrix3, Int>(0), TypedID<Matrix3, Int>(1)))
+    let jf = JacobianFactor9x3x3_2(jacobian: M9, error: b, edges: Tuple2(TypedID<Matrix3>(0), TypedID<Matrix3>(1)))
     
     // assert the jacobian is correct
     assertEqual(
@@ -120,7 +120,7 @@ class ChordalInitializationTests: XCTestCase {
     // prior on the anchor orientation
     let jf_p = JacobianFactor9x3x3_1(jacobian: I_9x9,
                                           error: Vector9(1.0, 0.0, 0.0, /*  */ 0.0, 1.0, 0.0, /*  */ 0.0, 0.0, 1.0),
-                                          edges: Tuple1(TypedID<Matrix3, Int>(0)))
+                                          edges: Tuple1(TypedID<Matrix3>(0)))
     
     // assert the Jacobian is correct
     assertEqual(
@@ -150,11 +150,11 @@ class ChordalInitializationTests: XCTestCase {
     
     let initial = ci.solveOrientationGraph(g: pose3Graph, v: val_copy, ids: [x0, x1, x2, x3])
     
-    assertAllKeyPathEqual(Matrix3.identity, initial[TypedID<Rot3, Int>(ci.anchorId.perTypeID)].coordinate.R, accuracy: 1e-5)
+    assertAllKeyPathEqual(Matrix3.identity, initial[TypedID<Rot3>(ci.anchorId.perTypeID)].coordinate.R, accuracy: 1e-5)
     
-    assertAllKeyPathEqual( R0, initial[TypedID<Rot3, Int>(x0.perTypeID)], accuracy: 1e-5)
-    assertAllKeyPathEqual( R1, initial[TypedID<Rot3, Int>(x1.perTypeID)], accuracy: 1e-5)
-    assertAllKeyPathEqual( R2, initial[TypedID<Rot3, Int>(x2.perTypeID)], accuracy: 1e-5)
-    assertAllKeyPathEqual( R3, initial[TypedID<Rot3, Int>(x3.perTypeID)], accuracy: 1e-5)
+    assertAllKeyPathEqual( R0, initial[TypedID<Rot3>(x0.perTypeID)], accuracy: 1e-5)
+    assertAllKeyPathEqual( R1, initial[TypedID<Rot3>(x1.perTypeID)], accuracy: 1e-5)
+    assertAllKeyPathEqual( R2, initial[TypedID<Rot3>(x2.perTypeID)], accuracy: 1e-5)
+    assertAllKeyPathEqual( R3, initial[TypedID<Rot3>(x3.perTypeID)], accuracy: 1e-5)
   }
 }

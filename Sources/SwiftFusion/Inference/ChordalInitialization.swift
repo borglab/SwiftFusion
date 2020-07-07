@@ -26,7 +26,7 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
   public let edges: Variables.Indices
   public let difference: Matrix3
   
-  public init(_ id1: TypedID<Matrix3, Int>, _ id2: TypedID<Matrix3, Int>, _ difference: Matrix3) {
+  public init(_ id1: TypedID<Matrix3>, _ id2: TypedID<Matrix3>, _ difference: Matrix3) {
     self.edges = Tuple2(id1, id2)
     self.difference = difference
   }
@@ -66,7 +66,7 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   public let edges: Variables.Indices
   public let prior: Matrix3
   
-  public init(_ id: TypedID<Matrix3, Int>, _ prior: Matrix3) {
+  public init(_ id: TypedID<Matrix3>, _ prior: Matrix3) {
     self.edges = Tuple1(id)
     self.prior = prior
   }
@@ -103,10 +103,10 @@ public typealias JacobianFactor9x3x3_2 = JacobianFactor<Jacobian9x3x3_2, Vector9
 /// Chordal Initialization for Pose3s
 public struct ChordalInitialization {
   /// ID of the anchor used in chordal initialization, should only be used if not using `GetInitializations`.
-  public var anchorId: TypedID<Pose3, Int>
+  public var anchorId: TypedID<Pose3>
   
   public init() {
-    anchorId = TypedID<Pose3, Int>(0)
+    anchorId = TypedID<Pose3>(0)
   }
   
   /// Extract a subgraph of the original graph with only Pose3s.
@@ -132,14 +132,14 @@ public struct ChordalInitialization {
   public func solveOrientationGraph(
     g: FactorGraph,
     v: VariableAssignments,
-    ids: Array<TypedID<Pose3, Int>>
+    ids: Array<TypedID<Pose3>>
   ) -> VariableAssignments {
     /// The orientation graph, with only unconstrained rotation factors
     var orientationGraph = FactorGraph()
     /// orientation storage
     var orientations = VariableAssignments()
     /// association to lookup the vector-based storage from the pose3 ID
-    var associations = Dictionary<Int, TypedID<Matrix3, Int>>()
+    var associations = Dictionary<Int, TypedID<Matrix3>>()
     
     // allocate the space for solved rotations, and memorize the assocation
     for i in ids {
@@ -176,8 +176,8 @@ public struct ChordalInitialization {
   /// TODO(fan): replace this with a 3x3 specialized SVD instead of this generic SVD (slow)
   public func normalizeRelaxedRotations(
     _ relaxedRot3: VariableAssignments,
-    associations: Dictionary<Int, TypedID<Matrix3, Int>>,
-    ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+    associations: Dictionary<Int, TypedID<Matrix3>>,
+    ids: Array<TypedID<Pose3>>) -> VariableAssignments {
     var validRot3 = VariableAssignments()
     
     for v in ids {
@@ -204,11 +204,11 @@ public struct ChordalInitialization {
   ///   - graph: The factor graph with only `BetweenFactor<Pose3>` and `PriorFactor<Pose3>`
   ///   - orientations: The orientations returned by the chordal initialization for `Rot3`s
   ///   - ids: the `TypedID`s of the poses
-  public func computePoses(graph: FactorGraph, orientations: VariableAssignments, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+  public func computePoses(graph: FactorGraph, orientations: VariableAssignments, ids: Array<TypedID<Pose3>>) -> VariableAssignments {
     var val = VariableAssignments()
     var g = graph
     for v in ids {
-      let _ = val.store(Pose3(orientations[TypedID<Rot3, Int>(v.perTypeID)], Vector3(0,0,0)))
+      let _ = val.store(Pose3(orientations[TypedID<Rot3>(v.perTypeID)], Vector3(0,0,0)))
     }
     
     g.store(PriorFactor3(anchorId, Pose3()))
@@ -232,7 +232,7 @@ public struct ChordalInitialization {
   ///   - ids: the `TypedID`s of the poses
   ///
   /// NOTE: This function builds upon the assumption that all variables stored are Pose3s, will fail if that is not the case.
-  public static func GetInitializations(graph: FactorGraph, ids: Array<TypedID<Pose3, Int>>) -> VariableAssignments {
+  public static func GetInitializations(graph: FactorGraph, ids: Array<TypedID<Pose3>>) -> VariableAssignments {
     var ci = ChordalInitialization()
     var val = VariableAssignments()
     for _ in ids {
