@@ -152,6 +152,24 @@ final class Rot3Tests: XCTestCase {
     }
   }
   
+  /// Tests the ClosestTo function.
+  func testClosestTo() {
+    let M = Matrix3(
+          0.79067393, 0.6051136, -0.0930814,
+          0.4155925, -0.64214347, -0.64324489,
+          -0.44948549, 0.47046326, -0.75917576
+    )
+
+    let expected = Matrix3(
+          0.790687, 0.605096, -0.0931312,
+          0.415746, -0.642355, -0.643844,
+          -0.449411, 0.47036, -0.759468
+    )
+
+    let actual = Rot3.ClosestTo(mat: 3 * M).coordinate.R
+    assertAllKeyPathEqual(expected, actual, accuracy: 1e-6)
+  }
+  
   /// Tests that our derivatives will not fail when the rotation has slightly drifted away from the SO(3) manifold
   func testExtreme() {
     let R1 = Rot3()

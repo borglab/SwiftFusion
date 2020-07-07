@@ -50,6 +50,7 @@ func main() {
   var outputFilename = ""
   var loggingFolder: String? = nil
   var useChordal = false
+  var useChordalInitialization = false
   // Parse commandline.
   do {
     let parser = ArgumentParser(
@@ -80,6 +81,12 @@ func main() {
           kind: Bool.self,
           usage: "Use Chordal norm in BetweenFactor",
           completion: ShellCompletion.none)
+    let chordal_init = parser.add(
+          option: "--chordal-init",
+          shortName: nil,
+          kind: Bool.self,
+          usage: "Use Chordal Initialization",
+          completion: ShellCompletion.none)
     let parguments = try parser.parse(argsv)
     
     inputFilename = parguments.get(input)!
@@ -88,6 +95,10 @@ func main() {
     if let c = parguments.get(chordal) {
       print("Using Chordal norm in BetweenFactor")
       useChordal = c
+    }
+    if let c = parguments.get(chordal_init) {
+      print("Using Chordal Initialization")
+      useChordalInitialization = c
     }
   } catch ArgumentParserError.expectedValue(let value) {
     print("Missing value for argument \(value).")
@@ -133,11 +144,15 @@ func main() {
   var val = problem.initialGuess
   var graph = problem.graph
   
-  graph.store(PriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
+  graph.store(PriorFactor3(TypedID(0), Pose3()))
   
-  var optimizer = LM(precision: 1e-1, max_iteration: 100)
+  if useChordalInitialization {
+    val = ChordalInitialization.GetInitializations(graph: graph, ids: problem.variableId)
+  }
   
-  optimizer.verbosity = .TRYLAMBDA
+  var optimizer = LM(precision: 1e-6, max_iteration: 100)
+  
+  optimizer.verbosity = .SUMMARY
   optimizer.max_iteration = 100
   
   do {

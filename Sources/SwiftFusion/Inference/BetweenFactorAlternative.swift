@@ -34,6 +34,9 @@ public struct BetweenFactorAlternative<JacobianRows: FixedSizeArray>:
     let actualMotion = between(start, end)
     let R = actualMotion.coordinate.rot.coordinate.R + (-1) * difference.rot.coordinate.R
     let t = actualMotion.t - difference.t
+    
+    // TODO(fan): Discuss with Marc why this would lead to failing CI
+    // return Vector12(R[0, 0], R[0, 1], R[0, 2], R[1, 0], R[1, 1], R[1, 2], R[2, 0], R[2, 1], R[2, 2], t.x, t.y, t.z)
     return Vector12(R.s00, R.s01, R.s02, R.s10, R.s11, R.s12, R.s20, R.s21, R.s22, t.x, t.y, t.z)
   }
 
@@ -41,7 +44,7 @@ public struct BetweenFactorAlternative<JacobianRows: FixedSizeArray>:
   // with sugar.
   
   public func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
   public func errorVector(at x: Variables) -> ErrorVector {

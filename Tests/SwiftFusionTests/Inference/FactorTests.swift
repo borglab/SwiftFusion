@@ -40,7 +40,7 @@ fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: Fixe
   // with sugar.
 
   func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
   func errorVector(at x: Variables) -> Pose.TangentVector {
@@ -112,7 +112,7 @@ class FactorTests: XCTestCase {
 
     let motionErrors = graph.motionFactors.errors(at: graph.initialGuess)
     XCTAssertEqual(motionErrors[0], 0)
-    XCTAssertEqual(motionErrors[1], Vector3(0.1, 0, 0).squaredNorm, accuracy: 1e-6)
+    XCTAssertEqual(motionErrors[1], 0.5 * Vector3(0.1, 0, 0).squaredNorm, accuracy: 1e-6)
   }
 
   /// Test the error vectors from the example factor graph.
@@ -168,7 +168,7 @@ class FactorTests: XCTestCase {
       ],
       accuracy: 1e-6
     )
-    assertAllKeyPathEqual(motionsLinearized[1].error, Vector3(-0.1, 0, 0), accuracy: 1e-6)
+    assertAllKeyPathEqual(motionsLinearized[1].error, Vector3(0.1, 0, 0), accuracy: 1e-6)
   }
 
   /// Test the `errorVectors`, `errorVector_linearComponent`, and `errorVector_linearComponent_adjoint` operations on a collection of
@@ -200,8 +200,8 @@ class FactorTests: XCTestCase {
 
     let errorVectors = ArrayBuffer<Vector2>(
       unsafelyDowncasting: factors.errorVectors(at: variableAssignments))
-    XCTAssertEqual(errorVectors[0], Vector2(-3, -2))  // zero - matrix1 * [1 2]
-    XCTAssertEqual(errorVectors[1], Vector2(94, 193))  // [100 200] - matrix2 * [1 2]
+    XCTAssertEqual(errorVectors[0], Vector2(3, 2))  // matrix1 * [1 2] - zero
+    XCTAssertEqual(errorVectors[1], Vector2(-94, -193))  // matrix2 * [1 2] - [100 200]
     let forwardResult = ArrayBuffer<Vector2>(
       unsafelyDowncasting: factors.errorVectors_linearComponent(variableAssignments))
     XCTAssertEqual(forwardResult[0], Vector2(3, 2))  // matrix1 * [1 2]

@@ -72,6 +72,40 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   }
 }
 
+/// determinant for a 3x3 matrix
+fileprivate func det3(_ M: Tensor<Double>) -> Double {
+  precondition(M.shape[0] == 3)
+  precondition(M.shape[1] == 3)
+  
+  return (M[0, 0].scalar! * (M[1, 1].scalar! * M[2, 2].scalar! - M[2, 1].scalar! * M[1, 2].scalar!)
+  - M[1, 0].scalar! * (M[0, 1].scalar! * M[2, 2].scalar! - M[2, 1].scalar! * M[0, 2].scalar!)
+  + M[2, 0].scalar! * (M[0, 1].scalar! * M[1, 2].scalar! - M[1, 1].scalar! * M[0, 2].scalar!))
+}
+
+public extension Rot3 {
+  /// Regularize a 3x3 matrix to find the closest rotation matrix in a Frobenius sense
+  static func ClosestTo(mat: Matrix3) -> Rot3 {
+    let M = Tensor<Double>(shape: [3, 3], scalars: [mat[0, 0], mat[0, 1], mat[0, 2], mat[1, 0], mat[1, 1], mat[1, 2], mat[2, 0], mat[2, 1], mat[2, 2]])
+    
+    let (_, U, V) = M.transposed().svd(computeUV: true, fullMatrices: true)
+    let UVT = matmul(U!, V!.transposed())
+    
+    let det = det3(UVT)
+    
+    let S = Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()
+    
+    let R = matmul(V!, matmul(S, U!.transposed()))
+    
+    let M_r = Matrix3(
+          R[0, 0].scalar!, R[0, 1].scalar!, R[0, 2].scalar!,
+          R[1, 0].scalar!, R[1, 1].scalar!, R[1, 2].scalar!,
+          R[2, 0].scalar!, R[2, 1].scalar!, R[2, 2].scalar!
+    )
+    
+    return Rot3(coordinate: Matrix3Coordinate(M_r))
+  }
+}
+
 public struct Matrix3Coordinate: Equatable, KeyPathIterable {
   public var R: Matrix3
   
@@ -160,7 +194,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     let nearZero = theta2 <= .ulpOfOne
     let (wx, wy, wz) = (local.x, local.y, local.z)
     let W = Matrix3(0.0, -wz, wy, wz, 0.0, -wx, -wy, wx, 0.0)
-    let I_3x3 = Matrix3.Identity
+    let I_3x3 = Matrix3.identity
     if !nearZero {
       let theta = sqrtWrap(theta2)
       let sin_theta = sin(theta)
@@ -189,9 +223,9 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     let tr = R11 + R22 + R33
 
     if tr + 1.0 < 1e-10 {
-      if abs(R33 + 1.0) > 1e-10 {
+      if abs(R33 + 1.0) > 1e-5 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
-      } else if abs(R22 + 1.0) > 1e-10 {
+      } else if abs(R22 + 1.0) > 1e-5 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R22)) * Vector3(R12, 1.0 + R22, R32)
       } else {
         // if(abs(R.r1_.x()+1.0) > 1e-10)  This is implicit

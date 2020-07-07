@@ -1,6 +1,7 @@
 // This file tests for the CGLS optimizer
 
 import SwiftFusion
+import PenguinStructures
 import TensorFlow
 import XCTest
 

@@ -37,4 +37,34 @@ final class OldGaussianFactorGraphTests: XCTestCase {
     let actual = A * x
     XCTAssertEqual(expected, actual)
   }
+  
+  /// test to ensure we are matching the GTSAM behavior
+    func testSanity() {
+      var v_linear = VectorValues()
+      v_linear.insert(0, Vector([0, 0]))
+      v_linear.insert(1, Vector([0, 0]))
+      v_linear.insert(2, Vector([0, 0]))
+      
+      let I_2x2 = Matrix(eye: 2)
+      
+      var linearGraph = OldGaussianFactorGraph()
+      // JacobianFactor(2, (Matrix(2,2)<< 10, 0, 0, 10).finished(), (Vector(2) << -1, -1).finished(), unit2);
+      linearGraph += OldJacobianFactor([2], [10 * I_2x2], Vector([-1, -1]))
+  //    linearGraph.store(JacobianFactor(2, (Matrix(2,2)<< -10, 0, 0, -10).finished(), 0, (Matrix(2,2)<< 10, 0, 0, 10).finished(), (Vector(2) << 2, -1).finished(), unit2);
+      linearGraph += OldJacobianFactor([2, 0], [-10 * I_2x2, 10 * I_2x2], Vector([2, -1]))
+  //    linearGraph.store(JacobianFactor(2, (Matrix(2,2)<< -5, 0, 0, -5).finished(), 1, (Matrix(2,2)<< 5, 0, 0, 5).finished(), (Vector(2) << 0, 1).finished(), unit2);
+      linearGraph += OldJacobianFactor([2, 1], [-5 * I_2x2, 5 * I_2x2], Vector([0, 1]))
+  //    linearGraph.store(JacobianFactor(0, (Matrix(2,2)<< -5, 0, 0, -5).finished(), 1, (Matrix(2,2)<< 5, 0, 0, 5).finished(), (Vector(2) << -1, 1.5).finished(), unit2);
+      linearGraph += OldJacobianFactor([0, 1], [-5 * I_2x2, 5 * I_2x2], Vector([-1, 1.5]))
+  //    linearGraph.store(JacobianFactor(0, (Matrix(2,2)<< 1, 0, 0, 1).finished(), (Vector(2) << 0, 0).finished(), unit2);
+      linearGraph += OldJacobianFactor([0], [1 * I_2x2], Vector([0, 0]))
+  //    linearGraph.store(JacobianFactor(1, (Matrix(2,2)<< 1, 0, 0, 1).finished(), (Vector(2) << 0, 0).finished(), unit2);
+      linearGraph += OldJacobianFactor([1], [1 * I_2x2], Vector([0, 0]))
+  //    linearGraph.store(JacobianFactor(2, (Matrix(2,2)<< 1, 0, 0, 1).finished(), (Vector(2) << 0, 0).finished(), unit2);
+      linearGraph += OldJacobianFactor([2], [1 * I_2x2], Vector([0, 0]))
+      
+      print("error = \(linearGraph.residual(v_linear))")
+      
+      // NOTE: Should be [25; -17.5; -5; 12.5; -30; -5];
+    }
 }

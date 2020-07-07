@@ -71,7 +71,7 @@ class FactorGraphTests: XCTestCase {
       var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
       optimizer.optimize(gfg: linearized, initial: &dx)
-      x.move(along: (-1) * dx)
+      x.move(along: dx)
     }
 
     // Test condition: pose 5 should be identical to pose 1 (close loop).
@@ -139,7 +139,7 @@ class FactorGraphTests: XCTestCase {
       var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
       optimizer.optimize(gfg: gfg, initial: &dx)
-      x.move(along: (-1) * dx)
+      x.move(along: dx)
     }
 
     let pose_1 = x[id1]
@@ -184,7 +184,63 @@ class FactorGraphTests: XCTestCase {
         var dx = x.tangentVectorZeros
         var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
         optimizer.optimize(gfg: gfg, initial: &dx)
-        x.move(along: (-1) * dx)
+        x.move(along: dx)
+      }
+
+      if fg.error(at: x) < 1e-5 {
+        // Successfully found the global minimum.
+        let pose_2 = x[id2]
+        assertAllKeyPathEqual(pose_2, p2, accuracy: 1e-2)
+        return
+      }
+    }
+
+    XCTFail("failed to find the global minimum after \(attemptCount) attempts")
+  }
+  
+  func testGtsamPose3SLAMExampleChordalInit() {
+    // Create a hexagon of poses
+    let (hexagonId, hexagon) = circlePose3(numPoses: 6, radius: 1.0)
+    let p0 = hexagon[hexagonId[0]]
+    let p1 = hexagon[hexagonId[1]]
+    let p2 = hexagon[hexagonId[2]]
+
+    // Sometimes this optimization gets stuck in a local minimum, so attempt until we find the
+    // global minimum, with a maximum of `attemptCount` attempts.
+    let attemptCount = 10
+    for _ in 0..<attemptCount {
+      var x = VariableAssignments()
+      
+      let s = 0.9
+      let id0 = x.store(p0)
+      let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(s * Tensor(randomNormal: [6]))))
+      
+      var fg = FactorGraph()
+      fg.store(PriorFactor3(id0, p0))
+      let delta: Pose3 = between(p0, p1)
+
+      fg.store(BetweenFactor3(id0, id1, delta))
+      fg.store(BetweenFactor3(id1, id2, delta))
+      fg.store(BetweenFactor3(id2, id3, delta))
+      fg.store(BetweenFactor3(id3, id4, delta))
+      fg.store(BetweenFactor3(id4, id5, delta))
+      fg.store(BetweenFactor3(id5, id0, delta))
+
+      let chordal_init = ChordalInitialization.GetInitializations(graph: fg, ids: [id0, id1, id2, id3, id4, id5])
+      
+      x = chordal_init
+      
+      // optimize
+      for _ in 0..<16 {
+        let gfg = fg.linearized(at: x)
+        var dx = x.tangentVectorZeros
+        var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
+        optimizer.optimize(gfg: gfg, initial: &dx)
+        x.move(along: dx)
       }
 
       if fg.error(at: x) < 1e-5 {

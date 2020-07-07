@@ -88,7 +88,7 @@ public struct GenericCGLS {
   public mutating func optimize(gfg: GaussianFactorGraph, initial x: inout VariableAssignments) {
     step += 1
 
-    var r = gfg.errorVectors(at: x) // r(0) = b - A * x(0), the residual
+    var r = (-1) * gfg.errorVectors(at: x) // r(0) = b - A * x(0), the residual
     var p = gfg.errorVectors_linearComponent_adjoint(r) // p(0) = s(0) = A^T * r(0), residual in value space
     var s = p // residual of normal equations
     var gamma = s.squaredNorm // γ(0) = ||s(0)||^2

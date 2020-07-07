@@ -59,6 +59,11 @@ public struct GaussianFactorGraph {
     }
   }
 
+  /// Returns the total error, at `x`, of all the factors.
+  public func error(at x: VariableAssignments) -> Double {
+    return 0.5 * errorVectors(at: x).squaredNorm
+  }
+  
   /// Returns the error vectors, at `x`, of all the factors.
   public func errorVectors(at x: AllVectors) -> AllVectors {
     return AllVectors(storage: storage.mapValues { factors in

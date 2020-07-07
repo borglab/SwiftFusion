@@ -21,4 +21,9 @@ class MatrixNTests: XCTestCase {
       Vector3(16, 6, 8)
     )
   }
+  
+  /// Test matrix dimensionality
+  func testMatrix3DimAsLinearSpace() {
+    XCTAssertEqual(Matrix3.dimension, 9)
+  }
 }

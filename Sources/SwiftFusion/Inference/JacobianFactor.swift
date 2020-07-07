@@ -53,16 +53,16 @@ public struct JacobianFactor<
     let (value, pb) = valueWithPullback(at: x, in: f)
     let rows = Rows(ErrorVector.standardBasis.lazy.map(pb))
     self.jacobian = rows
-    self.error = value
+    self.error = -value
     self.edges = Input.linearized(edges)
   }
 
   public func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
   public func errorVector(at x: Variables) -> ErrorVector {
-    return error - errorVector_linearComponent(x)
+    return errorVector_linearComponent(x) - error
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {

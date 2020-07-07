@@ -69,7 +69,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
       var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 0, max_iteration: 500)
       optimizer.optimize(gfg: linearized, initial: &dx)
-      x.move(along: (-1) * dx)
+      x.move(along: dx)
     }
 
     check(graph.error(at: x), near: 0.987, accuracy: 1e-2)
