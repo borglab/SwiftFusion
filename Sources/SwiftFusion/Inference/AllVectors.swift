@@ -77,7 +77,9 @@ extension AllVectors {
   }
 
   /// Returns the `ErrorVector` from the `perFactorID`-th factor of type `F`.
-  public subscript<F: VectorFactor>(_ perFactorID: Int, factorType _: F.Type) -> F.ErrorVector {
+  public subscript<F: VectorFactor>(_ perFactorID: Int, factorType _: F.Type)
+    -> F.ErrorVector
+  {
     let array = storage[ObjectIdentifier(F.self)].unsafelyUnwrapped
     return ArrayBuffer<F.ErrorVector>(unsafelyDowncasting: array).withUnsafeBufferPointer { b in
       b[perFactorID]
