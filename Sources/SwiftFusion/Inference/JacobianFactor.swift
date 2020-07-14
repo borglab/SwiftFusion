@@ -94,6 +94,69 @@ public struct JacobianFactor<
   }
 }
 
+/// Convenience initializers in terms of `FixedSizeMatrix`.
+extension JacobianFactor {
+  /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
+  ///
+  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  public init<J1Rows>(
+    jacobian j1: FixedSizeMatrix<J1Rows>,
+    error: ErrorVector,
+    edges: Variables.Indices
+  ) where Rows.Element == Tuple1<J1Rows.Element> {
+    precondition(J1Rows.count == ErrorVector.dimension)
+    self.init(
+      jacobian: Rows(j1.rows.lazy.map { Tuple1($0) }),
+      error: error,
+      edges: edges
+    )
+  }
+
+  /// Creates a Jacobian factor with the given Jacobians, `error`, and `edges`.
+  ///
+  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  public init<J1Rows, J2Rows>(
+    jacobians j1: FixedSizeMatrix<J1Rows>,
+    _ j2: FixedSizeMatrix<J2Rows>,
+    error: ErrorVector,
+    edges: Variables.Indices
+  ) where Rows.Element == Tuple2<J1Rows.Element, J2Rows.Element> {
+    precondition(J1Rows.count == ErrorVector.dimension)
+    precondition(J2Rows.count == ErrorVector.dimension)
+    self.init(
+      jacobian: Rows(zip(j1.rows, j2.rows).lazy.map { Tuple2($0.0, $0.1) }),
+      error: error,
+      edges: edges
+    )
+  }
+
+  /// Creates a Jacobian factor with the given Jacobians, `error`, and `edges`.
+  ///
+  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  public init<J1Rows, J2Rows, J3Rows>(
+    jacobians j1: FixedSizeMatrix<J1Rows>,
+    _ j2: FixedSizeMatrix<J2Rows>,
+    _ j3: FixedSizeMatrix<J3Rows>,
+    error: ErrorVector,
+    edges: Variables.Indices
+  ) where Rows.Element == Tuple3<J1Rows.Element, J2Rows.Element, J3Rows.Element> {
+    precondition(J1Rows.count == ErrorVector.dimension)
+    precondition(J2Rows.count == ErrorVector.dimension)
+    precondition(J3Rows.count == ErrorVector.dimension)
+    self.init(
+      jacobian: Rows(zip(zip(j1.rows, j2.rows), j3.rows).lazy.map { Tuple3($0.0.0, $0.0.1, $0.1) }),
+      error: error,
+      edges: edges
+    )
+  }
+}
+
+/// A Jacobian factor with 1 2-dimensional input and a 2-dimensional error vector.
+public typealias JacobianFactor2x2_1 = JacobianFactor<Array2<Tuple1<Vector2>>, Vector2>
+
+/// A Jacobian factor with 2 2-dimensional inputs and a 2-dimensional error vector.
+public typealias JacobianFactor2x2_2 = JacobianFactor<Array2<Tuple2<Vector2, Vector2>>, Vector2>
+
 /// A Jacobian factor with 1 3-dimensional input and a 3-dimensional error vector.
 public typealias JacobianFactor3x3_1 = JacobianFactor<Array3<Tuple1<Vector3>>, Vector3>
 
