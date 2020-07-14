@@ -18,11 +18,8 @@ import TensorFlow
 /// A relaxed version of the Rot3 between that uses the Chordal (Frobenious) norm on rotation
 /// Please refer to Carlone15icra (Initialization Techniques for 3D SLAM: a Survey on Rotation Estimation and its Use in Pose Graph Optimization)
 /// for explanation.
-public struct RelaxedRotationFactorRot3: LinearizableFactor
+public struct RelaxedRotationFactorRot3: LinearizableFactor2
 {
-  public typealias Variables = Tuple2<Matrix3, Matrix3>
-  public typealias JacobianRows = Array9<Tuple2<Matrix3.TangentVector, Matrix3.TangentVector>>
-  
   public let edges: Variables.Indices
   public let difference: Matrix3
   
@@ -39,26 +36,11 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
     let R1h = matmul(R12, R2.transposed()).transposed()
     return (R1h - R1).vec
   }
-  
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-  
-  @differentiable
-  public func errorVector(at x: Variables) -> ErrorVector {
-    return errorVector(x.head, x.tail.head)
-  }
 }
 
 /// A factor for the anchor in chordal initialization
-public struct RelaxedAnchorFactorRot3: LinearizableFactor
+public struct RelaxedAnchorFactorRot3: LinearizableFactor1
 {
-  public typealias Variables = Tuple1<Matrix3>
-  public typealias JacobianRows = Array9<Tuple1<Matrix3.TangentVector>>
-  
   public let edges: Variables.Indices
   public let prior: Matrix3
   
@@ -72,18 +54,6 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   @differentiable
   public func errorVector(_ val: Matrix3) -> ErrorVector {
     (val - prior).vec
-  }
-  
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-  
-  @differentiable
-  public func errorVector(at x: Variables) -> ErrorVector {
-    return errorVector(x.head)
   }
 }
 
