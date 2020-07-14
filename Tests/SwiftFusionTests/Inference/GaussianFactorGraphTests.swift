@@ -85,10 +85,9 @@ class GaussianFactorGraphTests: XCTestCase {
     let id2 = x.store(Vector3(1.0/3, 1.0/3, 1.0/3))
     
     // let terms = [Matrix3.identity, 2 * Matrix3.identity, 3 * Matrix3.identity]
-    let jf = JacobianFactor(jacobian: Array3(Tuple3(Vector3(1, 0, 0), Vector3(2, 0, 0), Vector3(3, 0, 0)),
-                                             Tuple3(Vector3(0, 1, 0), Vector3(0, 2, 0), Vector3(0, 3, 0)),
-                                             Tuple3(Vector3(0, 0, 1), Vector3(0, 0, 2), Vector3(0, 0, 3))),
-                            error: Vector3(1, 2, 3), edges: Tuple3(id0, id1, id2))
+    let jf = JacobianFactor<Array3<Tuple3<Vector3, Vector3, Vector3>>, Vector3>(
+      jacobians: FixedSizeMatrix3.identity, 2 * FixedSizeMatrix3.identity, 3 * FixedSizeMatrix3.identity,
+      error: Vector3(1, 2, 3), edges: Tuple3(id0, id1, id2))
     
     var gfg = GaussianFactorGraph(zeroValues: x)
     gfg.store(jf)
@@ -97,5 +96,29 @@ class GaussianFactorGraphTests: XCTestCase {
     
     assertAllKeyPathEqual(r[0, factorType: JacobianFactor<Array3<Tuple3<Vector3, Vector3, Vector3>>, Vector3>.self],
                           Vector3(2, 1, 0), accuracy: 1e-10)
+  }
+
+  /// Test Ax.
+  func testMultiplication() {
+    let A = SimpleGaussianFactorGraph.create()
+    let Ax = A.errorVectors_linearComponent(at: SimpleGaussianFactorGraph.correctDelta())
+    XCTAssertEqual(Ax[0, factorType: JacobianFactor2x2_1.self], Vector2(-1, -1))
+    XCTAssertEqual(Ax[0, factorType: JacobianFactor2x2_2.self], Vector2(2, -1))
+    XCTAssertEqual(Ax[1, factorType: JacobianFactor2x2_2.self], Vector2(0, 1))
+    XCTAssertEqual(Ax[2, factorType: JacobianFactor2x2_2.self], Vector2(-1, 1.5))
+  }
+
+  /// Test A^Ty
+  func testTransposeMultiplication() {
+    var y = AllVectors()
+    y.store(Vector2(0, 0), factorType: JacobianFactor2x2_1.self)
+    y.store(Vector2(15, 0), factorType: JacobianFactor2x2_2.self)
+    y.store(Vector2(0, -5), factorType: JacobianFactor2x2_2.self)
+    y.store(Vector2(-7.5, -5), factorType: JacobianFactor2x2_2.self)
+    let A = SimpleGaussianFactorGraph.create()
+    let ATy = A.errorVectors_linearComponent_adjoint(y)
+    XCTAssertEqual(ATy[SimpleGaussianFactorGraph.l1ID], Vector2(-37.5, -50))
+    XCTAssertEqual(ATy[SimpleGaussianFactorGraph.x1ID], Vector2(-150, 25))
+    XCTAssertEqual(ATy[SimpleGaussianFactorGraph.x2ID], Vector2(187.5, 25))
   }
 }

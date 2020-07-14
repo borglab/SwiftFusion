@@ -1,3 +1,4 @@
+import PenguinStructures
 import TensorFlow
 import SwiftFusion
 import XCTest
@@ -45,7 +46,7 @@ func assertAllKeyPathEqual<T: KeyPathIterable>(
 }
 
 /// Factor graph with 2 2D factors on 3 2D variables
-public final class SimpleGaussianFactorGraph {
+public final class SimpleOldGaussianFactorGraph {
   public static func create() -> OldGaussianFactorGraph {
     var fg = OldGaussianFactorGraph()
     
@@ -81,6 +82,57 @@ public final class SimpleGaussianFactorGraph {
     c.insert(x2, Vector([0.0, 0.0]))
     
     return c
+  }
+}
+
+/// Factor graph with 2 2D factors on 3 2D variables.
+public enum SimpleGaussianFactorGraph {
+  public static let x1ID = TypedID<Vector2>(2)
+  public static let x2ID = TypedID<Vector2>(0)
+  public static let l1ID = TypedID<Vector2>(1)
+
+  public static func create() -> GaussianFactorGraph {
+    let I_2x2 = FixedSizeMatrix2.identity
+    var fg = GaussianFactorGraph(zeroValues: zeroDelta())
+    fg.store(JacobianFactor2x2_1(
+      jacobian: 10 * I_2x2,
+      error: -1 * Vector2(1, 1),
+      edges: Tuple1(x1ID)))
+    fg.store(JacobianFactor2x2_2(
+      jacobians: 10 * I_2x2, -10 * I_2x2,
+      error: Vector2(2, -1),
+      edges: Tuple2(x2ID, x1ID)))
+    fg.store(JacobianFactor2x2_2(
+      jacobians: 5 * I_2x2, -5 * I_2x2,
+      error: Vector2(0, 1),
+      edges: Tuple2(l1ID, x1ID)))
+    fg.store(JacobianFactor2x2_2(
+      jacobians: -5 * I_2x2, 5 * I_2x2,
+      error: Vector2(-1, 1.5),
+      edges: Tuple2(x2ID, l1ID)))
+    return fg
+  }
+
+  public static func correctDelta() -> VariableAssignments {
+    var x = VariableAssignments()
+    let actualX2ID = x.store(Vector2(0.1, -0.2))
+    assert(actualX2ID == x2ID)
+    let actualL1ID = x.store(Vector2(-0.1, 0.1))
+    assert(actualL1ID == l1ID)
+    let actualX1ID = x.store(Vector2(-0.1, -0.1))
+    assert(actualX1ID == x1ID)
+    return x
+  }
+
+  public static func zeroDelta() -> VariableAssignments {
+    var x = VariableAssignments()
+    let actualX2ID = x.store(Vector2.zero)
+    assert(actualX2ID == x2ID)
+    let actualL1ID = x.store(Vector2.zero)
+    assert(actualL1ID == l1ID)
+    let actualX1ID = x.store(Vector2.zero)
+    assert(actualX1ID == x1ID)
+    return x
   }
 }
 

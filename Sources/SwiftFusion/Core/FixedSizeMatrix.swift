@@ -14,6 +14,9 @@
 
 import PenguinStructures
 
+public typealias FixedSizeMatrix2 = FixedSizeMatrix<Array2<Vector2>>
+public typealias FixedSizeMatrix3 = FixedSizeMatrix<Array3<Vector3>>
+
 /// A matrix whose dimensions are known at compile time.
 ///
 /// Stored as a fixed-size array of rows, where the rows are `EuclideanVectorN`. For example,
@@ -88,5 +91,17 @@ extension FixedSizeMatrix: AdditiveArithmetic {
 
   public static var zero: Self {
     return Self(rows: Rows((0..<Rows.count).lazy.map { _ in Rows.Element.zero }))
+  }
+}
+
+extension FixedSizeMatrix {
+  public static func * (_ lhs: Double, _ rhs: Self) -> Self {
+    var result = rhs
+    for i in 0..<Self.rowCount {
+      for j in 0..<Self.columnCount {
+        result[i, j] *= lhs
+      }
+    }
+    return result
   }
 }

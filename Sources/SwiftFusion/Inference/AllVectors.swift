@@ -66,6 +66,16 @@ extension AllVectors {
     return VariableAssignments(storage: r)
   }
 
+  /// Stores an `ErrorVector` for a factor of type `F`.
+  public mutating func store<F: LinearizableFactor>(_ value: F.ErrorVector, factorType _: F.Type) {
+    _ = storage[
+      ObjectIdentifier(F.self),
+      // Note: This is a safe upcast.
+      default: AnyElementArrayBuffer(
+        unsafelyCasting: AnyVectorArrayBuffer(ArrayBuffer<F.ErrorVector>()))
+    ].unsafelyAppend(value)
+  }
+
   /// Returns the `ErrorVector` from the `perFactorID`-th factor of type `F`.
   public subscript<F: LinearizableFactor>(_ perFactorID: Int, factorType _: F.Type) -> F.ErrorVector {
     let array = storage[ObjectIdentifier(F.self)].unsafelyUnwrapped
