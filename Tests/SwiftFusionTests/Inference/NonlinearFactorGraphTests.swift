@@ -5,28 +5,23 @@ import XCTest
 final class NonlinearFactorGraphTests: XCTestCase {
   /// test ATr
   func testBasicOps() {
-    var fg = NonlinearFactorGraph()
+    var fg = FactorGraph()
     
-    let bf1 = OldBetweenFactor(0, 1, Pose2(0.0,0.0, 0.0))
+    var val = VariableAssignments()
+    let id0 = val.store(Pose2(1.0, 1.0, 0.0))
+    let id1 = val.store(Pose2(1.0, 1.0, .pi))
     
-    fg += bf1
+    let bf1 = BetweenFactor(id0, id1, Pose2(0.0, 0.0, 0.0))
     
-    var val = Values()
-    val.insert(0, Pose2(1.0, 1.0, 0.0))
-    val.insert(1, Pose2(1.0, 1.0, .pi))
+    fg.store(bf1)
     
-    let gfg = fg.linearize(val)
+    let gfg = fg.linearized(at: val)
     
-    var vv = VectorValues()
+    var vv = val.tangentVectorZeros
     
-    vv.insert(0, Vector(zeros: 3))
-    vv.insert(1, Vector(zeros: 3))
+    let expected = Vector3(.pi, 0.0, 0.0)
     
-    let expected = Tensor<Double>(shape:[3], scalars: [.pi, 0.0, 0.0])
-    
-    print("gfg = \(gfg)")
-    print("error = \(gfg.residual(vv).norm)")
-    assertEqual((gfg.residual(vv))[0].tensor, expected, accuracy: 1e-6)
+    assertAllKeyPathEqual(gfg.errorVectors(at: vv)[0, factorType: BetweenFactor<Pose2>.self], expected, accuracy: 1e-6)
   }
   
   /// test CGLS iterative solver

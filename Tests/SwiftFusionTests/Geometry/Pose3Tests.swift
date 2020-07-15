@@ -1,5 +1,6 @@
 import XCTest
 import SwiftFusion
+import PenguinStructures
 import TensorFlow
 
 final class Pose3Tests: XCTestCase {
@@ -41,20 +42,23 @@ final class Pose3Tests: XCTestCase {
     let P = Vector3(3.5,-8.2,4.2)
     let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
     let t1 = Pose3(R, P)
-    let I: Tensor<Double> = eye(rowCount: 6)
-    let prior_factor = OldPriorFactor(0, t1)
+    let I = FixedSizeMatrix<Array6<Tuple1<Vector6>>>.identity
     
-    var vals = Values()
-    vals.insert(0, t1) // should be identity matrix
+    var val = VariableAssignments()
+    let id1 = val.store(t1) // should be identity matrix
+    let prior_factor = PriorFactor(id1, t1)
     // Change this to t2, still zero in upper left block
     
-    let actual = prior_factor.linearize(vals).jacobians[0]
+    let actual = JacobianFactor6x6_1(linearizing: prior_factor, at: Tuple1(t1))
     
-    assertEqual(actual.tensor, I, accuracy: 1e-8)
+    let jacobian = actual.jacobian
+
+    // print(voidPtr.pointee)
+    XCTAssertEqual(jacobian, I.rows)
   }
   
   /// circlePose3 generates a set of poses in a circle. This function
-  /// returns those poses inside a gtsam.Values object, with sequential
+  /// returns those poses inside a gtsam.VariableAssignments object, with sequential
   /// keys starting from 0. An optional character may be provided, which
   /// will be stored in the msb of each key (i.e. gtsam.Symbol).
 
@@ -64,68 +68,64 @@ final class Pose3Tests: XCTestCase {
   /// |    |
   /// z-->xZ--> Y  (z pointing towards viewer, Z pointing away from viewer)
   /// Vehicle at p0 is looking towards y axis (X-axis points towards world y)
-  func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> Values {
-    var values = Values()
+  func circlePose3(numPoses: Int = 8, radius: Double = 1.0) -> (Array<TypedID<Pose3>>, VariableAssignments) {
+    var values = VariableAssignments()
+    var ids = [TypedID<Pose3>]()
     var theta: Double = 0.0
     let dtheta = 2.0 * .pi / Double(numPoses)
     let gRo = Rot3(0, 1, 0, 1, 0, 0, 0, 0, -1)
-    for i in 0..<numPoses {
-      let key = 0 + i
+    for _ in 0..<numPoses {
       let gti = Vector3(radius * cos(theta), radius * sin(theta), 0)
       let oRi = Rot3.fromTangent(Vector3(0, 0, -theta))  // negative yaw goes counterclockwise, with Z down !
       let gTi = Pose3(gRo * oRi, gti)
-      values.insert(key, gTi)
+      ids.append(values.store(gTi))
       theta = theta + dtheta
     }
-    return values
+    return (ids, values)
   }
   
   func testGtsamPose3SLAMExample() {
     // Create a hexagon of poses
-    let hexagon = circlePose3(numPoses: 6, radius: 1.0)
-    let p0 = hexagon[0, as: Pose3.self]
-    let p1 = hexagon[1, as: Pose3.self]
+    let (hexagon_id, hexagon_val) = circlePose3(numPoses: 6, radius: 1.0)
+    let p0 = hexagon_val[hexagon_id[0]]
+    let p1 = hexagon_val[hexagon_id[1]]
     
     // create a Pose graph with one equality constraint and one measurement
-    var fg = NonlinearFactorGraph()
-    fg += OldPriorFactor(0, p0)
+    var fg = FactorGraph()
+    fg.store(PriorFactor(hexagon_id[0], p0))
     let delta = between(p0, p1)
 
-    fg += OldBetweenFactor(0, 1, delta)
-    fg += OldBetweenFactor(1, 2, delta)
-    fg += OldBetweenFactor(2, 3, delta)
-    fg += OldBetweenFactor(3, 4, delta)
-    fg += OldBetweenFactor(4, 5, delta)
-    fg += OldBetweenFactor(5, 0, delta)
+    fg.store(BetweenFactor(hexagon_id[0], hexagon_id[1], delta))
+    fg.store(BetweenFactor(hexagon_id[1], hexagon_id[2], delta))
+    fg.store(BetweenFactor(hexagon_id[2], hexagon_id[3], delta))
+    fg.store(BetweenFactor(hexagon_id[3], hexagon_id[4], delta))
+    fg.store(BetweenFactor(hexagon_id[4], hexagon_id[5], delta))
+    fg.store(BetweenFactor(hexagon_id[5], hexagon_id[0], delta))
 
     // Create initial config
-    var val = Values()
+    var val = VariableAssignments()
     let s: Double = 0.10
-    val.insert(0, p0)
-    val.insert(1, hexagon[1, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    val.insert(2, hexagon[2, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    val.insert(3, hexagon[3, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    val.insert(4, hexagon[4, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
-    val.insert(5, hexagon[5, as: Pose3.self].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(p0)
+    let _ = val.store(hexagon_val[hexagon_id[1]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[2]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[3]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[4]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[5]].retract(Vector6(s * Tensor<Double>(randomNormal: [6]))))
 
     // optimize
     for _ in 0..<16 {
-      let gfg = fg.linearize(val)
+      let gfg = fg.linearized(at: val)
       
-      let optimizer = CGLS(precision: 1e-6, max_iteration: 500)
+      var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
       
-      var dx = VectorValues()
-      
-      for i in 0..<6 {
-        dx.insert(i, Vector(zeros: 6))
-      }
-      
+      var dx = val.tangentVectorZeros
+
       optimizer.optimize(gfg: gfg, initial: &dx)
       
       val.move(along: dx)
     }
 
-    let pose_1 = val[1, as: Pose3.self]
+    let pose_1 = val[hexagon_id[1]]
     assertAllKeyPathEqual(pose_1, p1, accuracy: 1e-2)
   }
 

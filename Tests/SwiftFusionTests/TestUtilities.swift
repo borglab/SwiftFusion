@@ -45,46 +45,6 @@ func assertAllKeyPathEqual<T: KeyPathIterable>(
   }
 }
 
-/// Factor graph with 2 2D factors on 3 2D variables
-public final class SimpleOldGaussianFactorGraph {
-  public static func create() -> OldGaussianFactorGraph {
-    var fg = OldGaussianFactorGraph()
-    
-    let I_2x2 = Matrix(eye: 2)
-    let x1 = 2, x2 = 0, l1 = 1
-    
-    // linearized prior on x1: c[_x1_]+x1=0 i.e. x1=-c[_x1_]
-    fg += OldJacobianFactor([x1], [10 * I_2x2], -1.0 * Vector([1.0, 1.0]))
-    // odometry between x1 and x2: x2-x1=[0.2;-0.1]
-    fg += OldJacobianFactor([x2, x1], [10 * I_2x2, -10 * I_2x2], Vector([2.0, -1.0]))
-    // measurement between x1 and l1: l1-x1=[0.0;0.2]
-    fg += OldJacobianFactor([l1, x1], [5 * I_2x2, -5 * I_2x2], Vector([0.0, 1.0]))
-    // measurement between x2 and l1: l1-x2=[-0.2;0.3]
-    fg += OldJacobianFactor([x2, l1], [-5 * I_2x2, 5 * I_2x2], Vector([-1.0, 1.5]))
-    return fg;
-  }
-
-  public static func correctDelta() -> VectorValues {
-    let x1 = 2, x2 = 0, l1 = 1
-    var c = VectorValues()
-    c.insert(l1, Vector([-0.1, 0.1]))
-    c.insert(x1, Vector([-0.1, -0.1]))
-    c.insert(x2, Vector([0.1, -0.2]))
-    
-    return c
-  }
-
-  public static func zeroDelta() -> VectorValues {
-    let x1 = 2, x2 = 0, l1 = 1
-    var c = VectorValues()
-    c.insert(l1, Vector([0.0, 0.0]))
-    c.insert(x1, Vector([0.0, 0.0]))
-    c.insert(x2, Vector([0.0, 0.0]))
-    
-    return c
-  }
-}
-
 /// Factor graph with 2 2D factors on 3 2D variables.
 public enum SimpleGaussianFactorGraph {
   public static let x1ID = TypedID<Vector2>(2)
