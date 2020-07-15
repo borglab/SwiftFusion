@@ -11,7 +11,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     let id0 = val.store(Pose2(1.0, 1.0, 0.0))
     let id1 = val.store(Pose2(1.0, 1.0, .pi))
     
-    let bf1 = BetweenFactor2(id0, id1, Pose2(0.0, 0.0, 0.0))
+    let bf1 = BetweenFactor(id0, id1, Pose2(0.0, 0.0, 0.0))
     
     fg.store(bf1)
     
@@ -21,7 +21,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     
     let expected = Vector3(.pi, 0.0, 0.0)
     
-    assertAllKeyPathEqual(gfg.errorVectors(at: vv)[0, factorType: BetweenFactor2.self], expected, accuracy: 1e-6)
+    assertAllKeyPathEqual(gfg.errorVectors(at: vv)[0, factorType: BetweenFactor<Pose2>.self], expected, accuracy: 1e-6)
   }
   
   /// test CGLS iterative solver

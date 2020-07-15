@@ -46,10 +46,10 @@ final class Pose3Tests: XCTestCase {
     
     var val = VariableAssignments()
     let id1 = val.store(t1) // should be identity matrix
-    let prior_factor = PriorFactor3(id1, t1)
+    let prior_factor = PriorFactor(id1, t1)
     // Change this to t2, still zero in upper left block
     
-    let actual = prior_factor.linearized(at: Tuple1(t1))
+    let actual = JacobianFactor6x6_1(linearizing: prior_factor, at: Tuple1(t1))
     
     let jacobian = actual.jacobian
 
@@ -92,15 +92,15 @@ final class Pose3Tests: XCTestCase {
     
     // create a Pose graph with one equality constraint and one measurement
     var fg = FactorGraph()
-    fg.store(PriorFactor3(hexagon_id[0], p0))
+    fg.store(PriorFactor(hexagon_id[0], p0))
     let delta = between(p0, p1)
 
-    fg.store(BetweenFactor3(hexagon_id[0], hexagon_id[1], delta))
-    fg.store(BetweenFactor3(hexagon_id[1], hexagon_id[2], delta))
-    fg.store(BetweenFactor3(hexagon_id[2], hexagon_id[3], delta))
-    fg.store(BetweenFactor3(hexagon_id[3], hexagon_id[4], delta))
-    fg.store(BetweenFactor3(hexagon_id[4], hexagon_id[5], delta))
-    fg.store(BetweenFactor3(hexagon_id[5], hexagon_id[0], delta))
+    fg.store(BetweenFactor(hexagon_id[0], hexagon_id[1], delta))
+    fg.store(BetweenFactor(hexagon_id[1], hexagon_id[2], delta))
+    fg.store(BetweenFactor(hexagon_id[2], hexagon_id[3], delta))
+    fg.store(BetweenFactor(hexagon_id[3], hexagon_id[4], delta))
+    fg.store(BetweenFactor(hexagon_id[4], hexagon_id[5], delta))
+    fg.store(BetweenFactor(hexagon_id[5], hexagon_id[0], delta))
 
     // Create initial config
     var val = VariableAssignments()
