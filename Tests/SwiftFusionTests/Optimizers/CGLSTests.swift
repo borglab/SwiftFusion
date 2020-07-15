@@ -8,15 +8,15 @@ import XCTest
 final class CGLSTests: XCTestCase {  
   /// test convergence for a simple gaussian factor graph
   func testCGLSSolver() {
-    let gfg = SimpleOldGaussianFactorGraph.create()
+    let gfg = SimpleGaussianFactorGraph.create()
     
-    let optimizer = CGLS(precision: 1e-7, max_iteration: 10)
-    var x: VectorValues = SimpleOldGaussianFactorGraph.zeroDelta()
+    var optimizer = GenericCGLS(precision: 1e-7, max_iteration: 10)
+    var x: VariableAssignments = SimpleGaussianFactorGraph.zeroDelta()
     optimizer.optimize(gfg: gfg, initial: &x)
     
-    let expected = SimpleOldGaussianFactorGraph.correctDelta()
+    let expected = SimpleGaussianFactorGraph.correctDelta()
     
-    for k in x.keys {
+    for k in [SimpleGaussianFactorGraph.x1ID, SimpleGaussianFactorGraph.x2ID] {
       assertEqual(x[k].tensor, expected[k].tensor, accuracy: 1e-6)
     }
   }
