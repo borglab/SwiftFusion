@@ -18,11 +18,8 @@ import TensorFlow
 /// A relaxed version of the Rot3 between that uses the Chordal (Frobenious) norm on rotation
 /// Please refer to Carlone15icra (Initialization Techniques for 3D SLAM: a Survey on Rotation Estimation and its Use in Pose Graph Optimization)
 /// for explanation.
-public struct RelaxedRotationFactorRot3: LinearizableFactor
+public struct RelaxedRotationFactorRot3: LinearizableFactor2
 {
-  public typealias Variables = Tuple2<Matrix3, Matrix3>
-  public typealias JacobianRows = Array9<Tuple2<Matrix3.TangentVector, Matrix3.TangentVector>>
-  
   public let edges: Variables.Indices
   public let difference: Matrix3
   
@@ -39,30 +36,11 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor
     let R1h = matmul(R12, R2.transposed()).transposed()
     return (R1h - R1).vec
   }
-  
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-  
-  public func errorVector(at x: Variables) -> ErrorVector {
-    return errorVector(x.head, x.tail.head)
-  }
-  
-  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
-  }
 }
 
 /// A factor for the anchor in chordal initialization
-public struct RelaxedAnchorFactorRot3: LinearizableFactor
+public struct RelaxedAnchorFactorRot3: LinearizableFactor1
 {
-  public typealias Variables = Tuple1<Matrix3>
-  public typealias JacobianRows = Array9<Tuple1<Matrix3.TangentVector>>
-  
   public let edges: Variables.Indices
   public let prior: Matrix3
   
@@ -72,24 +50,10 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor
   }
   
   public typealias ErrorVector = Vector9
+
+  @differentiable
   public func errorVector(_ val: Matrix3) -> ErrorVector {
     (val - prior).vec
-  }
-  
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-  
-  public func errorVector(at x: Variables) -> ErrorVector {
-    return errorVector(x.head)
-  }
-  
-  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
   }
 }
 
@@ -113,12 +77,12 @@ public struct ChordalInitialization {
   public func buildPose3graph(graph: FactorGraph) -> FactorGraph {
     var pose3Graph = FactorGraph()
     
-    for factor in graph.factors(type: BetweenFactor3.self) {
+    for factor in graph.factors(type: BetweenFactor<Pose3>.self) {
       pose3Graph.store(factor)
     }
     
-    for factor in graph.factors(type: PriorFactor3.self) {
-      pose3Graph.store(BetweenFactor3(anchorId, factor.edges.head, factor.prior))
+    for factor in graph.factors(type: PriorFactor<Pose3>.self) {
+      pose3Graph.store(BetweenFactor(anchorId, factor.edges.head, factor.prior))
     }
     
     return pose3Graph
@@ -150,7 +114,7 @@ public struct ChordalInitialization {
     associations[anchorId.perTypeID] = orientations.store(Matrix3.zero)
     
     // iterate the pose3 graph and make corresponding relaxed factors
-    for factor in g.factors(type: BetweenFactor3.self) {
+    for factor in g.factors(type: BetweenFactor<Pose3>.self) {
       let R = factor.difference.rot.coordinate.R
       let frob_factor = RelaxedRotationFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R)
       orientationGraph.store(frob_factor)
@@ -211,7 +175,7 @@ public struct ChordalInitialization {
       let _ = val.store(Pose3(orientations[TypedID<Rot3>(v.perTypeID)], Vector3(0,0,0)))
     }
     
-    g.store(PriorFactor3(anchorId, Pose3()))
+    g.store(PriorFactor(anchorId, Pose3()))
     let anchor_id = val.store(Pose3(Rot3(), Vector3(0,0,0)))
     assert(anchor_id == anchorId)
     

@@ -20,45 +20,28 @@ import PenguinStructures
 @testable import SwiftFusion
 
 /// A factor that switches between different linear motions based on an integer label.
-fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  LinearizableFactor
-  where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
-{
-  typealias Variables = Tuple3<Int, Pose, Pose>
+fileprivate struct SwitchingMotionModelFactor<Pose: LieGroup>: VectorFactor3 {
+  typealias ErrorVector = Pose.TangentVector
+  typealias LinearizableComponent = BetweenFactor<Pose>
 
   let edges: Variables.Indices
 
   let motions: [Pose]
 
-  typealias ErrorVector = Pose.TangentVector
   func errorVector(_ motionLabel: Int, _ start: Pose, _ end: Pose) -> ErrorVector {
     let actualMotion = between(start, end)
     return motions[motionLabel].localCoordinate(actualMotion)
   }
 
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-
-  func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-
-  func errorVector(at x: Variables) -> Pose.TangentVector {
-    return errorVector(x.head, x.tail.head, x.tail.tail.head)
-  }
-
-  typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  func linearized(at x: Variables) -> Linearization {
-    Linearization(
-      linearizing: { errorVector(x.head, $0.head, $0.tail.head) },
-      at: x.tail,
-      edges: edges.tail
+  func linearizableComponent(_ motionLabel: Int, _ start: Pose, _ end: Pose)
+    -> (LinearizableComponent, LinearizableComponent.Variables)
+  {
+    return (
+      BetweenFactor(input1ID, input2ID, motions[motionLabel]),
+      Tuple2(start, end)
     )
   }
 }
-
-fileprivate typealias SwitchingMotionModelFactor2 =
-  SwitchingMotionModelFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
 
 // A switching motion model factor graph.
 //
@@ -74,8 +57,8 @@ fileprivate struct ExampleFactorGraph {
   var motionLabelIDs = [TypedID<Int>]()
   var poseIDs = [TypedID<Pose2>]()
 
-  var priorFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<PriorFactor2>())
-  var motionFactors = AnyLinearizableFactorArrayBuffer(ArrayBuffer<SwitchingMotionModelFactor2>())
+  var priorFactors = AnyVectorFactorArrayBuffer(ArrayBuffer<PriorFactor<Pose2>>())
+  var motionFactors = AnyVectorFactorArrayBuffer(ArrayBuffer<SwitchingMotionModelFactor<Pose2>>())
 
   init() {
     // Set up the initial guess.
@@ -89,13 +72,13 @@ fileprivate struct ExampleFactorGraph {
 
     // Set up the factor graph.
 
-    _ = priorFactors.unsafelyAppend(PriorFactor2(poseIDs[0], Pose2(0, 0, 0)))
+    _ = priorFactors.unsafelyAppend(PriorFactor(poseIDs[0], Pose2(0, 0, 0)))
 
-    _ = motionFactors.unsafelyAppend(SwitchingMotionModelFactor2(
+    _ = motionFactors.unsafelyAppend(SwitchingMotionModelFactor(
       edges: Tuple3(motionLabelIDs[0], poseIDs[0], poseIDs[1]),
       motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
     ))
-    _ = motionFactors.unsafelyAppend(SwitchingMotionModelFactor2(
+    _ = motionFactors.unsafelyAppend(SwitchingMotionModelFactor(
       edges: Tuple3(motionLabelIDs[1], poseIDs[1], poseIDs[2]),
       motions: [Pose2(1, 1, 0), Pose2(0, 0, 1)]
     ))

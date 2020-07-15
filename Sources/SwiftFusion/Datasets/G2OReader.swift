@@ -65,7 +65,7 @@ public enum G2OReader {
           assert(typedID.perTypeID == id)
           variableId.append(typedID)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
-          graph.store(BetweenFactor2(TypedID(id1), TypedID(id2), difference))
+          graph.store(BetweenFactor(TypedID(id1), TypedID(id2), difference))
         }
       }
     }
@@ -80,9 +80,9 @@ public enum G2OReader {
           variableId.append(typedID)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
           if chordal {
-            graph.store(BetweenFactorAlternative3(TypedID(id1), TypedID(id2), difference))
+            graph.store(BetweenFactorAlternative(TypedID(id1), TypedID(id2), difference))
           } else {
-            graph.store(BetweenFactor3(TypedID(id1), TypedID(id2), difference))
+            graph.store(BetweenFactor(TypedID(id1), TypedID(id2), difference))
           }
         }
       }

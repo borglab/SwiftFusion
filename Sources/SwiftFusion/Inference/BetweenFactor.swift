@@ -15,16 +15,7 @@
 import PenguinStructures
 
 /// A factor that specifies a difference between two poses.
-///
-/// `JacobianRows` specifies the `Rows` parameter of the Jacobian of this factor. See the
-/// documentation on `JacobianFactor.jacobian` for more information. Use the typealiases below to
-/// avoid specifying this type parameter every time you create an instance.
-public struct BetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
-  LinearizableFactor
-  where JacobianRows.Element == Tuple2<Pose.TangentVector, Pose.TangentVector>
-{
-  public typealias Variables = Tuple2<Pose, Pose>
-
+public struct BetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
   public let edges: Variables.Indices
   public let difference: Pose
 
@@ -33,31 +24,9 @@ public struct BetweenFactor<Pose: LieGroup, JacobianRows: FixedSizeArray>:
     self.difference = difference
   }
 
-  public typealias ErrorVector = Pose.TangentVector
-  public func errorVector(_ start: Pose, _ end: Pose) -> ErrorVector {
+  @differentiable
+  public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
     let actualMotion = between(start, end)
     return difference.localCoordinate(actualMotion)
   }
-
-  // Note: All the remaining code in this factor is boilerplate that we can eventually eliminate
-  // with sugar.
-  
-  public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
-  }
-
-  public func errorVector(at x: Variables) -> Pose.TangentVector {
-    return errorVector(x.head, x.tail.head)
-  }
-
-  public typealias Linearization = JacobianFactor<JacobianRows, ErrorVector>
-  public func linearized(at x: Variables) -> Linearization {
-    Linearization(linearizing: errorVector, at: x, edges: edges)
-  }
 }
-
-/// A between factor on `Pose2`.
-public typealias BetweenFactor2 = BetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
-
-/// A between factor on `Pose3`.
-public typealias BetweenFactor3 = BetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>

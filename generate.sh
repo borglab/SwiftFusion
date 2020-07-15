@@ -25,6 +25,7 @@ GYB="$SWIFT_BASE"/utils/gyb
 
 GENERATED_FILES=(
   "Sources/SwiftFusion/Core/VectorN.swift"
+  "Sources/SwiftFusion/Inference/FactorBoilerplate.swift"
   "Tests/SwiftFusionTests/Core/VectorNTests.swift"
 )
 
