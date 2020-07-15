@@ -49,7 +49,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
     try! G2OReader.G2OFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
   check(
     intelDataset.graph.error(at: intelDataset.initialGuess),
-    near: 73565.64,
+    near: 0.5 * 73565.64,
     accuracy: 1e-2)
 
   // Uses `FactorGraph` on the Intel dataset.
@@ -72,7 +72,7 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
       x.move(along: dx)
     }
 
-    check(graph.error(at: x), near: 0.987, accuracy: 1e-2)
+    check(graph.error(at: x), near: 0.5 * 0.987, accuracy: 1e-2)
   }
 }
 
