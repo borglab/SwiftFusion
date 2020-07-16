@@ -54,6 +54,7 @@ extension FixedSizeMatrix {
   ///
   /// Requires: `elements.count == Self.shape[0] * Self.shape[1]`.
   public init<C: Collection>(_ elements: C) where C.Element == Double {
+    precondition(elements.count == Self.shape[0] * Self.shape[1])
     self.rows = Rows((0..<Rows.count).lazy.map { i in
       Rows.Element(elements.dropFirst(i * Self.shape[1]))
     })

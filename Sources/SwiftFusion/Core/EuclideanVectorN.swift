@@ -57,6 +57,9 @@ extension EuclideanVectorN {
 }
 
 extension EuclideanVectorN {
+  /// Creates a vector with the same scalars as `v`.
+  ///
+  /// - Requires: `Self.dimension == V.dimension`.
   @differentiable
   public init<V: EuclideanVectorN>(_ v: V) {
     precondition(Self.dimension == V.dimension)
@@ -79,6 +82,9 @@ extension EuclideanVectorN {
     )
   }
 
+  /// Creates a vector with the scalars from `v1`, followed by the scalars from `v2`.
+  ///
+  /// - Requires: `Self.dimension == V1.dimension + V2.dimension`.
   @differentiable
   public init<V1: EuclideanVectorN, V2: EuclideanVectorN>(concatenating v1: V1, _ v2: V2) {
     precondition(Self.dimension == V1.dimension + V2.dimension)
