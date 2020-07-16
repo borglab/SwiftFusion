@@ -22,7 +22,7 @@ let package = Package(
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
     .package(url: "https://github.com/google/swift-benchmark.git", .branch("master")),
-    .package(url: "https://github.com/saeta/penguin.git", .branch("specialized-anyarray")),
+    .package(url: "https://github.com/saeta/penguin.git", .branch("master")),
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
   ],
