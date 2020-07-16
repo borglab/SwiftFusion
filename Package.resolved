@@ -5,8 +5,8 @@
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
-          "branch": "master",
-          "revision": "f8734043301cd842f11813c6be0b13eae3a29623",
+          "branch": "specialized-anyarray",
+          "revision": "61a8378e26175e47defa2961b110a5d2df070b09",
           "version": null
         }
       },
