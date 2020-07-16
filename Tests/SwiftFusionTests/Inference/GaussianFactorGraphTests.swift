@@ -86,7 +86,7 @@ class GaussianFactorGraphTests: XCTestCase {
     
     // let terms = [Matrix3.identity, 2 * Matrix3.identity, 3 * Matrix3.identity]
     let jf = JacobianFactor<Array3<Tuple3<Vector3, Vector3, Vector3>>, Vector3>(
-      jacobians: FixedSizeMatrix3.identity, 2 * FixedSizeMatrix3.identity, 3 * FixedSizeMatrix3.identity,
+      jacobians: Matrix3.identity, 2 * Matrix3.identity, 3 * Matrix3.identity,
       error: Vector3(1, 2, 3), edges: Tuple3(id0, id1, id2))
     
     var gfg = GaussianFactorGraph(zeroValues: x)

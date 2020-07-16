@@ -77,7 +77,7 @@ extension Empty: EuclideanVector {
   @differentiable
   public func dot(_ other: Self) -> Double { return 0 }
 
-  // MARK: - Conversion to/from collections of scalars.
+  // MARK: - Conversion from collections of scalars.
 
   /// Creates an instance whose elements are `scalars`.
   ///
@@ -86,9 +86,6 @@ extension Empty: EuclideanVector {
     assert(scalars.isEmpty)
     self.init()
   }
-
-  /// The scalars in `self`.
-  public var scalars: [Double] { [] }
 }
 
 extension Empty: EuclideanVectorN {
@@ -129,7 +126,7 @@ where Head: EuclideanVectorN, Tail: EuclideanVectorN {
     return head.dot(other.head) + tail.dot(other.tail)
   }
 
-  // MARK: - Conversion to/from collections of scalars.
+  // MARK: - Conversion from collections of scalars.
 
   /// Creates an instance whose elements are `scalars`.
   ///
@@ -142,13 +139,6 @@ where Head: EuclideanVectorN, Tail: EuclideanVectorN {
       head: Head(scalars.prefix(Head.dimension)),
       tail: Tail(scalars.dropFirst(Head.dimension))
     )
-  }
-
-  /// The scalars in `self`.
-  public var scalars: [Double] {
-    // Note: Not spending effort making this more efficient because we're going to stop using this
-    // soon.
-    return Array(head.scalars) + Array(tail.scalars)
   }
 
   // MARK: `EuclideanVectorN` requirements.

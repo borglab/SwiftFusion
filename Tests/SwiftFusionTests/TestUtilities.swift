@@ -52,7 +52,7 @@ public enum SimpleGaussianFactorGraph {
   public static let l1ID = TypedID<Vector2>(1)
 
   public static func create() -> GaussianFactorGraph {
-    let I_2x2 = FixedSizeMatrix2.identity
+    let I_2x2 = Matrix2.identity
     var fg = GaussianFactorGraph(zeroValues: zeroDelta())
     fg.store(JacobianFactor2x2_1(
       jacobian: 10 * I_2x2,

@@ -25,7 +25,7 @@ class IdentityLinearizationFactorTests: XCTestCase {
   /// Test that `IdentityLinearizationFactor` forwards to the underlying factor's methods.
   func testForwardsMethods() {
     let base = TestGaussianFactor(
-      jacobian: FixedSizeMatrix3([1, 2, 3, 4, 5, 6, 7, 8, 9]),
+      jacobian: Matrix3([1, 2, 3, 4, 5, 6, 7, 8, 9]),
       error: Vector3(10, 20, 30),
       edges: Tuple1(TypedID(0)))
     let f = IdentityLinearizationFactor<TestGaussianFactor>(
