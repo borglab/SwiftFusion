@@ -184,11 +184,11 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
     let storageType = Type<ArrayStorage<Element>>()
 
     errorVectors = { storage, x in
-      .init(storage[as:storageType].errorVectors(at: x))
+      .init(storage[as: storageType].errorVectors(at: x))
     }
     
     linearized = { storage, x in
-      .init(storage[as:storageType].linearized(at: x) as ArrayBuffer<Linearization>)
+      .init(storage[as: storageType].linearized(at: x) as ArrayBuffer<Linearization>)
     }
     super.init(Type<Element>())
   }
