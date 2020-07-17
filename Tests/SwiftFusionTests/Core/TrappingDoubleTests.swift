@@ -28,10 +28,11 @@ class TrappingDoubleTests: XCTestCase {
 
   /// Tests that `TrappingDouble` traps on `NaN`s.
   ///
-  /// There is no way to assert that a trap happens, so this test is skipped. You can remove the
-  /// `XCTSkipIf` line and run this test to manually verify the trapping behavior.
-  func testTrap() throws {
-    try XCTSkipIf(true)
-    let _: TrappingDouble = .infinity - .infinity
+  /// Until https://github.com/saeta/penguin/issues/64 is addressed, we have no way to assert that a
+  /// trap happens, so this test is skipped. You can comment the line back in and run this test to
+  /// manually verify the trapping behavior.  We don't use XCTSkipIf(true) because it generates
+  /// diagnostics.
+  func testTrap() {
+    // let _: TrappingDouble = .infinity - .infinity
   }
 }
