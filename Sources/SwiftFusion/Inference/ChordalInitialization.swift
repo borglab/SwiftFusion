@@ -34,7 +34,7 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor2
   public func errorVector(_ R1: Matrix3, _ R2: Matrix3) -> ErrorVector {
     let R12 = difference
     let R1h = matmul(R12, R2.transposed()).transposed()
-    return (R1h - R1).vec
+    return ErrorVector(R1h - R1)
   }
 }
 
@@ -53,7 +53,7 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor1
 
   @differentiable
   public func errorVector(_ val: Matrix3) -> ErrorVector {
-    (val - prior).vec
+    ErrorVector(val - prior)
   }
 }
 

@@ -113,7 +113,7 @@ public func skew_symmetric_v(_ v: Vector3) -> Matrix3 {
         0, -v.z, v.y,
         v.z, 0, -v.x,
         -v.y, v.x, 0
-    )
+  )
 }
 
 extension Pose3Coordinate: ManifoldCoordinate {
@@ -178,7 +178,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
     // Formula from Agrawal06iros, equation (14)
     // simplified with Mathematica, and multiplying in T to avoid matrix math
     let Tan = tan(0.5 * t)
-    let WT = matvec(W, T)
+    let WT: Vector3 = matvec(W, T)
     let u = ((T - (0.5 * t) * WT) as Vector3) + (1 - t / (2 * Tan)) * matvec(W, WT)
     return Pose3Coordinate.tangentVector(
       DecomposedTangentVector(w: w, v: u))
