@@ -17,7 +17,7 @@ final class NonlinearFactorGraphTests: XCTestCase {
     
     let gfg = fg.linearized(at: val)
     
-    var vv = val.tangentVectorZeros
+    let vv = val.tangentVectorZeros
     
     let expected = Vector3(.pi, 0.0, 0.0)
     
