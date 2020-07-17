@@ -1,4 +1,4 @@
-
+import PenguinStructures
 import TensorFlow
 
 /// SO(3) group of 3D Rotations
@@ -73,32 +73,25 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
 }
 
 /// determinant for a 3x3 matrix
-fileprivate func det3(_ M: Tensor<Double>) -> Double {
-  precondition(M.shape[0] == 3)
-  precondition(M.shape[1] == 3)
-  
-  return (M[0, 0].scalar! * (M[1, 1].scalar! * M[2, 2].scalar! - M[2, 1].scalar! * M[1, 2].scalar!)
-  - M[1, 0].scalar! * (M[0, 1].scalar! * M[2, 2].scalar! - M[2, 1].scalar! * M[0, 2].scalar!)
-  + M[2, 0].scalar! * (M[0, 1].scalar! * M[1, 2].scalar! - M[1, 1].scalar! * M[0, 2].scalar!))
+fileprivate func det3(_ M: Matrix3) -> Double {
+  return (M[0, 0] * (M[1, 1] * M[2, 2] - M[2, 1] * M[1, 2])
+      - M[1, 0] * (M[0, 1] * M[2, 2] - M[2, 1] * M[0, 2])
+      + M[2, 0] * (M[0, 1] * M[1, 2] - M[1, 1] * M[0, 2]))
 }
 
 public extension Rot3 {
   /// Regularize a 3x3 matrix to find the closest rotation matrix in a Frobenius sense
   static func ClosestTo(mat: Matrix3) -> Rot3 {
-    let M = Tensor<Double>(shape: [3, 3], scalars: [mat[0, 0], mat[0, 1], mat[0, 2], mat[1, 0], mat[1, 1], mat[1, 2], mat[2, 0], mat[2, 1], mat[2, 2]])
-    
-    let (_, U, V) = M.transposed().svd(computeUV: true, fullMatrices: true)
-    let UVT = matmul(U!, V!.transposed())
-    
+    let (_, U, V) = mat.transposed().svd()
+    let UVT = matmul(U, V.transposed())
+
     let det = det3(UVT)
-    
-    let S = Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()
-    
-    let R = matmul(V!, matmul(S, U!.transposed()))
-    
-    let M_r = Matrix3(R.scalars)
-    
-    return Rot3(coordinate: Matrix3Coordinate(M_r))
+
+    let S = Matrix3(diagonal: Array3(1, 1, det))
+
+    let R = matmul(V, matmul(S, U.transposed()))
+
+    return Rot3(coordinate: Matrix3Coordinate(R))
   }
 }
 

@@ -324,4 +324,28 @@ class FixedSizeMatrixTests: XCTestCase {
       "Matrix(Vector2(x: 1.0, y: 2.0), Vector2(x: 3.0, y: 4.0))"
     )
   }
+
+  // MARK: - LAPACK method tests.
+
+  /// Asserts that `matrix.svd()` is a SVD of `matrix`.
+  func assertSVD(_ matrix: Matrix3) {
+    let (s, u, v) = matrix.svd()
+    assertAllKeyPathEqual(
+      matmul(u, matmul(Matrix3(diagonal: s.scalars), v.transposed())),
+      matrix,
+      accuracy: 1e-10)
+    assertAllKeyPathEqual(matmul(u.transposed(), u), Matrix3.identity, accuracy: 1e-10)
+    assertAllKeyPathEqual(matmul(v.transposed(), v), Matrix3.identity, accuracy: 1e-10)
+  }
+
+  func testSVD() {
+    assertSVD(Matrix3.zero)
+    assertSVD(Matrix3.identity)
+    assertSVD(Matrix3(diagonal: [1, 5, 10]))
+    assertSVD(Matrix3([
+      1, 2, 3,
+      4, 5, 6,
+      7, 8, 9
+    ]))
+  }
 }

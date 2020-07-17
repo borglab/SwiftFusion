@@ -60,6 +60,19 @@ extension FixedSizeMatrix {
     })
   }
 
+  /// Creates a matrix with `elements` on the diagonal and zeros everywhere else.
+  ///
+  /// Requires: `Self.isSquare`.
+  /// Requires: `elements.count == Self.shape[0]`.
+  public init<C: Collection>(diagonal elements: C) where C.Element == Double {
+    precondition(Self.isSquare)
+    precondition(elements.count == Self.shape[0])
+    self = Self.zero
+    for (i, element) in elements.enumerated() {
+      self[i, i] = element
+    }
+  }
+
   /// Creates a matrix with rows `r0`, `r1`, and `r2`.
   @differentiable
   public init(rows r0: Rows.Element, _ r1: Rows.Element, _ r2: Rows.Element) {
@@ -78,14 +91,9 @@ extension FixedSizeMatrix {
 
   /// The identity matrix.
   ///
-  /// - Requires: `Self` is a square matrix. e.g. `Self.shape[0] == Self.shape[1]`.
+  /// - Requires: `Self.isSquare`.
   public static var identity: Self {
-    precondition(Self.shape[0] == Self.shape[1])
-    var r = Self.zero
-    for i in 0..<Self.shape[0] {
-      r[i, i] = 1
-    }
-    return r
+    Self(diagonal: (0..<Self.shape[0]).lazy.map { _ in 1 })
   }
 }
 
