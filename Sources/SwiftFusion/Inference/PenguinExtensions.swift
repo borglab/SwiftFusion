@@ -11,26 +11,8 @@ extension AnyArrayBuffer {
   }
 }
 
-/// An `AnyArrayBuffer` dispatcher for elements that are not statically known to support any
-/// operations.
-// We can't use `AnyObject` for this because the bitcast at [1] fails with "Swift runtime failure:
-// Can't unsafeBitCast between types of different sizes" when trying to cast an `AnyArrayBuffer`
-// of some other dispatch to an `AnyArrayBuffer<AnyObject>`.
-//
-// [1] https://github.com/saeta/penguin/blob/47980eb5630ebfd7bc2a88a4a7a60a050dd01b0a/Sources/PenguinStructures/AnyArrayBuffer.swift#L64
-class AnyElementDispatch {}
-
 /// A type-erased array that is not statically known to support any operations.
-typealias AnyElementArrayBuffer = AnyArrayBuffer<AnyElementDispatch>
-
-extension AnyArrayBuffer where Dispatch == AnyElementDispatch {
-  /// Creates an instance from a typed buffer of `Element`
-  init<Element>(_ src: ArrayBuffer<Element>) {
-    self.init(
-      storage: src.storage,
-      dispatch: AnyElementDispatch.self)
-  }
-}
+typealias AnyElementArrayBuffer = AnyArrayBuffer<AnyObject>
 
 extension ArrayBuffer {
   /// Creates an instance with the given `count`, and capacity at least
@@ -51,5 +33,24 @@ extension ArrayBuffer {
     self.init(minimumCapacity: 0)
     self.storage = .init(
       count: count, minimumCapacity: minimumCapacity, initializeElements: initializeElements)
+  }
+}
+
+extension UnsafeRawPointer {
+  /// Returns the `T` to which `self` points.
+  internal subscript<T>(as _: Type<T>) -> T {
+    self.assumingMemoryBound(to: T.self).pointee
+  }
+}
+
+extension UnsafeMutableRawPointer {
+  /// Returns the `T` to which `self` points.
+  internal subscript<T>(as _: Type<T>) -> T {
+    get {
+      self.assumingMemoryBound(to: T.self).pointee
+    }
+    _modify {
+      yield &self.assumingMemoryBound(to: T.self).pointee
+    }
   }
 }

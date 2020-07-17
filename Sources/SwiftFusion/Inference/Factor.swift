@@ -62,11 +62,10 @@ extension LinearizableFactor {
   }
 }
 
-/// Do not use this; it is a workaround for a Swift compiler limitation.
-public protocol GaussianFactor_: Factor where Variables: EuclideanVectorN {}
-
 /// A factor whose `errorVector` is a linear function of the variables, plus a constant.
-public protocol GaussianFactor: LinearizableFactor, GaussianFactor_ {
+public protocol GaussianFactor: LinearizableFactor
+  where LinearizableComponent.Variables.TangentVector == Variables
+{
   /// The linear component of `errorVector`.
   func errorVector_linearComponent(_ x: Variables) -> ErrorVector
 
