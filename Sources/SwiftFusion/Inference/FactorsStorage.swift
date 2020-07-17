@@ -123,26 +123,17 @@ typealias AnyFactorArrayBuffer = AnyArrayBuffer<FactorArrayDispatch>
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Factor`
 /// elements.
-class FactorArrayDispatch: AnyElementDispatch {
-  /// Returns the errors, at `x`, of the factors in `storage`.
+class FactorArrayDispatch {
+  /// A function returning the errors, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `VectorFactor` type.
-  class func errors(_ storage: UnsafeRawPointer, at x: VariableAssignments) -> [Double] {
-    fatalError("implement as in FactorArrayDispatch_")
-  }
-}
+  final let errors: (_ storage: UnsafeRawPointer, _ x: VariableAssignments) -> [Double]
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `Factor` element type.
-class FactorArrayDispatch_<Element: Factor>
-  : FactorArrayDispatch, AnyArrayDispatch
-{
-  /// Returns the errors, at `x`, of the factors in `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  override class func errors(_ storage: UnsafeRawPointer, at x: VariableAssignments) -> [Double] {
-    asStorage(storage).errors(at: x)
+  /// Creates an instance for elements of type `Element`.
+  init<Element: Factor>(_: Type<Element>) {
+    let storageType = Type<ArrayStorage<Element>>()
+    errors = { storage, x in storage[as: storageType].errors(at: x) }
   }
 }
 
@@ -151,14 +142,14 @@ extension AnyArrayBuffer where Dispatch == FactorArrayDispatch {
   init<Dispatch: Factor>(_ src: ArrayBuffer<Dispatch>) {
     self.init(
       storage: src.storage,
-      dispatch: FactorArrayDispatch_<Dispatch>.self)
+      dispatch: FactorArrayDispatch(Type<Dispatch>()))
   }
 }
 
 extension AnyArrayBuffer where Dispatch: FactorArrayDispatch {
   /// Returns the errors, at `x`, of the factors.
   func errors(at x: VariableAssignments) -> [Double] {
-    withUnsafePointer(to: storage) { dispatch.errors($0, at: x) }
+    withUnsafePointer(to: storage) { dispatch.errors($0, x) }
   }
 }
 
@@ -169,178 +160,74 @@ typealias AnyVectorFactorArrayBuffer = AnyArrayBuffer<VectorFactorArrayDispatch>
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `VectorFactor`
 /// elements.
 class VectorFactorArrayDispatch: FactorArrayDispatch {
-  /// Returns the error vectors, at `x`, of the factors in `storage`.
+  /// A function returning the error vectors, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `VectorFactor` type.
-  class func errorVectors(_ storage: UnsafeRawPointer, at x: VariableAssignments)
-    -> AnyVectorArrayBuffer
-  {
-    fatalError("implement as in VectorFactorArrayDispatch_")
-  }
+  final let errorVectors:
+    (_ storage: UnsafeRawPointer, _ x: VariableAssignments) -> AnyVectorArrayBuffer
 
-  /// Returns the linearizations, at `x`, of the factors in `storage`.
+  /// A function returning the linearizations, at `x`, of the factors in `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `VectorFactor` type.
-  class func linearized(_ storage: UnsafeRawPointer, at x: VariableAssignments)
-    -> AnyGaussianFactorArrayBuffer
-  {
-    fatalError("implement as in VectorFactorArrayDispatch_")
-  }
-}
+  final let linearized:
+    (_ storage: UnsafeRawPointer, _ x: VariableAssignments) -> AnyGaussianFactorArrayBuffer
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `VectorFactor` element type.
-class VectorFactorArrayDispatch_<
-  Element: VectorFactor,
-  Linearization: LinearApproximationFactor
->: VectorFactorArrayDispatch, AnyArrayDispatch
-where Linearization.Variables == Element.LinearizableComponent.Variables.TangentVector,
-      Linearization.ErrorVector == Element.ErrorVector
-{
-  /// Returns the errors, at `x`, of the factors in `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == BetweenFactor<Pose2>, Linearization == JacobianFactor3x3_2)
-  @_specialize(where Element == BetweenFactor<Pose3>, Linearization == JacobianFactor6x6_2)
-  @_specialize(where Element == BetweenFactorAlternative, Linearization == JacobianFactor12x6_2)
-  @_specialize(where Element == PriorFactor<Pose2>, Linearization == JacobianFactor3x3_1)
-  @_specialize(where Element == PriorFactor<Pose3>, Linearization == JacobianFactor6x6_1)
-  override class func errors(_ storage: UnsafeRawPointer, at x: VariableAssignments) -> [Double] {
-    asStorage(storage).errors(at: x)
-  }
-
-  /// Returns the error vectors, at `x`, of the factors in `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == BetweenFactor<Pose2>, Linearization == JacobianFactor3x3_2)
-  @_specialize(where Element == BetweenFactor<Pose3>, Linearization == JacobianFactor6x6_2)
-  @_specialize(where Element == BetweenFactorAlternative, Linearization == JacobianFactor12x6_2)
-  @_specialize(where Element == PriorFactor<Pose2>, Linearization == JacobianFactor3x3_1)
-  @_specialize(where Element == PriorFactor<Pose3>, Linearization == JacobianFactor6x6_1)
-  override class func errorVectors(_ storage: UnsafeRawPointer, at x: VariableAssignments)
-    -> AnyVectorArrayBuffer
+  /// Creates an instance for elements of type `Element` using the given `Linearization`.
+  init<Element: VectorFactor, Linearization: LinearApproximationFactor>(
+    _: Type<Element>, linearization: Type<Linearization>
+  )
+    where Linearization.Variables == Element.LinearizableComponent.Variables.TangentVector,
+          Linearization.ErrorVector == Element.ErrorVector
   {
-    .init(asStorage(storage).errorVectors(at: x))
-  }
+    let storageType = Type<ArrayStorage<Element>>()
 
-  /// Returns the linearizations, at `x`, of the factors in `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == BetweenFactor<Pose2>, Linearization == JacobianFactor3x3_2)
-  @_specialize(where Element == BetweenFactor<Pose3>, Linearization == JacobianFactor6x6_2)
-  @_specialize(where Element == BetweenFactorAlternative, Linearization == JacobianFactor12x6_2)
-  @_specialize(where Element == PriorFactor<Pose2>, Linearization == JacobianFactor3x3_1)
-  @_specialize(where Element == PriorFactor<Pose3>, Linearization == JacobianFactor6x6_1)
-  override class func linearized(_ storage: UnsafeRawPointer, at x: VariableAssignments)
-    -> AnyGaussianFactorArrayBuffer
-  {
-    .init(asStorage(storage).linearized(at: x) as ArrayBuffer<Linearization>)
+    errorVectors = { storage, x in
+      .init(storage[as: storageType].errorVectors(at: x))
+    }
+    
+    linearized = { storage, x in
+      .init(storage[as: storageType].linearized(at: x) as ArrayBuffer<Linearization>)
+    }
+    super.init(Type<Element>())
   }
 }
 
 extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
   init<Element: VectorFactor>(_ src: ArrayBuffer<Element>) {
-    let dispatch: VectorFactorArrayDispatch.Type
+    let dispatch: VectorFactorArrayDispatch
+    let elementType = Type<Element>()
+    typealias TangentVector = Element.LinearizableComponent.Variables.TangentVector
+    typealias Linearization<A: FixedSizeArray> = Type<JacobianFactor<A, Element.ErrorVector>>
+      where A.Element: EuclideanVectorN & DifferentiableVariableTuple
+    
     switch Element.ErrorVector.dimension {
     case 1:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array1<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array1<TangentVector>>())
     case 2:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array2<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array2<TangentVector>>())
     case 3:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array3<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array3<TangentVector>>())
     case 4:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array4<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array4<TangentVector>>())
     case 5:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array5<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array5<TangentVector>>())
     case 6:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array6<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array6<TangentVector>>())
     case 7:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array7<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array7<TangentVector>>())
     case 8:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array8<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array8<TangentVector>>())
     case 9:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array9<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array9<TangentVector>>())
     case 10:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array10<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array10<TangentVector>>())
     case 11:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array11<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array11<TangentVector>>())
     case 12:
-      dispatch = VectorFactorArrayDispatch_<
-        Element,
-        JacobianFactor<
-          Array12<Element.LinearizableComponent.Variables.TangentVector>,
-          Element.ErrorVector
-        >
-      >.self
+      dispatch = .init(elementType, linearization: Linearization<Array12<TangentVector>>())
     default:
       fatalError("ErrorVector dimension \(Element.ErrorVector.dimension) not implemented")
     }
@@ -352,12 +239,12 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
 extension AnyArrayBuffer where Dispatch: VectorFactorArrayDispatch {
   /// Returns the error vectors, at `x`, of the factors.
   func errorVectors(at x: VariableAssignments) -> AnyVectorArrayBuffer {
-    withUnsafePointer(to: storage) { dispatch.errorVectors($0, at: x) }
+    withUnsafePointer(to: storage) { dispatch.errorVectors($0, x) }
   }
 
   /// Returns the linearizations, at `x`, of the factors.
   func linearized(at x: VariableAssignments) -> AnyGaussianFactorArrayBuffer {
-    withUnsafePointer(to: storage) { dispatch.linearized($0, at: x) }
+    withUnsafePointer(to: storage) { dispatch.linearized($0, x) }
   }
 }
 
@@ -368,195 +255,37 @@ typealias AnyGaussianFactorArrayBuffer = AnyArrayBuffer<GaussianFactorArrayDispa
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `GaussianFactor`
 /// elements.
 class GaussianFactorArrayDispatch: VectorFactorArrayDispatch {
-  /// Returns the linear component of `errorVectors` at `x`.
+  /// A function returning the linear component of `errorVectors` at `x`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `GaussianFactor` type.
-  class func errorVectors_linearComponent(
-    _ storage: UnsafeRawPointer,
-    _ x: VariableAssignments
-  ) -> AnyVectorArrayBuffer {
-    fatalError("implement as in GaussianFactorArrayDispatch_")
-  }
+  final let errorVectors_linearComponent:
+    (_ storage: UnsafeRawPointer,_ x: VariableAssignments) -> AnyVectorArrayBuffer
 
-  /// Accumulates the adjoint (aka "transpose" or "dual") of `errorVectors` at `y` into `result`.
+  /// A function that accumulates the adjoint (aka "transpose" or "dual") of `errorVectors` at `y`
+  /// into `result`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `GaussianFactor` type.
   /// - Requires: `y.elementType == Element.ErrorVector.self`.
   /// - Requires: `result` contains elements at all of `self`'s elements' inputs.
-  class func errorVectors_linearComponent_adjoint(
-    _ storage: UnsafeRawPointer,
-    _ y: AnyElementArrayBuffer,
-    into result: inout VariableAssignments
-  ) {
-    fatalError("implement as in GaussianFactorArrayDispatch_")
-  }
-}
-
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `GaussianFactor` element type.
-class GaussianFactorArrayDispatch_<Element: GaussianFactor>
-  : GaussianFactorArrayDispatch, AnyArrayDispatch
-{
-  /// Returns the errors, at `x`, of the factors in `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == JacobianFactor3x3_1)
-  @_specialize(where Element == JacobianFactor3x3_2)
-  @_specialize(where Element == JacobianFactor6x6_1)
-  @_specialize(where Element == JacobianFactor6x6_2)
-  @_specialize(where Element == JacobianFactor9x3x3_1)
-  @_specialize(where Element == JacobianFactor9x3x3_2)
-  @_specialize(where Element == JacobianFactor12x6_1)
-  @_specialize(where Element == JacobianFactor12x6_2)
-  @_specialize(where Element == ScalarJacobianFactor<Vector1>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector2>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector3>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector4>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector5>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector7>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector8>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector9>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector10>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector11>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector12>)
-  override class func errors(_ storage: UnsafeRawPointer, at x: VariableAssignments) -> [Double] {
-    asStorage(storage).errors(at: x)
-  }
-
-  /// Returns the error vectors, at `x`, of the factors in `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == JacobianFactor3x3_1)
-  @_specialize(where Element == JacobianFactor3x3_2)
-  @_specialize(where Element == JacobianFactor6x6_1)
-  @_specialize(where Element == JacobianFactor6x6_2)
-  @_specialize(where Element == JacobianFactor9x3x3_1)
-  @_specialize(where Element == JacobianFactor9x3x3_2)
-  @_specialize(where Element == JacobianFactor12x6_1)
-  @_specialize(where Element == JacobianFactor12x6_2)
-  @_specialize(where Element == ScalarJacobianFactor<Vector1>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector2>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector3>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector4>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector5>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector7>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector8>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector9>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector10>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector11>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector12>)
-  override class func errorVectors(_ storage: UnsafeRawPointer, at x: VariableAssignments)
-    -> AnyVectorArrayBuffer
+  final let errorVectors_linearComponent_adjoint: (
+    _ storage: UnsafeRawPointer, _ y: AnyElementArrayBuffer,
+    _ result: inout VariableAssignments
+  ) -> Void
+  
+  /// Creates an instance for elements of type `Element`.
+  init<Element: GaussianFactor>(_: Type<Element>) 
   {
-    .init(asStorage(storage).errorVectors(at: x))
-  }
-
-  /// Returns the linearizations, at `x`, of the factors in `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == JacobianFactor3x3_1)
-  @_specialize(where Element == JacobianFactor3x3_2)
-  @_specialize(where Element == JacobianFactor6x6_1)
-  @_specialize(where Element == JacobianFactor6x6_2)
-  @_specialize(where Element == JacobianFactor9x3x3_1)
-  @_specialize(where Element == JacobianFactor9x3x3_2)
-  @_specialize(where Element == JacobianFactor12x6_1)
-  @_specialize(where Element == JacobianFactor12x6_2)
-  @_specialize(where Element == ScalarJacobianFactor<Vector1>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector2>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector3>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector4>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector5>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector7>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector8>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector9>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector10>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector11>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector12>)
-  override class func linearized(_ storage: UnsafeRawPointer, at x: VariableAssignments)
-    -> AnyGaussianFactorArrayBuffer
-  {
-    // Gaussian factors are linearizations of themselves, so we can just return the factors
-    // unmodified.
-    .init(ArrayBuffer(asStorage(storage)))
-  }
-
-  /// Returns the linear component of `errorVectors` at `x`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `GaussianFactor` type.
-  @_specialize(where Element == JacobianFactor3x3_1)
-  @_specialize(where Element == JacobianFactor3x3_2)
-  @_specialize(where Element == JacobianFactor6x6_1)
-  @_specialize(where Element == JacobianFactor6x6_2)
-  @_specialize(where Element == JacobianFactor9x3x3_1)
-  @_specialize(where Element == JacobianFactor9x3x3_2)
-  @_specialize(where Element == JacobianFactor12x6_1)
-  @_specialize(where Element == JacobianFactor12x6_2)
-  @_specialize(where Element == ScalarJacobianFactor<Vector1>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector2>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector3>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector4>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector5>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector7>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector8>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector9>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector10>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector11>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector12>)
-  override class func errorVectors_linearComponent(
-    _ storage: UnsafeRawPointer,
-    _ x: VariableAssignments
-  ) -> AnyVectorArrayBuffer {
-    .init(asStorage(storage).errorVectors_linearComponent(x))
-  }
-
-  /// Accumulates the adjoint (aka "transpose" or "dual") of `errorVectors` at `y` into `result`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `GaussianFactor` type.
-  /// - Requires: `y.elementType == Element.ErrorVector.self`.
-  /// - Requires: `result` contains elements at all of `self`'s elements' inputs.
-  @_specialize(where Element == JacobianFactor3x3_1)
-  @_specialize(where Element == JacobianFactor3x3_2)
-  @_specialize(where Element == JacobianFactor6x6_1)
-  @_specialize(where Element == JacobianFactor6x6_2)
-  @_specialize(where Element == JacobianFactor9x3x3_1)
-  @_specialize(where Element == JacobianFactor9x3x3_2)
-  @_specialize(where Element == JacobianFactor12x6_1)
-  @_specialize(where Element == JacobianFactor12x6_2)
-  @_specialize(where Element == ScalarJacobianFactor<Vector1>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector2>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector3>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector4>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector5>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector6>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector7>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector8>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector9>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector10>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector11>)
-  @_specialize(where Element == ScalarJacobianFactor<Vector12>)
-  override class func errorVectors_linearComponent_adjoint(
-    _ storage: UnsafeRawPointer,
-    _ y: AnyElementArrayBuffer,
-    into result: inout VariableAssignments
-  ) {
-    asStorage(storage).errorVectors_linearComponent_adjoint(
-      .init(unsafelyDowncasting: y),
-      into: &result
-    )
+    let storageType = Type<ArrayStorage<Element>>()
+    errorVectors_linearComponent = { storage, x in
+      .init(storage[as: storageType].errorVectors_linearComponent(x))
+    }
+    errorVectors_linearComponent_adjoint = {  storage, y, result in
+      storage[as: storageType].errorVectors_linearComponent_adjoint(
+        .init(unsafelyDowncasting: y), into: &result)
+    }
+    super.init(Type<Element>(), linearization: Type<IdentityLinearizationFactor<Element>>())
   }
 }
 
@@ -565,14 +294,14 @@ extension AnyArrayBuffer where Dispatch == GaussianFactorArrayDispatch {
   init<Element: GaussianFactor>(_ src: ArrayBuffer<Element>) {
     self.init(
       storage: src.storage,
-      dispatch: GaussianFactorArrayDispatch_<Element>.self)
+      dispatch: GaussianFactorArrayDispatch(Type<Element>()))
   }
 }
 
 extension AnyArrayBuffer where Dispatch: GaussianFactorArrayDispatch {
   /// Returns the error vectors, at `x`, of the factors.
   func errorVectors(at x: VariableAssignments) -> AnyVectorArrayBuffer {
-    withUnsafePointer(to: storage) { dispatch.errorVectors($0, at: x) }
+    withUnsafePointer(to: storage) { dispatch.errorVectors($0, x) }
   }
 
   /// Returns the linear component of `errorVectors` at `x`.
@@ -589,7 +318,7 @@ extension AnyArrayBuffer where Dispatch: GaussianFactorArrayDispatch {
     into result: inout VariableAssignments
   ) {
     withUnsafePointer(to: storage) {
-      dispatch.errorVectors_linearComponent_adjoint($0, y, into: &result)
+      dispatch.errorVectors_linearComponent_adjoint($0, y, &result)
     }
   }
 }
