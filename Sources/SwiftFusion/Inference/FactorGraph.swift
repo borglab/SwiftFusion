@@ -16,61 +16,55 @@ import PenguinStructures
 
 /// A factor graph.
 public struct FactorGraph {
-  /// Dictionary from factor type to contiguous storage for that type.
-  var storage: [ObjectIdentifier: AnyFactorArrayBuffer] = [:]
-
+  /// Storage for all the graph's factors.
+  private var storage: TypewiseStorage<FactorArrayDispatch>
+  public typealias FactorID<F: Factor> = TypewiseElementID<F>
+  
   /// Creates an empty instance.
   public init() {}
 
   /// Creates an instance backed by the given `storage`.
-  internal init(storage: [ObjectIdentifier: AnyFactorArrayBuffer]) {
+  internal init(storage: Storage) {
     self.storage = storage
   }
 
-  /// Stores `factor` in the graph.
-  public mutating func store<T: Factor>(_ factor: T) {
-    _ = storage[
-      ObjectIdentifier(T.self),
-      default: AnyFactorArrayBuffer(ArrayBuffer<T>())
-    ].unsafelyAppend(factor)
+  /// Stores `newFactor` in the graph.
+  @discardableResult
+  public mutating func store<F: Factor>(_ newFactor: F) -> FactorID<F> {
+    storage.insert(newFactor, inBuffer: TypeID(F.self)) { .init($0) }
   }
 
   /// Stores `factor` in the graph.
-  public mutating func store<T: VectorFactor>(_ factor: T) {
-    _ = storage[
-      ObjectIdentifier(T.self),
-      default: AnyFactorArrayBuffer(
+  @discardableResult
+  public mutating func store<F: VectorFactor>(_ newFactor: F) -> FactorID<F> {
+      storage.insert(newFactor, inBuffer: TypeID(F.self)) {
         // Note: This is a safe upcast.
-        unsafelyCasting: AnyVectorFactorArrayBuffer(ArrayBuffer<T>()))
-    ].unsafelyAppend(factor)
+        .init(unsafelyCasting: AnyVectorFactorArrayBuffer($0))
+      }
   }
 
   /// Stores `factor` in the graph.
-  public mutating func store<T: GaussianFactor>(_ factor: T) {
-    _ = storage[
-      ObjectIdentifier(T.self),
-      default: AnyFactorArrayBuffer(
-        // Note: This is a safe upcast.
-        unsafelyCasting: AnyGaussianFactorArrayBuffer(ArrayBuffer<T>()))
-    ].unsafelyAppend(factor)
-  }
-
-  /// Returns the factors of type `T`.
-  public func factors<T>(type _: T.Type) -> ArrayBuffer<T> {
-    guard let anyArrayBuffer = storage[ObjectIdentifier(T.self)] else {
-      return ArrayBuffer<T>()
+  public mutating func store<F: GaussianFactor>(_ newFactor: F)  -> FactorID<F> {
+    storage.insert(newFactor, inBuffer: TypeID(F.self)) {
+      // Note: This is a safe upcast.
+      .init(unsafelyCasting: AnyGaussianFactorArrayBuffer($0))
     }
-    return ArrayBuffer(unsafelyDowncasting: anyArrayBuffer)
   }
 
+  /// Accesses the factors of type `F`.
+  subscript<F: Factor>(_: Type<F>) -> ArrayBuffer<F> {
+    storage.buffers[TypeID(F.self)].map { .init(unsafelyDowncasting: $0) }
+      ?? .init()
+  }
+  
   /// Returns the total error, at `x`, of all the factors.
   public func error(at x: VariableAssignments) -> Double {
-    return storage.values.lazy.map { $0.errors(at: x).reduce(0, +) }.reduce(0, +)
+    return storage.buffers.values.lazy.map { $0.errors(at: x).reduce(0, +) }.reduce(0, +)
   }
 
   /// Returns the total error, at `x`, of all the linearizable factors.
   public func linearizableError(at x: VariableAssignments) -> Double {
-    return storage.values.reduce(0) { (result, factors) in
+    return storage.buffers.values.reduce(0) { (result, factors) in
       guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
         return result
       }
@@ -80,7 +74,7 @@ public struct FactorGraph {
 
   /// Returns the error vectors, at `x`, of all the linearizable factors.
   public func errorVectors(at x: VariableAssignments) -> AllVectors {
-    return AllVectors(storage: storage.compactMapValues { factors in
+    return AllVectors(storage: storage.buffers.compactMapValues { factors in
       guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
         return nil
       }

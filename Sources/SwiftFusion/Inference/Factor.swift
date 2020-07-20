@@ -178,8 +178,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
     _ variableAssignments: VariableAssignments,
     _ body: (UnsafePointers) -> R
   ) -> R {
-    let headArray = variableAssignments.storage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
-    return ArrayBuffer<Head>(unsafelyDowncasting: headArray)
+    return variableAssignments[TypewiseBufferKey<Head>()]
       .withUnsafeBufferPointer { headBuffer in
         Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
           body(
@@ -193,7 +192,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   }
 
   public static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {
-    variableAssignments.storage[ObjectIdentifier(Head.self)]!.ensureUniqueStorage()
+    variableAssignments[VariableAssignments.BufferKey<Head>()].ensureUniqueStorage()
     Tail.ensureUniqueStorage(&variableAssignments)
   }
 
@@ -208,7 +207,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
 
   public init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
     self.init(
-      head: variableBufferBases.head.advanced(by: indices.head.perTypeID).pointee,
+      head: variableBufferBases.head[indices.head.position],
       tail: Tail(variableBufferBases.tail, indices: indices.tail)
     )
   }

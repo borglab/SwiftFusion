@@ -70,18 +70,18 @@ public struct ChordalInitialization {
   public var anchorId: TypedID<Pose3>
   
   public init() {
-    anchorId = TypedID<Pose3>(0)
+    anchorId = TypedID<Pose3>(position: 0)
   }
   
   /// Extract a subgraph of the original graph with only Pose3s.
   public func buildPose3graph(graph: FactorGraph) -> FactorGraph {
     var pose3Graph = FactorGraph()
     
-    for factor in graph.factors(type: BetweenFactor<Pose3>.self) {
+    for factor in graph[Type<BetweenFactor<Pose3>>()] {
       pose3Graph.store(factor)
     }
     
-    for factor in graph.factors(type: PriorFactor<Pose3>.self) {
+    for factor in graph[Type<PriorFactor<Pose3>>()] {
       pose3Graph.store(BetweenFactor(anchorId, factor.edges.head, factor.prior))
     }
     
@@ -114,9 +114,11 @@ public struct ChordalInitialization {
     associations[anchorId.perTypeID] = orientations.store(Matrix3.zero)
     
     // iterate the pose3 graph and make corresponding relaxed factors
-    for factor in g.factors(type: BetweenFactor<Pose3>.self) {
+    for factor in g[Type<BetweenFactor<Pose3>>()] {
       let R = factor.difference.rot.coordinate.R
-      let frob_factor = RelaxedRotationFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R)
+      let frob_factor = RelaxedRotationFactorRot3(
+        associations[factor.edges.head.perTypeID]!,
+        associations[factor.edges.tail.head.perTypeID]!, R)
       orientationGraph.store(frob_factor)
     }
     

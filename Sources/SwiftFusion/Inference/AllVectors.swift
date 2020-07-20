@@ -20,7 +20,7 @@ import PenguinStructures
 /// statically that `AllVectors` only contains vector values, and (2) we use `AllVectors` in some
 /// places for things other than variable assignments (e.g. a collection of error vectors is one
 /// error vector per factor).
-public typealias AllVectors = VariableAssignments
+public typealias AllVectors = TypeMappedStorage<VectorArrayDispatch>
 
 /// Vector operations.
 // TODO: There are some mutating operations here that copy, mutate, and write back. Make these
@@ -31,8 +31,8 @@ extension AllVectors {
   ///
   /// Precondition: All the variables in `self` are vectors.
   public var squaredNorm: Double {
-    return storage.values.reduce(into: 0) { (result, value) in
-      result += AnyVectorArrayBuffer(unsafelyCasting: value).dot(value)
+    return self.reduce(0) { r, v in
+      r + v.dot(v)
     }
   }
 

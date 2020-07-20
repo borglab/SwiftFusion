@@ -14,20 +14,29 @@
 
 import PenguinStructures
 
+protocol GaussianFactorGraphProtocol {
+  associatedtype ErrorVectors
+  associatedtype ErrorVectorsLinearComponentAdjoint
+  associatedtype 
+}
+
 /// A factor graph whose factors are all `GaussianFactor`s.
 public struct GaussianFactorGraph {
-  /// Dictionary from factor type to contiguous storage for that type.
-  var storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer]
+  private typealias Storage = TypewiseStorage<GaussianFactorArrayDispatch>
+  
+  /// Storage for all the graph's factors.
+  private var storage: Storage
 
   /// Assignment of zero to all the variables in the factor graph.
   var zeroValues: AllVectors
 
   /// Creates an instance with the given `zeroValues`.
   public init(zeroValues: AllVectors) {
-    self.storage = [:]
+    self.storage = .init()
     self.zeroValues = zeroValues
   }
 
+  /*
   /// Creates an instance with the given `storage` and `zeroValues`.
   init(
     storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer],
@@ -36,27 +45,16 @@ public struct GaussianFactorGraph {
     self.storage = storage
     self.zeroValues = zeroValues
   }
-
+   */
+  
   /// Stores `factor` in the graph.
   public mutating func store<T: GaussianFactor>(_ factor: T) {
-    _ = storage[
-      ObjectIdentifier(T.self),
-      default: AnyGaussianFactorArrayBuffer(ArrayBuffer<T>())
-    ].unsafelyAppend(factor)
+    storage.store(factor) { .init($0) }
   }
 
-  /// For each variable, add a Jacobian factor that scales it by `scalar`.
-  ///
-  /// Precondition: `self` doesn't already contain scalar Jacobian factors. (Temporary limitation
-  /// that we can remove when necessary.)
-  public mutating func addScalarJacobians(_ scalar: Double) {
-    zeroValues.storage.values.forEach { value in
-      let vectors = AnyVectorArrayBuffer(unsafelyCasting: value)
-      let key = ObjectIdentifier(vectors.scalarJacobianType)
-      // TODO: Support adding more jacobians of the same type.
-      precondition(storage[key] == nil)
-      storage[key] = vectors.jacobians(scalar: scalar)
-    }
+  /// For each variable, a Jacobian factor that scales it by `scaleFactor`.
+  public func jacobians(scaleFactor: Double) -> TypeMappedStorage<GaussianFactorArrayDispatch> {
+    zeroValues.map { $0.jacobians(scalar: scaleFactor) }
   }
 
   /// Returns the total error, at `x`, of all the factors.

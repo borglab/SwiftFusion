@@ -99,10 +99,10 @@ public struct LM {
         }
         
         var damped = gfg
-        
+        var dampedJacobians = damped.jacobians(scaleFactor: lambda)
         damped.addScalarJacobians(lambda)
         
-        let old_linear_error = damped.error(at: dx)
+        let old_linear_error = damped.error(at: .init(dx))
         
         var dx_t = dx
         var optimizer = GenericCGLS(precision: 1e-10, max_iteration: max_inner_iteration)

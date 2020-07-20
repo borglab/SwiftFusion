@@ -94,4 +94,39 @@ extension AnyArrayBuffer {
       self.storage = .init(me.storage)
     }
   }
+
+  /// Accesses `self` as an `AnyArrayBuffer<D>` if `self.dispatch` has dynamic type `D`.
+  ///
+  /// - Requires `D.self is Dispatch.Type`.
+  /// - Writing requires a non-nil written value.
+  /// - Where `!(self.dispatch is D)`:
+  ///   - reading returns `nil`.
+  ///   - writing changes the dispatch type of `self`.
+  ///
+  public subscript<D>(dispatch _: Type<D>) -> AnyArrayBuffer<D>? {
+    get {
+      precondition(D.self is Dispatch.Type)
+      return AnyArrayBuffer<D>(self)
+    }
+    
+    _modify {
+      precondition(D.self is Dispatch.Type)
+      
+      // TODO: check for spurious ARC traffic
+      var me = AnyArrayBuffer<D>(self)
+      if me != nil {
+        // Don't retain an additional reference during this mutation, to prevent needless CoW.
+        self.storage = nil
+      }
+      yield &me
+      if let written = me {
+        // This unwrapping will succeed due to the precondition (already checked).
+        self = Self(written).unsafelyUnwrapped
+      }
+      else {
+        // FIXME: remove all elements instead.
+        fatalError("Can't write nil through subscript(dispatch:)")
+      }
+    }
+  }
 }

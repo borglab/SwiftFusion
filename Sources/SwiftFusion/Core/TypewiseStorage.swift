@@ -13,7 +13,7 @@
 // limitations under the License.
 import PenguinStructures
 
-public struct TypewiseBufferKey<Element> {
+public struct TypewiseBufferKey<Element> : Hashable {
   var elementType: Type<Element> { .init() }
   var bufferID: TypeID { .init(Element.self) }
 
@@ -22,7 +22,7 @@ public struct TypewiseBufferKey<Element> {
   }
 }
 
-public struct TypeMappedBufferKey<Element> {
+public struct TypeMappedBufferKey<Element>  : Hashable {
   let bufferID: TypeID
   
   var elementType: Type<Element> { .init() }
@@ -37,7 +37,7 @@ public struct TypeMappedBufferKey<Element> {
   }
 }
 
-public struct TypewiseElementID<Element> {
+public struct TypewiseElementID<Element>  : Hashable {
   let position: ArrayBuffer<Element>.Index
   
   var elementType: Type<Element> { .init() }
@@ -49,7 +49,7 @@ public struct TypewiseElementID<Element> {
   }
 }
 
-public struct TypeMappedElementID<Element> {
+public struct TypeMappedElementID<Element> : Hashable {
   let bufferID: TypeID
   let position: ArrayBuffer<Element>.Index
   
@@ -74,13 +74,21 @@ extension Dictionary {
       yield &values[index(forKey: k)!]
     }
   }
+
+  mutating func updateValues(_ update: (Key, inout Value, Index) throws -> Void) rethrows {
+    var i = startIndex
+    while i != endIndex {
+      try update(self[i].key, &values[i], i)
+      formIndex(after: &i)
+    }
+  }
 }
 
 public struct TypewiseStorage<Dispatch: AnyObject> {
   public typealias ElementID<T> = TypewiseElementID<T>
   public typealias BufferKey<T> = TypewiseBufferKey<T>
 
-  private var base: TypeMappedStorage<Dispatch>
+  private var base: TypeMappedStorage<Dispatch> = .init()
   
   public mutating func store<T>(
     _ x: T,
@@ -107,13 +115,36 @@ public struct TypewiseStorage<Dispatch: AnyObject> {
       yield &base[k.map()]
     }
   }
+
+  public func map<NewDispatch>(
+    _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>
+  ) rethrows -> TypeMappedStorage<NewDispatch> {
+    try base.map(bufferTransform)
+  }
+
+  public func compactMap<NewDispatch>(
+    _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>?
+  ) rethrows -> TypeMappedStorage<NewDispatch> {
+    try base.compactMap(bufferTransform)
+  }
+
+  public mutating func update<OtherDispatch>(
+    homomorphicArgument parameter: TypeMappedStorage<OtherDispatch>,
+    _ update: (inout AnyArrayBuffer<Dispatch>, AnyArrayBuffer<OtherDispatch>) throws -> Void
+  ) rethrows {
+    try base.update(homomorphicArgument: parameter, update)
+  }
 }
 
 public struct TypeMappedStorage<Dispatch: AnyObject> {
   public typealias ElementID<T> = TypeMappedElementID<T>
   public typealias BufferKey<T> = TypeMappedBufferKey<T>
   
-  private var buffers: [TypeID: AnyArrayBuffer<Dispatch>] = [:]
+  private var buffers: [TypeID: AnyArrayBuffer<Dispatch>]
+
+  internal init(buffers: [TypeID: AnyArrayBuffer<Dispatch>] = [:]) {
+    self.buffers = buffers
+  }
   
   public mutating func store<T>(
     _ x: T, inBuffer bufferID: TypeID,
@@ -148,5 +179,41 @@ public struct TypeMappedStorage<Dispatch: AnyObject> {
     _modify {
       yield &buffers[existingKey: k.bufferID][existingElementType: k.elementType]
     }
+  }
+
+  public func map<NewDispatch>(
+    _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>
+  ) rethrows -> TypeMappedStorage<NewDispatch> {
+    try .init(buffers: buffers.mapValues(bufferTransform))
+  }
+
+
+  public func compactMap<NewDispatch>(
+    _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>?
+  ) rethrows -> TypeMappedStorage<NewDispatch> {
+    try .init(buffers: buffers.compactMapValues(bufferTransform))
+  }
+
+  public mutating func update<OtherDispatch>(
+    homomorphicArgument parameter: TypeMappedStorage<OtherDispatch>,
+    _ update: (inout AnyArrayBuffer<Dispatch>, AnyArrayBuffer<OtherDispatch>) throws -> Void
+  ) rethrows {
+    try buffers.updateValues { k, target, _ in
+      try update(&target, parameter.buffers[k]!)
+    }
+  }
+
+  public func reduce<R>(
+    into initialValue: R,
+    _ combine: (inout R, AnyArrayBuffer<Dispatch>) throws -> Void
+  ) rethrows -> R {
+    try buffers.values.reduce(into: initialValue, combine)
+  }
+
+  public func reduce<R>(
+    _ initialValue: R,
+    _ combine: (R, AnyArrayBuffer<Dispatch>) throws -> R
+  ) rethrows -> R {
+    try buffers.values.reduce(initialValue, combine)
   }
 }

@@ -84,8 +84,10 @@ extension ArrayStorage where Element: EuclideanVectorN {
 
   /// Returns Jacobians that scale each element by `scalar`.
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
-    AnyGaussianFactorArrayBuffer(ArrayBuffer(enumerated().lazy.map { (i, _) in
-      ScalarJacobianFactor(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
+    AnyGaussianFactorArrayBuffer(
+      ArrayBuffer(
+        indices.enumerated().lazy.map { (i, _) in
+          ScalarJacobianFactor(edges: Tuple1(TypedID<Element>(position: i)), scalar: scalar)
     }))
   }
 }
@@ -96,7 +98,7 @@ typealias AnyDifferentiableArrayBuffer = AnyArrayBuffer<DifferentiableArrayDispa
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Differentiable`
 /// elements.
-class DifferentiableArrayDispatch {
+public class DifferentiableArrayDispatch {
   /// The `TangentVector` type of the elements.
   final let tangentVectorType: Any.Type
 
@@ -113,7 +115,7 @@ class DifferentiableArrayDispatch {
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element`
   ///   has a subclass-specific `Differentiable` type.
   /// - Requires: `directions.elementType == Element.TangentVector.self`.
-  final let move: (_ storage: UnsafeMutableRawPointer, _ directions: AnyElementArrayBuffer) -> Void
+  final let move: (_ storage: UnsafeMutableRawPointer, _ directions: AnyVectorArrayBuffer) -> Void
 
   /// Creates an instance for elements of type `Element`.
   init<Element: Differentiable>(_: Type<Element>) where Element.TangentVector: EuclideanVectorN {
@@ -151,7 +153,7 @@ extension AnyArrayBuffer where Dispatch: DifferentiableArrayDispatch {
   }
 
   /// Moves each element along the corresponding element of `directions`.
-  mutating func move(along directions: AnyElementArrayBuffer) {
+  mutating func move(along directions: AnyVectorArrayBuffer) {
     ensureUniqueStorage()
     withUnsafeMutablePointer(to: &storage) { dispatch.move($0, directions) }
   }
@@ -163,7 +165,7 @@ typealias AnyVectorArrayBuffer = AnyArrayBuffer<VectorArrayDispatch>
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `EuclideanVectorN`
 /// elements.
-class VectorArrayDispatch: DifferentiableArrayDispatch {
+public class VectorArrayDispatch: DifferentiableArrayDispatch {
   /// A function that adds `others` to the `ArrayStorage` whose address is `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
