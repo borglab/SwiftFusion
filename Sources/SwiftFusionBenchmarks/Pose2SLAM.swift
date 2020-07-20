@@ -18,33 +18,6 @@ import Benchmark
 import SwiftFusion
 
 let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
-
-  let intelDatasetOld =
-    try! G2OReader.G2ONonlinearFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
-  check(intelDatasetOld.graph.error(intelDatasetOld.initialGuess), near: 73565.64, accuracy: 1e-2)
-
-  // Uses `NonlinearFactorGraph` on the Intel dataset.
-  // The solvers are configured to run for a constant number of steps.
-  // The nonlinear solver is 5 iterations of Gauss-Newton.
-  // The linear solver is 100 iterations of CGLS.
-  suite.benchmark(
-    "NonlinearFactorGraph, Intel, 5 Gauss-Newton steps, 100 CGLS steps",
-    settings: Iterations(1), TimeUnit(.ms)
-  ) {
-    var val = intelDatasetOld.initialGuess
-    for _ in 0..<5 {
-      let gfg = intelDatasetOld.graph.linearize(val)
-      let optimizer = CGLS(precision: 0, max_iteration: 100)
-      var dx = VectorValues()
-      for i in 0..<val.count {
-        dx.insert(i, Vector(zeros: 3))
-      }
-      optimizer.optimize(gfg: gfg, initial: &dx)
-      val.move(along: dx)
-    }
-//    check(intelDatasetOld.graph.error(val), near: 35.59, accuracy: 1e-2)
-  }
-
   let intelDataset =
     try! G2OReader.G2OFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
   check(
