@@ -95,3 +95,7 @@ extension AnyArrayBuffer {
     }
   }
 }
+
+extension Type {
+  static var id: TypeID { TypeID(T.self) }
+}

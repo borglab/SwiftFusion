@@ -95,7 +95,7 @@ public struct TypewiseStorage<Dispatch: AnyObject> {
     makeBuffer: (ArrayBuffer<T>) -> AnyArrayBuffer<Dispatch>
   ) -> ElementID<T>
   {
-    base.store(x, inBuffer: TypeID(T.self), makeBuffer: makeBuffer).unmapped
+    base.store(x, inBuffer: Type<T>.id, makeBuffer: makeBuffer).unmapped
   }
   
   public subscript<Element>(id: ElementID<Element>) -> Element {
