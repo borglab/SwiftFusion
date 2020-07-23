@@ -208,13 +208,13 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
 
   public init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
     self.init(
-      head: variableBufferBases.head.advanced(by: indices.head.perTypeID).pointee,
+      head: variableBufferBases.head[indices.head.perTypeID],
       tail: Tail(variableBufferBases.tail, indices: indices.tail)
     )
   }
 
   public func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {
-    variableBufferBases.head.advanced(by: indices.head.perTypeID)
+    (variableBufferBases.head + indices.head.perTypeID)
       .assign(repeating: self.head, count: 1)
     self.tail.store(into: variableBufferBases.tail, indices: indices.tail)
   }
