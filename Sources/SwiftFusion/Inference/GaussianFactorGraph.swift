@@ -12,10 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import PenguinStructures
+import PenguinStructures  
+
+public protocol GaussianFactorGraphProtocol: FactorGraphProtocol
+// where Variables : EuclideanVector
+{
+  
+}
 
 /// A factor graph whose factors are all `GaussianFactor`s.
-public struct GaussianFactorGraph {
+public struct GaussianFactorGraph: GaussianFactorGraphProtocol {
+  public typealias Variables = AllVectors
+  public typealias ErrorVectors = AllVectors
+  public typealias Linearization = Self
+  
   /// Dictionary from factor type to contiguous storage for that type.
   var storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer]
 
@@ -88,4 +98,18 @@ public struct GaussianFactorGraph {
     }
     return x
   }
+}
+
+extension GaussianFactorGraph {
+  /// Returns the total error, at `x`, of all the linearizable factors.
+  public func linearizableError(at x: Variables) -> Double {
+    return storage.values.reduce(0) { (result, factors) in
+      guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
+        return result
+      }
+      return result + linearizableFactors.errors(at: x).reduce(0, +)
+    }
+  }
+
+  public func linearized(at x: Variables) -> Linearization { self }
 }
