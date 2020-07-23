@@ -14,8 +14,39 @@
 
 import PenguinStructures
 
+/// Types that represent the factors and edges (but not the variable values) of a [factor
+/// graph](http://www.cs.cmu.edu/~kaess/pub/Dellaert17fnt.pdf).
+public protocol FactorGraphProtocol {
+  /// A type that can represent the variables used in this graph.
+  associatedtype Variables
+
+  /// A type that can represent the error vectors of `self` for a given `Variables` value.
+  associatedtype ErrorVectors // : EuclideanVector
+
+  /// A type that can represent a linearization of `self`.
+  associatedtype Linearization // : GaussianFactorGraphProtocol
+  
+  /// Returns the error at `x`.
+  ///
+  /// The result is typically interpreted as negative log-likelihood.
+  func error(at x: Variables) -> Double
+  
+  /// Returns the error vectors, at `x`, of all the linearizable factors.
+  func errorVectors(at x: Variables) -> ErrorVectors
+
+  /// Returns the total error, at `x`, of all the linearizable factors.
+  func linearizableError(at x: Variables) -> Double
+
+  /// Returns a linear approximation to `self.errorVectors`, centered around `x`.
+  ///
+  /// The linear approximation satisfies the approximate equality:
+  ///   `self.linearized(at: x).errorVectors(dx)` ≈ `self.errorVectors(at: x.moved(along: dx))`
+  /// where the equality is exact when `dx == x.linearizedZero`.
+  func linearized(at x: Variables) -> Linearization
+}
+
 /// A factor graph.
-public struct FactorGraph {
+public struct FactorGraph : FactorGraphProtocol {
   /// Dictionary from factor type to contiguous storage for that type.
   var storage: [ObjectIdentifier: AnyFactorArrayBuffer] = [:]
 
