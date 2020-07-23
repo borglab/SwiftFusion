@@ -116,7 +116,9 @@ public struct ChordalInitialization {
     // iterate the pose3 graph and make corresponding relaxed factors
     for factor in g.factors(type: BetweenFactor<Pose3>.self) {
       let R = factor.difference.rot.coordinate.R
-      let frob_factor = RelaxedRotationFactorRot3(associations[factor.edges.head.perTypeID]!, associations[factor.edges.tail.head.perTypeID]!, R)
+      let frob_factor = RelaxedRotationFactorRot3(
+        associations[factor.edges.head.perTypeID]!, 
+        associations[factor.edges.tail.head.perTypeID]!, R)
       orientationGraph.store(frob_factor)
     }
     
