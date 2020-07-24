@@ -7,11 +7,25 @@ public protocol EuclideanVectorN: EuclideanVector {
 
   /// A standard basis of vectors.
   static var standardBasis: [Self] { get }
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  func withUnsafeBufferPointer<R>(
+    _ body: (UnsafeBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  mutating func withUnsafeMutableBufferPointer<R>(
+    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+  ) rethrows -> R
 }
 
 extension EuclideanVectorN {
   /// Returns the result of calling `body` on the scalars of `self`.
-  func withUnsafeBufferPointer<R>(
+  public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R {
     return try withUnsafePointer(to: self) { p in
@@ -24,7 +38,7 @@ extension EuclideanVectorN {
   }
 
   /// Returns the result of calling `body` on the scalars of `self`.
-  mutating func withUnsafeMutableBufferPointer<R>(
+  public mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
     return try withUnsafeMutablePointer(to: &self) { p in

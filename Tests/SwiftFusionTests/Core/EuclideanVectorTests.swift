@@ -229,6 +229,8 @@ extension EuclideanVectorTests where Testee: EuclideanVectorN {
     runAllEuclideanVectorTests()
     testDimension()
     testStandardBasis()
+    testWithUnsafeBufferPointer()
+    testWithUnsafeMutableBufferPointer()
   }
 
   /// Tests that the dimension is correct.
@@ -240,6 +242,24 @@ extension EuclideanVectorTests where Testee: EuclideanVectorN {
   func testStandardBasis() {
     let actualStandardBasis = Array(Testee.standardBasis)
     XCTAssertEqual(actualStandardBasis, self.basisVectors)
+  }
+
+  func testWithUnsafeBufferPointer() {
+    let v = makeVector(from: 1, stride: 1)
+    v.withUnsafeBufferPointer { b in
+      XCTAssertEqual(Array(b), Array(1..<(Self.dimension+1)).map { Double($0) })
+    }
+  }
+
+  func testWithUnsafeMutableBufferPointer() {
+    var v = makeVector(from: 1, stride: 1)
+    v.withUnsafeMutableBufferPointer { b in
+      XCTAssertEqual(Array(b), Array(1..<(Self.dimension+1)).map { Double($0) })
+      for i in 0..<b.count {
+        b[i] = -Double(i)
+      }
+    }
+    XCTAssertEqual(v, makeVector(from: 0, stride: -1))
   }
 }
 
