@@ -254,6 +254,18 @@ extension FixedSizeMatrix {
     }
   }
 
+  /// Creates the outer product of `lhs` and `rhs`.
+  ///
+  /// - Requires: `Self.isSquare`.
+  public init<Result: EuclideanVectorN>(outerProductNosqr lhs: Result, _ rhs: Rows.Element) {
+    self = Self.zero
+    for i in 0..<Result.dimension {
+      for j in 0..<Self.shape[0] {
+        self[i, j] = lhs[i] * rhs[j]
+      }
+    }
+  }
+
   /// Returns the transpose of `self`.
   ///
   /// - Requires: `Self.isSquare`.
@@ -273,6 +285,26 @@ extension FixedSizeMatrix {
   @usableFromInline
   func vjpTransposed() -> (value: Self, pullback: (Self) -> Self) {
     return (transposed(), { $0.transposed() })
+  }
+
+  /// Returns the transpose of `self`.
+  ///
+  /// - Requires: `Self.isSquare`.
+  @differentiable
+  public func transposed_nonsquare<Result>() -> FixedSizeMatrix<Result> {
+    var r = FixedSizeMatrix<Result>.zero
+    for i in 0..<FixedSizeMatrix<Result>.shape[0] {
+      for j in 0..<FixedSizeMatrix<Result>.shape[1] {
+        r[i, j] = self[j, i]
+      }
+    }
+    return r
+  }
+
+  @derivative(of: transposed_nonsquare)
+  @usableFromInline
+  func vjpTransposedNonsquare<Result>() -> (value: FixedSizeMatrix<Result>, pullback: (FixedSizeMatrix<Result>) -> Self) {
+    return (transposed_nonsquare(), { $0.transposed_nonsquare() })
   }
 }
 
@@ -302,6 +334,36 @@ func vjpMatvec<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: Rows.Element)
     matvec(lhs, rhs),
     { v in
       (FixedSizeMatrix<Rows>(outerProduct: v, rhs), matvec(lhs.transposed(), v))
+    }
+  )
+}
+
+/// Returns the matrix-vector product of `lhs` and `rhs`.
+///
+/// Note: This is currently only implemented for square matrices, but could be extended later.
+///
+/// - Requires: `type(of: lhs).isSquare`.
+@differentiable
+public func matvec_nonsquare<Rows, Result: EuclideanVectorN>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: Rows.Element) -> Result {
+  var r = Result.zero
+  for i in 0..<Rows.count {
+    for j in 0..<Rows.Element.dimension {
+      r[i] += lhs[i, j] * rhs[j]
+    }
+  }
+  return r
+}
+
+@derivative(of: matvec_nonsquare)
+@usableFromInline
+func vjpMatvec_nonsquare<Rows, Result: EuclideanVectorN>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: Rows.Element)
+  -> (value: Result, pullback: (Result) -> (FixedSizeMatrix<Rows>, Rows.Element))
+{
+  return (
+    matvec_nonsquare(lhs, rhs),
+    { v in
+      let t = lhs.transposed_nonsquare()
+      return (FixedSizeMatrix<Rows>(outerProductNosqr: v, rhs), matvec_nonsquare(t, v))
     }
   )
 }
