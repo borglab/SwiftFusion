@@ -156,12 +156,27 @@ extension EuclideanVectorN {
     }
   }
 
-  /// Returns this vector as a `Tensor<Double>`.
-  ///
-  /// Note: This is for backwards compatibility with existing code.
-  public var tensor: Tensor<Double> {
+  @differentiable
+  public init(flatTensor: Tensor<Double>) {
+    self.init(flatTensor.scalars)
+  }
+
+  @derivative(of: init(flatTensor:))
+  @usableFromInline
+  static func vjpInit(flatTensor: Tensor<Double>) -> (value: Self, pullback: (Self) -> Tensor<Double>) {
+    return (Self(flatTensor: flatTensor), { $0.flatTensor })
+  }
+
+  @differentiable
+  public var flatTensor: Tensor<Double> {
     withUnsafeBufferPointer { b in
       return Tensor<Double>(shape: [b.count], scalars: b)
     }
+  }
+
+  @derivative(of: flatTensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) {
+    return (self.flatTensor, { Self(flatTensor: $0) })
   }
 }
