@@ -1,53 +1,88 @@
-// /// A scalar data type compatible with SwiftFusion.
-// ///
-// /// Types that conform to `SwiftFusionScalar` can be used as the `Scalar` associated type of
-// /// `Tensor`.
-// //
-// // This includes all `_SwiftFusionDataTypeCompatible` types except `String`.
-// public protocol SwiftFusionScalar {}
+extension Vector5: ManifoldCoordinate {
+  /// The local coordinate type of the manifold.
+  ///
+  /// This is the `TangentVector` of the `Manifold` wrapper type.
+  ///
+  /// Note that this is not the same type as `Self.TangentVector`.
+  public typealias LocalCoordinate = Self
 
-// public typealias SwiftFusionNumeric = SwiftFusionScalar & Numeric
-// public typealias SwiftFusionSignedNumeric = SwiftFusionScalar & SignedNumeric
-// public typealias SwiftFusionInteger = SwiftFusionScalar & BinaryInteger
+  /// Diffeomorphism between a neigborhood of `LocalCoordinate.zero` and `Self`.
+  ///
+  /// Satisfies the following properties:
+  /// - `retract(LocalCoordinate.zero) == self`
+  /// - There exists an open set `B` around `LocalCoordinate.zero` such that
+  ///   `localCoordinate(retract(b)) == b` for all `b \in B`.
+  @differentiable(wrt: local)
+  public func retract(_ local: LocalCoordinate) -> Self {
+    self + local
+  }
 
-// /// A floating-point data type that conforms to `Differentiable` and is compatible with SwiftFusion.
-// ///
-// /// - Note: `Tensor` conditionally conforms to `Differentiable` when the `Scalar` associated type
-// ///   conforms `SwiftFusionFloatingPoint`.
-// public protocol SwiftFusionFloatingPoint:
-//     SwiftFusionScalar & BinaryFloatingPoint & Differentiable & ElementaryFunctions
-//     where Self.RawSignificand: FixedWidthInteger,
-//           Self == Self.TangentVector {}
+  /// Inverse of `retract`.
+  ///
+  /// Satisfies the following properties:
+  /// - `localCoordinate(self) == LocalCoordinate.zero`
+  /// - There exists an open set `B` around `self` such that `localCoordinate(retract(b)) == b` for all
+  ///   `b \in B`.
+  @differentiable(wrt: global)
+  public func localCoordinate(_ global: Self) -> LocalCoordinate {
+    global - self
+  }
+}
 
-// extension Float: SwiftFusionFloatingPoint {}
-// extension Double: SwiftFusionFloatingPoint {}
+extension Vector5: Manifold {
+  /// The manifold's global coordinate system.
+  public typealias Coordinate = Self
 
-// extension Bool: SwiftFusionScalar {}
+  /// The coordinate of `self`.
+  ///
+  /// Note: The distinction between `coordinateStorage` and `coordinate` is a workaround until we
+  /// can define default derivatives for protocol requirements (TF-982). Until then, implementers
+  /// of this protocol must define `coordinateStorage`, and clients of this protocol must access
+  /// coordinate`. This allows us to define default derivatives for `coordinate` that translate
+  /// between the `ManifoldCoordinate` tangent space and the `Manifold` tangent space.
+  public var coordinateStorage: Coordinate {
+    get {
+      self
+    }
 
-// extension Int8: SwiftFusionScalar {}
+    set {
+      self = newValue
+    }
+  }
 
-// extension UInt8: SwiftFusionScalar {}
+  /// Creates a manifold point with coordinate `coordinateStorage`.
+  ///
+  /// Note: The distinction between `init(coordinateStorage:)` and `init(coordinate:)` is a workaround until we
+  /// can define default derivatives for protocol requirements (TF-982). Until then, implementers
+  /// of this protocol must define `init(coordinateStorage:)`, and clients of this protocol must access
+  /// init(coordinate:)`. This allows us to define default derivatives for `init(coordinate:)` that translate
+  /// between the `ManifoldCoordinate` tangent space and the `Manifold` tangent space.
+  public init(coordinateStorage: Coordinate) {
+    self = coordinateStorage
+  }
+}
 
-// extension Int16: SwiftFusionScalar {}
+extension Vector5: LieGroupCoordinate {
+  /// Creates the group identity.
+  public init() {
+    self = Self.zero
+  }
 
-// extension UInt16: SwiftFusionScalar {}
+  /// Returns the group inverse.
+  @differentiable
+  public func inverse() -> Self {
+    -self
+  }
 
-// extension Int32: SwiftFusionScalar {}
+  /// The group operation.
+  @differentiable
+  public static func * (_ lhs: Self, _ rhs: Self) -> Self {
+    lhs + rhs
+  }
 
-// extension UInt32: SwiftFusionScalar {}
+  public func AdjointTranspose(_ v: LocalCoordinate) -> LocalCoordinate {
+    return defaultAdjointTranspose(v)
+  }
+}
 
-// extension Int64: SwiftFusionScalar {}
-
-// extension UInt64: SwiftFusionScalar {}
-
-// @frozen
-// public struct BFloat16 {
-//     @usableFromInline var data: Int16 = 0
-//     private init() {}
-// }
-
-// extension BFloat16: SwiftFusionScalar {}
-
-// extension Float: SwiftFusionScalar {}
-
-// extension Double: SwiftFusionScalar {}
+extension Vector5: LieGroup {}
