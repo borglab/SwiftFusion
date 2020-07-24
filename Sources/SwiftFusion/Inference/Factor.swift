@@ -16,7 +16,7 @@ import PenguinStructures
 
 /// A factor in a factor graph.
 public protocol Factor {
-  /// A tuple of the variable types of variables adjacent to this factor.
+  /// A tuple type whose instances contain the values of the variables adjacent to this factor.
   associatedtype Variables: VariableTuple
 
   /// The IDs of the variables adjacent to this factor.
