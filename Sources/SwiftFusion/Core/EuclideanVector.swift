@@ -68,12 +68,6 @@ extension EuclideanVector {
   public init(_ vector: Vector) {
     self.init(vector.scalars)
   }
-
-  /// Creates a vector with the same elements as `tensor`.
-  public init(_ tensor: Tensor<Double>) {
-    let vector = Vector(tensor.scalars)
-    self.init(vector)
-  }
 }
 
 /// Default implementations of some `EuclideanVector` requirements.

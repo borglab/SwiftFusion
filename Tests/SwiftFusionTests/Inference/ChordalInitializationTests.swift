@@ -90,8 +90,8 @@ class ChordalInitializationTests: XCTestCase {
     
     // assert the jacobian is correct
     assertEqual(
-      Tensor<Double>(stacking: frf_j.jacobian.map { $0.tensor }),
-      Tensor<Double>(stacking: jf.jacobian.map { $0.tensor })
+      Tensor<Double>(stacking: frf_j.jacobian.map { $0.flatTensor }),
+      Tensor<Double>(stacking: jf.jacobian.map { $0.flatTensor })
       , accuracy: 1e-4
     )
     
@@ -124,8 +124,8 @@ class ChordalInitializationTests: XCTestCase {
     
     // assert the Jacobian is correct
     assertEqual(
-      Tensor<Double>(stacking: fpf_j.jacobian.map { $0.tensor }),
-      Tensor<Double>(stacking: jf_p.jacobian.map { $0.tensor })
+      Tensor<Double>(stacking: fpf_j.jacobian.map { $0.flatTensor }),
+      Tensor<Double>(stacking: jf_p.jacobian.map { $0.flatTensor })
       , accuracy: 1e-4
     )
     

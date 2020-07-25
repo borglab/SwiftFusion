@@ -1,4 +1,5 @@
 import Foundation
+import TensorFlow
 import XCTest
 
 import SwiftFusion
@@ -229,6 +230,10 @@ extension EuclideanVectorTests where Testee: EuclideanVectorN {
     runAllEuclideanVectorTests()
     testDimension()
     testStandardBasis()
+    testWithUnsafeBufferPointer()
+    testWithUnsafeMutableBufferPointer()
+    testInitFromFlatTensor()
+    testFlatTensor()
   }
 
   /// Tests that the dimension is correct.
@@ -240,6 +245,50 @@ extension EuclideanVectorTests where Testee: EuclideanVectorN {
   func testStandardBasis() {
     let actualStandardBasis = Array(Testee.standardBasis)
     XCTAssertEqual(actualStandardBasis, self.basisVectors)
+  }
+
+  func testWithUnsafeBufferPointer() {
+    let v = makeVector(from: 1, stride: 1)
+    v.withUnsafeBufferPointer { b in
+      XCTAssertEqual(Array(b), Array(1..<(Self.dimension+1)).map { Double($0) })
+    }
+  }
+
+  func testWithUnsafeMutableBufferPointer() {
+    var v = makeVector(from: 1, stride: 1)
+    v.withUnsafeMutableBufferPointer { b in
+      XCTAssertEqual(Array(b), Array(1..<(Self.dimension+1)).map { Double($0) })
+      for i in 0..<b.count {
+        b[i] = -Double(i)
+      }
+    }
+    XCTAssertEqual(v, makeVector(from: 0, stride: -1))
+  }
+
+  func testInitFromFlatTensor() {
+    let t = Tensor(shape: [Self.dimension], scalars: Array(0..<Self.dimension).map { Double($0) })
+    let v = Testee(flatTensor: t)
+    let expectedV = makeVector(from: 0, stride: 1)
+    XCTAssertEqual(v, expectedV)
+
+    let (value, pb) = valueWithPullback(at: t) { Testee(flatTensor: $0) }
+    XCTAssertEqual(value, expectedV)
+    for b in basisVectors {
+      XCTAssertEqual(pb(b), b.flatTensor)
+    }
+  }
+
+  func testFlatTensor() {
+    let v = makeVector(from: 0, stride: 1)
+    let t = v.flatTensor
+    let expectedT = Tensor(shape: [Self.dimension], scalars: Array(0..<Self.dimension).map { Double($0) })
+    XCTAssertEqual(t, expectedT)
+
+    let (value, pb) = valueWithPullback(at: v) { $0.flatTensor }
+    XCTAssertEqual(value, expectedT)
+    for b in basisVectors {
+      XCTAssertEqual(pb(b.flatTensor), b)
+    }
   }
 }
 

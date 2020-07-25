@@ -7,11 +7,25 @@ public protocol EuclideanVectorN: EuclideanVector {
 
   /// A standard basis of vectors.
   static var standardBasis: [Self] { get }
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  func withUnsafeBufferPointer<R>(
+    _ body: (UnsafeBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  mutating func withUnsafeMutableBufferPointer<R>(
+    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+  ) rethrows -> R
 }
 
 extension EuclideanVectorN {
   /// Returns the result of calling `body` on the scalars of `self`.
-  func withUnsafeBufferPointer<R>(
+  public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R {
     return try withUnsafePointer(to: self) { p in
@@ -24,7 +38,7 @@ extension EuclideanVectorN {
   }
 
   /// Returns the result of calling `body` on the scalars of `self`.
-  mutating func withUnsafeMutableBufferPointer<R>(
+  public mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
     return try withUnsafeMutablePointer(to: &self) { p in
@@ -142,12 +156,27 @@ extension EuclideanVectorN {
     }
   }
 
-  /// Returns this vector as a `Tensor<Double>`.
-  ///
-  /// Note: This is for backwards compatibility with existing code.
-  public var tensor: Tensor<Double> {
+  @differentiable
+  public init(flatTensor: Tensor<Double>) {
+    self.init(flatTensor.scalars)
+  }
+
+  @derivative(of: init(flatTensor:))
+  @usableFromInline
+  static func vjpInit(flatTensor: Tensor<Double>) -> (value: Self, pullback: (Self) -> Tensor<Double>) {
+    return (Self(flatTensor: flatTensor), { $0.flatTensor })
+  }
+
+  @differentiable
+  public var flatTensor: Tensor<Double> {
     withUnsafeBufferPointer { b in
       return Tensor<Double>(shape: [b.count], scalars: b)
     }
+  }
+
+  @derivative(of: flatTensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) {
+    return (self.flatTensor, { Self(flatTensor: $0) })
   }
 }
