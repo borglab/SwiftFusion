@@ -13,38 +13,60 @@
 // limitations under the License.
 import PenguinStructures
 
-/// A mapping from instances of `TypeID` to instances of `AnyArrayBuffer<Dispatch>`
-public struct TypeKeyedArrayBuffers<Dispatch: AnyObject> {
-  internal typealias Storage = [TypeID: AnyArrayBuffer<Dispatch>]
-  private var storage: Storage
+/// Types that store a heterogeneous collection of `ArrayBuffer`s (in the form of
+/// `AnyArrayBuffer<Dispatch>`) with common capabilities, keyed by `TypeID`.
+public protocol TypeKeyedArrayBuffersProtocol {
+  /// A dispatch table for the common capabilites of each buffer type.
+  associatedtype Dispatch: AnyObject
+
+  /// A key that can be used to look up an untyped `ArrayBuffer` (i.e. `AnyArrayBuffer<Dispatch>`)
+  typealias UntypedKey = TypeID
   
-  internal init(_ storage: Storage) { self.storage = storage }
-  public init() { storage = [:] }
+  /// (Internal only) The backing store.
+  var _storage: [UntypedKey: AnyArrayBuffer<Dispatch>] { get set }
+  
+  /// (Internal only) Creates an instance with the given backing store.
+  init(_storage: Storage)
 }
 
-extension TypeKeyedArrayBuffers {
-  public typealias Buffers = Dictionary<TypeID, AnyArrayBuffer<Dispatch>>.Values
-  public typealias Keys = Dictionary<TypeID, AnyArrayBuffer<Dispatch>>.Keys
-  public typealias Key = TypeID
+/// A mapping from instances of `TypeID` to instances of `AnyArrayBuffer<Dispatch>`
+public struct TypeKeyedArrayBuffers<Dispatch: AnyObject>: TypeKeyedArrayBuffersProtocol {
+  public typealias Dispatch = Dispatch
+  public var _storage: Storage
+  public init(_storage: Storage) { self._storage = _storage }
+}
+
+extension TypeKeyedArrayBuffersProtocol {
+  /// Creates an empty instance
+  public init() { self.init(_storage: [:]) }
+
+  /// Representation of the stored `AnyArrayBuffer`s.
+  public typealias AnyBuffers = Storage.Values
   
-  public var buffers: Buffers {
-    get { storage.values }
-    _modify { yield &storage.values}
+  /// Representation of the `TypeID`s that index the stored `AnyArrayBuffer`s.
+  public typealias UntypedKeys = Storage.Keys
+  
+  /// The stored `AnyArrayBuffer`s.
+  public var anyBuffers: AnyBuffers {
+    get { _storage.values }
+    _modify { yield &_storage.values}
   }
-  private var keys: Keys { storage.keys }
+
+  /// the `TypeID`s that index the stored `AnyArrayBuffer`s.
+  private var untypedKeys: UntypedKeys { _storage.keys }
 
   /// Returns `true` iff `self` and other have the same key values, and for each key, the same
   /// number of elements in the corresponding array.
   internal func hasSameStructure<D>(as other: TypeKeyedArrayBuffers<D>) -> Bool {
-    if storage.count != other.storage.count { return false }
-    return storage.allSatisfy { k, v in  other.storage[k]?.count == v.count }
+    if _storage.count != other._storage.count { return false }
+    return _storage.allSatisfy { k, v in  other._storage[k]?.count == v.count }
   }
 
   /// Returns a mapping from each key `k` of `self` into `bufferTransform(self[k])`.
   public func mapBuffers<NewDispatch>(
     _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>
   ) rethrows -> TypeKeyedArrayBuffers<NewDispatch> {
-    try .init(storage.mapValues(bufferTransform))
+    try .init(_storage: _storage.mapValues(bufferTransform))
   }
 
   /// Returns a mapping from each key `k` of `self` into the corresponding array, transformed by
@@ -52,7 +74,7 @@ extension TypeKeyedArrayBuffers {
   public func compactMapBuffers<NewDispatch>(
     _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>?
   ) rethrows -> TypeKeyedArrayBuffers<NewDispatch> {
-    try .init(storage.compactMapValues(bufferTransform))
+    try .init(_storage: _storage.compactMapValues(bufferTransform))
   }
 
   /// Invokes `update` on each buffer of self, passing the buffer having the same `key` in
@@ -66,10 +88,10 @@ extension TypeKeyedArrayBuffers {
       _ parameter: AnyArrayBuffer<OtherDispatch>) throws -> Void
   ) rethrows {
     precondition(
-      storage.count == parameter.storage.count,
+      _storage.count == parameter._storage.count,
       "parameter must have same structure as `self`")
-    try storage.updateValues { k, target, _ in
-      guard let p = parameter.storage[k] else {
+    try _storage.updateValues { k, target, _ in
+      guard let p = parameter._storage[k] else {
         fatalError("parameter must have same structure as `self`")
       }
       try update(&target, p)
