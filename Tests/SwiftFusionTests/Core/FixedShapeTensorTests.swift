@@ -22,13 +22,13 @@ class FixedShapeTensorTests: XCTestCase {
   /// Test that we can differentiably convert a `Tensor` to a `FixedShapeTensor`.
   func testInitFromTensor() {
     let t = Tensor<Double>(ones: [10, 10])
-    let (value, pb) = valueWithPullback(at: t) { Tensor10_10($0) }
-    XCTAssertEqual(value, Tensor10_10(t))
+    let (value, pb) = valueWithPullback(at: t) { Tensor10x10($0) }
+    XCTAssertEqual(value, Tensor10x10(t))
     for i in 0..<10 {
       for j in 0..<10 {
         var basisVector = Tensor<Double>(zeros: [10, 10])
         basisVector[i, j] = Tensor(1)
-        XCTAssertEqual(pb(Tensor10_10(basisVector)), basisVector)
+        XCTAssertEqual(pb(Tensor10x10(basisVector)), basisVector)
       }
     }
   }
@@ -36,21 +36,21 @@ class FixedShapeTensorTests: XCTestCase {
   /// Test that we can differentiably convert a `FixedShapeTensor` to a `Tensor`.
   func testToTensor() {
     let t = Tensor<Double>(ones: [10, 10])
-    let fst = Tensor10_10(t)
+    let fst = Tensor10x10(t)
     let (value, pb) = valueWithPullback(at: fst) { $0.tensor }
     XCTAssertEqual(value, t)
     for i in 0..<10 {
       for j in 0..<10 {
         var basisVector = Tensor<Double>(zeros: [10, 10])
         basisVector[i, j] = Tensor(1)
-        XCTAssertEqual(pb(basisVector), Tensor10_10(basisVector))
+        XCTAssertEqual(pb(basisVector), Tensor10x10(basisVector))
       }
     }
   }
 }
 
 class FixedShapeTensorEuclideanVectorTests: XCTestCase, EuclideanVectorTests {
-  typealias Testee = Tensor10_10
+  typealias Testee = Tensor10x10
   static var dimension: Int { 100 }
   func testAll() {
     runAllEuclideanVectorNTests()

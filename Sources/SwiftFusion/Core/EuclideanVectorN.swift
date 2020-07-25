@@ -147,26 +147,25 @@ extension EuclideanVectorN {
 }
 
 extension EuclideanVectorN {
-  /// Returns this vector as a `Vector`.
+  /// Creates an instance with the same scalars as `flatTensor`.
   ///
-  /// Note: This is for backwards compatibility with existing code.
-  public var vector: Vector {
-    withUnsafeBufferPointer { b in
-      return Vector(Array(b))
-    }
-  }
-
+  /// - Reqiures: `flatTensor.shape == [Self.dimension]`.
   @differentiable
   public init(flatTensor: Tensor<Double>) {
+    precondition(flatTensor.shape == [Self.dimension])
     self.init(flatTensor.scalars)
   }
 
   @derivative(of: init(flatTensor:))
   @usableFromInline
-  static func vjpInit(flatTensor: Tensor<Double>) -> (value: Self, pullback: (Self) -> Tensor<Double>) {
+  static func vjpInit(flatTensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
     return (Self(flatTensor: flatTensor), { $0.flatTensor })
   }
 
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
   @differentiable
   public var flatTensor: Tensor<Double> {
     withUnsafeBufferPointer { b in
@@ -178,5 +177,14 @@ extension EuclideanVectorN {
   @usableFromInline
   func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) {
     return (self.flatTensor, { Self(flatTensor: $0) })
+  }
+
+  /// Returns this vector as a `Vector`.
+  ///
+  /// Note: This is for backwards compatibility with existing code.
+  public var vector: Vector {
+    withUnsafeBufferPointer { b in
+      return Vector(Array(b))
+    }
   }
 }
