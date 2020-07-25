@@ -66,7 +66,7 @@ class FactorGraphTests: XCTestCase {
     graph.store(BetweenFactor(pose5ID, pose4ID, Pose2(2.0, 0.0, .pi / 2)))
     graph.store(PriorFactor(pose1ID, Pose2(0, 0, 0)))
 
-    for _ in 0..<3 {
+    for _ in 0..<5 {
       let linearized = graph.linearized(at: x)
       var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
