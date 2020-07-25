@@ -20,7 +20,30 @@ public struct GaussianFactorGraph {
   var storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer]
 
   /// Assignment of zero to all the variables in the factor graph.
-  var zeroValues: VariableAssignments
+  var zeroValues: AllVectors
+
+  /// Creates an instance with the given `zeroValues`.
+  public init(zeroValues: AllVectors) {
+    self.storage = [:]
+    self.zeroValues = zeroValues
+  }
+
+  /// Creates an instance with the given `storage` and `zeroValues`.
+  init(
+    storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer],
+    zeroValues: AllVectors
+  ) {
+    self.storage = storage
+    self.zeroValues = zeroValues
+  }
+
+  /// Stores `factor` in the graph.
+  public mutating func store<T: GaussianFactor>(_ factor: T) {
+    _ = storage[
+      ObjectIdentifier(T.self),
+      default: AnyGaussianFactorArrayBuffer(ArrayBuffer<T>())
+    ].unsafelyAppend(factor)
+  }
 
   /// For each variable, add a Jacobian factor that scales it by `scalar`.
   ///
@@ -36,6 +59,11 @@ public struct GaussianFactorGraph {
     }
   }
 
+  /// Returns the total error, at `x`, of all the factors.
+  public func error(at x: VariableAssignments) -> Double {
+    return 0.5 * errorVectors(at: x).squaredNorm
+  }
+  
   /// Returns the error vectors, at `x`, of all the factors.
   public func errorVectors(at x: AllVectors) -> AllVectors {
     return AllVectors(storage: storage.mapValues { factors in
@@ -45,7 +73,7 @@ public struct GaussianFactorGraph {
   }
 
   /// Returns the linear component of `errorVectors`, evaluated at `x`.
-  func errorVectors_linearComponent(at x: AllVectors) -> AllVectors {
+  public func errorVectors_linearComponent(at x: AllVectors) -> AllVectors {
     return AllVectors(storage: storage.mapValues { factors in
       // Note: This is a safe upcast.
       AnyElementArrayBuffer(unsafelyCasting: factors.errorVectors_linearComponent(x))
@@ -53,7 +81,7 @@ public struct GaussianFactorGraph {
   }
 
   /// Returns the adjoint of the linear component of `errorVectors`, evaluated at `y`.
-  func errorVectors_linearComponent_adjoint(_ y: AllVectors) -> AllVectors {
+  public func errorVectors_linearComponent_adjoint(_ y: AllVectors) -> AllVectors {
     var x = zeroValues
     storage.forEach { (key, factor) in
       factor.errorVectors_linearComponent_adjoint(y.storage[key].unsafelyUnwrapped, into: &x)

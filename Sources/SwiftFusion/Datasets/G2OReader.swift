@@ -18,40 +18,12 @@ import Foundation
 ///
 /// See https://lucacarlone.mit.edu/datasets/ for g2o specification and example datasets.
 public enum G2OReader {
-  /// A G2O problem expressed as a `NonlinearFactorGraph`.
-  public struct G2ONonlinearFactorGraph {
-    /// The initial guess.
-    public var initialGuess: Values = Values()
-
-    /// The factor graph representing the measurements.
-    public var graph: NonlinearFactorGraph = NonlinearFactorGraph()
-
-    /// Creates a problem from the given 2D file.
-    public init(g2oFile2D: URL) throws {
-      try G2OReader.read2D(file: g2oFile2D) { self.handleEntry($0) }
-    }
-
-    /// Creates a problem from the given 3D file.
-    public init(g2oFile3D: URL) throws {
-      try G2OReader.read3D(file: g2oFile3D) { self.handleEntry($0) }
-    }
-
-    private mutating func handleEntry<Pose: LieGroup>(_ entry: Entry<Pose>) {
-      switch entry {
-      case .initialGuess(index: let index, pose: let pose):
-        initialGuess.insert(index, pose)
-      case .measurement(frameIndex: let frameIndex, measuredIndex: let measuredIndex, pose: let pose):
-        graph += OldBetweenFactor(frameIndex, measuredIndex, pose)
-      }
-    }
-  }
-
   /// A G2O problem expressed as a `FactorGraph`.
   public struct G2OFactorGraph<Pose: LieGroup> {
     /// The initial guess.
     public var initialGuess = VariableAssignments()
 
-    public var variableId = Array<TypedID<Pose, Int>>()
+    public var variableId = Array<TypedID<Pose>>()
     
     /// The factor graph representing the measurements.
     public var graph = FactorGraph()
@@ -65,7 +37,7 @@ public enum G2OReader {
           assert(typedID.perTypeID == id)
           variableId.append(typedID)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
-          graph.store(BetweenFactor2(TypedID(id1), TypedID(id2), difference))
+          graph.store(BetweenFactor(TypedID(id1), TypedID(id2), difference))
         }
       }
     }
@@ -80,9 +52,9 @@ public enum G2OReader {
           variableId.append(typedID)
         case .measurement(frameIndex: let id1, measuredIndex: let id2, pose: let difference):
           if chordal {
-            graph.store(BetweenFactorAlternative3(TypedID(id1), TypedID(id2), difference))
+            graph.store(BetweenFactorAlternative(TypedID(id1), TypedID(id2), difference))
           } else {
-            graph.store(BetweenFactor3(TypedID(id1), TypedID(id2), difference))
+            graph.store(BetweenFactor(TypedID(id1), TypedID(id2), difference))
           }
         }
       }

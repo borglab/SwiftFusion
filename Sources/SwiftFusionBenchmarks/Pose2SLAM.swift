@@ -18,38 +18,11 @@ import Benchmark
 import SwiftFusion
 
 let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
-
-  let intelDatasetOld =
-    try! G2OReader.G2ONonlinearFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
-  check(intelDatasetOld.graph.error(intelDatasetOld.initialGuess), near: 73565.64, accuracy: 1e-2)
-
-  // Uses `NonlinearFactorGraph` on the Intel dataset.
-  // The solvers are configured to run for a constant number of steps.
-  // The nonlinear solver is 5 iterations of Gauss-Newton.
-  // The linear solver is 100 iterations of CGLS.
-  suite.benchmark(
-    "NonlinearFactorGraph, Intel, 5 Gauss-Newton steps, 100 CGLS steps",
-    settings: Iterations(1), TimeUnit(.ms)
-  ) {
-    var val = intelDatasetOld.initialGuess
-    for _ in 0..<5 {
-      let gfg = intelDatasetOld.graph.linearize(val)
-      let optimizer = CGLS(precision: 0, max_iteration: 100)
-      var dx = VectorValues()
-      for i in 0..<val.count {
-        dx.insert(i, Vector(zeros: 3))
-      }
-      optimizer.optimize(gfg: gfg, initial: &dx)
-      val.move(along: dx)
-    }
-//    check(intelDatasetOld.graph.error(val), near: 35.59, accuracy: 1e-2)
-  }
-
   let intelDataset =
     try! G2OReader.G2OFactorGraph(g2oFile2D: try! cachedDataset("input_INTEL_g2o.txt"))
   check(
     intelDataset.graph.error(at: intelDataset.initialGuess),
-    near: 73565.64,
+    near: 0.5 * 73565.64,
     accuracy: 1e-2)
 
   // Uses `FactorGraph` on the Intel dataset.
@@ -62,17 +35,17 @@ let pose2SLAM = BenchmarkSuite(name: "Pose2SLAM") { suite in
   ) {
     var x = intelDataset.initialGuess
     var graph = intelDataset.graph
-    graph.store(PriorFactor2(TypedID(0), Pose2(0, 0, 0)))
+    graph.store(PriorFactor(TypedID(0), Pose2(0, 0, 0)))
 
     for _ in 0..<10 {
       let linearized = graph.linearized(at: x)
       var dx = x.tangentVectorZeros
       var optimizer = GenericCGLS(precision: 0, max_iteration: 500)
       optimizer.optimize(gfg: linearized, initial: &dx)
-      x.move(along: (-1) * dx)
+      x.move(along: dx)
     }
 
-    check(graph.error(at: x), near: 0.987, accuracy: 1e-2)
+    check(graph.error(at: x), near: 0.5 * 0.987, accuracy: 1e-2)
   }
 }
 

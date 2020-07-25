@@ -16,40 +16,68 @@ import PenguinStructures
 
 /// A factor in a factor graph.
 public protocol Factor {
-  /// A tuple of the variable types of variables adjacent to this factor.
+  /// A tuple type whose instances contain the values of the variables adjacent to this factor.
   associatedtype Variables: VariableTuple
 
   /// The IDs of the variables adjacent to this factor.
   var edges: Variables.Indices { get }
 
-  /// Returns the error given the values of the adjacent variables.
+  /// Returns the error at `x`.
+  ///
+  /// This is typically interpreted as negative log-likelihood.
   func error(at x: Variables) -> Double
 }
 
-/// A factor with an error vector, which can be linearized around any point.
-public protocol LinearizableFactor: Factor {
+/// A factor whose `error` is a function of a vector-valued `errorVector` function.
+public protocol VectorFactor: Factor {
   /// The type of the error vector.
   // TODO: Add a description of what an error vector is.
   associatedtype ErrorVector: EuclideanVectorN
 
-  /// Returns the error vector given the values of the adjacent variables.
+  /// Returns the error vector at `x`.
   func errorVector(at x: Variables) -> ErrorVector
 
-  /// The type of the linearized factor.
-  associatedtype Linearization: GaussianFactor
+  /// A factor whose variables are the `Differentiable` subset of `Self`'s variables.
+  associatedtype LinearizableComponent: LinearizableFactor
+  where LinearizableComponent.ErrorVector == ErrorVector
 
-  /// Returns a factor whose `errorVector` linearly approximates `self`'s `errorVector` around the
-  /// given point.
-  func linearized(at x: Variables) -> Linearization
+  /// Returns the linearizable component of `self` at `x`, and returns the `Differentiable` subset
+  /// of `x`.
+  func linearizableComponent(at x: Variables)
+    -> (LinearizableComponent, LinearizableComponent.Variables)
+}
+
+/// A factor whose `errorVector` function is linearizable with respect to all the variables.
+public protocol LinearizableFactor: VectorFactor
+where Variables: DifferentiableVariableTuple, Variables.TangentVector: EuclideanVectorN
+{
+  /// Returns the error vector given the values of the adjacent variables.
+  @differentiable
+  func errorVector(at x: Variables) -> ErrorVector
+}
+
+extension LinearizableFactor {
+  public func linearizableComponent(at x: Variables) -> (Self, Variables) {
+    return (self, x)
+  }
 }
 
 /// A factor whose `errorVector` is a linear function of the variables, plus a constant.
-public protocol GaussianFactor: LinearizableFactor where Variables: EuclideanVectorN {
+public protocol GaussianFactor: LinearizableFactor
+  where LinearizableComponent.Variables.TangentVector == Variables
+{
   /// The linear component of `errorVector`.
   func errorVector_linearComponent(_ x: Variables) -> ErrorVector
 
   /// The adjoint (aka "transpose" or "dual") of the linear component of `errorVector`.
   func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables
+}
+
+/// A linear approximation of a linearizable factor.
+public protocol LinearApproximationFactor: GaussianFactor {
+  /// Creates a factor that linearly approximates `f` at `x`.
+  init<F: LinearizableFactor>(linearizing f: F, at x: F.Variables)
+  where F.Variables.TangentVector == Variables, F.ErrorVector == ErrorVector
 }
 
 // MARK: - `VariableTuple`.
@@ -144,7 +172,7 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   public typealias UnsafePointers = Tuple<UnsafePointer<Head>, Tail.UnsafePointers>
   public typealias UnsafeMutablePointers =
     Tuple<UnsafeMutablePointer<Head>, Tail.UnsafeMutablePointers>
-  public typealias Indices = Tuple<TypedID<Head, Int>, Tail.Indices>
+  public typealias Indices = Tuple<TypedID<Head>, Tail.Indices>
 
   public static func withVariableBufferBaseUnsafePointers<R>(
     _ variableAssignments: VariableAssignments,
@@ -180,41 +208,37 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
 
   public init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
     self.init(
-      head: variableBufferBases.head.advanced(by: indices.head.perTypeID).pointee,
+      head: variableBufferBases.head[indices.head.perTypeID],
       tail: Tail(variableBufferBases.tail, indices: indices.tail)
     )
   }
 
   public func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {
-    variableBufferBases.head.advanced(by: indices.head.perTypeID)
+    (variableBufferBases.head + indices.head.perTypeID)
       .assign(repeating: self.head, count: 1)
     self.tail.store(into: variableBufferBases.tail, indices: indices.tail)
   }
 }
 
 /// Tuple of differentiable variable types suitable for a factor.
-protocol DifferentiableVariableTuple: VariableTuple {
-  /// A tuple of `TypedID`s referring to variables adjacent to a factor.
-  associatedtype TangentIndices: TupleProtocol
-
+public protocol DifferentiableVariableTuple: Differentiable & VariableTuple
+where TangentVector: DifferentiableVariableTuple {
   /// Returns the indices of the linearized variables corresponding to `indices` in the linearized
   /// factor graph.
-  static func linearized(_ indices: Indices) -> TangentIndices
+  static func linearized(_ indices: Indices) -> TangentVector.Indices
 }
 
 extension Empty: DifferentiableVariableTuple {
-  typealias TangentIndices = Self
-  static func linearized(_ indices: Indices) -> TangentIndices {
+  public static func linearized(_ indices: Indices) -> TangentVector.Indices {
     indices
   }
 }
 
 extension Tuple: DifferentiableVariableTuple
 where Head: Differentiable, Tail: DifferentiableVariableTuple {
-  typealias TangentIndices = Tuple<TypedID<Head.TangentVector, Int>, Tail.TangentIndices>
-  static func linearized(_ indices: Indices) -> TangentIndices {
-    TangentIndices(
-      head: TypedID<Head.TangentVector, Int>(indices.head.perTypeID),
+  public static func linearized(_ indices: Indices) -> TangentVector.Indices {
+    TangentVector.Indices(
+      head: TypedID<Head.TangentVector>(indices.head.perTypeID),
       tail: Tail.linearized(indices.tail)
     )
   }

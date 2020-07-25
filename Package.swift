@@ -12,9 +12,6 @@ let package = Package(
       name: "SwiftFusion",
       targets: ["SwiftFusion"]),
     .executable(
-      name: "Pose2SLAMG2O",
-      targets: ["Pose2SLAMG2O"]),
-    .executable(
       name: "Pose3SLAMG2O",
       targets: ["Pose3SLAMG2O"])
   ],
@@ -38,10 +35,6 @@ let package = Package(
         "Benchmark",
         "SwiftFusion",
       ]),
-    .target(
-      name: "Pose2SLAMG2O",
-      dependencies: ["SwiftFusion"],
-      path: "Examples/Pose2SLAMG2O"),
     .target(
       name: "Pose3SLAMG2O",
       dependencies: ["SwiftFusion", "TensorBoardX", "SwiftToolsSupport"],

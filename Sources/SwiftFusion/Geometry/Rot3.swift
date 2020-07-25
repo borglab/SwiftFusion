@@ -72,6 +72,36 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   }
 }
 
+/// determinant for a 3x3 matrix
+fileprivate func det3(_ M: Tensor<Double>) -> Double {
+  precondition(M.shape[0] == 3)
+  precondition(M.shape[1] == 3)
+  
+  return (M[0, 0].scalar! * (M[1, 1].scalar! * M[2, 2].scalar! - M[2, 1].scalar! * M[1, 2].scalar!)
+  - M[1, 0].scalar! * (M[0, 1].scalar! * M[2, 2].scalar! - M[2, 1].scalar! * M[0, 2].scalar!)
+  + M[2, 0].scalar! * (M[0, 1].scalar! * M[1, 2].scalar! - M[1, 1].scalar! * M[0, 2].scalar!))
+}
+
+public extension Rot3 {
+  /// Regularize a 3x3 matrix to find the closest rotation matrix in a Frobenius sense
+  static func ClosestTo(mat: Matrix3) -> Rot3 {
+    let M = Tensor<Double>(shape: [3, 3], scalars: [mat[0, 0], mat[0, 1], mat[0, 2], mat[1, 0], mat[1, 1], mat[1, 2], mat[2, 0], mat[2, 1], mat[2, 2]])
+    
+    let (_, U, V) = M.transposed().svd(computeUV: true, fullMatrices: true)
+    let UVT = matmul(U!, V!.transposed())
+    
+    let det = det3(UVT)
+    
+    let S = Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()
+    
+    let R = matmul(V!, matmul(S, U!.transposed()))
+    
+    let M_r = Matrix3(R.scalars)
+    
+    return Rot3(coordinate: Matrix3Coordinate(M_r))
+  }
+}
+
 public struct Matrix3Coordinate: Equatable, KeyPathIterable {
   public var R: Matrix3
   
@@ -136,7 +166,7 @@ extension Matrix3Coordinate {
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
   func unrotate(_ v: Vector3) -> Vector3 {
-    return matvec(transposed: R, v)
+    return matvec(R.transposed(), v)
   }
 }
 
@@ -160,7 +190,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     let nearZero = theta2 <= .ulpOfOne
     let (wx, wy, wz) = (local.x, local.y, local.z)
     let W = Matrix3(0.0, -wz, wy, wz, 0.0, -wx, -wy, wx, 0.0)
-    let I_3x3 = Matrix3.Identity
+    let I_3x3 = Matrix3.identity
     if !nearZero {
       let theta = sqrtWrap(theta2)
       let sin_theta = sin(theta)
@@ -181,17 +211,17 @@ extension Matrix3Coordinate: ManifoldCoordinate {
   @differentiable(wrt: global)
   public func localCoordinate(_ global: Matrix3Coordinate) -> Vector3 {
     let relative = self.inverse() * global
-    let R = relative.R
-    let (R11, R12, R13) = (R.s00, R.s01, R.s02)
-    let (R21, R22, R23) = (R.s10, R.s11, R.s12)
-    let (R31, R32, R33) = (R.s20, R.s21, R.s22)
+    let R = Vector9(relative.R)
+    let (R11, R12, R13) = (R.s0, R.s1, R.s2)
+    let (R21, R22, R23) = (R.s3, R.s4, R.s5)
+    let (R31, R32, R33) = (R.s6, R.s7, R.s8)
 
     let tr = R11 + R22 + R33
 
-    if abs(tr + 1.0) < 1e-10 {
-      if abs(R33 + 1.0) > 1e-10 {
+    if tr + 1.0 < 1e-10 {
+      if abs(R33 + 1.0) > 1e-5 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R33)) * Vector3(R13, R23, 1.0 + R33)
-      } else if abs(R22 + 1.0) > 1e-10 {
+      } else if abs(R22 + 1.0) > 1e-5 {
         return (.pi / sqrtWrap(2.0 + 2.0 * R22)) * Vector3(R12, 1.0 + R22, R32)
       } else {
         // if(abs(R.r1_.x()+1.0) > 1e-10)  This is implicit

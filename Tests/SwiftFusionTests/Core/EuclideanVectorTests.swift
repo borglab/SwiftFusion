@@ -35,8 +35,6 @@ extension EuclideanVectorTests {
   func runAllEuclideanVectorTests() {
     testEquality()
     testMove()
-    testConversionVector()
-    testConversionTensor()
     testAddMutating()
     testAddFunctional()
     testSubtractMutating()
@@ -63,18 +61,6 @@ extension EuclideanVectorTests {
     let t = makeVector(from: 1, stride: 1)
     v.move(along: t)
     XCTAssertEqual(v, makeVector(from: 1, stride: 2))
-  }
-
-  /// Tests conversion to/from `Vector`.
-  func testConversionVector() {
-    let v1 = makeVector(from: 0, stride: 1)
-    XCTAssertEqual(Testee(v1.vector), v1)
-  }
-
-  /// Tests conversion to/from `Tensor`.
-  func testConversionTensor() {
-    let v1 = makeVector(from: 0, stride: 1)
-    XCTAssertEqual(Testee(v1.tensor), v1)
   }
 
   /// Tests the value and derivative of the mutating +=.
@@ -183,7 +169,11 @@ extension EuclideanVectorTests {
   func testDot() {
     let v1 = makeVector(from: 1, stride: 1)
     let v2 = makeVector(from: 2, stride: 1)
-    let expectedDot = (0..<Self.dimension).map { Double(($0 + 1) * ($0 + 2)) }.reduce(0, +)
+    let expectedDot = (0..<Self.dimension).reduce(into: 0) { (r: inout Double, i: Int) in
+      let x = Double(i) + 1
+      let y = Double(i) + 2
+      r += x * y
+    }
     XCTAssertEqual(v1.dot(v2), expectedDot)
 
     let (value, g) = valueWithGradient(at: v1, v2) { $0.dot($1) }
@@ -207,7 +197,10 @@ extension EuclideanVectorTests {
   /// Tests the value and derivative of `squaredNorm`.
   func testSquaredNorm() {
     let v1 = makeVector(from: 1, stride: 1)
-    let expectedSquaredNorm = (0..<Self.dimension).map { Double(($0 + 1) * ($0 + 1)) }.reduce(0, +)
+    let expectedSquaredNorm = (0..<Self.dimension).reduce(into: 0) { (r: inout Double, i: Int) in
+      let x = Double(i) + 1
+      r += x * x
+    }
     XCTAssertEqual(v1.squaredNorm, expectedSquaredNorm)
 
     let (value, g) = valueWithGradient(at: v1) { $0.squaredNorm }
@@ -218,7 +211,10 @@ extension EuclideanVectorTests {
   /// Tests the value and derivative of `norm`.
   func testNorm() {
     let v1 = makeVector(from: 1, stride: 1)
-    let expectedNorm = (0..<Self.dimension).map { Double(($0 + 1) * ($0 + 1)) }.reduce(0, +).squareRoot()
+    let expectedNorm = (0..<Self.dimension).reduce(into: 0) { (r: inout Double, i: Int) in
+      let x = Double(i) + 1
+      r += x * x
+    }.squareRoot()
     XCTAssertEqual(v1.norm, expectedNorm)
 
     let (value, g) = valueWithGradient(at: v1) { $0.norm }
@@ -244,5 +240,44 @@ extension EuclideanVectorTests where Testee: EuclideanVectorN {
   func testStandardBasis() {
     let actualStandardBasis = Array(Testee.standardBasis)
     XCTAssertEqual(actualStandardBasis, self.basisVectors)
+  }
+}
+
+/// Tests methods that involve multiple distinct euclidean vector types.
+class MultipleEuclideanVectorTests: XCTestCase {
+  /// Tests converting from one type to another type with the same number of elements.
+  func testConversion() {
+    let v = Vector9(0, 1, 2, 3, 4, 5, 6, 7, 8)
+    let m = Matrix3(0, 1, 2, 3, 4, 5, 6, 7, 8)
+    XCTAssertEqual(Vector9(m), v)
+
+    let (value, pb) = valueWithPullback(at: m) { Vector9($0) }
+    XCTAssertEqual(value, v)
+    for (bV, bM) in zip(Vector9.standardBasis, Matrix3.standardBasis) {
+      XCTAssertEqual(pb(bV), bM)
+    }
+  }
+
+  /// Tests concatenating two vectors.
+  func testConcatenate() {
+    let v1 = Vector2(0, 1)
+    let v2 = Vector3(2, 3, 4)
+    let expected = Vector5(0, 1, 2, 3, 4)
+    XCTAssertEqual(Vector5(concatenating: v1, v2), expected)
+
+    let (value, pb) = valueWithPullback(at: v1, v2) { Vector5(concatenating: $0, $1) }
+    XCTAssertEqual(value, expected)
+
+    XCTAssertEqual(pb(Vector5(1, 0, 0, 0, 0)).0, Vector2(1, 0))
+    XCTAssertEqual(pb(Vector5(0, 1, 0, 0, 0)).0, Vector2(0, 1))
+    XCTAssertEqual(pb(Vector5(0, 0, 1, 0, 0)).0, Vector2(0, 0))
+    XCTAssertEqual(pb(Vector5(0, 0, 0, 1, 0)).0, Vector2(0, 0))
+    XCTAssertEqual(pb(Vector5(0, 0, 0, 0, 1)).0, Vector2(0, 0))
+
+    XCTAssertEqual(pb(Vector5(1, 0, 0, 0, 0)).1, Vector3(0, 0, 0))
+    XCTAssertEqual(pb(Vector5(0, 1, 0, 0, 0)).1, Vector3(0, 0, 0))
+    XCTAssertEqual(pb(Vector5(0, 0, 1, 0, 0)).1, Vector3(1, 0, 0))
+    XCTAssertEqual(pb(Vector5(0, 0, 0, 1, 0)).1, Vector3(0, 1, 0))
+    XCTAssertEqual(pb(Vector5(0, 0, 0, 0, 1)).1, Vector3(0, 0, 1))
   }
 }

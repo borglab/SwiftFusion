@@ -85,7 +85,7 @@ extension ArrayStorage where Element: EuclideanVectorN {
   /// Returns Jacobians that scale each element by `scalar`.
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
     AnyGaussianFactorArrayBuffer(ArrayBuffer(enumerated().lazy.map { (i, _) in
-      ScalarJacobianFactor(edges: Tuple1(TypedID<Element, Int>(i)), scalar: scalar)
+      ScalarJacobianFactor(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
     }))
   }
 }
@@ -96,62 +96,35 @@ typealias AnyDifferentiableArrayBuffer = AnyArrayBuffer<DifferentiableArrayDispa
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Differentiable`
 /// elements.
-class DifferentiableArrayDispatch: AnyElementDispatch {
+class DifferentiableArrayDispatch {
   /// The `TangentVector` type of the elements.
-  class var tangentVectorType: Any.Type {
-    fatalError("implement as in DifferentiableArrayDispatch_")
-  }
+  final let tangentVectorType: Any.Type
 
-  /// Returns the zero `TangentVector`s for each of the elements in the `ArrayStorage` whose
+  /// A function returning the zero `TangentVector`s for each of the elements in the `ArrayStorage` whose
   /// address is `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `Differentiable` type.
-  class func tangentVectorZeros(_ storage: UnsafeRawPointer)
-    -> AnyArrayBuffer<VectorArrayDispatch>
-  {
-    fatalError("implement as in DifferentiableArrayDispatch_")
-  }
+  final let tangentVectorZeros: (_ storage: UnsafeRawPointer) -> AnyArrayBuffer<VectorArrayDispatch>
 
-  /// Moves each element in the `ArrayStorage` whose address is `storage` along the corresponding
-  /// element of `directions`.
+  /// A function that moves each element in the `ArrayStorage` whose address is `storage` along the
+  /// corresponding element of `directions`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element`
   ///   has a subclass-specific `Differentiable` type.
   /// - Requires: `directions.elementType == Element.TangentVector.self`.
-  class func move(_ storage: UnsafeRawPointer, along directions: AnyElementArrayBuffer) {
-    fatalError("implement as in DifferentiableArrayDispatch_")
-  }
-}
+  final let move: (_ storage: UnsafeMutableRawPointer, _ directions: AnyElementArrayBuffer) -> Void
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `Differentiable` element type.
-class DifferentiableArrayDispatch_<Element: Differentiable>
-  : DifferentiableArrayDispatch, AnyArrayDispatch
-  where Element.TangentVector: EuclideanVectorN
-{
-  /// The `TangentVector` type of the elements.
-  override class var tangentVectorType: Any.Type {
-    Element.TangentVector.self
-  }
-
-  /// Returns the zero `TangentVector`s for each of the elements in the `ArrayStorage` whose
-  /// address is `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  override class func tangentVectorZeros(_ storage: UnsafeRawPointer)
-    -> AnyArrayBuffer<VectorArrayDispatch>
-  {
-    .init(asStorage(storage).tangentVectorZeros)
-  }
-
-  /// Moves each element in the `ArrayStorage` whose address is `storage` along the corresponding
-  /// element of `directions`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  /// - Requires: `directions.elementType == Element.TangentVector.self`.
-  override class func move(_ storage: UnsafeRawPointer, along directions: AnyElementArrayBuffer) {
-    asStorage(storage).move(along: .init(unsafelyDowncasting: directions))
+  /// Creates an instance for elements of type `Element`.
+  init<Element: Differentiable>(_: Type<Element>) where Element.TangentVector: EuclideanVectorN {
+    let storageType = Type<ArrayStorage<Element>>()
+    tangentVectorType = Element.TangentVector.self
+    tangentVectorZeros = { storage in
+      .init(storage[as: storageType].tangentVectorZeros)
+    }
+    move = { storage, directions in
+      storage[as: storageType].move(along: .init(unsafelyDowncasting: directions))
+    }
   }
 }
 
@@ -162,7 +135,7 @@ extension AnyArrayBuffer where Dispatch == DifferentiableArrayDispatch {
   {
     self.init(
       storage: src.storage,
-      dispatch: DifferentiableArrayDispatch_<Element>.self)
+      dispatch: DifferentiableArrayDispatch(Type<Element>()))
   }
 }
 
@@ -180,7 +153,7 @@ extension AnyArrayBuffer where Dispatch: DifferentiableArrayDispatch {
   /// Moves each element along the corresponding element of `directions`.
   mutating func move(along directions: AnyElementArrayBuffer) {
     ensureUniqueStorage()
-    withUnsafePointer(to: storage) { dispatch.move($0, along: directions) }
+    withUnsafeMutablePointer(to: &storage) { dispatch.move($0, directions) }
   }
 }
 
@@ -191,25 +164,22 @@ typealias AnyVectorArrayBuffer = AnyArrayBuffer<VectorArrayDispatch>
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `EuclideanVectorN`
 /// elements.
 class VectorArrayDispatch: DifferentiableArrayDispatch {
-  /// Adds `others` to the `ArrayStorage` whose address is `storage`.
+  /// A function that adds `others` to the `ArrayStorage` whose address is `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `EuclideanVectorN` type.
   /// - Requires: `others.elementType == Element`.
   /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  class func add(_ storage: UnsafeRawPointer, _ others: AnyElementArrayBuffer) {
-    fatalError("implement as in VectorArrayDispatch_")
-  }
+  final let add: (_ storage: UnsafeMutableRawPointer, _ others: AnyElementArrayBuffer) -> Void 
 
-  /// Scales each element of the `ArrayStorage` whose address is `storage` by `scalar`.
+  /// A function that scales each element of the `ArrayStorage` whose address is `storage` by
+  /// `factor`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `EuclideanVectorN` type.
-  class func scale(_ storage: UnsafeRawPointer, by scalar: Double) {
-    fatalError("implement as in VectorArrayDispatch_")
-  }
+  final let scale: (_ storage: UnsafeMutableRawPointer, _ factor: Double) -> Void
 
-  /// Returns the dot product of the `ArrayStorage` whose address is `storage` with `others`.
+  /// A function returning the dot product of the `ArrayStorage` whose address is `storage` with `others`.
   ///
   /// This is the sum of the dot products of corresponding elements.
   ///
@@ -217,130 +187,35 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   ///   subclass-specific `EuclideanVectorN` type.
   /// - Requires: `others.elementType == Element`.
   /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  class func dot(_ storage: UnsafeRawPointer, _ others: AnyElementArrayBuffer) -> Double {
-    fatalError("implement as in VectorArrayDispatch_")
-  }
+  final let dot: (_ storage: UnsafeRawPointer, _ others: AnyElementArrayBuffer) -> Double
 
-  /// Returns Jacobians that scale each element of `storage` by `scalar`.
+  /// A function returning Jacobians that scale each element of `storage` by `scalar`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `EuclideanVectorN` type.
-  class func jacobians(_ storage: UnsafeRawPointer, scalar: Double)
-    -> AnyGaussianFactorArrayBuffer
-  {
-    fatalError("implement as in VectorArrayDispatch_")
-  }
+  final let jacobians:
+    (_ storage: UnsafeRawPointer, _ scalar: Double) -> AnyGaussianFactorArrayBuffer
 
   /// The type of a `ScalarJacobianFactor` that scales the elements.
-  class var scalarJacobianType: Any.Type {
-    fatalError("implement as in VectorArrayDispatch_")
-  }
-}
+  final let scalarJacobianType: Any.Type
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for a
-/// specific `Vector` element type.
-class VectorArrayDispatch_<Element: EuclideanVectorN>
-  : VectorArrayDispatch, AnyArrayDispatch
-{
-  /// The `TangentVector` type of the elements.
-  override class var tangentVectorType: Any.Type {
-    Element.TangentVector.self
-  }
-
-  /// Returns the zero `TangentVector`s for each of the elements in the `ArrayStorage` whose
-  /// address is `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  override class func tangentVectorZeros(_ storage: UnsafeRawPointer)
-    -> AnyArrayBuffer<VectorArrayDispatch>
-  {
-    .init(asStorage(storage).tangentVectorZeros)
-  }
-
-  /// Moves each element in the `ArrayStorage` whose address is `storage` along the corresponding
-  /// element of `directions`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  /// - Requires: `directions.elementType == Element.TangentVector.self`.
-  override class func move(_ storage: UnsafeRawPointer, along directions: AnyElementArrayBuffer) {
-    asStorage(storage).move(along: .init(unsafelyDowncasting: directions))
-  }
-
-  /// Adds `others` to the `ArrayStorage` whose address is `storage`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  /// - Requires: `others.elementType == Element`.
-  /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  @_specialize(where Element == Vector1)
-  @_specialize(where Element == Vector2)
-  @_specialize(where Element == Vector3)
-  @_specialize(where Element == Vector4)
-  @_specialize(where Element == Vector5)
-  @_specialize(where Element == Vector6)
-  @_specialize(where Element == Vector7)
-  @_specialize(where Element == Vector8)
-  @_specialize(where Element == Vector9)
-  @_specialize(where Element == Vector10)
-  @_specialize(where Element == Vector11)
-  @_specialize(where Element == Vector12)
-  override class func add(_ storage: UnsafeRawPointer, _ others: AnyElementArrayBuffer) {
-    asStorage(storage).add(.init(unsafelyDowncasting: others))
-  }
-
-  /// Scales each element of the `ArrayStorage` whose address is `storage` by `scalar`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  @_specialize(where Element == Vector1)
-  @_specialize(where Element == Vector2)
-  @_specialize(where Element == Vector3)
-  @_specialize(where Element == Vector4)
-  @_specialize(where Element == Vector5)
-  @_specialize(where Element == Vector6)
-  @_specialize(where Element == Vector7)
-  @_specialize(where Element == Vector8)
-  @_specialize(where Element == Vector9)
-  @_specialize(where Element == Vector10)
-  @_specialize(where Element == Vector11)
-  @_specialize(where Element == Vector12)
-  override class func scale(_ storage: UnsafeRawPointer, by scalar: Double) {
-    asStorage(storage).scale(by: scalar)
-  }
-
-  /// Returns the dot product of the `ArrayStorage` whose address is `storage` with `others`.
-  ///
-  /// This is the sum of the dot products of corresponding elements.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  /// - Requires: `others.elementType == Element`.
-  /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  @_specialize(where Element == Vector1)
-  @_specialize(where Element == Vector2)
-  @_specialize(where Element == Vector3)
-  @_specialize(where Element == Vector4)
-  @_specialize(where Element == Vector5)
-  @_specialize(where Element == Vector6)
-  @_specialize(where Element == Vector7)
-  @_specialize(where Element == Vector8)
-  @_specialize(where Element == Vector9)
-  @_specialize(where Element == Vector10)
-  @_specialize(where Element == Vector11)
-  @_specialize(where Element == Vector12)
-  override class func dot(_ storage: UnsafeRawPointer, _ others: AnyElementArrayBuffer) -> Double {
-    asStorage(storage).dot(.init(unsafelyDowncasting: others))
-  }
-
-  /// Returns Jacobians that scale each element by `scalar`.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage<Element>`.
-  override class func jacobians(_ storage: UnsafeRawPointer, scalar: Double)
-    -> AnyGaussianFactorArrayBuffer
-  {
-    asStorage(storage).jacobians(scalar: scalar)
-  }
-
-  /// The type of a `ScalarJacobianFactor` that scales the elements.
-  override class var scalarJacobianType: Any.Type {
-    ScalarJacobianFactor<Element>.self
+  /// Creates an instance for elements of type `Element`.
+  init<Element: EuclideanVectorN>(_: Type<Element>, _: () = ()) {
+    let storageType = Type<ArrayStorage<Element>>()
+    add = { storage, others in
+      storage[as: storageType].add(.init(unsafelyDowncasting: others))
+    }
+    scale = { storage, factor in
+      storage[as: storageType].scale(by: factor)
+    }
+    dot = { storage, others in
+      storage[as: storageType].dot(.init(unsafelyDowncasting: others))
+    }
+    jacobians = { storage, scalar in
+      storage[as: storageType].jacobians(scalar: scalar)
+    }
+    scalarJacobianType = ScalarJacobianFactor<Element>.self
+    super.init(Type<Element>())
   }
 }
 
@@ -349,7 +224,7 @@ extension AnyArrayBuffer where Dispatch == VectorArrayDispatch {
   init<Element: EuclideanVectorN>(_ src: ArrayBuffer<Element>) {
     self.init(
       storage: src.storage,
-      dispatch: VectorArrayDispatch_<Element>.self)
+      dispatch: VectorArrayDispatch(Type<Element>()))
   }
 }
 
@@ -359,13 +234,13 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   /// - Requires: `others.count == count`.
   mutating func add(_ others: AnyElementArrayBuffer) {
     ensureUniqueStorage()
-    withUnsafePointer(to: storage) { dispatch.add($0, others) }
+    withUnsafeMutablePointer(to: &storage) { dispatch.add($0, others) }
   }
 
-  /// Scales each element of `self` by `scalar`.
-  mutating func scale(by scalar: Double) {
+  /// Scales each element of `self` by `factor`.
+  mutating func scale(by factor: Double) {
     ensureUniqueStorage()
-    withUnsafePointer(to: storage) { dispatch.scale($0, by: scalar) }
+    withUnsafeMutablePointer(to: &storage) { dispatch.scale($0, factor) }
   }
 
   /// Returns the dot product of `self` with `others`.
@@ -378,7 +253,7 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   }
 
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
-    withUnsafePointer(to: storage) { dispatch.jacobians($0, scalar: scalar) }
+    withUnsafePointer(to: storage) { dispatch.jacobians($0, scalar) }
   }
 
   var scalarJacobianType: Any.Type {

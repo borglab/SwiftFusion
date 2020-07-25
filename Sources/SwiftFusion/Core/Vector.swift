@@ -52,6 +52,11 @@ extension Vector {
   public var dimension: Int {
     return scalarsStorage.count
   }
+
+  /// Returns this vector as a `Tensor<Double>`.
+  public var tensor: Tensor<Double> {
+    return Tensor<Double>(shape: [scalarsStorage.count], scalars: scalarsStorage)
+  }
 }
 
 /// Conformance to `EuclideanVector`.

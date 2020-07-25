@@ -19,7 +19,7 @@ import PenguinStructures
 public struct JacobianFactor<
   Rows: FixedSizeArray,
   ErrorVector: EuclideanVectorN
->: GaussianFactor where Rows.Element: EuclideanVectorN & VariableTuple {
+>: LinearApproximationFactor where Rows.Element: EuclideanVectorN & DifferentiableVariableTuple {
   public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.
@@ -37,32 +37,35 @@ public struct JacobianFactor<
   public let edges: Variables.Indices
 
   /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
-  init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
+  public init(jacobian: Rows, error: ErrorVector, edges: Variables.Indices) {
     self.jacobian = jacobian
     self.error = error
     self.edges = edges
   }
 
-  /// Creates a Jacobian factor that linearizes `f` at `x`, and is adjacent to the variables
-  /// identifed by edges.
-  init<Input: Differentiable & DifferentiableVariableTuple>(
-    linearizing f: @differentiable (Input) -> ErrorVector,
-    at x: Input,
-    edges: Input.Indices
-  ) where Input.TangentVector == Variables, Input.TangentIndices == Variables.Indices {
-    let (value, pb) = valueWithPullback(at: x, in: f)
+  /// Creates a factor that linearly approximates `f` at `x`.
+  public init<F: LinearizableFactor>(linearizing f: F, at x: F.Variables)
+  where F.Variables.TangentVector == Variables, F.ErrorVector == ErrorVector {
+    let (value, pb) = valueWithPullback(at: x, in: f.errorVector)
     let rows = Rows(ErrorVector.standardBasis.lazy.map(pb))
     self.jacobian = rows
-    self.error = value
-    self.edges = Input.linearized(edges)
+    self.error = -value
+    self.edges = F.Variables.linearized(f.edges)
   }
 
   public func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
+  @differentiable
   public func errorVector(at x: Variables) -> ErrorVector {
-    return error - errorVector_linearComponent(x)
+    return errorVector_linearComponent(x) - error
+  }
+
+  @usableFromInline
+  @derivative(of: errorVector)
+  func vjpErrorVector(at x: Variables) -> (value: ErrorVector, pullback: (ErrorVector) -> Variables) {
+    return (errorVector(at: x), errorVector_linearComponent_adjoint)
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {
@@ -87,12 +90,70 @@ public struct JacobianFactor<
       }
     }
   }
+}
 
-  public typealias Linearization = Self
-  public func linearized(at x: Variables) -> Self {
-    return self
+/// Convenience initializers in terms of `FixedSizeMatrix`.
+extension JacobianFactor {
+  /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
+  ///
+  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  public init<J1Rows>(
+    jacobian j1: FixedSizeMatrix<J1Rows>,
+    error: ErrorVector,
+    edges: Variables.Indices
+  ) where Rows.Element == Tuple1<J1Rows.Element> {
+    precondition(J1Rows.count == ErrorVector.dimension)
+    self.init(
+      jacobian: Rows(j1.rows.lazy.map { Tuple1($0) }),
+      error: error,
+      edges: edges
+    )
+  }
+
+  /// Creates a Jacobian factor with the given Jacobians, `error`, and `edges`.
+  ///
+  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  public init<J1Rows, J2Rows>(
+    jacobians j1: FixedSizeMatrix<J1Rows>,
+    _ j2: FixedSizeMatrix<J2Rows>,
+    error: ErrorVector,
+    edges: Variables.Indices
+  ) where Rows.Element == Tuple2<J1Rows.Element, J2Rows.Element> {
+    precondition(J1Rows.count == ErrorVector.dimension)
+    precondition(J2Rows.count == ErrorVector.dimension)
+    self.init(
+      jacobian: Rows(zip(j1.rows, j2.rows).lazy.map { Tuple2($0.0, $0.1) }),
+      error: error,
+      edges: edges
+    )
+  }
+
+  /// Creates a Jacobian factor with the given Jacobians, `error`, and `edges`.
+  ///
+  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  public init<J1Rows, J2Rows, J3Rows>(
+    jacobians j1: FixedSizeMatrix<J1Rows>,
+    _ j2: FixedSizeMatrix<J2Rows>,
+    _ j3: FixedSizeMatrix<J3Rows>,
+    error: ErrorVector,
+    edges: Variables.Indices
+  ) where Rows.Element == Tuple3<J1Rows.Element, J2Rows.Element, J3Rows.Element> {
+    precondition(J1Rows.count == ErrorVector.dimension)
+    precondition(J2Rows.count == ErrorVector.dimension)
+    precondition(J3Rows.count == ErrorVector.dimension)
+    self.init(
+      jacobian: Rows(zip(zip(j1.rows, j2.rows), j3.rows).lazy.map { Tuple3($0.0.0, $0.0.1, $0.1) }),
+      error: error,
+      edges: edges
+    )
   }
 }
+
+/// A Jacobian factor with 1 2-dimensional input and a 2-dimensional error vector.
+public typealias JacobianFactor2x2_1 = JacobianFactor<Array2<Tuple1<Vector2>>, Vector2>
+
+/// A Jacobian factor with 2 2-dimensional inputs and a 2-dimensional error vector.
+public typealias JacobianFactor2x2_2 = JacobianFactor<Array2<Tuple2<Vector2, Vector2>>, Vector2>
 
 /// A Jacobian factor with 1 3-dimensional input and a 3-dimensional error vector.
 public typealias JacobianFactor3x3_1 = JacobianFactor<Array3<Tuple1<Vector3>>, Vector3>

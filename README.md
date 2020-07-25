@@ -11,7 +11,7 @@ swift test
 ## Run benchmarks
 
 ```
-swift run -c release -Xswiftc -cross-module-optimization Benchmarks
+swift run -c release -Xswiftc -cross-module-optimization SwiftFusionBenchmarks
 ```
 
 ## Update dependency versions

@@ -17,38 +17,10 @@
 import Benchmark
 import SwiftFusion
 
-let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
-  
-  var gridDataset_old =
-    try! G2OReader.G2ONonlinearFactorGraph(g2oFile3D: try! cachedDataset("pose3example.txt"))
-  // Uses `NonlinearFactorGraph` on the GTSAM pose3example dataset.
-  // The solvers are configured to run for a constant number of steps.
-  // The nonlinear solver is 40 iterations of Gauss-Newton.
-  // The linear solver is 200 iterations of CGLS.
-  suite.benchmark(
-    "NonlinearFactorGraph, Pose3Example, 40 Gauss-Newton steps, 200 CGLS steps",
-    settings: Iterations(1), TimeUnit(.ms)
-  ) {
-    var val = gridDataset_old.initialGuess
-    gridDataset_old.graph += OldPriorFactor(0, Pose3())
-    for _ in 0..<40 {
-      print("error = \(gridDataset_old.graph.error(val))")
-      let gfg = gridDataset_old.graph.linearize(val)
-      let optimizer = CGLS(precision: 0, max_iteration: 200)
-      var dx = VectorValues()
-      for i in 0..<val.count {
-        dx.insert(i, Vector(zeros: 6))
-      }
-      optimizer.optimize(gfg: gfg, initial: &dx)
-      print("gfg error = \(gfg.residual(dx).norm)")
-      val.move(along: dx)
-    }
-    for i in val.keys.sorted() {
-      print(val[i, as: Pose3.self].t)
-    }
-  }
-  
-  var sphere2500Dataset =  try! G2OReader.G2OFactorGraph(g2oFile3D: try! cachedDataset("sphere2500.g2o"))
+let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in 
+  let sphere2500URL = try! cachedDataset("sphere2500.g2o")
+  let sphere2500Dataset =  try! G2OReader.G2OFactorGraph(g2oFile3D: sphere2500URL)
+
   // Uses `FactorGraph` on the sphere2500 dataset.
   // The solvers are configured to run for a constant number of *LM steps*, except when the LM solver is
   // unable to progress even with maximum lambda.
@@ -60,11 +32,43 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     var val = sphere2500Dataset.initialGuess
     var graph = sphere2500Dataset.graph
     
-    graph.store(PriorFactor3(TypedID(0), Pose3(Rot3.fromTangent(Vector3.zero), Vector3.zero)))
+    graph.store(PriorFactor(TypedID(0), Pose3()))
     
     var optimizer = LM()
     optimizer.verbosity = .SUMMARY
     optimizer.max_iteration = 30
+    optimizer.max_inner_iteration = 200
+    
+    do {
+      try optimizer.optimize(graph: graph, initial: &val)
+    } catch let error {
+      print("The solver gave up, message: \(error.localizedDescription)")
+    }
+  }
+
+  suite.benchmark(
+    "sphere2500, chordal initialization",
+    settings: Iterations(1), TimeUnit(.ms)
+  ) {
+    _ = ChordalInitialization.GetInitializations(
+      graph: sphere2500Dataset.graph, ids: sphere2500Dataset.variableId)
+  }
+
+  let sphere2500DatasetChordal = try! G2OReader.G2OFactorGraph(
+    g2oFile3D: sphere2500URL, chordal: true)
+
+  suite.benchmark(
+    "sphere2500, chordal graph, 1 LM step, 200 CGLS steps",
+    settings: Iterations(1), TimeUnit(.ms)
+  ) {
+    var val = sphere2500DatasetChordal.initialGuess
+    var graph = sphere2500DatasetChordal.graph
+    
+    graph.store(PriorFactor(TypedID(0), Pose3()))
+    
+    var optimizer = LM()
+    optimizer.verbosity = .SUMMARY
+    optimizer.max_iteration = 1
     optimizer.max_inner_iteration = 200
     
     do {
