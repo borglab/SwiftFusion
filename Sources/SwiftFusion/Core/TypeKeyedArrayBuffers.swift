@@ -13,6 +13,28 @@
 // limitations under the License.
 import PenguinStructures
 
+/// Types that carry a static buffer element type, whose instances can be used to look up a
+/// (type-erased) buffer dynamically having that type of element in models of
+/// `TypeKeyedArrayBuffersProtocol`.
+public protocol TypedBufferKeyProtocol {
+  /// The `Element` type of buffers looked up with this key.
+  associatedtype Element
+
+  /// The untyped key associated with the buffer looked up with this key.
+  var untyped: TypeID { get }
+}
+
+extension TypedBufferKeyProtocol {
+  /// The `Element` type of buffers looked up with this key.
+  var elementType: Type<Element> { .init() }
+}
+
+/// A key for accessing an `ArrayBuffer` in a `TypeKeyedArrayBuffersProtocol` instance.
+struct TypedBufferKey<Element> : TypedBufferKeyProtocol {
+  /// The untyped key associated with the buffer looked up with this key.
+  let untyped: TypeID
+}
+
 /// Types that store a heterogeneous collection of `ArrayBuffer`s (in the form of
 /// `AnyArrayBuffer<Dispatch>`) with common capabilities, keyed by `TypeID`.
 public protocol TypeKeyedArrayBuffersProtocol {
@@ -21,6 +43,9 @@ public protocol TypeKeyedArrayBuffersProtocol {
 
   /// A key that can be used to look up an untyped `ArrayBuffer` (i.e. `AnyArrayBuffer<Dispatch>`)
   typealias UntypedKey = TypeID
+
+  /// The type of the backing store
+  typealias Storage = [UntypedKey: AnyArrayBuffer<Dispatch>]
   
   /// (Internal only) The backing store.
   var _storage: [UntypedKey: AnyArrayBuffer<Dispatch>] { get set }
@@ -52,8 +77,20 @@ extension TypeKeyedArrayBuffersProtocol {
     _modify { yield &_storage.values}
   }
 
-  /// the `TypeID`s that index the stored `AnyArrayBuffer`s.
+  /// The keys that index the stored `AnyArrayBuffer`s.
   private var untypedKeys: UntypedKeys { _storage.keys }
+
+  /// Accesses the buffer associated with `k`.
+  ///
+  /// - Requires: the buffer associated with `k.untyped` stores elements of type `Element`.
+  public subscript<K: TypedBufferKeyProtocol>(k: K) -> ArrayBuffer<K.Element> {
+    get {
+      _storage[existingKey: k.untyped][existingElementType: k.elementType]
+    }
+    _modify {
+      yield &_storage[existingKey: k.untyped][existingElementType: k.elementType]
+    }
+  }
 
   /// Returns `true` iff `self` and other have the same key values, and for each key, the same
   /// number of elements in the corresponding array.
