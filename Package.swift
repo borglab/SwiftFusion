@@ -11,6 +11,9 @@ let package = Package(
     .library(
       name: "SwiftFusion",
       targets: ["SwiftFusion"]),
+    .library(
+      name: "BeeDataset",
+      targets: ["BeeDataset"]),
     .executable(
       name: "Pose3SLAMG2O",
       targets: ["Pose3SLAMG2O"])
@@ -22,6 +25,7 @@ let package = Package(
     .package(url: "https://github.com/saeta/penguin.git", .branch("master")),
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
+    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("master")),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -36,10 +40,20 @@ let package = Package(
         "SwiftFusion",
       ]),
     .target(
+      name: "BeeDataset",
+      dependencies: [
+        "SwiftFusion",
+        .product(name: "Datasets", package: "swift-models"),
+        .product(name: "ModelSupport", package: "swift-models"),
+      ]),
+    .target(
       name: "Pose3SLAMG2O",
       dependencies: ["SwiftFusion", "TensorBoardX", "SwiftToolsSupport"],
       path: "Examples/Pose3SLAMG2O"),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: ["SwiftFusion"]),
+    .testTarget(
+      name: "BeeDatasetTests",
+      dependencies: ["BeeDataset"]),
   ])
