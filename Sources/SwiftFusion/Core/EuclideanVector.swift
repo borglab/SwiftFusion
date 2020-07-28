@@ -61,13 +61,6 @@ extension EuclideanVector {
   public var norm: Double {
     return squaredNorm.squareRoot()
   }
-
-  /// Creates a vector with the same elements as `vector`.
-  ///
-  /// Note: This is for backwards compatibility with existing code.
-  public init(_ vector: Vector) {
-    self.init(vector.scalars)
-  }
 }
 
 /// Default implementations of some `EuclideanVector` requirements.

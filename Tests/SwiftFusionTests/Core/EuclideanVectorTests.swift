@@ -22,14 +22,14 @@ extension EuclideanVectorTests {
     return (0..<Self.dimension).map { index in
       var v = Array(repeating: Double(0), count: Self.dimension)
       v[index] = 1
-      return Testee(Vector(v))
+      return Testee(v)
     }
   }
 
   /// Make a vector whose first element is `start` and whose subsequent elements increment by
   /// `stride`.
   fileprivate func makeVector(from start: Double, stride: Double) -> Testee {
-    return Testee(Vector(Array((0..<Self.dimension).map { start + Double($0) * stride })))
+    return Testee(Array((0..<Self.dimension).map { start + Double($0) * stride }))
   }
 
   /// Tests all `EuclideanVector` requirements.

@@ -178,13 +178,4 @@ extension EuclideanVectorN {
   func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) {
     return (self.flatTensor, { Self(flatTensor: $0) })
   }
-
-  /// Returns this vector as a `Vector`.
-  ///
-  /// Note: This is for backwards compatibility with existing code.
-  public var vector: Vector {
-    withUnsafeBufferPointer { b in
-      return Vector(Array(b))
-    }
-  }
 }
