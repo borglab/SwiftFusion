@@ -1,7 +1,7 @@
 import TensorFlow
 
 /// A `Tensor` with a statically known shape.
-public protocol FixedShapeTensor: EuclideanVectorN {
+public protocol FixedShapeTensor: EuclideanVector {
   /// The shape of an instance.
   static var shape: TensorShape { get }
 
@@ -14,7 +14,7 @@ public protocol FixedShapeTensor: EuclideanVectorN {
   @differentiable var tensor: Tensor<Double> { get set }
 }
 
-/// Default implementations of `EuclideanVectorN` requirements.
+/// Default implementations of `EuclideanVector` requirements.
 extension FixedShapeTensor {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {

@@ -33,7 +33,7 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   @differentiable
   func dot(_ other: Self) -> Double
 
-  // MARK: - Conversion from collections of scalars.
+  // MARK: - Methods for setting/accessing scalars.
 
   /// Creates an instance whose elements are `scalars`.
   ///
@@ -42,6 +42,29 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
   ///
   /// TODO: Maybe make this failable.
   init<Source: Collection>(_ scalars: Source) where Source.Element == Double
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  func withUnsafeBufferPointer<R>(
+    _ body: (UnsafeBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  mutating func withUnsafeMutableBufferPointer<R>(
+    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  // MARK: - Methods relating to static dimension.
+  // TODO: Make these per-instance so that we can support dynamically-sized vectors.
+
+  /// The dimension of the vector.
+  static var dimension: Int { get }
+
+  /// A standard basis of vectors.
+  static var standardBasis: [Self] { get }
 }
 
 /// Convenient operations on Euclidean vector spaces that can be implemented in terms of the

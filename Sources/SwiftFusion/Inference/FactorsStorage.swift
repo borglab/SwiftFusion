@@ -201,7 +201,7 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     let elementType = Type<Element>()
     typealias TangentVector = Element.LinearizableComponent.Variables.TangentVector
     typealias Linearization<A: FixedSizeArray> = Type<JacobianFactor<A, Element.ErrorVector>>
-      where A.Element: EuclideanVectorN & DifferentiableVariableTuple
+      where A.Element: EuclideanVector & DifferentiableVariableTuple
     
     switch Element.ErrorVector.dimension {
     case 1:

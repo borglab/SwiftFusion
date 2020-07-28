@@ -1,29 +1,6 @@
 import TensorFlow
 
-/// A vector in a Euclidean vector space whose dimension is fixed at compile time.
-public protocol EuclideanVectorN: EuclideanVector {
-  /// The dimension of the vector.
-  static var dimension: Int { get }
-
-  /// A standard basis of vectors.
-  static var standardBasis: [Self] { get }
-
-  /// Returns the result of calling `body` on the scalars of `self`.
-  ///
-  /// A default is provided that returns a pointer to `self`.
-  func withUnsafeBufferPointer<R>(
-    _ body: (UnsafeBufferPointer<Double>) throws -> R
-  ) rethrows -> R
-
-  /// Returns the result of calling `body` on the scalars of `self`.
-  ///
-  /// A default is provided that returns a pointer to `self`.
-  mutating func withUnsafeMutableBufferPointer<R>(
-    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
-  ) rethrows -> R
-}
-
-extension EuclideanVectorN {
+extension EuclideanVector {
   /// Returns the result of calling `body` on the scalars of `self`.
   public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
@@ -70,12 +47,12 @@ extension EuclideanVectorN {
   }
 }
 
-extension EuclideanVectorN {
+extension EuclideanVector {
   /// Creates a vector with the same scalars as `v`.
   ///
   /// - Requires: `Self.dimension == V.dimension`.
   @differentiable
-  public init<V: EuclideanVectorN>(_ v: V) {
+  public init<V: EuclideanVector>(_ v: V) {
     precondition(Self.dimension == V.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
@@ -89,7 +66,7 @@ extension EuclideanVectorN {
 
   @derivative(of: init(_:))
   @usableFromInline
-  static func vjpInit<V: EuclideanVectorN>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
+  static func vjpInit<V: EuclideanVector>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
     return (
       Self(v),
       { t in V(t) }
@@ -100,7 +77,7 @@ extension EuclideanVectorN {
   ///
   /// - Requires: `Self.dimension == V1.dimension + V2.dimension`.
   @differentiable
-  public init<V1: EuclideanVectorN, V2: EuclideanVectorN>(concatenating v1: V1, _ v2: V2) {
+  public init<V1: EuclideanVector, V2: EuclideanVector>(concatenating v1: V1, _ v2: V2) {
     precondition(Self.dimension == V1.dimension + V2.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
@@ -119,7 +96,7 @@ extension EuclideanVectorN {
 
   @derivative(of: init(concatenating:_:))
   @usableFromInline
-  static func vjpInit<V1: EuclideanVectorN, V2: EuclideanVectorN>(concatenating v1: V1, _ v2: V2) -> (
+  static func vjpInit<V1: EuclideanVector, V2: EuclideanVector>(concatenating v1: V1, _ v2: V2) -> (
     value: Self,
     pullback: (Self) -> (V1, V2)
   ) {
@@ -146,7 +123,7 @@ extension EuclideanVectorN {
   }
 }
 
-extension EuclideanVectorN {
+extension EuclideanVector {
   /// Creates an instance with the same scalars as `flatTensor`.
   ///
   /// - Reqiures: `flatTensor.shape == [Self.dimension]`.

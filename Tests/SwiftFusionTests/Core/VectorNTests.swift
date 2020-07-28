@@ -10,7 +10,7 @@ import SwiftFusion
 
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 9)
 
-class ConcreteEuclideanVectorNTests: XCTestCase {
+class ConcreteEuclideanVectorTests: XCTestCase {
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 19)
 
   /// Test that initializing a vector from coordinate values works.
@@ -177,83 +177,83 @@ class ConcreteEuclideanVectorNTests: XCTestCase {
 }
 
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector1EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector1EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector1
   static var dimension: Int { return 1 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector2EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector2EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector2
   static var dimension: Int { return 2 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector3EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector3EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector3
   static var dimension: Int { return 3 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector4EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector4EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector4
   static var dimension: Int { return 4 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector5EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector5EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector5
   static var dimension: Int { return 5 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector6EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector6EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector6
   static var dimension: Int { return 6 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector7EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector7EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector7
   static var dimension: Int { return 7 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector8EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector8EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector8
   static var dimension: Int { return 8 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
-/// Tests the `EuclideanVectorN` requirements.
-class Vector9EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `EuclideanVector` requirements.
+class Vector9EuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Vector9
   static var dimension: Int { return 9 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }

@@ -86,9 +86,7 @@ extension Empty: EuclideanVector {
     assert(scalars.isEmpty)
     self.init()
   }
-}
 
-extension Empty: EuclideanVectorN {
   /// The dimension of the vector.
   public static var dimension: Int { return 0 }
 
@@ -96,8 +94,8 @@ extension Empty: EuclideanVectorN {
   public static var standardBasis: [Self] { return [] }
 }
 
-extension Tuple: EuclideanVector, EuclideanVectorN
-where Head: EuclideanVectorN, Tail: EuclideanVectorN {
+extension Tuple: EuclideanVector
+where Head: EuclideanVector, Tail: EuclideanVector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.head += rhs.head
@@ -141,7 +139,7 @@ where Head: EuclideanVectorN, Tail: EuclideanVectorN {
     )
   }
 
-  // MARK: `EuclideanVectorN` requirements.
+  // MARK: `EuclideanVector` requirements.
 
   /// The dimension of the vector.
   public static var dimension: Int { return Head.dimension + Tail.dimension }

@@ -53,6 +53,6 @@ class FixedShapeTensorEuclideanVectorTests: XCTestCase, EuclideanVectorTests {
   typealias Testee = Tensor10x10
   static var dimension: Int { 100 }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllEuclideanVectorTests()
   }
 }

@@ -7,7 +7,7 @@ import SwiftFusion
 /// Conform to this and call `runAllEuclideanVectorTests()` to test all the `EuclideanVector`
 /// requirements on a concrete type.
 ///
-/// Or call `runAllEuclideanVectorNTests()` to test all the `EuclideanVectorN` requirements.
+/// Or call `runAllEuclideanVectorTests()` to test all the `EuclideanVector` requirements.
 protocol EuclideanVectorTests {
   /// The concrete type that we are testing.
   associatedtype Testee: EuclideanVector
@@ -46,6 +46,12 @@ extension EuclideanVectorTests {
     testNegate()
     testSquaredNorm()
     testNorm()
+    testDimension()
+    testStandardBasis()
+    testWithUnsafeBufferPointer()
+    testWithUnsafeMutableBufferPointer()
+    testInitFromFlatTensor()
+    testFlatTensor()
   }
 
   /// Tests ==.
@@ -221,19 +227,6 @@ extension EuclideanVectorTests {
     let (value, g) = valueWithGradient(at: v1) { $0.norm }
     XCTAssertEqual(value, expectedNorm)
     XCTAssertEqual(g, (1 / v1.norm) * v1)
-  }
-}
-
-extension EuclideanVectorTests where Testee: EuclideanVectorN {
-  /// Tests all `EuclideanVectorN` requirements, including those inherited from `EuclideanVector`.
-  func runAllEuclideanVectorNTests() {
-    runAllEuclideanVectorTests()
-    testDimension()
-    testStandardBasis()
-    testWithUnsafeBufferPointer()
-    testWithUnsafeMutableBufferPointer()
-    testInitFromFlatTensor()
-    testFlatTensor()
   }
 
   /// Tests that the dimension is correct.

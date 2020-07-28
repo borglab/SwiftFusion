@@ -15,7 +15,7 @@
 import PenguinStructures
 
 /// A Gaussian factor that scales its input by a scalar.
-public struct ScalarJacobianFactor<ErrorVector: EuclideanVectorN>: GaussianFactor {
+public struct ScalarJacobianFactor<ErrorVector: EuclideanVector>: GaussianFactor {
   public typealias Variables = Tuple1<ErrorVector>
 
   public let edges: Variables.Indices

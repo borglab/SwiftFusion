@@ -71,7 +71,7 @@ public protocol VectorFactor${arity}_ {
 
   typealias Variables = Tuple${arity}<${repeated('V%d')}>
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: EuclideanVector
   associatedtype LinearizableComponent: LinearizableFactor
 
   /// Returns the error vector at the given point.
@@ -122,7 +122,7 @@ public protocol LinearizableFactor${arity}_ {
   typealias Variables = Tuple${arity}<${repeated('V%d')}>
   typealias LinearizableComponent = Self
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: EuclideanVector
 
   /// Returns the error vector given the values of the adjacent variables.
   @differentiable

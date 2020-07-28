@@ -32,7 +32,7 @@ public protocol Factor {
 public protocol VectorFactor: Factor {
   /// The type of the error vector.
   // TODO: Add a description of what an error vector is.
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: EuclideanVector
 
   /// Returns the error vector at `x`.
   func errorVector(at x: Variables) -> ErrorVector
@@ -49,7 +49,7 @@ public protocol VectorFactor: Factor {
 
 /// A factor whose `errorVector` function is linearizable with respect to all the variables.
 public protocol LinearizableFactor: VectorFactor
-where Variables: DifferentiableVariableTuple, Variables.TangentVector: EuclideanVectorN
+where Variables: DifferentiableVariableTuple, Variables.TangentVector: EuclideanVector
 {
   /// Returns the error vector given the values of the adjacent variables.
   @differentiable

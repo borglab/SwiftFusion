@@ -22,8 +22,8 @@ public struct Vector${dim}: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector${dim}: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to EuclideanVector
+extension Vector${dim}: AdditiveArithmetic, EuclideanVector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     % for coordinate in coordinates:
