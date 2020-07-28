@@ -1,5 +1,115 @@
+import Foundation
 import TensorFlow
 
+/// An element of a Euclidean vector space.
+public protocol EuclideanVector: Differentiable where Self.TangentVector == Self {
+  // MARK: - AdditiveArithmetic requirements, refined to require differentiability.
+
+  @differentiable
+  static func += (_ lhs: inout Self, _ rhs: Self)
+
+  @differentiable
+  static func + (_ lhs: Self, _ rhs: Self) -> Self
+
+  @differentiable
+  static func -= (_ lhs: inout Self, _ rhs: Self)
+
+  @differentiable
+  static func - (_ lhs: Self, _ rhs: Self) -> Self
+
+  // MARK: - Scalar multiplication.
+
+  @differentiable
+  static func *= (_ lhs: inout Self, _ rhs: Double)
+
+  @differentiable
+  static func * (_ lhs: Double, _ rhs: Self) -> Self
+
+  // MARK: - Euclidean structure.
+
+  /// The inner product of `self` with `other`.
+  @differentiable
+  func dot(_ other: Self) -> Double
+
+  // MARK: - Methods for setting/accessing scalars.
+
+  /// Creates an instance whose elements are `scalars`.
+  ///
+  /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
+  /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
+  ///
+  /// TODO: Maybe make this failable.
+  init<Source: Collection>(_ scalars: Source) where Source.Element == Double
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  func withUnsafeBufferPointer<R>(
+    _ body: (UnsafeBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// A default is provided that returns a pointer to `self`.
+  mutating func withUnsafeMutableBufferPointer<R>(
+    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  // MARK: - Methods relating to static dimension.
+  // TODO: Make these per-instance so that we can support dynamically-sized vectors.
+
+  /// The dimension of the vector.
+  static var dimension: Int { get }
+
+  /// A standard basis of vectors.
+  static var standardBasis: [Self] { get }
+}
+
+/// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
+/// primitive operations.
+extension EuclideanVector {
+  @differentiable
+  public static prefix func - (_ v: Self) -> Self {
+    return (-1) * v
+  }
+
+  @differentiable
+  public var squaredNorm: Double {
+    return self.dot(self)
+  }
+
+  @differentiable
+  public var norm: Double {
+    return squaredNorm.squareRoot()
+  }
+}
+
+/// Default implementations of some vector space operations in terms of other vector space
+/// operations.
+extension EuclideanVector {
+  @differentiable
+  public static func + (_ lhs: Self, _ rhs: Self) -> Self {
+    var result = lhs
+    result += rhs
+    return result
+  }
+
+  @differentiable
+  public static func - (_ lhs: Self, _ rhs: Self) -> Self {
+    var result = lhs
+    result -= rhs
+    return result
+  }
+
+  @differentiable
+  public static func * (_ lhs: Double, _ rhs: Self) -> Self {
+    var result = rhs
+    result *= lhs
+    return result
+  }
+}
+
+/// Default implementations of raw memory access, for vectors represented as contiguous scalars.
 extension EuclideanVector {
   /// Returns the result of calling `body` on the scalars of `self`.
   public func withUnsafeBufferPointer<R>(
@@ -26,7 +136,10 @@ extension EuclideanVector {
               count: Self.dimension))
     }
   }
+}
 
+/// Implementation of `subscript`.
+extension EuclideanVector {
   /// Accesses the scalar at `i`.
   subscript(i: Int) -> Double {
     _read {
@@ -47,6 +160,7 @@ extension EuclideanVector {
   }
 }
 
+/// Conversions between `Vector`s with compatible shapes.
 extension EuclideanVector {
   /// Creates a vector with the same scalars as `v`.
   ///
@@ -123,6 +237,7 @@ extension EuclideanVector {
   }
 }
 
+/// Conversions to/from `Tensor`.
 extension EuclideanVector {
   /// Creates an instance with the same scalars as `flatTensor`.
   ///
