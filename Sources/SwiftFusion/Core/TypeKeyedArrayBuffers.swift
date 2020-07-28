@@ -13,63 +13,41 @@
 // limitations under the License.
 import PenguinStructures
 
-/// Types that carry a static buffer element type, whose instances can be used to look up a
-/// (type-erased) buffer dynamically having that type of element in models of
-/// `TypeKeyedArrayBuffersProtocol`.
-public protocol TypedBufferKeyProtocol {
-  /// The `Element` type of buffers looked up with this key.
-  associatedtype Element
-
+/// A key for accessing an `ArrayBuffer` in a `TypeKeyedArrayBuffersProtocol` instance.
+///
+/// The `Element` type of the `ArrayBuffer` is communicated by the `Element` type parameter.
+public struct TypedBufferKey<Element> {
   /// The untyped key associated with the buffer looked up with this key.
-  var untyped: TypeID { get }
-}
-
-extension TypedBufferKeyProtocol {
+  let untyped: TypeID
+  
   /// The `Element` type of buffers looked up with this key.
   var elementType: Type<Element> { .init() }
 }
 
-/// A key for accessing an `ArrayBuffer` in a `TypeKeyedArrayBuffersProtocol` instance.
-struct TypedBufferKey<Element> : TypedBufferKeyProtocol {
-  /// The untyped key associated with the buffer looked up with this key.
-  let untyped: TypeID
-}
-
-/// Types that store a heterogeneous collection of `ArrayBuffer`s (in the form of
-/// `AnyArrayBuffer<Dispatch>`) with common capabilities, keyed by `TypeID`.
-public protocol TypeKeyedArrayBuffersProtocol {
-  /// A dispatch table for the common capabilites of each buffer type.
-  associatedtype Dispatch: AnyObject
-
+/// A mapping from instances of `TypeID` to instances of `AnyArrayBuffer<Dispatch>`
+public struct TypeKeyedArrayBuffers<Dispatch: AnyObject> {
   /// A key that can be used to look up an untyped `ArrayBuffer` (i.e. `AnyArrayBuffer<Dispatch>`)
-  typealias UntypedKey = TypeID
+  fileprivate typealias UntypedKey = TypeID
 
   /// The type of the backing store
-  typealias Storage = [UntypedKey: AnyArrayBuffer<Dispatch>]
+  fileprivate typealias Storage = [UntypedKey: AnyArrayBuffer<Dispatch>]
   
-  /// (Internal only) The backing store.
-  var _storage: [UntypedKey: AnyArrayBuffer<Dispatch>] { get set }
-  
-  /// (Internal only) Creates an instance with the given backing store.
-  init(_storage: Storage)
-}
-
-/// A mapping from instances of `TypeID` to instances of `AnyArrayBuffer<Dispatch>`
-public struct TypeKeyedArrayBuffers<Dispatch: AnyObject>: TypeKeyedArrayBuffersProtocol {
+  /// A dispatch table for the common capabilites of each buffer type.
   public typealias Dispatch = Dispatch
-  public var _storage: Storage
-  public init(_storage: Storage) { self._storage = _storage }
+  
+  private var _storage: Storage
+  private init(_storage: Storage) { self._storage = _storage }
 }
 
-extension TypeKeyedArrayBuffersProtocol {
+extension TypeKeyedArrayBuffers {
   /// Creates an empty instance
   public init() { self.init(_storage: [:]) }
 
   /// Representation of the stored `AnyArrayBuffer`s.
-  public typealias AnyBuffers = Storage.Values
+  public typealias AnyBuffers = Dictionary<TypeID, AnyArrayBuffer<Dispatch>>.Values
   
   /// Representation of the `TypeID`s that index the stored `AnyArrayBuffer`s.
-  public typealias UntypedKeys = Storage.Keys
+  fileprivate typealias UntypedKeys = Storage.Keys
   
   /// The stored `AnyArrayBuffer`s.
   public var anyBuffers: AnyBuffers {
@@ -83,7 +61,7 @@ extension TypeKeyedArrayBuffersProtocol {
   /// Accesses the buffer associated with `k`.
   ///
   /// - Requires: the buffer associated with `k.untyped` stores elements of type `Element`.
-  public subscript<K: TypedBufferKeyProtocol>(k: K) -> ArrayBuffer<K.Element> {
+  public subscript<Element>(k: TypedBufferKey<Element>) -> ArrayBuffer<Element> {
     get {
       _storage[existingKey: k.untyped][existingElementType: k.elementType]
     }
@@ -94,7 +72,7 @@ extension TypeKeyedArrayBuffersProtocol {
 
   /// Returns `true` iff `self` and other have the same key values, and for each key, the same
   /// number of elements in the corresponding array.
-  internal func hasSameStructure<D>(as other: TypeKeyedArrayBuffers<D>) -> Bool {
+  public func hasSameStructure<D>(as other: TypeKeyedArrayBuffers<D>) -> Bool {
     if _storage.count != other._storage.count { return false }
     return _storage.allSatisfy { k, v in  other._storage[k]?.count == v.count }
   }
