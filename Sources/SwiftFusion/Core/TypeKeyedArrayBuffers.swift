@@ -13,33 +13,48 @@
 // limitations under the License.
 import PenguinStructures
 
-/// A key for accessing an `ArrayBuffer` in a `TypeKeyedArrayBuffersProtocol` instance.
-///
-/// The `Element` type of the `ArrayBuffer` is communicated by the `Element` type parameter.
-public struct TypedBufferKey<Element> {
-  /// The untyped key associated with the buffer looked up with this key.
-  let untyped: TypeID
-  
-  /// The `Element` type of buffers looked up with this key.
-  var elementType: Type<Element> { .init() }
-}
-
 /// A mapping from instances of `TypeID` to instances of `AnyArrayBuffer<Dispatch>`
 public struct TypeKeyedArrayBuffers<Dispatch: AnyObject> {
+  private var _storage: Storage
+  private init(_storage: Storage) { self._storage = _storage }
+  
   /// A key that can be used to look up an untyped `ArrayBuffer` (i.e. `AnyArrayBuffer<Dispatch>`)
   fileprivate typealias UntypedKey = TypeID
 
   /// The type of the backing store
-  fileprivate typealias Storage = [UntypedKey: AnyArrayBuffer<Dispatch>]
+  private typealias Storage = [UntypedKey: AnyArrayBuffer<Dispatch>]
   
   /// A dispatch table for the common capabilites of each buffer type.
   public typealias Dispatch = Dispatch
-  
-  private var _storage: Storage
-  private init(_storage: Storage) { self._storage = _storage }
 }
 
 extension TypeKeyedArrayBuffers {
+  /// A key for accessing a particular `ArrayBuffer`.
+  ///
+  /// The `Element` type of the `ArrayBuffer` is communicated by the `Element` type parameter.
+  public struct BufferKey<Element> {
+    /// The untyped key associated with the buffer looked up with this key.
+    fileprivate let untyped: UntypedKey
+    
+    /// The `Element` type of buffers looked up with this key.
+    fileprivate var elementType: Type<Element> { .init() }
+  }
+
+  /// A key for accessing a `store`d element.
+  ///
+  /// Note that only elements directly inserted via a call to `store` (as opposed to those generated
+  /// via `mapBuffers`) can be accessed this way.
+  public struct KeyToStored<Element> {
+    /// The index where the `Element` is stored in its `ArrayBuffer`.
+    fileprivate let indexInBuffer: Int
+      
+    /// The key to the buffer in which the accessed element is stored.
+    fileprivate var buffer: BufferKey<Element> { .init(untyped: Type<Element>.id) }
+    
+    /// The `Element` type of buffers looked up with this key.
+    fileprivate var elementType: Type<Element> { .init() }
+  }
+
   /// Creates an empty instance
   public init() { self.init(_storage: [:]) }
 
@@ -47,7 +62,7 @@ extension TypeKeyedArrayBuffers {
   public typealias AnyBuffers = Dictionary<TypeID, AnyArrayBuffer<Dispatch>>.Values
   
   /// Representation of the `TypeID`s that index the stored `AnyArrayBuffer`s.
-  fileprivate typealias UntypedKeys = Storage.Keys
+  private typealias UntypedKeys = Storage.Keys
   
   /// The stored `AnyArrayBuffer`s.
   public var anyBuffers: AnyBuffers {
@@ -61,7 +76,7 @@ extension TypeKeyedArrayBuffers {
   /// Accesses the buffer associated with `k`.
   ///
   /// - Requires: the buffer associated with `k.untyped` stores elements of type `Element`.
-  public subscript<Element>(k: TypedBufferKey<Element>) -> ArrayBuffer<Element> {
+  public subscript<Element>(k: BufferKey<Element>) -> ArrayBuffer<Element> {
     get {
       _storage[existingKey: k.untyped][existingElementType: k.elementType]
     }
@@ -112,4 +127,26 @@ extension TypeKeyedArrayBuffers {
       try update(&target, p)
     }
   }
+
+  /// Stores `newElement`, returning its key.
+  ///
+  /// - Parameter upcast: used to erase the type of a newly-created buffer if none exists with the
+  ///   right element type.
+  public mutating func store<Element>(
+    _ newElement: Element, upcast: (ArrayBuffer<Element>) -> AnyArrayBuffer<Dispatch>
+  ) -> KeyToStored<Element>
+  {
+    let bufferKey = Type<Element>.id
+    if let i = _storage[bufferKey, default: upcast(.init())][elementType: Type<Element>()]?
+         .append(newElement)
+    {
+      return .init(indexInBuffer: i)
+    }
+    fatalError(
+      """
+      Can't insert \(Element.self) in buffer of \(_storage[bufferKey]!.elementType) \
+      with key \(Element.self).
+      """)
+  }
+  
 }
