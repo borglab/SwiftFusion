@@ -51,19 +51,19 @@ extension Rot2: CustomDebugStringConvertible {
 extension Rot2 {
   /// Returns the result of acting `self` on `v`.
   @differentiable
-  func rotate(_ v: Vector2) -> Vector2 {
+  public func rotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x - s * v.y, s * v.x + c * v.y)
   }
 
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
-  func unrotate(_ v: Vector2) -> Vector2 {
+  public func unrotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
 }
 
 @differentiable
-func * (r: Rot2, p: Vector2) -> Vector2 {
+public func * (r: Rot2, p: Vector2) -> Vector2 {
   r.rotate(p)
 }
 
