@@ -13,21 +13,30 @@
 // limitations under the License.
 import PenguinStructures
 
-/// A mapping from instances of `TypeID` to instances of `AnyArrayBuffer<Dispatch>`
-public struct TypeKeyedArrayBuffers<Dispatch: AnyObject> {
+/// A mapping from instances of `TypeID` to instances of `AnyArrayBuffer<ElementAPI>`.
+///
+/// `ConstructionAPI` is a type that determines other aspects of the type's API.
+public struct TypeKeyedArrayBuffers<ElementAPI: AnyObject, ConstructionAPI> {
   private var _storage: Storage
   private init(_storage: Storage) { self._storage = _storage }
   
-  /// A key that can be used to look up an untyped `ArrayBuffer` (i.e. `AnyArrayBuffer<Dispatch>`)
+  /// A key that can be used to look up an untyped `ArrayBuffer` (i.e. `AnyArrayBuffer<ElementAPI>`)
   fileprivate typealias UntypedKey = TypeID
 
   /// The type of the backing store
-  private typealias Storage = [UntypedKey: AnyArrayBuffer<Dispatch>]
+  private typealias Storage = [UntypedKey: AnyArrayBuffer<ElementAPI>]
   
   /// A dispatch table for the common capabilites of each buffer type.
-  public typealias Dispatch = Dispatch
+  public typealias ElementAPI = ElementAPI
 }
 
+public enum DirectConstruction {}
+
+public typealias ArrayBuffersByElementType<ElementAPI: AnyObject>
+  = TypeKeyedArrayBuffers<ElementAPI, DirectConstruction>
+
+public typealias MappedArrayBuffers<ElementAPI: AnyObject> = TypeKeyedArrayBuffers<ElementAPI, Any>
+  
 extension TypeKeyedArrayBuffers {
   /// A key for accessing a particular `ArrayBuffer`.
   ///
@@ -40,26 +49,11 @@ extension TypeKeyedArrayBuffers {
     fileprivate var elementType: Type<Element> { .init() }
   }
 
-  /// A key for accessing a `store`d element.
-  ///
-  /// Note that only elements directly inserted via a call to `store` (as opposed to those generated
-  /// via `mapBuffers`) can be accessed this way.
-  public struct KeyToStored<Element> {
-    /// The index where the `Element` is stored in its `ArrayBuffer`.
-    fileprivate let indexInBuffer: Int
-      
-    /// The key to the buffer in which the accessed element is stored.
-    fileprivate var buffer: BufferKey<Element> { .init(untyped: Type<Element>.id) }
-    
-    /// The `Element` type of buffers looked up with this key.
-    fileprivate var elementType: Type<Element> { .init() }
-  }
-
   /// Creates an empty instance
   public init() { self.init(_storage: [:]) }
 
   /// Representation of the stored `AnyArrayBuffer`s.
-  public typealias AnyBuffers = Dictionary<TypeID, AnyArrayBuffer<Dispatch>>.Values
+  public typealias AnyBuffers = Dictionary<TypeID, AnyArrayBuffer<ElementAPI>>.Values
   
   /// Representation of the `TypeID`s that index the stored `AnyArrayBuffer`s.
   private typealias UntypedKeys = Storage.Keys
@@ -87,23 +81,23 @@ extension TypeKeyedArrayBuffers {
 
   /// Returns `true` iff `self` and other have the same key values, and for each key, the same
   /// number of elements in the corresponding array.
-  public func hasSameStructure<D>(as other: TypeKeyedArrayBuffers<D>) -> Bool {
+  public func hasSameStructure<D, C>(as other: TypeKeyedArrayBuffers<D, C>) -> Bool {
     if _storage.count != other._storage.count { return false }
     return _storage.allSatisfy { k, v in  other._storage[k]?.count == v.count }
   }
 
   /// Returns a mapping from each key `k` of `self` into `bufferTransform(self[k])`.
-  public func mapBuffers<NewDispatch>(
-    _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>
-  ) rethrows -> TypeKeyedArrayBuffers<NewDispatch> {
+  public func mapBuffers<NewElementAPI>(
+    _ bufferTransform: (AnyArrayBuffer<ElementAPI>) throws -> AnyArrayBuffer<NewElementAPI>
+  ) rethrows -> MappedArrayBuffers<NewElementAPI> {
     try .init(_storage: _storage.mapValues(bufferTransform))
   }
 
   /// Returns a mapping from each key `k` of `self` into the corresponding array, transformed by
   /// `bufferTransform`.
-  public func compactMapBuffers<NewDispatch>(
-    _ bufferTransform: (AnyArrayBuffer<Dispatch>) throws -> AnyArrayBuffer<NewDispatch>?
-  ) rethrows -> TypeKeyedArrayBuffers<NewDispatch> {
+  public func compactMapBuffers<NewElementAPI>(
+    _ bufferTransform: (AnyArrayBuffer<ElementAPI>) throws -> AnyArrayBuffer<NewElementAPI>?
+  ) rethrows -> MappedArrayBuffers<NewElementAPI> {
     try .init(_storage: _storage.compactMapValues(bufferTransform))
   }
 
@@ -111,11 +105,11 @@ extension TypeKeyedArrayBuffers {
   /// `parameter` as a second argument.
   ///
   /// - Requires: `self.hasSameStructure(as: parameter)`
-  public mutating func updateBuffers<OtherDispatch>(
-    homomorphicArgument parameter: TypeKeyedArrayBuffers<OtherDispatch>,
+  public mutating func updateBuffers<OtherElementAPI, OtherConstruction>(
+    homomorphicArgument parameter: TypeKeyedArrayBuffers<OtherElementAPI, OtherConstruction>,
     _ update: (
-      _ myBuffer: inout AnyArrayBuffer<Dispatch>,
-      _ parameter: AnyArrayBuffer<OtherDispatch>) throws -> Void
+      _ myBuffer: inout AnyArrayBuffer<ElementAPI>,
+      _ parameter: AnyArrayBuffer<OtherElementAPI>) throws -> Void
   ) rethrows {
     precondition(
       _storage.count == parameter._storage.count,
@@ -127,14 +121,31 @@ extension TypeKeyedArrayBuffers {
       try update(&target, p)
     }
   }
+}
+
+extension ArrayBuffersByElementType {
+  /// A key for accessing a `store`d element.
+  ///
+  /// Note that only elements directly inserted via a call to `store` (as opposed to those generated
+  /// via `mapBuffers`) can be accessed this way.
+  public struct ElementKey<Element> {
+    /// The index where the `Element` is stored in its `ArrayBuffer`.
+    fileprivate let indexInBuffer: Int
+      
+    /// The key to the buffer in which the accessed element is stored.
+    fileprivate var buffer: BufferKey<Element> { .init(untyped: Type<Element>.id) }
+    
+    /// The `Element` type of buffers looked up with this key.
+    fileprivate var elementType: Type<Element> { .init() }
+  }
 
   /// Stores `newElement`, returning its key.
   ///
   /// - Parameter upcast: used to erase the type of a newly-created buffer if none exists with the
   ///   right element type.
   public mutating func store<Element>(
-    _ newElement: Element, upcast: (ArrayBuffer<Element>) -> AnyArrayBuffer<Dispatch>
-  ) -> KeyToStored<Element>
+    _ newElement: Element, upcast: (ArrayBuffer<Element>) -> AnyArrayBuffer<ElementAPI>
+  ) -> ElementKey<Element>
   {
     let bufferKey = Type<Element>.id
     if let i = _storage[bufferKey, default: upcast(.init())][elementType: Type<Element>()]?
@@ -150,7 +161,7 @@ extension TypeKeyedArrayBuffers {
   }
 
   /// Accesses the element for which invoking `store` returned `id`.
-  public subscript<Element>(id: KeyToStored<Element>) -> Element {
+  public subscript<Element>(id: ElementKey<Element>) -> Element {
     get {
       self[id.buffer][id.indexInBuffer]
     }
