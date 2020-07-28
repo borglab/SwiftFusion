@@ -148,5 +148,14 @@ extension TypeKeyedArrayBuffers {
       with key \(Element.self).
       """)
   }
-  
+
+  /// Accesses the element for which invoking `store` returned `id`.
+  public subscript<Element>(id: KeyToStored<Element>) -> Element {
+    get {
+      self[id.buffer][id.indexInBuffer]
+    }
+    _modify {
+      yield &self[id.buffer][id.indexInBuffer]
+    }
+  }
 }
