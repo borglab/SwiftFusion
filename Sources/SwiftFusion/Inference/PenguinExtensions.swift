@@ -99,3 +99,29 @@ extension AnyArrayBuffer {
 extension Type {
   static var id: TypeID { TypeID(T.self) }
 }
+
+// =================================================================================================
+// Standard library extensions
+
+extension Dictionary {
+  /// Accesses the value associated with a key that is known to exist in `self`.
+  ///
+  /// - Precondition: self[k] != `nil`.
+  subscript(existingKey k: Key) -> Value {
+    get { self[k]! }
+    _modify {
+      yield &values[index(forKey: k)!]
+    }
+  }
+
+  /// Invokes `update` to mutate each stored `Value`, passing its corresponding `Key` and the
+  /// `Index` in `self` where that `(Key, Value)` pair is stored.
+  mutating func updateValues(_ update: (Key, inout Value, Index) throws -> Void) rethrows {
+    var i = startIndex
+    while i != endIndex {
+      try update(self[i].key, &values[i], i)
+      formIndex(after: &i)
+    }
+  }
+}
+
