@@ -1,8 +1,16 @@
 import TensorFlow
 
+/// A `Tensor` with a statically known shape.
 public protocol FixedShapeTensor: EuclideanVectorN {
+  /// The shape of an instance.
   static var shape: TensorShape { get }
+
+  /// Creates an instance containing `tensor`.
+  ///
+  /// - Requires: `tensor.shape == Self.shape`.
   @differentiable init(_ tensor: Tensor<Double>)
+
+  /// The value.
   @differentiable var tensor: Tensor<Double> { get set }
 }
 
@@ -64,8 +72,10 @@ extension FixedShapeTensor {
   }
 }
 
-public struct Tensor10_10: AdditiveArithmetic, FixedShapeTensor {
-  public typealias TangentVector = Tensor10_10
+// Copy this implementation and modify the `shape` to create `FixedShapeTensor`s with other shapes.
+/// A `Tensor` with shape `[10, 10]`.
+public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
+  public typealias TangentVector = Tensor10x10
   public static var shape: TensorShape { [10, 10] }
   @differentiable public var tensor: Tensor<Double>
 
