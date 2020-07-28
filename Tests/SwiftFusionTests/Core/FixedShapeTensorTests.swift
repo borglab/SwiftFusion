@@ -49,10 +49,10 @@ class FixedShapeTensorTests: XCTestCase {
   }
 }
 
-class FixedShapeTensorEuclideanVectorTests: XCTestCase, EuclideanVectorTests {
+class FixedShapeTensorVectorTests: XCTestCase, VectorTests {
   typealias Testee = Tensor10x10
   static var dimension: Int { 100 }
   func testAll() {
-    runAllEuclideanVectorTests()
+    runAllVectorTests()
   }
 }

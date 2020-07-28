@@ -18,8 +18,8 @@ import PenguinStructures
 /// materialized error vector.
 public struct JacobianFactor<
   Rows: FixedSizeArray,
-  ErrorVector: EuclideanVector
->: LinearApproximationFactor where Rows.Element: EuclideanVector & DifferentiableVariableTuple {
+  ErrorVector: Vector
+>: LinearApproximationFactor where Rows.Element: Vector & DifferentiableVariableTuple {
   public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.

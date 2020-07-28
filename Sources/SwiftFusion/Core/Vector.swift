@@ -2,7 +2,7 @@ import Foundation
 import TensorFlow
 
 /// An element of a Euclidean vector space.
-public protocol EuclideanVector: Differentiable where Self.TangentVector == Self {
+public protocol Vector: Differentiable where Self.TangentVector == Self {
   // MARK: - AdditiveArithmetic requirements, refined to require differentiability.
 
   @differentiable
@@ -67,7 +67,7 @@ public protocol EuclideanVector: Differentiable where Self.TangentVector == Self
 
 /// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
 /// primitive operations.
-extension EuclideanVector {
+extension Vector {
   @differentiable
   public static prefix func - (_ v: Self) -> Self {
     return (-1) * v
@@ -86,7 +86,7 @@ extension EuclideanVector {
 
 /// Default implementations of some vector space operations in terms of other vector space
 /// operations.
-extension EuclideanVector {
+extension Vector {
   @differentiable
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = lhs
@@ -110,7 +110,7 @@ extension EuclideanVector {
 }
 
 /// Default implementations of raw memory access, for vectors represented as contiguous scalars.
-extension EuclideanVector {
+extension Vector {
   /// Returns the result of calling `body` on the scalars of `self`.
   public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
@@ -139,7 +139,7 @@ extension EuclideanVector {
 }
 
 /// Implementation of `subscript`.
-extension EuclideanVector {
+extension Vector {
   /// Accesses the scalar at `i`.
   subscript(i: Int) -> Double {
     _read {
@@ -161,12 +161,12 @@ extension EuclideanVector {
 }
 
 /// Conversions between `Vector`s with compatible shapes.
-extension EuclideanVector {
+extension Vector {
   /// Creates a vector with the same scalars as `v`.
   ///
   /// - Requires: `Self.dimension == V.dimension`.
   @differentiable
-  public init<V: EuclideanVector>(_ v: V) {
+  public init<V: Vector>(_ v: V) {
     precondition(Self.dimension == V.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
@@ -180,7 +180,7 @@ extension EuclideanVector {
 
   @derivative(of: init(_:))
   @usableFromInline
-  static func vjpInit<V: EuclideanVector>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
+  static func vjpInit<V: Vector>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
     return (
       Self(v),
       { t in V(t) }
@@ -191,7 +191,7 @@ extension EuclideanVector {
   ///
   /// - Requires: `Self.dimension == V1.dimension + V2.dimension`.
   @differentiable
-  public init<V1: EuclideanVector, V2: EuclideanVector>(concatenating v1: V1, _ v2: V2) {
+  public init<V1: Vector, V2: Vector>(concatenating v1: V1, _ v2: V2) {
     precondition(Self.dimension == V1.dimension + V2.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
@@ -210,7 +210,7 @@ extension EuclideanVector {
 
   @derivative(of: init(concatenating:_:))
   @usableFromInline
-  static func vjpInit<V1: EuclideanVector, V2: EuclideanVector>(concatenating v1: V1, _ v2: V2) -> (
+  static func vjpInit<V1: Vector, V2: Vector>(concatenating v1: V1, _ v2: V2) -> (
     value: Self,
     pullback: (Self) -> (V1, V2)
   ) {
@@ -238,7 +238,7 @@ extension EuclideanVector {
 }
 
 /// Conversions to/from `Tensor`.
-extension EuclideanVector {
+extension Vector {
   /// Creates an instance with the same scalars as `flatTensor`.
   ///
   /// - Reqiures: `flatTensor.shape == [Self.dimension]`.

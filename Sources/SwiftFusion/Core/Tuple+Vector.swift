@@ -59,7 +59,7 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
   }
 }
 
-extension Empty: EuclideanVector {
+extension Empty: Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {}
 
@@ -94,8 +94,8 @@ extension Empty: EuclideanVector {
   public static var standardBasis: [Self] { return [] }
 }
 
-extension Tuple: EuclideanVector
-where Head: EuclideanVector, Tail: EuclideanVector {
+extension Tuple: Vector
+where Head: Vector, Tail: Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.head += rhs.head
@@ -139,7 +139,7 @@ where Head: EuclideanVector, Tail: EuclideanVector {
     )
   }
 
-  // MARK: `EuclideanVector` requirements.
+  // MARK: `Vector` requirements.
 
   /// The dimension of the vector.
   public static var dimension: Int { return Head.dimension + Tail.dimension }

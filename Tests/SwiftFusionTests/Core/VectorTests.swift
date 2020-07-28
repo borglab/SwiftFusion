@@ -4,19 +4,19 @@ import XCTest
 
 import SwiftFusion
 
-/// Conform to this and call `runAllEuclideanVectorTests()` to test all the `EuclideanVector`
+/// Conform to this and call `runAllVectorTests()` to test all the `Vector`
 /// requirements on a concrete type.
 ///
-/// Or call `runAllEuclideanVectorTests()` to test all the `EuclideanVector` requirements.
-protocol EuclideanVectorTests {
+/// Or call `runAllVectorTests()` to test all the `Vector` requirements.
+protocol VectorTests {
   /// The concrete type that we are testing.
-  associatedtype Testee: EuclideanVector
+  associatedtype Testee: Vector
 
   /// The dimension of the vector we are testing.
   static var dimension: Int { get }
 }
 
-extension EuclideanVectorTests {
+extension VectorTests {
   /// A set of basis vectors.
   fileprivate var basisVectors: [Testee] {
     return (0..<Self.dimension).map { index in
@@ -32,8 +32,8 @@ extension EuclideanVectorTests {
     return Testee(Array((0..<Self.dimension).map { start + Double($0) * stride }))
   }
 
-  /// Tests all `EuclideanVector` requirements.
-  func runAllEuclideanVectorTests() {
+  /// Tests all `Vector` requirements.
+  func runAllVectorTests() {
     testEquality()
     testMove()
     testAddMutating()
@@ -286,7 +286,7 @@ extension EuclideanVectorTests {
 }
 
 /// Tests methods that involve multiple distinct euclidean vector types.
-class MultipleEuclideanVectorTests: XCTestCase {
+class MultipleVectorTests: XCTestCase {
   /// Tests converting from one type to another type with the same number of elements.
   func testConversion() {
     let v = Vector9(0, 1, 2, 3, 4, 5, 6, 7, 8)

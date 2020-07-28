@@ -19,12 +19,12 @@ public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>
 
 /// A matrix whose dimensions are known at compile time.
 ///
-/// Stored as a fixed-size array of rows, where the rows are `EuclideanVector`. For example,
+/// Stored as a fixed-size array of rows, where the rows are `Vector`. For example,
 /// - `FixedSizeMatrix<Array3<Vector2>>`: A 3x2 matrix, where each row is a `Vector2`.
 /// - `FixedSizeMatrix<Array3<Tuple2<Vector2, Vector3>>`: A 3x5 matrix, where each row is a
 ///   `Tuple2<Vector2, Vector3>`.
 public struct FixedSizeMatrix<Rows: Equatable & FixedSizeArray>
-  where Rows.Element: EuclideanVector
+  where Rows.Element: Vector
 {
 
   /// The elements of the matrix, stored as a fixed-size array of row vectors.
@@ -113,7 +113,7 @@ extension FixedSizeMatrix: Differentiable {
   public typealias TangentVector = Self
 }
 
-extension FixedSizeMatrix: EuclideanVector {
+extension FixedSizeMatrix: Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in

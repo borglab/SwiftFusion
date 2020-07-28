@@ -16,7 +16,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// This is the `TangentVector` of the `Manifold` wrapper type.
   ///
   /// Note that this is not the same type as `Self.TangentVector`.
-  associatedtype LocalCoordinate: EuclideanVector
+  associatedtype LocalCoordinate: Vector
 
   /// Diffeomorphism between a neigborhood of `LocalCoordinate.zero` and `Self`.
   ///
