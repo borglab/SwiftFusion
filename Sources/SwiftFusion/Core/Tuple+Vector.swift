@@ -60,42 +60,27 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
 }
 
 extension Empty: Vector {
+  public var dimension: Int { return 0 }
+
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {}
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {}
 
-  // MARK: - Scalar multiplication.
-
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {}
 
-  // MARK: - Euclidean structure.
-
-  /// The inner product of `self` with `other`.
   @differentiable
   public func dot(_ other: Self) -> Double { return 0 }
 
-  // MARK: - Conversion from collections of scalars.
-
-  /// Creates an instance whose elements are `scalars`.
-  ///
-  /// Precondition: `scalars` must be empty.
-  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
-    assert(scalars.isEmpty)
-    self.init()
-  }
-
-  /// The dimension of the vector.
-  public static var dimension: Int { return 0 }
-
-  /// A standard basis of vectors.
-  public static var standardBasis: [Self] { return [] }
+  public var standardBasis: [Self] { return [] }
 }
 
 extension Tuple: Vector
 where Head: Vector, Tail: Vector {
+  public var dimension: Int { return head.dimension + tail.dimension }
+
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.head += rhs.head
@@ -108,45 +93,19 @@ where Head: Vector, Tail: Vector {
     lhs.tail -= rhs.tail
   }
 
-  // MARK: - Scalar multiplication.
-
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.head *= rhs
     lhs.tail *= rhs
   }
 
-  // MARK: - Euclidean structure.
-
-  /// The inner product of `self` with `other`.
   @differentiable
   public func dot(_ other: Self) -> Double {
     return head.dot(other.head) + tail.dot(other.tail)
   }
 
-  // MARK: - Conversion from collections of scalars.
-
-  /// Creates an instance whose elements are `scalars`.
-  ///
-  /// The first `Head.dimension` scalars go in `self.head`, and the remaining `Tail.dimension`
-  /// scalars go in `self.tail`.
-  ///
-  /// Precondition: `scalars` must have exactly `Head.dimension + Tail.dimension` elements.
-  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
-    self.init(
-      head: Head(scalars.prefix(Head.dimension)),
-      tail: Tail(scalars.dropFirst(Head.dimension))
-    )
-  }
-
-  // MARK: `Vector` requirements.
-
-  /// The dimension of the vector.
-  public static var dimension: Int { return Head.dimension + Tail.dimension }
-
-  /// A standard basis of vectors.
-  public static var standardBasis: [Self] {
-    return Head.standardBasis.map { Self(head: $0, tail: Tail.zero) }
-      + Tail.standardBasis.map { Self(head: Head.zero, tail: $0) }
+  public var standardBasis: [Self] {
+    return head.standardBasis.map { Self(head: $0, tail: Tail.zero) }
+      + tail.standardBasis.map { Self(head: Head.zero, tail: $0) }
   }
 }

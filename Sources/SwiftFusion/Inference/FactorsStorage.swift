@@ -196,14 +196,16 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
 
 extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: VectorFactor>(_ src: ArrayBuffer<Element>) {
+  init<Element: VectorFactor>(_ src: ArrayBuffer<Element>)
+    where Element.ErrorVector: FixedSizeVector
+  {
     let dispatch: VectorFactorArrayDispatch
     let elementType = Type<Element>()
     typealias TangentVector = Element.LinearizableComponent.Variables.TangentVector
     typealias Linearization<A: FixedSizeArray> = Type<JacobianFactor<A, Element.ErrorVector>>
       where A.Element: Vector & DifferentiableVariableTuple
     
-    switch Element.ErrorVector.dimension {
+    switch Element.ErrorVector.staticDimension {
     case 1:
       dispatch = .init(elementType, linearization: Linearization<Array1<TangentVector>>())
     case 2:
@@ -229,7 +231,7 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     case 12:
       dispatch = .init(elementType, linearization: Linearization<Array12<TangentVector>>())
     default:
-      fatalError("ErrorVector dimension \(Element.ErrorVector.dimension) not implemented")
+      fatalError("ErrorVector dimension \(Element.ErrorVector.staticDimension) not implemented")
     }
 
     self.init(storage: src.storage, dispatch: dispatch)

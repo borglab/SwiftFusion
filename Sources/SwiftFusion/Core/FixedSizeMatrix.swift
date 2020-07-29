@@ -113,7 +113,7 @@ extension FixedSizeMatrix: Differentiable {
   public typealias TangentVector = Self
 }
 
-extension FixedSizeMatrix: Vector {
+extension FixedSizeMatrix: FixedSizeVector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in
@@ -221,7 +221,7 @@ extension FixedSizeMatrix: Vector {
     return (self.dot(other), { v in (v * other, v * self) })
   }
 
-  public static var dimension: Int {
+  public var dimension: Int {
     return Self.staticDimension
   }
 
@@ -230,8 +230,8 @@ extension FixedSizeMatrix: Vector {
   }
 
   public var standardBasis: [Self] {
-    (0..<staticDimension).map { i in
-      var v = zero
+    (0..<dimension).map { i in
+      var v = Self.zero
       v[i] = 1
       return v
     }

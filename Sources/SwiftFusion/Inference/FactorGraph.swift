@@ -36,7 +36,7 @@ public struct FactorGraph {
   }
 
   /// Stores `factor` in the graph.
-  public mutating func store<T: VectorFactor>(_ factor: T) {
+  public mutating func store<T: VectorFactor>(_ factor: T) where T.ErrorVector: FixedSizeVector {
     _ = storage[
       ObjectIdentifier(T.self),
       default: AnyFactorArrayBuffer(

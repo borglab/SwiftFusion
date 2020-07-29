@@ -9,7 +9,7 @@ import TensorFlow
 // such vectors and use a longer name like `GeneralizedVector` for the generalized vector spaces.
 public protocol Vector: Differentiable where Self.TangentVector == Self {
   /// The number of components of this vector.
-  static var dimension: Int { get }
+  var dimension: Int { get }
 
   // MARK: - AdditiveArithmetic requirements, refined to require differentiability.
 
@@ -44,17 +44,6 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
 
   // MARK: - Methods for accessing the standard basis and for manipulating the coordinates under
   // the standard basis.
-
-  /// Creates an instance whose elements are `scalars`.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  ///
-  /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
-  /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
-  ///
-  /// TODO: Maybe make this failable.
-  init<Source: Collection>(_ scalars: Source) where Source.Element == Double
 
   /// Returns the result of calling `body` on the scalars of `self`.
   ///
@@ -133,6 +122,7 @@ extension Vector {
   public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R {
+    let dimension = self.dimension
     return try withUnsafePointer(to: self) { p in
       try body(
           UnsafeBufferPointer<Double>(
@@ -146,6 +136,7 @@ extension Vector {
   public mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
+    let dimension = self.dimension
     return try withUnsafeMutablePointer(to: &self) { p in
       try body(
           UnsafeMutableBufferPointer<Double>(
@@ -178,11 +169,58 @@ extension Vector {
   }
 }
 
+extension Vector {
+  /// Returns a `Tensor` with shape `[Self.staticDimension]` with the same scalars as `self`.
+  @differentiable(where Self: InitializableVector)
+  public var flatTensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: flatTensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) where Self: InitializableVector {
+    return (self.flatTensor, { Self(flatTensor: $0) })
+  }
+}
+
+public protocol InitializableVector: Vector {
+  /// Creates an instance whose elements are `scalars`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  ///
+  /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
+  /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
+  ///
+  /// TODO: Maybe make this failable.
+  init<Source: Collection>(_ scalars: Source) where Source.Element == Double
+}
+
+/// Conversions to/from `Tensor`.
+extension InitializableVector {
+  /// Creates an instance with the same scalars as `flatTensor`.
+  @differentiable
+  public init(flatTensor: Tensor<Double>) {
+    self.init(flatTensor.scalars)
+  }
+
+  @derivative(of: init(flatTensor:))
+  @usableFromInline
+  static func vjpInit(flatTensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(flatTensor: flatTensor), { $0.flatTensor })
+  }
+}
+
 /// A `Vector` whose instances all have the same `dimension`.
 ///
 /// Note: This is a temporary shim to help incrementally remove the assumption that vectors have a
 /// static `dimension`. New code should prefer `Vector` so that it does not rely on a static `dimension`.
-public protocol FixedSizeVector: Vector {
+public protocol FixedSizeVector: InitializableVector {
   /// The `dimension` of an instance.
   static var staticDimension: Int { get }
 }
@@ -191,10 +229,10 @@ public protocol FixedSizeVector: Vector {
 extension FixedSizeVector {
   /// Creates a vector with the same scalars as `v`.
   ///
-  /// - Requires: `Self.dimension == V.dimension`.
+  /// - Requires: `Self.staticDimension == V.staticDimension`.
   @differentiable
-  public init<V: Vector>(_ v: V) {
-    precondition(Self.dimension == V.dimension)
+  public init<V: FixedSizeVector>(_ v: V) {
+    precondition(Self.staticDimension == V.staticDimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
       v.withUnsafeBufferPointer { vBuf in
@@ -207,7 +245,7 @@ extension FixedSizeVector {
 
   @derivative(of: init(_:))
   @usableFromInline
-  static func vjpInit<V: Vector>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
+  static func vjpInit<V: FixedSizeVector>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
     return (
       Self(v),
       { t in V(t) }
@@ -216,10 +254,10 @@ extension FixedSizeVector {
 
   /// Creates a vector with the scalars from `v1`, followed by the scalars from `v2`.
   ///
-  /// - Requires: `Self.dimension == V1.dimension + V2.dimension`.
+  /// - Requires: `Self.staticDimension == V1.staticDimension + V2.staticDimension`.
   @differentiable
-  public init<V1: Vector, V2: Vector>(concatenating v1: V1, _ v2: V2) {
-    precondition(Self.dimension == V1.dimension + V2.dimension)
+  public init<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) {
+    precondition(Self.staticDimension == V1.staticDimension + V2.staticDimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
       v1.withUnsafeBufferPointer { v1Buf in
@@ -229,7 +267,7 @@ extension FixedSizeVector {
       }
       v2.withUnsafeBufferPointer { v2Buf in
         for (i, s) in v2Buf.enumerated() {
-          rBuf[i + V1.dimension] = s
+          rBuf[i + V1.staticDimension] = s
         }
       }
     }
@@ -237,7 +275,7 @@ extension FixedSizeVector {
 
   @derivative(of: init(concatenating:_:))
   @usableFromInline
-  static func vjpInit<V1: Vector, V2: Vector>(concatenating v1: V1, _ v2: V2) -> (
+  static func vjpInit<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) -> (
     value: Self,
     pullback: (Self) -> (V1, V2)
   ) {
@@ -254,47 +292,12 @@ extension FixedSizeVector {
           var t2 = V2.zero
           t2.withUnsafeMutableBufferPointer { t2Buf in
             for i in t2Buf.indices {
-              t2Buf[i] = tBuf[i + V1.dimension]
+              t2Buf[i] = tBuf[i + V1.staticDimension]
             }
           }
           return (t1, t2)
         }
       }
     )
-  }
-}
-
-/// Conversions to/from `Tensor`.
-extension Vector {
-  /// Creates an instance with the same scalars as `flatTensor`.
-  ///
-  /// - Reqiures: `flatTensor.shape == [Self.dimension]`.
-  @differentiable
-  public init(flatTensor: Tensor<Double>) {
-    precondition(flatTensor.shape == [Self.dimension])
-    self.init(flatTensor.scalars)
-  }
-
-  @derivative(of: init(flatTensor:))
-  @usableFromInline
-  static func vjpInit(flatTensor: Tensor<Double>) -> (
-    value: Self,
-    pullback: (Self) -> Tensor<Double>
-  ) {
-    return (Self(flatTensor: flatTensor), { $0.flatTensor })
-  }
-
-  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
-  @differentiable
-  public var flatTensor: Tensor<Double> {
-    withUnsafeBufferPointer { b in
-      return Tensor<Double>(shape: [b.count], scalars: b)
-    }
-  }
-
-  @derivative(of: flatTensor)
-  @usableFromInline
-  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) {
-    return (self.flatTensor, { Self(flatTensor: $0) })
   }
 }

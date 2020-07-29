@@ -52,7 +52,7 @@ extension FixedShapeTensor {
     (0..<dimension).map { i in
       var b = Array(repeating: Double(0), count: dimension)
       b[i] = 1
-      return Self(Tensor(shape: shape, scalars: b))
+      return Self(Tensor(shape: Self.shape, scalars: b))
     }
   }
 

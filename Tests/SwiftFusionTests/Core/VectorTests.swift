@@ -10,7 +10,7 @@ import SwiftFusion
 /// Or call `runAllVectorTests()` to test all the `Vector` requirements.
 protocol VectorTests {
   /// The concrete type that we are testing.
-  associatedtype Testee: Vector
+  associatedtype Testee: FixedSizeVector
 
   /// The dimension of the vector we are testing.
   static var dimension: Int { get }
