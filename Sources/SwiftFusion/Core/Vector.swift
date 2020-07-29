@@ -1,7 +1,12 @@
 import Foundation
 import TensorFlow
 
-/// An element of a Euclidean vector space.
+/// A vector, in a Euclidean vector space with standard orthonormal basis.
+//
+// Note: Generalized vector spaces may not have Euclidean structure or a standard basis, so we may
+// eventually add a "generalized vector" protocol. However, most vectors used in computations do
+// have Euclidean structure and standard basis, so we'll reserve the short name `Vector` for
+// such vectors and use a longer name like `GeneralizedVector` for the generalized vector spaces.
 public protocol Vector: Differentiable where Self.TangentVector == Self {
   // MARK: - AdditiveArithmetic requirements, refined to require differentiability.
 
@@ -28,12 +33,18 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   // MARK: - Euclidean structure.
 
   /// The inner product of `self` with `other`.
+  ///
+  /// Note: Depends on Euclidean vector space structure, and therefore would not be available on a
+  /// generalized vector.
   @differentiable
   func dot(_ other: Self) -> Double
 
   // MARK: - Methods for setting/accessing scalars.
 
   /// Creates an instance whose elements are `scalars`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
   ///
   /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
   /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
@@ -43,12 +54,18 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
 
   /// Returns the result of calling `body` on the scalars of `self`.
   ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  ///
   /// A default is provided that returns a pointer to `self`.
   func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R
 
   /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
   ///
   /// A default is provided that returns a pointer to `self`.
   mutating func withUnsafeMutableBufferPointer<R>(
@@ -61,7 +78,10 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   /// The dimension of the vector.
   static var dimension: Int { get }
 
-  /// A standard basis of vectors.
+  /// The standard orthonormal basis.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
   static var standardBasis: [Self] { get }
 }
 
