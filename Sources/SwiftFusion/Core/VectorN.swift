@@ -52,9 +52,9 @@ extension Vector1: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 1 }
+  public var dimension: Int { return 1 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 1)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
@@ -73,6 +73,10 @@ extension Vector1: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [x]
   }
+}
+
+extension Vector1: FixedSizeVector {
+  public static var staticDimension: Int { return 1 }
 }
 
 extension Vector1: ElementaryFunctions {}
@@ -137,9 +141,9 @@ extension Vector2: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 2 }
+  public var dimension: Int { return 2 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 2)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
@@ -163,6 +167,10 @@ extension Vector2: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [x, y]
   }
+}
+
+extension Vector2: FixedSizeVector {
+  public static var staticDimension: Int { return 2 }
 }
 
 extension Vector2: ElementaryFunctions {}
@@ -239,9 +247,9 @@ extension Vector3: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 3 }
+  public var dimension: Int { return 3 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 3)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
@@ -270,6 +278,10 @@ extension Vector3: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [x, y, z]
   }
+}
+
+extension Vector3: FixedSizeVector {
+  public static var staticDimension: Int { return 3 }
 }
 
 extension Vector3: ElementaryFunctions {}
@@ -358,9 +370,9 @@ extension Vector4: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 4 }
+  public var dimension: Int { return 4 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 4)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -394,6 +406,10 @@ extension Vector4: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3]
   }
+}
+
+extension Vector4: FixedSizeVector {
+  public static var staticDimension: Int { return 4 }
 }
 
 extension Vector4: ElementaryFunctions {}
@@ -494,9 +510,9 @@ extension Vector5: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 5 }
+  public var dimension: Int { return 5 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 5)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -535,6 +551,10 @@ extension Vector5: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4]
   }
+}
+
+extension Vector5: FixedSizeVector {
+  public static var staticDimension: Int { return 5 }
 }
 
 extension Vector5: ElementaryFunctions {}
@@ -647,9 +667,9 @@ extension Vector6: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 6 }
+  public var dimension: Int { return 6 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 6)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -693,6 +713,10 @@ extension Vector6: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4, s5]
   }
+}
+
+extension Vector6: FixedSizeVector {
+  public static var staticDimension: Int { return 6 }
 }
 
 extension Vector6: ElementaryFunctions {}
@@ -817,9 +841,9 @@ extension Vector7: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 7 }
+  public var dimension: Int { return 7 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 7)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -868,6 +892,10 @@ extension Vector7: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4, s5, s6]
   }
+}
+
+extension Vector7: FixedSizeVector {
+  public static var staticDimension: Int { return 7 }
 }
 
 extension Vector7: ElementaryFunctions {}
@@ -1004,9 +1032,9 @@ extension Vector8: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 8 }
+  public var dimension: Int { return 8 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 8)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1060,6 +1088,10 @@ extension Vector8: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4, s5, s6, s7]
   }
+}
+
+extension Vector8: FixedSizeVector {
+  public static var staticDimension: Int { return 8 }
 }
 
 extension Vector8: ElementaryFunctions {}
@@ -1208,9 +1240,9 @@ extension Vector9: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 9 }
+  public var dimension: Int { return 9 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 9)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1269,6 +1301,10 @@ extension Vector9: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4, s5, s6, s7, s8]
   }
+}
+
+extension Vector9: FixedSizeVector {
+  public static var staticDimension: Int { return 9 }
 }
 
 extension Vector9: ElementaryFunctions {}
@@ -1429,9 +1465,9 @@ extension Vector10: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 10 }
+  public var dimension: Int { return 10 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 10)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1495,6 +1531,10 @@ extension Vector10: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9]
   }
+}
+
+extension Vector10: FixedSizeVector {
+  public static var staticDimension: Int { return 10 }
 }
 
 extension Vector10: ElementaryFunctions {}
@@ -1667,9 +1707,9 @@ extension Vector11: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 11 }
+  public var dimension: Int { return 11 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 11)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1738,6 +1778,10 @@ extension Vector11: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10]
   }
+}
+
+extension Vector11: FixedSizeVector {
+  public static var staticDimension: Int { return 11 }
 }
 
 extension Vector11: ElementaryFunctions {}
@@ -1922,9 +1966,9 @@ extension Vector12: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return 12 }
+  public var dimension: Int { return 12 }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 12)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1998,6 +2042,10 @@ extension Vector12: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11]
   }
+}
+
+extension Vector12: FixedSizeVector {
+  public static var staticDimension: Int { return 12 }
 }
 
 extension Vector12: ElementaryFunctions {}

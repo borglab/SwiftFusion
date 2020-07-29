@@ -40,11 +40,15 @@ extension FixedShapeTensor {
     self.init(Tensor(shape: Self.shape, scalars: Array(scalars)))
   }
 
-  public static var dimension: Int {
+  public var dimension: Int {
+    Self.staticDimension
+  }
+
+  public static var staticDimension: Int {
     shape.reduce(1, *)
   }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     (0..<dimension).map { i in
       var b = Array(repeating: Double(0), count: dimension)
       b[i] = 1

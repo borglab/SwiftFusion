@@ -17,24 +17,24 @@ import PenguinStructures
 public typealias Matrix2 = FixedSizeMatrix<Array2<Vector2>>
 public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>
 
-/// A matrix whose dimensions are known at compile time.
+/// A matrix whose staticDimensions are known at compile time.
 ///
 /// Stored as a fixed-size array of rows, where the rows are `Vector`. For example,
 /// - `FixedSizeMatrix<Array3<Vector2>>`: A 3x2 matrix, where each row is a `Vector2`.
 /// - `FixedSizeMatrix<Array3<Tuple2<Vector2, Vector3>>`: A 3x5 matrix, where each row is a
 ///   `Tuple2<Vector2, Vector3>`.
 public struct FixedSizeMatrix<Rows: Equatable & FixedSizeArray>
-  where Rows.Element: Vector
+  where Rows.Element: FixedSizeVector
 {
 
   /// The elements of the matrix, stored as a fixed-size array of row vectors.
   public var rows: Rows
 
-  /// The number of elements of each dimension of the matrix.
+  /// The number of elements of each staticDimension of the matrix.
   ///
   /// `shape[0]` is the number of rows.
   /// `shape[1]` is the number of columns.
-  public static var shape: Array2<Int> { return Array2(Rows.count, Rows.Element.dimension) }
+  public static var shape: Array2<Int> { return Array2(Rows.count, Rows.Element.staticDimension) }
 
   /// Accesses the element at `row`, `column`.
   public subscript(row: Int, column: Int) -> Double {
@@ -118,7 +118,7 @@ extension FixedSizeMatrix: Vector {
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in
       rhs.withUnsafeBufferPointer { bRhs in
-        for i in 0..<Self.dimension {
+        for i in 0..<Self.staticDimension {
           bLhs[i] += bRhs[i]
         }
       }
@@ -139,7 +139,7 @@ extension FixedSizeMatrix: Vector {
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in
       rhs.withUnsafeBufferPointer { bRhs in
-        for i in 0..<Self.dimension {
+        for i in 0..<Self.staticDimension {
           bLhs[i] -= bRhs[i]
         }
       }
@@ -159,7 +159,7 @@ extension FixedSizeMatrix: Vector {
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.withUnsafeMutableBufferPointer { b in
-      for i in 0..<Self.dimension {
+      for i in 0..<Self.staticDimension {
         b[i] *= rhs
       }
     }
@@ -181,7 +181,7 @@ extension FixedSizeMatrix: Vector {
   @differentiable
   public static func /= (_ lhs: inout Self, _ rhs: Double) {
     lhs.withUnsafeMutableBufferPointer { b in
-      for i in 0..<Self.dimension {
+      for i in 0..<Self.staticDimension {
         b[i] /= rhs
       }
     }
@@ -210,7 +210,7 @@ extension FixedSizeMatrix: Vector {
   public func dot(_ other: Self) -> Double {
     withUnsafeBufferPointer { b1 in
       other.withUnsafeBufferPointer { b2 in
-        (0..<Self.dimension).reduce(0) { (r, i) in r + b1[i] * b2[i] }
+        (0..<Self.staticDimension).reduce(0) { (r, i) in r + b1[i] * b2[i] }
       }
     }
   }
@@ -222,11 +222,15 @@ extension FixedSizeMatrix: Vector {
   }
 
   public static var dimension: Int {
+    return Self.staticDimension
+  }
+
+  public static var staticDimension: Int {
     return shape[0] * shape[1]
   }
 
-  public static var standardBasis: [Self] {
-    (0..<dimension).map { i in
+  public var standardBasis: [Self] {
+    (0..<staticDimension).map { i in
       var v = zero
       v[i] = 1
       return v
@@ -285,8 +289,8 @@ extension FixedSizeMatrix {
 public func matvec<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: Rows.Element) -> Rows.Element {
   precondition(type(of: lhs).isSquare, "matvec only implemented for square matrices")
   var r = Rows.Element.zero
-  for i in 0..<Rows.Element.dimension {
-    for j in 0..<Rows.Element.dimension {
+  for i in 0..<Rows.Element.staticDimension {
+    for j in 0..<Rows.Element.staticDimension {
       r[i] += lhs[i, j] * rhs[j]
     }
   }
@@ -318,9 +322,9 @@ public func matmul<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: FixedSizeMatrix<Ro
 {
   precondition(type(of: lhs).isSquare, "matmul only implemented for square matrices")
   var r = FixedSizeMatrix<Rows>.zero
-  for line in 0..<Rows.Element.dimension {
-    for i in 0..<Rows.Element.dimension {
-      for j in 0..<Rows.Element.dimension {
+  for line in 0..<Rows.Element.staticDimension {
+    for i in 0..<Rows.Element.staticDimension {
+      for j in 0..<Rows.Element.staticDimension {
         r[i, line] += lhs[i, j] * rhs[j, line]
       }
     }
@@ -348,7 +352,7 @@ extension FixedSizeMatrix: Equatable {}
 
 extension FixedSizeMatrix: KeyPathIterable {
   public var allKeyPaths: [PartialKeyPath<Self>] {
-    (0..<Self.dimension).map { \Self[$0] }
+    (0..<Self.staticDimension).map { \Self[$0] }
   }
 }
 

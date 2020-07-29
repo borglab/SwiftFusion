@@ -8,6 +8,9 @@ import TensorFlow
 // have Euclidean structure and standard basis, so we'll reserve the short name `Vector` for
 // such vectors and use a longer name like `GeneralizedVector` for the generalized vector spaces.
 public protocol Vector: Differentiable where Self.TangentVector == Self {
+  /// The number of components of this vector.
+  static var dimension: Int { get }
+
   // MARK: - AdditiveArithmetic requirements, refined to require differentiability.
 
   @differentiable
@@ -39,7 +42,8 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   @differentiable
   func dot(_ other: Self) -> Double
 
-  // MARK: - Methods for setting/accessing scalars.
+  // MARK: - Methods for accessing the standard basis and for manipulating the coordinates under
+  // the standard basis.
 
   /// Creates an instance whose elements are `scalars`.
   ///
@@ -72,17 +76,11 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R
 
-  // MARK: - Methods relating to static dimension.
-  // TODO: Make these per-instance so that we can support dynamically-sized vectors.
-
-  /// The dimension of the vector.
-  static var dimension: Int { get }
-
   /// The standard orthonormal basis.
   ///
   /// Note: Depends on a determined standard basis, and therefore would not be available on a
   /// generalized vector.
-  static var standardBasis: [Self] { get }
+  var standardBasis: [Self] { get }
 }
 
 /// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
@@ -140,7 +138,7 @@ extension Vector {
           UnsafeBufferPointer<Double>(
               start: UnsafeRawPointer(p)
                   .assumingMemoryBound(to: Double.self),
-              count: Self.dimension))
+              count: dimension))
     }
   }
 
@@ -153,7 +151,7 @@ extension Vector {
           UnsafeMutableBufferPointer<Double>(
               start: UnsafeMutableRawPointer(p)
                   .assumingMemoryBound(to: Double.self),
-              count: Self.dimension))
+              count: dimension))
     }
   }
 }
@@ -176,12 +174,21 @@ extension Vector {
   /// Traps with a suitable error message if `i` is not the position of an
   /// element in `self`.
   private func boundsCheck(_ i: Int) {
-    precondition(i >= 0 && i < Self.dimension, "index out of range")
+    precondition(i >= 0 && i < dimension, "index out of range")
   }
 }
 
-/// Conversions between `Vector`s with compatible shapes.
-extension Vector {
+/// A `Vector` whose instances all have the same `dimension`.
+///
+/// Note: This is a temporary shim to help incrementally remove the assumption that vectors have a
+/// static `dimension`. New code should prefer `Vector` so that it does not rely on a static `dimension`.
+public protocol FixedSizeVector: Vector {
+  /// The `dimension` of an instance.
+  static var staticDimension: Int { get }
+}
+
+/// Conversions between `FixedSizeVector`s with compatible shapes.
+extension FixedSizeVector {
   /// Creates a vector with the same scalars as `v`.
   ///
   /// - Requires: `Self.dimension == V.dimension`.

@@ -29,7 +29,7 @@
 public func jacobian<A: Differentiable, B: Differentiable>(
   of f: @differentiable(A) -> B,
   at p: A
-) -> [A.TangentVector] where B.TangentVector: Vector {
+) -> [A.TangentVector] where B.TangentVector: FixedSizeVector {
   let pb = pullback(at: p, in: f)
-  return B.TangentVector.standardBasis.map { pb($0) }
+  return B.TangentVector.zero.standardBasis.map { pb($0) }
 }
