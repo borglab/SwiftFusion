@@ -17,7 +17,7 @@ import PenguinStructures
 /// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and
 /// materialized error vector.
 public struct JacobianFactor<
-  Rows: FixedSizeArray,
+  Rows: SourceInitializableCollection & UnsafeBufferAccessibleCollection,
   ErrorVector: Vector
 >: LinearApproximationFactor where Rows.Element: Vector & DifferentiableVariableTuple {
   public typealias Variables = Rows.Element
