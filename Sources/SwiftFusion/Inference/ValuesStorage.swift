@@ -19,7 +19,7 @@ import PenguinStructures
 
 // MARK: - Algorithms on arrays of `Differentiable` values.
 
-extension ArrayStorage where Element: Differentiable, Element.TangentVector: EuclideanVectorN {
+extension ArrayStorage where Element: Differentiable, Element.TangentVector: Vector {
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: ArrayBuffer<Element.TangentVector> {
     withUnsafeMutableBufferPointer { vs in
@@ -42,9 +42,9 @@ extension ArrayStorage where Element: Differentiable, Element.TangentVector: Euc
   }
 }
 
-// MARK: - Algorithms on arrays of `EuclideanVectorN` values.
+// MARK: - Algorithms on arrays of `Vector` values.
 
-extension ArrayStorage where Element: EuclideanVectorN {
+extension ArrayStorage where Element: Vector {
   /// Adds `others` to `self`.
   ///
   /// - Requires: `others.count == count`.
@@ -116,7 +116,7 @@ class DifferentiableArrayDispatch {
   final let move: (_ storage: UnsafeMutableRawPointer, _ directions: AnyElementArrayBuffer) -> Void
 
   /// Creates an instance for elements of type `Element`.
-  init<Element: Differentiable>(_: Type<Element>) where Element.TangentVector: EuclideanVectorN {
+  init<Element: Differentiable>(_: Type<Element>) where Element.TangentVector: Vector {
     let storageType = Type<ArrayStorage<Element>>()
     tangentVectorType = Element.TangentVector.self
     tangentVectorZeros = { storage in
@@ -131,7 +131,7 @@ class DifferentiableArrayDispatch {
 extension AnyArrayBuffer where Dispatch == DifferentiableArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
   init<Element: Differentiable>(_ src: ArrayBuffer<Element>)
-    where Element.TangentVector: EuclideanVectorN
+    where Element.TangentVector: Vector
   {
     self.init(
       storage: src.storage,
@@ -157,17 +157,17 @@ extension AnyArrayBuffer where Dispatch: DifferentiableArrayDispatch {
   }
 }
 
-// MARK: - Type-erased arrays of `EuclideanVectorN` values.
+// MARK: - Type-erased arrays of `Vector` values.
 
 typealias AnyVectorArrayBuffer = AnyArrayBuffer<VectorArrayDispatch>
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `EuclideanVectorN`
+/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Vector`
 /// elements.
 class VectorArrayDispatch: DifferentiableArrayDispatch {
   /// A function that adds `others` to the `ArrayStorage` whose address is `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `EuclideanVectorN` type.
+  ///   subclass-specific `Vector` type.
   /// - Requires: `others.elementType == Element`.
   /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
   final let add: (_ storage: UnsafeMutableRawPointer, _ others: AnyElementArrayBuffer) -> Void 
@@ -176,7 +176,7 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   /// `factor`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `EuclideanVectorN` type.
+  ///   subclass-specific `Vector` type.
   final let scale: (_ storage: UnsafeMutableRawPointer, _ factor: Double) -> Void
 
   /// A function returning the dot product of the `ArrayStorage` whose address is `storage` with `others`.
@@ -184,7 +184,7 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   /// This is the sum of the dot products of corresponding elements.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `EuclideanVectorN` type.
+  ///   subclass-specific `Vector` type.
   /// - Requires: `others.elementType == Element`.
   /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
   final let dot: (_ storage: UnsafeRawPointer, _ others: AnyElementArrayBuffer) -> Double
@@ -192,7 +192,7 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   /// A function returning Jacobians that scale each element of `storage` by `scalar`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `EuclideanVectorN` type.
+  ///   subclass-specific `Vector` type.
   final let jacobians:
     (_ storage: UnsafeRawPointer, _ scalar: Double) -> AnyGaussianFactorArrayBuffer
 
@@ -200,7 +200,7 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   final let scalarJacobianType: Any.Type
 
   /// Creates an instance for elements of type `Element`.
-  init<Element: EuclideanVectorN>(_: Type<Element>, _: () = ()) {
+  init<Element: Vector>(_: Type<Element>, _: () = ()) {
     let storageType = Type<ArrayStorage<Element>>()
     add = { storage, others in
       storage[as: storageType].add(.init(unsafelyDowncasting: others))
@@ -221,7 +221,7 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
 
 extension AnyArrayBuffer where Dispatch == VectorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: EuclideanVectorN>(_ src: ArrayBuffer<Element>) {
+  init<Element: Vector>(_ src: ArrayBuffer<Element>) {
     self.init(
       storage: src.storage,
       dispatch: VectorArrayDispatch(Type<Element>()))

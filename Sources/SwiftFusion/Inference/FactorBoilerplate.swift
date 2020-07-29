@@ -66,7 +66,7 @@ public protocol VectorFactor1_ {
 
   typealias Variables = Tuple1<V0>
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
   associatedtype LinearizableComponent: LinearizableFactor
 
   /// Returns the error vector at the given point.
@@ -117,7 +117,7 @@ public protocol LinearizableFactor1_ {
   typealias Variables = Tuple1<V0>
   typealias LinearizableComponent = Self
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
   @differentiable
@@ -199,7 +199,7 @@ public protocol VectorFactor2_ {
 
   typealias Variables = Tuple2<V0, V1>
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
   associatedtype LinearizableComponent: LinearizableFactor
 
   /// Returns the error vector at the given point.
@@ -256,7 +256,7 @@ public protocol LinearizableFactor2_ {
   typealias Variables = Tuple2<V0, V1>
   typealias LinearizableComponent = Self
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
   @differentiable
@@ -350,7 +350,7 @@ public protocol VectorFactor3_ {
 
   typealias Variables = Tuple3<V0, V1, V2>
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
   associatedtype LinearizableComponent: LinearizableFactor
 
   /// Returns the error vector at the given point.
@@ -413,7 +413,7 @@ public protocol LinearizableFactor3_ {
   typealias Variables = Tuple3<V0, V1, V2>
   typealias LinearizableComponent = Self
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
   @differentiable
@@ -519,7 +519,7 @@ public protocol VectorFactor4_ {
 
   typealias Variables = Tuple4<V0, V1, V2, V3>
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
   associatedtype LinearizableComponent: LinearizableFactor
 
   /// Returns the error vector at the given point.
@@ -588,7 +588,7 @@ public protocol LinearizableFactor4_ {
   typealias Variables = Tuple4<V0, V1, V2, V3>
   typealias LinearizableComponent = Self
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
   @differentiable
@@ -706,7 +706,7 @@ public protocol VectorFactor5_ {
 
   typealias Variables = Tuple5<V0, V1, V2, V3, V4>
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
   associatedtype LinearizableComponent: LinearizableFactor
 
   /// Returns the error vector at the given point.
@@ -781,7 +781,7 @@ public protocol LinearizableFactor5_ {
   typealias Variables = Tuple5<V0, V1, V2, V3, V4>
   typealias LinearizableComponent = Self
 
-  associatedtype ErrorVector: EuclideanVectorN
+  associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
   @differentiable

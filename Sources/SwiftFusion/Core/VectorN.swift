@@ -20,8 +20,8 @@ public struct Vector1: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector1: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector1: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -97,8 +97,8 @@ public struct Vector2: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector2: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector2: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -191,8 +191,8 @@ public struct Vector3: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector3: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector3: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -302,8 +302,8 @@ public struct Vector4: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector4: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector4: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -430,8 +430,8 @@ public struct Vector5: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector5: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector5: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -575,8 +575,8 @@ public struct Vector6: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector6: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector6: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -737,8 +737,8 @@ public struct Vector7: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector7: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector7: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -916,8 +916,8 @@ public struct Vector8: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector8: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector8: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -1112,8 +1112,8 @@ public struct Vector9: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector9: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector9: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -1325,8 +1325,8 @@ public struct Vector10: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector10: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector10: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -1555,8 +1555,8 @@ public struct Vector11: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector11: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector11: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
@@ -1802,8 +1802,8 @@ public struct Vector12: KeyPathIterable {
   }
 }
 
-/// Conformance to EuclideanVectorN
-extension Vector12: AdditiveArithmetic, EuclideanVectorN {
+/// Conformance to Vector
+extension Vector12: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
