@@ -32,7 +32,7 @@ extension Tensor where Scalar == Double {
   @differentiable
   public func patch(
     at region: OrientedBoundingBox,
-    interpolation: @differentiable (Tensor<Scalar>, Scalar, Scalar) -> Tensor<Scalar>
+    interpolation: @differentiable (Tensor<Scalar>, Vector2) -> Tensor<Scalar>
   ) -> Tensor<Scalar> {
     precondition(self.shape.count == 3, "image must have shape height x width x channelCount")
     let patchShape: TensorShape =
@@ -42,7 +42,7 @@ extension Tensor where Scalar == Double {
       for j in 0..<patchShape[1] {
         let vDest = Vector2(Double(j) + 0.5, Double(i) + 0.5) - 0.5 * region.size
         let vSrc = region.center.t + region.center.rot * vDest
-        patch.differentiableUpdate(i, j, to: interpolation(self, vSrc.x, vSrc.y))
+        patch.differentiableUpdate(i, j, to: interpolation(self, vSrc))
       }
     }
     return patch
