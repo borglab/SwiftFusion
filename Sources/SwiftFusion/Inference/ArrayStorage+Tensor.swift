@@ -42,6 +42,23 @@ extension ArrayStorage {
     }
   }
 
+  /// Creates a new instance containing the elements of `a0` combined with the corresponding
+  /// elements of `a1` via calling `combine`.
+  ///
+  /// - Requires: a0.count == a1.count
+  convenience init<E0, T>(
+    elementwise a0: ArrayStorage<E0>, _ a1: T,
+    _ combine: (_ a0x: E0, _ a1x: T)->Element
+  ) {
+    self.init(count: a0.count) { target in 
+      a0.withUnsafeMutableBufferPointer { b0 in
+        for i in 0..<b0.count {
+          (target + i).initialize(to: combine(b0[i], a1))
+        }
+      }
+    }
+  }
+
   /// Calls `updateElement(&myX, aX)` for each pair of corresponding elements `myX` and `aX` of
   /// `self` and `a`.
   ///
@@ -55,6 +72,19 @@ extension ArrayStorage {
         assert(me.count == b.count, "shape mismatch (\(me.count) != \(b.count))")
         for i in 0..<me.count { updateElement(&me[i], b[i]) }
       }
+    }
+  }
+
+  /// Calls `updateElement(&myX, aX)` for each pair of corresponding elements `myX` and `aX` of
+  /// `self` and `a`.
+  ///
+  /// - Requires: `self.count == a.count`
+  func update<T>(
+    elementwise a: T,
+    _ updateElement: (_ myX: inout Element, _ aX: T)->Void
+  ) {
+    self.withUnsafeMutableBufferPointer { me in
+      for i in 0..<me.count { updateElement(&me[i], a) }
     }
   }
 }

@@ -13,22 +13,21 @@
 // limitations under the License.
 import PenguinStructures
 
-extension ArrayBuffer: EuclideanVector where Element: EuclideanVector {
-  /// Returns a zero tensor shape-compatible with all other tensors
-  public static var zero: Self { .init() }
-  
+extension ArrayBuffer/*: EuclideanVector*/ where Element: EuclideanVector {
   /// Replaces lhs with the product of `lhs` and `rhs`.
-  public static func *= (lhs: inout ArrayBuffer, rhs: Double) -> ArrayBuffer {
+  public static func *= (lhs: inout ArrayBuffer, rhs: Double) -> Void {
     if lhs.isEmpty { return }
     if rhs == 0 { lhs = .zero }
-    else { lhs.update(elementwiseWith: rhs, *=, *) }
+    else {
+      lhs.update(elementwise: rhs, *=, { l, r in r * l })
+    }
   }
 
   /// Returns the product of `lhs` and `rhs`.
   public static func * (lhs: ArrayBuffer, rhs: Double) -> ArrayBuffer {
     if lhs.isEmpty { return lhs }
     if rhs == 0 { return .zero }
-    return .init(lhs.lazy.map { $0 * rhs })
+    return .init(lhs.lazy.map { rhs * $0 })
   }
 
   /// Returns the dot product of `self` with `other`.
@@ -39,26 +38,9 @@ extension ArrayBuffer: EuclideanVector where Element: EuclideanVector {
     assert(self.tensorShapeIsCompatible(withThatOf: other))
     return self.withUnsafeBufferPointer { lhs in
       other.withUnsafeBufferPointer { rhs in
-        (0..<lhs.count).reduce(0) { sum, i in sum += lhs[i].dot(rhs[i]) }
+        (0..<lhs.count).reduce(0) { sum, i in sum + lhs[i].dot(rhs[i]) }
       }
     }
-  }
-
-  /// Replaces `lhs` with the sum of `lhs` and `rhs`
-  ///
-  /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  public static func += (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
-    if rhs.isEmpty { return }
-    else if lhs.isEmpty { lhs = rhs }
-    else { lhs.update(elementwiseWith: rhs, +=, +) }
-  }
-
-  /// Returns the result of subtracting `rhs` from `lhs`.
-  ///
-  /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  public static func -= (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
-    if rhs.isEmpty { return }
-    else { lhs.update(elementwiseWith: rhs, -=, -) }
   }
 
   /// Creates an instance whose elements are `scalars`.

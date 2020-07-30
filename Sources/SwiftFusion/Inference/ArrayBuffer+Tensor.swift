@@ -37,11 +37,11 @@ extension ArrayBuffer {
   /// `self` and `a`, using `combine` (if supplied) to initialize new storage when required.
   ///
   /// - Requires: `self.count == a.count`
-  @differentiable
+  // @differentiable(wrt: (self, a) where Element: Differentiable, E: Differentiable)
   mutating func update<E>(
     elementwiseWith a: ArrayBuffer<E>,
-    _ updateElement: (_ myX: inout Element, _ aX: E)->Void,
-    _ combine: Optional<(_ a0x: Element, _ a1x: E)->Element> = nil
+    _ updateElement: /*@differentiable*/ (_ myX: inout Element, _ aX: E)->Void,
+    _ combine: Optional</*@differentiable*/ (_ a0x: Element, _ a1x: E)->Element> = nil
   ) {
     while true {
       if isKnownUniquelyReferenced(&storage) {
@@ -50,6 +50,32 @@ extension ArrayBuffer {
       }
       else if let f = combine {
         storage = .init(elementwise: storage, a.storage, f)
+        return
+      }
+      else {
+        storage = storage.makeCopy()
+      }
+    }
+  }
+
+  /// Calls `updateElement(&myX, aX)` on each pair of corresponding elements `myX` and `aX` of
+  /// `self` and `a`, using `combine` (if supplied) to initialize new storage when required.
+  ///
+  /// - Requires: `self.count == a.count`
+  // @differentiable(wrt: (self, a) where Element: Differentiable, E: Differentiable)
+  // TODO: Fix comment
+  mutating func update<T>(
+    elementwise a: T,
+    _ updateElement: /*@differentiable*/ (_ myX: inout Element, _ aX: T)->Void,
+    _ combine: Optional</*@differentiable*/ (_ a0x: Element, _ a1x: T)->Element> = nil
+  ) {
+    while true {
+      if isKnownUniquelyReferenced(&storage) {
+        storage.update(elementwise: a, updateElement)
+        return
+      }
+      else if let f = combine {
+        storage = .init(elementwise: storage, a, f)
         return
       }
       else {
@@ -75,32 +101,77 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   /// Returns the sum of `lhs` and `rhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
+  @differentiable(where Element: Differentiable)
   public static func + (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
-    .init(lhs.storage + rhs.storage)
+    if lhs.isEmpty { return rhs }
+    if rhs.isEmpty { return lhs }
+    return .init(elementwise: lhs, rhs, +)
   }
 
+  @usableFromInline
+  @derivative(of: +)
+  static func vjp_plus(lhs: ArrayBuffer, rhs: ArrayBuffer) 
+    -> (value: ArrayBuffer, pullback: (TangentVector)->(TangentVector, TangentVector))
+  where Element: Differentiable
+  {
+    (lhs + rhs, { x in (x, x) })
+  }
+  
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
+  @differentiable(where Element: Differentiable)
   public static func - (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
-    .init(lhs.storage - rhs.storage)
+    if rhs.isEmpty { return lhs }
+    return .init(elementwise: lhs, rhs, -)
   }
 
+  @usableFromInline
+  @derivative(of: -)
+  static func vjp_minus(lhs: ArrayBuffer, rhs: ArrayBuffer) 
+    -> (value: ArrayBuffer, pullback: (TangentVector)->(TangentVector, TangentVector))
+  where Element: Differentiable
+  {
+    (lhs - rhs, { x in (x, .zero - x) })
+  }
+  
   /// Replaces `lhs` with the sum of `lhs` and `rhs`
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
+  @differentiable(where Element: Differentiable)
   public static func += (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     else if lhs.isEmpty { lhs = rhs }
     else { lhs.update(elementwiseWith: rhs, +=, +) }
   }
 
+  @usableFromInline
+  @derivative(of: +=)
+  static func vjp_plusEquals(lhs: inout ArrayBuffer, rhs: ArrayBuffer) 
+    -> (value: Void, pullback: (inout TangentVector)->(TangentVector))
+  where Element: Differentiable
+  {
+    lhs += rhs
+    return ((), { x in x })
+  }
+  
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
+  @differentiable(where Element: Differentiable)
   public static func -= (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     else { lhs.update(elementwiseWith: rhs, -=, -) }
+  }
+
+  @usableFromInline
+  @derivative(of: -=)
+  static func vjp_minusEquals(lhs: inout ArrayBuffer, rhs: ArrayBuffer) 
+    -> (value: Void, pullback: (inout TangentVector)->(TangentVector))
+  where Element: Differentiable
+  {
+    lhs -= rhs
+    return ((), { x in .zero - x })
   }
 }
 
