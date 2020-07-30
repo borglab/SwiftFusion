@@ -1,7 +1,7 @@
 import TensorFlow
 
 /// A `Tensor` with a statically known shape.
-public protocol FixedShapeTensor: Vector {
+public protocol FixedShapeTensor: FixedSizeVector {
   /// The shape of an instance.
   static var shape: TensorShape { get }
 
@@ -41,10 +41,10 @@ extension FixedShapeTensor {
   }
 
   public var dimension: Int {
-    Self.staticDimension
+    Self.dimension
   }
 
-  public static var staticDimension: Int {
+  public static var dimension: Int {
     shape.reduce(1, *)
   }
 

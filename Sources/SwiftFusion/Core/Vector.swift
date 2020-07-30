@@ -170,7 +170,7 @@ extension Vector {
 }
 
 extension Vector {
-  /// Returns a `Tensor` with shape `[Self.staticDimension]` with the same scalars as `self`.
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
   @differentiable(where Self: InitializableVector)
   public var flatTensor: Tensor<Double> {
     withUnsafeBufferPointer { b in
@@ -222,17 +222,19 @@ extension InitializableVector {
 /// static `dimension`. New code should prefer `Vector` so that it does not rely on a static `dimension`.
 public protocol FixedSizeVector: InitializableVector {
   /// The `dimension` of an instance.
-  static var staticDimension: Int { get }
+  static var dimension: Int { get }
 }
 
 /// Conversions between `FixedSizeVector`s with compatible shapes.
 extension FixedSizeVector {
+  public static var standardBasis: [Self] { Self.zero.standardBasis }
+  
   /// Creates a vector with the same scalars as `v`.
   ///
-  /// - Requires: `Self.staticDimension == V.staticDimension`.
+  /// - Requires: `Self.dimension == V.dimension`.
   @differentiable
   public init<V: FixedSizeVector>(_ v: V) {
-    precondition(Self.staticDimension == V.staticDimension)
+    precondition(Self.dimension == V.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
       v.withUnsafeBufferPointer { vBuf in
@@ -254,10 +256,10 @@ extension FixedSizeVector {
 
   /// Creates a vector with the scalars from `v1`, followed by the scalars from `v2`.
   ///
-  /// - Requires: `Self.staticDimension == V1.staticDimension + V2.staticDimension`.
+  /// - Requires: `Self.dimension == V1.dimension + V2.dimension`.
   @differentiable
   public init<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) {
-    precondition(Self.staticDimension == V1.staticDimension + V2.staticDimension)
+    precondition(Self.dimension == V1.dimension + V2.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
       v1.withUnsafeBufferPointer { v1Buf in
@@ -267,7 +269,7 @@ extension FixedSizeVector {
       }
       v2.withUnsafeBufferPointer { v2Buf in
         for (i, s) in v2Buf.enumerated() {
-          rBuf[i + V1.staticDimension] = s
+          rBuf[i + V1.dimension] = s
         }
       }
     }
@@ -292,7 +294,7 @@ extension FixedSizeVector {
           var t2 = V2.zero
           t2.withUnsafeMutableBufferPointer { t2Buf in
             for i in t2Buf.indices {
-              t2Buf[i] = tBuf[i + V1.staticDimension]
+              t2Buf[i] = tBuf[i + V1.dimension]
             }
           }
           return (t1, t2)

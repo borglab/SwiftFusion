@@ -109,3 +109,19 @@ where Head: Vector, Tail: Vector {
       + tail.standardBasis.map { Self(head: Head.zero, tail: $0) }
   }
 }
+
+extension Empty: FixedSizeVector {
+  public static var dimension: Int { 0 }
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    assert(scalars.isEmpty)
+    self.init()
+  }
+}
+
+extension Tuple: FixedSizeVector, InitializableVector where Head: FixedSizeVector, Tail: FixedSizeVector {
+  public static var dimension: Int { Head.dimension + Tail.dimension }
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    let i = scalars.index(scalars.startIndex, offsetBy: Head.dimension)
+    self.init(head: .init(scalars[..<i]), tail: .init(scalars[i...]))
+  }
+}

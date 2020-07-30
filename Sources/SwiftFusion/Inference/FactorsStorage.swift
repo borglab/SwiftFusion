@@ -205,7 +205,7 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     typealias Linearization<A: FixedSizeArray> = Type<JacobianFactor<A, Element.ErrorVector>>
       where A.Element: Vector & DifferentiableVariableTuple
     
-    switch Element.ErrorVector.staticDimension {
+    switch Element.ErrorVector.dimension {
     case 1:
       dispatch = .init(elementType, linearization: Linearization<Array1<TangentVector>>())
     case 2:
@@ -231,7 +231,7 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     case 12:
       dispatch = .init(elementType, linearization: Linearization<Array12<TangentVector>>())
     default:
-      fatalError("ErrorVector dimension \(Element.ErrorVector.staticDimension) not implemented")
+      fatalError("ErrorVector dimension \(Element.ErrorVector.dimension) not implemented")
     }
 
     self.init(storage: src.storage, dispatch: dispatch)

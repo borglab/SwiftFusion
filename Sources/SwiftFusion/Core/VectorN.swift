@@ -76,7 +76,7 @@ extension Vector1: AdditiveArithmetic, Vector {
 }
 
 extension Vector1: FixedSizeVector {
-  public static var staticDimension: Int { return 1 }
+  public static var dimension: Int { return 1 }
 }
 
 extension Vector1: ElementaryFunctions {}
@@ -170,7 +170,7 @@ extension Vector2: AdditiveArithmetic, Vector {
 }
 
 extension Vector2: FixedSizeVector {
-  public static var staticDimension: Int { return 2 }
+  public static var dimension: Int { return 2 }
 }
 
 extension Vector2: ElementaryFunctions {}
@@ -281,7 +281,7 @@ extension Vector3: AdditiveArithmetic, Vector {
 }
 
 extension Vector3: FixedSizeVector {
-  public static var staticDimension: Int { return 3 }
+  public static var dimension: Int { return 3 }
 }
 
 extension Vector3: ElementaryFunctions {}
@@ -409,7 +409,7 @@ extension Vector4: AdditiveArithmetic, Vector {
 }
 
 extension Vector4: FixedSizeVector {
-  public static var staticDimension: Int { return 4 }
+  public static var dimension: Int { return 4 }
 }
 
 extension Vector4: ElementaryFunctions {}
@@ -554,7 +554,7 @@ extension Vector5: AdditiveArithmetic, Vector {
 }
 
 extension Vector5: FixedSizeVector {
-  public static var staticDimension: Int { return 5 }
+  public static var dimension: Int { return 5 }
 }
 
 extension Vector5: ElementaryFunctions {}
@@ -716,7 +716,7 @@ extension Vector6: AdditiveArithmetic, Vector {
 }
 
 extension Vector6: FixedSizeVector {
-  public static var staticDimension: Int { return 6 }
+  public static var dimension: Int { return 6 }
 }
 
 extension Vector6: ElementaryFunctions {}
@@ -895,7 +895,7 @@ extension Vector7: AdditiveArithmetic, Vector {
 }
 
 extension Vector7: FixedSizeVector {
-  public static var staticDimension: Int { return 7 }
+  public static var dimension: Int { return 7 }
 }
 
 extension Vector7: ElementaryFunctions {}
@@ -1091,7 +1091,7 @@ extension Vector8: AdditiveArithmetic, Vector {
 }
 
 extension Vector8: FixedSizeVector {
-  public static var staticDimension: Int { return 8 }
+  public static var dimension: Int { return 8 }
 }
 
 extension Vector8: ElementaryFunctions {}
@@ -1304,7 +1304,7 @@ extension Vector9: AdditiveArithmetic, Vector {
 }
 
 extension Vector9: FixedSizeVector {
-  public static var staticDimension: Int { return 9 }
+  public static var dimension: Int { return 9 }
 }
 
 extension Vector9: ElementaryFunctions {}
@@ -1534,7 +1534,7 @@ extension Vector10: AdditiveArithmetic, Vector {
 }
 
 extension Vector10: FixedSizeVector {
-  public static var staticDimension: Int { return 10 }
+  public static var dimension: Int { return 10 }
 }
 
 extension Vector10: ElementaryFunctions {}
@@ -1781,7 +1781,7 @@ extension Vector11: AdditiveArithmetic, Vector {
 }
 
 extension Vector11: FixedSizeVector {
-  public static var staticDimension: Int { return 11 }
+  public static var dimension: Int { return 11 }
 }
 
 extension Vector11: ElementaryFunctions {}
@@ -2045,7 +2045,7 @@ extension Vector12: AdditiveArithmetic, Vector {
 }
 
 extension Vector12: FixedSizeVector {
-  public static var staticDimension: Int { return 12 }
+  public static var dimension: Int { return 12 }
 }
 
 extension Vector12: ElementaryFunctions {}

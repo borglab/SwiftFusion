@@ -78,7 +78,7 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
 }
 
 extension Vector${dim}: FixedSizeVector {
-  public static var staticDimension: Int { return ${dim} }
+  public static var dimension: Int { return ${dim} }
 }
 
 extension Vector${dim}: ElementaryFunctions {}
