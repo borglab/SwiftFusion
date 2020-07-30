@@ -37,6 +37,7 @@ extension ArrayBuffer {
   /// `self` and `a`, using `combine` (if supplied) to initialize new storage when required.
   ///
   /// - Requires: `self.count == a.count`
+  @differentiable
   mutating func update<E>(
     elementwiseWith a: ArrayBuffer<E>,
     _ updateElement: (_ myX: inout Element, _ aX: E)->Void,
