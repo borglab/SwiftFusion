@@ -57,7 +57,7 @@ extension Tensor where Scalar == Double {
 /// Pixels that are out of bounds are considered to have the value `0` in all channels.
 ///
 /// - Parameters:
-///   - image: a `Tensor` of shape `[height, width, channelCount]".
+///   - image: an image, with shape `[height, width, channelCount]`.
 @differentiable
 public func bilinear(_ image: Tensor<Double>, _ point: Vector2) -> Tensor<Double> {
   precondition(image.shape.count == 3)
