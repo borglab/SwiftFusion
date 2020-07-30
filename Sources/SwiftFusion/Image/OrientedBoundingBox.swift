@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /// A rectangular region of an image, not necessarily axis-aligned.
-public struct OrientedBoundingBox {
+public struct OrientedBoundingBox: Differentiable {
   /// The pose of the region's center within the image.
   public var center: Pose2
 
