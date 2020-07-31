@@ -201,8 +201,7 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     let elementType = Type<Element>()
     typealias TangentVector = Element.LinearizableComponent.Variables.TangentVector
     typealias Linearization<A> = Type<JacobianFactor<A, Element.ErrorVector>>
-      where A: SourceInitializableCollection & UnsafeBufferAccessibleCollection,
-            A.Element: Vector & DifferentiableVariableTuple
+      where A: SourceInitializableCollection, A.Element: Vector & DifferentiableVariableTuple
 
     // For small dimensions, we use a fixed size array in the linearization because the allocation
     // and indirection overheads of a dynamically sized array are releatively big.
