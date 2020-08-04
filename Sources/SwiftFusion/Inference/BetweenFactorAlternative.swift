@@ -33,15 +33,3 @@ public struct BetweenFactorAlternative: LinearizableFactor2 {
     return Vector12(concatenating: R, t)
   }
 }
-
-public typealias Array8<T> = ArrayN<Array7<T>>
-public typealias Array9<T> = ArrayN<Array8<T>>
-public typealias Array10<T> = ArrayN<Array9<T>>
-public typealias Array11<T> = ArrayN<Array10<T>>
-public typealias Array12<T> = ArrayN<Array11<T>>
-
-/// A Jacobian factor with 1 6-dimensional input and a 12-dimensional error vector.
-public typealias JacobianFactor12x6_1 = JacobianFactor<Array12<Tuple1<Vector6>>, Vector12>
-
-/// A Jacobian factor with 2 6-dimensional inputs and a 12-dimensional error vector.
-public typealias JacobianFactor12x6_2 = JacobianFactor<Array12<Tuple2<Vector6, Vector6>>, Vector12>
