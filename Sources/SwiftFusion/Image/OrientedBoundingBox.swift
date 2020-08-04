@@ -15,21 +15,32 @@
 /// A rectangular region of an image, not necessarily axis-aligned.
 public struct OrientedBoundingBox: Differentiable {
   /// The pose of the region's center within the image.
+  ///
+  /// The translation component is in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
   public var center: Pose2
 
-  /// The lengths of the two sides of the region.
-  public var size: Vector2
+  /// The number of pixels along the height axis.
+  ///
+  /// This is the `rows` image dimension defined in `docs/ImageOperations.md`.
+  @noDerivative public let rows: Int
 
-  /// Creates a instance with the given `center` and `size`.
-  public init(center: Pose2, size: Vector2) {
+  /// The number of pixels along the width axis.
+  ///
+  /// This is the `cols` image dimension defines in `docs/ImageOperations.md`.
+  @noDerivative public let cols: Int
+
+  /// Creates a instance with the given `center`, `rows`, and `cols`.
+  public init(center: Pose2, rows: Int, cols: Int) {
     self.center = center
-    self.size = size
+    self.rows = rows
+    self.cols = cols
   }
 
-  /// The four corners of the region.
+  /// The four corners of the region, in `(u, v)` coordinates as defined in
+  /// `docs/ImageOperations.md`.
   public var corners: [Vector2] {
-    func corner(_ xFlip: Double, _ yFlip: Double) -> Vector2 {
-      return center.t + center.rot * (0.5 * Vector2(xFlip * size.x, yFlip * size.y))
+    func corner(_ uFlip: Double, _ vFlip: Double) -> Vector2 {
+      return center.t + center.rot * (0.5 * Vector2(uFlip * Double(cols), vFlip * Double(rows)))
     }
     return [corner(1, 1), corner(-1, 1), corner(-1, -1), corner(1, -1)]
   }

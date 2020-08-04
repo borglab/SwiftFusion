@@ -22,8 +22,7 @@ final class PatchTests: XCTestCase {
   func testSlice() {
     let image = Tensor<Double>(randomUniform: [100, 100, 3])
     let patch = image.patch(
-      at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), size: Vector2(20, 10)),
-      interpolation: bilinear)
+      at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), rows: 10, cols: 20))
     let expectedPatch = image.slice(lowerBounds: [25, 50, 0], sizes: [10, 20, 3])
     XCTAssertEqual(patch, expectedPatch)
   }
@@ -34,8 +33,7 @@ final class PatchTests: XCTestCase {
     let image = Tensor<Double>(randomUniform: [100, 100, 3])
     let grad = gradient(at: image) { image in
       image.patch(
-        at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), size: Vector2(20, 10)),
-        interpolation: bilinear
+        at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), rows: 10, cols: 20)
       ).sum()
     }
     var expectedGrad = Tensor<Double>(zeros: [100, 100, 3])
@@ -48,8 +46,8 @@ final class PatchTests: XCTestCase {
     let dataDir = URL.sourceFileDirectory().appendingPathComponent("data")
     let image = Tensor<Double>(Image(jpeg: dataDir.appendingPathComponent("test.png")).tensor)
     let obb = OrientedBoundingBox(
-      center: Pose2(Rot2(-20 * .pi / 180), Vector2(35, 65)), size: Vector2(40, 20))
-    let patch = image.patch(at: obb, interpolation: bilinear)
+      center: Pose2(Rot2(-20 * .pi / 180), Vector2(35, 65)), rows: 20, cols: 40)
+    let patch = image.patch(at: obb)
 
     // Created using ImageMagick:
     //   convert -distort SRT 35,65,20 -crop 40x20+15+55 test.png cropped.png
@@ -66,9 +64,9 @@ final class PatchTests: XCTestCase {
   /// constant.
   func testDerivativeWithRespectToPosition_constantImage() {
     let image = Tensor<Double>(ones: [100, 100, 3])
-    let obb = OrientedBoundingBox(center: Pose2(Rot2(1), Vector2(60, 50)), size: Vector2(20, 10))
+    let obb = OrientedBoundingBox(center: Pose2(Rot2(1), Vector2(60, 50)), rows: 10, cols: 20)
     let grad = gradient(at: obb) { obb in
-      image.patch(at: obb, interpolation: bilinear).mean()
+      image.patch(at: obb).mean()
     }
     XCTAssertEqual(grad.center.norm, 0, accuracy: 1e-6)
   }
@@ -79,9 +77,9 @@ final class PatchTests: XCTestCase {
     let image = Tensor(linearSpaceFrom: 0.01, to: 1, count: 100)
       .reshaped(to: [1, 100, 1])
       .tiled(multiples: [100, 1, 1])
-    let obb = OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 50)), size: Vector2(20, 10))
+    let obb = OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 50)), rows: 10, cols: 20)
     let grad = gradient(at: obb) { obb in
-      image.patch(at: obb, interpolation: bilinear).mean()
+      image.patch(at: obb).mean()
     }
     let expectedGrad = Vector3(0, 0.01, 0.00)
     XCTAssertEqual((grad.center - expectedGrad).norm, 0, accuracy: 1e-6)
@@ -99,13 +97,13 @@ final class PatchTests: XCTestCase {
     image[20..<25, 60..<70] = target
 
     // An initial guess that has some overlap with the target.
-    var x = OrientedBoundingBox(center: Pose2(Rot2(1.0), Vector2(63, 22)), size: Vector2(10, 5))
+    var x = OrientedBoundingBox(center: Pose2(Rot2(1.0), Vector2(63, 22)), rows: 5, cols: 10)
 
     // Use gradient descent to find an oriented bounding box containing all ones.
     let stepCount = 100
     for _ in 0..<stepCount {
       let g = gradient(at: x) { x in
-        (image.patch(at: x, interpolation: bilinear) - target).squared().mean()
+        (image.patch(at: x) - target).squared().mean()
       }
       x.center.move(along: -0.2 * g.center)
     }

@@ -15,34 +15,30 @@
 import TensorFlow
 
 extension Tensor where Scalar == Double {
-  /// Returns the patch of `self` at `region`, interpolating pixels using `interpolation`.
-  ///
-  /// Coordinate system used in `region`: The pixel at `self[j, i, ...]` is the square bounded by
-  /// the corners with coordinates `(i, j)` and `(i + 1, j + 1)`. The center of the pixel is at
-  /// coorindate `(i + 0.5, j + 0.5)`.
-  ///
-  /// For example, `(0, 0)` is the top left of the image and `(width, height)` is the bottom right
-  /// of the image.
+  /// Returns the patch of `self` at `region`, sampling pixels using `resample`.
   ///
   /// - Parameters:
-  ///   - self: an image, with shape `[height, width, channelCount]`.
-  ///   - region: the center, orientation, and size of the patch to extract. The center is
-  ///     specified in the coordinate system described above, and the size is specified in units
-  ///     of pixels.
+  ///   - self: a pixel tensor with shape `[height, width, channelCount]`. `height` and `width` are
+  ///     as defined in `docs/ImageOperations.md`.
+  ///   - region: the center, orientation, and size of the patch to extract.
+  ///   - resample: Returns a sample of `image` at `point`.
+  ///     - image: a pixel tensor, with shape `[height, width, channelCount]`. `height` and
+  ///       `width` are as defined in `docs/ImageOperations.md`.
+  ///     - point: a point in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
   @differentiable
   public func patch(
     at region: OrientedBoundingBox,
-    interpolation: @differentiable (Tensor<Scalar>, Vector2) -> Tensor<Scalar>
+    resample: @differentiable (_ image: Tensor<Scalar>, _ point: Vector2) -> Tensor<Scalar>
+      = bilinear
   ) -> Tensor<Scalar> {
     precondition(self.shape.count == 3, "image must have shape height x width x channelCount")
-    let patchShape: TensorShape =
-      withoutDerivative(at: [Int(region.size.y), Int(region.size.x), self.shape[2]])
+    let patchShape: TensorShape = [Int(region.rows), Int(region.cols), self.shape[2]]
     var patch = Tensor<Scalar>(zeros: patchShape)
-    for i in 0..<patchShape[0] {
-      for j in 0..<patchShape[1] {
-        let vDest = Vector2(Double(j) + 0.5, Double(i) + 0.5) - 0.5 * region.size
-        let vSrc = region.center.t + region.center.rot * vDest
-        patch.differentiableUpdate(i, j, to: interpolation(self, vSrc))
+    for i in 0..<region.rows {
+      for j in 0..<region.cols {
+        let vDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
+          - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+        patch.differentiableUpdate(i, j, to: resample(self, region.center * vDest))
       }
     }
     return patch
@@ -52,19 +48,23 @@ extension Tensor where Scalar == Double {
 /// Returns the pixel at `point` in `image`, using bilinear interpolation when `point` does not
 /// fall exactly in the center of a pixel.
 ///
-/// The coordinate system is the same as documented in `Tensor`'s `patch` method above.
-///
-/// Pixels that are out of bounds are considered to have the value `0` in all channels.
-///
 /// - Parameters:
-///   - image: an image, with shape `[height, width, channelCount]`.
+///   - image: a pixel tensor, with shape `[height, width, channelCount]`. `height` and
+///     `width` are as defined in `docs/ImageOperations.md`.
+///   - point: a point in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
 @differentiable
 public func bilinear(_ image: Tensor<Double>, _ point: Vector2) -> Tensor<Double> {
   precondition(image.shape.count == 3)
+
+  // The `(i, j)` integer coordinates of the top left pixel to sample from.
   let i = withoutDerivative(at: Int(floor(point.y - 0.5)))
   let j = withoutDerivative(at: Int(floor(point.x - 0.5)))
-  let p = Double(i) + 1.5 - point.y
-  let q = Double(j) + 1.5 - point.x
+
+  // Weight of the `(i, _)` pixels in the interpolation.
+  let weightI = Double(i) + 1.5 - point.y
+
+  // Weight of the `(_, j)` pixels in the interpolation.
+  let weightJ = Double(j) + 1.5 - point.x
 
   func pixelOrZero(_ t: Tensor<Double>, _ i: Int, _ j: Int) -> Tensor<Double> {
     if i < 0 {
@@ -82,10 +82,10 @@ public func bilinear(_ image: Tensor<Double>, _ point: Vector2) -> Tensor<Double
     return t[i, j]
   }
 
-  let s1 = pixelOrZero(image, i, j) * p * q
-  let s2 = pixelOrZero(image, i + 1, j) * (1 - p) * q
-  let s3 = pixelOrZero(image, i, j + 1) * p * (1 - q)
-  let s4 = pixelOrZero(image, i + 1, j + 1) * (1 - p) * (1 - q)
+  let s1 = pixelOrZero(image, i, j) * weightI * weightJ
+  let s2 = pixelOrZero(image, i + 1, j) * (1 - weightI) * weightJ
+  let s3 = pixelOrZero(image, i, j + 1) * weightI * (1 - weightJ)
+  let s4 = pixelOrZero(image, i + 1, j + 1) * (1 - weightI) * (1 - weightJ)
   return s1 + s2 + s3 + s4
 }
 
