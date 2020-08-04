@@ -82,141 +82,125 @@ public protocol LinearApproximationFactor: GaussianFactor {
 
 // MARK: - `VariableTuple`.
 
-/// Collections of variable types suitable for a factor.
+/// The variable values adjacent to a factor.
 public protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
-  /// A tuple of `UnsafePointer`s to the types of the variables adjacent to a factor.
-  associatedtype UnsafePointers: TupleProtocol
+  /// `UnsafePointer`s to the base addresss of buffers containing values of the variable types in
+  /// `Self`.
+  associatedtype BufferBaseAddresses: TupleProtocol
 
-  /// A tuple of `UnsafeMutablePointer`s to the types of the variables adjacent to a factor.
-  associatedtype UnsafeMutablePointers: TupleProtocol
+  /// `UnsafeMutablePointer`s to the base addresss of buffers containing values of the variable
+  /// types in `Self`.
+  associatedtype MutableBufferBaseAddresses: TupleProtocol
 
-  /// A tuple of `TypedID`s referring to variables adjacent to a factor.
+  /// The indices used to address a `VariableTuple` scattered across per-type buffers.
   associatedtype Indices: TupleProtocol
 
-  /// Invokes `body` with the base addressess of the variable assignment buffers for the variable
-  /// types in this `VariableTuble`.
+  /// Invokes `body` with the base addressess of buffers from `variableAssignments` storing
+  /// instances of the variable types in `self`.
   // TODO: `variableAssignments` should be the receiver.
-  static func withVariableBufferBaseUnsafePointers<R>(
-    _ variableAssignments: VariableAssignments,
-    _ body: (UnsafePointers) -> R
+  static func withMutableBufferBaseAddresses<R>(
+    _ variableAssignments: inout VariableAssignments,
+    _ body: (MutableBufferBaseAddresses) -> R
   ) -> R
 
-  /// Ensures that `variableAssignments` has unique storage for all the variable assignment buffers
-  /// for the variable types in this `VariableTuble`.
-  // TODO: `variableAssignments` should be the receiver.
-  static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments)
-
-  /// Returns mutable pointers referring to the same memory as `pointers`.
+  /// Returns a copy of `p` through which memory can't be mutated.
   // TODO: Maybe `pointers` should be the receiver.
-  static func unsafeMutablePointers(mutating pointers: UnsafePointers) -> UnsafeMutablePointers
+  static func withoutMutation(_ p: MutableBufferBaseAddresses) -> BufferBaseAddresses
 
-  /// Creates a tuple containing the variable values in `variableBufferBases`, at `indices`.
-  ///
-  /// Parameter variableBufferBases: the base addresses from `withVariableBufferBaseUnsafePointers`.
-  init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices)
+  /// Gathers the values at the given `positions` in the buffers having the given `baseAddresses`.
+  init(at positions: Indices, in baseAddresses: BufferBaseAddresses)
 
-  /// Stores `self` into `variableBufferBases`, at `indices`.
-  func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices)
+  /// Scatters `self` into the given positions of buffers having the given `baseAddresses`.
+  func assign(into positions: Indices, in baseAddresses: MutableBufferBaseAddresses)
 }
 
 extension VariableTuple {
-  /// Invokes `body` with the base addressess of the variable assignment buffers for the variable
-  /// types in this `VariableTuble`.
+  /// Invokes `body` with the base addressess of buffers from `variableAssignments` storing
+  /// instances of the variable types in `self`.
   // TODO: `variableAssignments` should be the receiver.
-  static func withVariableBufferBaseUnsafeMutablePointers<R>(
-    _ variableAssignments: inout VariableAssignments,
-    _ body: (UnsafeMutablePointers) -> R
+  static func withBufferBaseAddresses<R>(
+    _ variableAssignments: VariableAssignments,
+    _ body: (BufferBaseAddresses) -> R
   ) -> R {
-    ensureUniqueStorage(&variableAssignments)
-    return withVariableBufferBaseUnsafePointers(variableAssignments) {
-      body(unsafeMutablePointers(mutating: $0))
+    var v = variableAssignments
+    return withMutableBufferBaseAddresses(&v) {
+      body(withoutMutation($0))
     }
-  }
-
-  /// Creates a tuple containing the variable values in `variableBufferBases`, at `indices`.
-  ///
-  /// Parameter variableBufferBases: the base addresses from `withVariableBufferBaseUnsafePointers`.
-  init(_ variableBufferBases: UnsafePointers, indices: Indices) {
-    self.init(Self.unsafeMutablePointers(mutating: variableBufferBases), indices: indices)
   }
 }
 
 extension Empty: VariableTuple {
-  public typealias UnsafePointers = Self
-  public typealias UnsafeMutablePointers = Self
+  public typealias BufferBaseAddresses = Self
+  public typealias MutableBufferBaseAddresses = Self
   public typealias Indices = Self
 
-  public static func withVariableBufferBaseUnsafePointers<R>(
-    _ variableAssignments: VariableAssignments,
-    _ body: (UnsafePointers) -> R
+  public static func withMutableBufferBaseAddresses<R>(
+    _ : inout VariableAssignments,
+    _ body: (MutableBufferBaseAddresses) -> R
   ) -> R {
     return body(Empty())
   }
 
-  public static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {}
-
-  public static func unsafeMutablePointers(mutating pointers: UnsafePointers)
-    -> UnsafeMutablePointers
-  {
+  public static func withoutMutation(_ p: MutableBufferBaseAddresses) -> BufferBaseAddresses {
     Self()
   }
 
-  public init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
+  public init(at _: Indices, in _: MutableBufferBaseAddresses) {
     self.init()
   }
 
-  public func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {}
+  public func assign(into _: Indices, in _: MutableBufferBaseAddresses) {}
 }
 
 extension Tuple: VariableTuple where Tail: VariableTuple {
-  public typealias UnsafePointers = Tuple<UnsafePointer<Head>, Tail.UnsafePointers>
-  public typealias UnsafeMutablePointers =
-    Tuple<UnsafeMutablePointer<Head>, Tail.UnsafeMutablePointers>
+  /// `UnsafePointer`s to the base addresss of buffers containing values of the variable types in
+  /// `Self`.
+  public typealias BufferBaseAddresses = Tuple<UnsafePointer<Head>, Tail.BufferBaseAddresses>
+  
+  /// `UnsafeMutablePointer`s to the base addresss of buffers containing values of the variable
+  /// types in `Self`.
+  public typealias MutableBufferBaseAddresses
+    = Tuple<UnsafeMutablePointer<Head>, Tail.MutableBufferBaseAddresses>
+  
   public typealias Indices = Tuple<TypedID<Head>, Tail.Indices>
 
-  public static func withVariableBufferBaseUnsafePointers<R>(
-    _ variableAssignments: VariableAssignments,
-    _ body: (UnsafePointers) -> R
+  /// Invokes `body` with the base addressess of buffers from `variableAssignments` storing
+  /// instances of the variable types in `self`.
+  public static func withMutableBufferBaseAddresses<R>(
+    _ v: inout VariableAssignments,
+    _ body: (MutableBufferBaseAddresses) -> R
   ) -> R {
-    let headArray = variableAssignments.storage[ObjectIdentifier(Head.self)].unsafelyUnwrapped
-    return ArrayBuffer<Head>(unsafelyDowncasting: headArray)
-      .withUnsafeBufferPointer { headBuffer in
-        Tail.withVariableBufferBaseUnsafePointers(variableAssignments) { tailBase in
-          body(
-            UnsafePointers(
-              head: headBuffer.baseAddress ?? UnsafePointer(bitPattern: -1)!,
-              tail: tailBase
-            )
-          )
-        }
-      }
+    let headPointer = v.storage[
+      existingKey: ObjectIdentifier(Head.self)
+    ][
+      existingElementType: Type<Head>()
+    ].withUnsafeMutableBufferPointer { $0.baseAddress.unsafelyUnwrapped }
+
+    return Tail.withMutableBufferBaseAddresses(&v) {
+      body(.init(head: headPointer, tail: $0))
+    }
   }
 
-  public static func ensureUniqueStorage(_ variableAssignments: inout VariableAssignments) {
-    variableAssignments.storage[ObjectIdentifier(Head.self)]!.ensureUniqueStorage()
-    Tail.ensureUniqueStorage(&variableAssignments)
-  }
-
-  public static func unsafeMutablePointers(mutating pointers: UnsafePointers)
-    -> UnsafeMutablePointers
-  {
-    return UnsafeMutablePointers(
-      head: UnsafeMutablePointer(mutating: pointers.head),
-      tail: Tail.unsafeMutablePointers(mutating: pointers.tail)
+  public static func withoutMutation(_ p: MutableBufferBaseAddresses) -> BufferBaseAddresses {
+    return BufferBaseAddresses(
+      head: .init(p.head),
+      tail: Tail.withoutMutation(p.tail)
     )
   }
 
-  public init(_ variableBufferBases: UnsafeMutablePointers, indices: Indices) {
+  /// Gathers the values at the given `positions` in the buffers having the given `baseAddresses`.
+  public init(at positions: Indices, in baseAddresses: BufferBaseAddresses) {
     self.init(
-      head: variableBufferBases.head[indices.head.perTypeID],
-      tail: Tail(variableBufferBases.tail, indices: indices.tail)
+      head: baseAddresses.head[positions.head.perTypeID],
+      tail: Tail(at: positions.tail, in: baseAddresses.tail)
     )
   }
 
-  public func store(into variableBufferBases: UnsafeMutablePointers, indices: Indices) {
-    (variableBufferBases.head + indices.head.perTypeID)
+  /// Scatters `self` into the given positions of buffers having the given `baseAddresses`.
+  public func assign(into positions: Indices, in variableBufferBases: MutableBufferBaseAddresses) {
+    (variableBufferBases.head + positions.head.perTypeID)
       .assign(repeating: self.head, count: 1)
-    self.tail.store(into: variableBufferBases.tail, indices: indices.tail)
+    self.tail.assign(into: positions.tail, in: variableBufferBases.tail)
   }
 }
 

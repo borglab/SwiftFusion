@@ -78,8 +78,8 @@ class ValuesStorageTests: XCTestCase {
     guard let typedActual = ArrayBuffer<Elements.Element>(actual) else {
       XCTFail(
         """
-        Type-erased buffer has element type `\(actual.elementType)`, but expected element type \
-        `\(Elements.Element.self)`
+        Expected element type `\(Elements.Element.self)` but type-erased buffer has incompatible
+        type `\(type(of: actual.storage!))`
         """, file: file, line: line)
       return
     }
