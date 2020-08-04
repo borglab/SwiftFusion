@@ -19,13 +19,13 @@ import PenguinStructures
 public struct PPCAFactor: LinearizableFactor1 {
   public typealias Patch = Tensor10x10
   public let edges: Variables.Indices
-  public let desired: Patch
+  public let measured: Patch
   public var W: Tensor<Double>
   public var mu: Patch
 
-  public init(_ id: TypedID<Vector5>, desired: Patch, W: Tensor<Double>, mu: Patch) {
+  public init(_ id: TypedID<Vector5>, measured: Patch, W: Tensor<Double>, mu: Patch) {
     self.edges = Tuple1(id)
-    self.desired = desired
+    self.measured = measured
     self.W = W
     self.mu = mu
   }
@@ -33,7 +33,7 @@ public struct PPCAFactor: LinearizableFactor1 {
   public typealias V0 = Vector5
   @differentiable
   public func errorVector(_ a: Vector5) -> Patch.TangentVector {
-    return (mu + Patch(matmul(W, a.flatTensor.expandingShape(at: 1)).squeezingShape(at: 2)) - desired)
+    return (mu + Patch(matmul(W, a.flatTensor.expandingShape(at: 1)).squeezingShape(at: 2)) - measured)
   }
 }
 
