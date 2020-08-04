@@ -178,82 +178,82 @@ class ConcreteVectorTests: XCTestCase {
 
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector1VectorTests: XCTestCase, VectorTests {
+class Vector1VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector1
   static var dimension: Int { return 1 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector2VectorTests: XCTestCase, VectorTests {
+class Vector2VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector2
   static var dimension: Int { return 2 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector3VectorTests: XCTestCase, VectorTests {
+class Vector3VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector3
   static var dimension: Int { return 3 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector4VectorTests: XCTestCase, VectorTests {
+class Vector4VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector4
   static var dimension: Int { return 4 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector5VectorTests: XCTestCase, VectorTests {
+class Vector5VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector5
   static var dimension: Int { return 5 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector6VectorTests: XCTestCase, VectorTests {
+class Vector6VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector6
   static var dimension: Int { return 6 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector7VectorTests: XCTestCase, VectorTests {
+class Vector7VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector7
   static var dimension: Int { return 7 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector8VectorTests: XCTestCase, VectorTests {
+class Vector8VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector8
   static var dimension: Int { return 8 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 // ###sourceLocation(file: "Tests/SwiftFusionTests/Core/VectorNTests.swift.gyb", line: 32)
 /// Tests the `Vector` requirements.
-class Vector9VectorTests: XCTestCase, VectorTests {
+class Vector9VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector9
   static var dimension: Int { return 9 }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }

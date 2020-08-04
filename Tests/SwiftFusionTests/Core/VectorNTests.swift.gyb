@@ -30,11 +30,11 @@ class ConcreteVectorTests: XCTestCase {
 
 % for dim in dims:
 /// Tests the `Vector` requirements.
-class Vector${dim}VectorTests: XCTestCase, VectorTests {
+class Vector${dim}VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector${dim}
   static var dimension: Int { return ${dim} }
   func testAll() {
-    runAllVectorTests()
+    runAllFixedSizeVectorTests()
   }
 }
 % end

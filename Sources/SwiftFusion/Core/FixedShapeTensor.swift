@@ -1,6 +1,8 @@
 import TensorFlow
 
 /// A `Tensor` with a statically known shape.
+///
+/// TODO(https://github.com/borglab/SwiftFusion/issues/152): Remove this.
 public protocol FixedShapeTensor: FixedSizeVector {
   /// The shape of an instance.
   static var shape: TensorShape { get }

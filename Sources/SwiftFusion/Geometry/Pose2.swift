@@ -190,7 +190,7 @@ extension Pose2 {
   /// The Adjoint group action of `self` on the tangent space, as a matrix.
   public var AdjointMatrix: Tensor<Double> {
     Tensor(
-      stacking: Pose2.TangentVector.zero.standardBasis.map { Adjoint($0).flatTensor }).transposed()
+      stacking: Pose2.TangentVector.standardBasis.map { Adjoint($0).flatTensor }).transposed()
   }
 }
 

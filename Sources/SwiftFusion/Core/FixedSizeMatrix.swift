@@ -17,12 +17,15 @@ import PenguinStructures
 public typealias Matrix2 = FixedSizeMatrix<Array2<Vector2>>
 public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>
 
-/// A matrix whose staticDimensions are known at compile time.
+/// A matrix whose dimensions are known at compile time.
 ///
 /// Stored as a fixed-size array of rows, where the rows are `Vector`. For example,
 /// - `FixedSizeMatrix<Array3<Vector2>>`: A 3x2 matrix, where each row is a `Vector2`.
 /// - `FixedSizeMatrix<Array3<Tuple2<Vector2, Vector3>>`: A 3x5 matrix, where each row is a
 ///   `Tuple2<Vector2, Vector3>`.
+///
+/// TODO(https://github.com/borglab/SwiftFusion/issues/152): Rename to `Matrix` and remove the
+/// requirement that this is fixed size.
 public struct FixedSizeMatrix<Rows: Equatable & FixedSizeArray>
   where Rows.Element: FixedSizeVector
 {
@@ -359,5 +362,30 @@ extension FixedSizeMatrix: KeyPathIterable {
 extension FixedSizeMatrix: CustomStringConvertible {
   public var description: String {
     "Matrix(" + rows.map { "\($0)" }.joined(separator: ", ") + ")"
+  }
+}
+
+// MARK: - Helper subscript for vector.
+
+extension Vector {
+  /// Accesses the `i`-th scalar.
+  //
+  // This is fileprivate because it's
+  fileprivate subscript(i: Int) -> Double {
+    _read {
+      boundsCheck(i)
+      yield withUnsafeBufferPointer { $0.baseAddress.unsafelyUnwrapped[i] }
+    }
+    _modify {
+      boundsCheck(i)
+      defer { _fixLifetime(self) }
+      yield &withUnsafeMutableBufferPointer { $0.baseAddress }.unsafelyUnwrapped[i]
+    }
+  }
+
+  /// Traps with a suitable error message if `i` is not the position of an
+  /// element in `self`.
+  private func boundsCheck(_ i: Int) {
+    precondition(i >= 0 && i < dimension, "index out of range")
   }
 }

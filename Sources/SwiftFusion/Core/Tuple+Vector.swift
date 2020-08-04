@@ -118,7 +118,9 @@ extension Empty: FixedSizeVector {
   }
 }
 
-extension Tuple: FixedSizeVector, InitializableVector where Head: FixedSizeVector, Tail: FixedSizeVector {
+extension Tuple: FixedSizeVector, ScalarsInitializableVector
+  where Head: FixedSizeVector, Tail: FixedSizeVector
+{
   public static var dimension: Int { Head.dimension + Tail.dimension }
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     let i = scalars.index(scalars.startIndex, offsetBy: Head.dimension)

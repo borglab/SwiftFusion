@@ -18,7 +18,7 @@ import PenguinStructures
 /// materialized error vector.
 public struct JacobianFactor<
   Rows: FixedSizeArray,
-  ErrorVector: InitializableVector
+  ErrorVector: ScalarsInitializableVector
 >: LinearApproximationFactor where Rows.Element: Vector & DifferentiableVariableTuple {
   public typealias Variables = Rows.Element
 

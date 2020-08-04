@@ -50,7 +50,8 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   /// Note: Depends on a determined standard basis, and therefore would not be available on a
   /// generalized vector.
   ///
-  /// A default is provided that returns a pointer to `self`.
+  /// A default is provided that is correct for types that are represented as contiguous scalars
+  /// in memory.
   func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R
@@ -60,7 +61,8 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   /// Note: Depends on a determined standard basis, and therefore would not be available on a
   /// generalized vector.
   ///
-  /// A default is provided that returns a pointer to `self`.
+  /// A default is provided that is correct for types that are represented as contiguous scalars
+  /// in memory.
   mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R
@@ -72,8 +74,30 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   var standardBasis: [Self] { get }
 }
 
-/// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
-/// primitive operations.
+/// A `Vector` whose instances can be initialized for a collection of scalars.
+public protocol ScalarsInitializableVector: Vector {
+  /// Creates an instance whose elements are `scalars`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  ///
+  /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
+  /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
+  ///
+  /// TODO: Maybe make this failable.
+  init<Source: Collection>(_ scalars: Source) where Source.Element == Double
+}
+
+/// A `Vector` whose instances all have the same `dimension`.
+///
+/// Note: This is a temporary shim to help incrementally remove the assumption that vectors have a
+/// static `dimension`. New code should prefer `Vector` so that it does not rely on a static `dimension`.
+public protocol FixedSizeVector: ScalarsInitializableVector {
+  /// The `dimension` of an instance.
+  static var dimension: Int { get }
+}
+
+/// Vector space operations that can be implemented in terms of others.
 extension Vector {
   @differentiable
   public static prefix func - (_ v: Self) -> Self {
@@ -89,11 +113,7 @@ extension Vector {
   public var norm: Double {
     return squaredNorm.squareRoot()
   }
-}
 
-/// Default implementations of some vector space operations in terms of other vector space
-/// operations.
-extension Vector {
   @differentiable
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = lhs
@@ -116,14 +136,13 @@ extension Vector {
   }
 }
 
-/// Default implementations of raw memory access, for vectors represented as contiguous scalars.
+/// Default implementations of raw memory access.
 extension Vector {
   /// Returns the result of calling `body` on the scalars of `self`.
   public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R {
-    let dimension = self.dimension
-    return try withUnsafePointer(to: self) { p in
+    return try withUnsafePointer(to: self) { [dimension = self.dimension] p in
       try body(
           UnsafeBufferPointer<Double>(
               start: UnsafeRawPointer(p)
@@ -136,8 +155,7 @@ extension Vector {
   public mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
-    let dimension = self.dimension
-    return try withUnsafeMutablePointer(to: &self) { p in
+    return try withUnsafeMutablePointer(to: &self) { [dimension = self.dimension] p in
       try body(
           UnsafeMutableBufferPointer<Double>(
               start: UnsafeMutableRawPointer(p)
@@ -147,31 +165,10 @@ extension Vector {
   }
 }
 
-/// Implementation of `subscript`.
-extension Vector {
-  /// Accesses the scalar at `i`.
-  subscript(i: Int) -> Double {
-    _read {
-      boundsCheck(i)
-      yield withUnsafeBufferPointer { $0.baseAddress.unsafelyUnwrapped[i] }
-    }
-    _modify {
-      boundsCheck(i)
-      defer { _fixLifetime(self) }
-      yield &withUnsafeMutableBufferPointer { $0.baseAddress }.unsafelyUnwrapped[i]
-    }
-  }
-
-  /// Traps with a suitable error message if `i` is not the position of an
-  /// element in `self`.
-  private func boundsCheck(_ i: Int) {
-    precondition(i >= 0 && i < dimension, "index out of range")
-  }
-}
-
+/// Conversion to `Tensor`.
 extension Vector {
   /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
-  @differentiable(where Self: InitializableVector)
+  @differentiable(where Self: ScalarsInitializableVector)
   public var flatTensor: Tensor<Double> {
     withUnsafeBufferPointer { b in
       return Tensor<Double>(shape: [b.count], scalars: b)
@@ -180,26 +177,15 @@ extension Vector {
 
   @derivative(of: flatTensor)
   @usableFromInline
-  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) where Self: InitializableVector {
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+    where Self: ScalarsInitializableVector
+  {
     return (self.flatTensor, { Self(flatTensor: $0) })
   }
 }
 
-public protocol InitializableVector: Vector {
-  /// Creates an instance whose elements are `scalars`.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  ///
-  /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
-  /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
-  ///
-  /// TODO: Maybe make this failable.
-  init<Source: Collection>(_ scalars: Source) where Source.Element == Double
-}
-
-/// Conversions to/from `Tensor`.
-extension InitializableVector {
+/// Conversion from `Tensor`.
+extension ScalarsInitializableVector {
   /// Creates an instance with the same scalars as `flatTensor`.
   @differentiable
   public init(flatTensor: Tensor<Double>) {
@@ -216,19 +202,10 @@ extension InitializableVector {
   }
 }
 
-/// A `Vector` whose instances all have the same `dimension`.
-///
-/// Note: This is a temporary shim to help incrementally remove the assumption that vectors have a
-/// static `dimension`. New code should prefer `Vector` so that it does not rely on a static `dimension`.
-public protocol FixedSizeVector: InitializableVector {
-  /// The `dimension` of an instance.
-  static var dimension: Int { get }
-}
-
 /// Conversions between `FixedSizeVector`s with compatible shapes.
 extension FixedSizeVector {
   public static var standardBasis: [Self] { Self.zero.standardBasis }
-  
+
   /// Creates a vector with the same scalars as `v`.
   ///
   /// - Requires: `Self.dimension == V.dimension`.
