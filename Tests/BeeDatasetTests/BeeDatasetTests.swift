@@ -23,10 +23,10 @@ final class BeeDatasetTests: XCTestCase {
     let frames = BeeFrames(
       directory: datasetDirectory.appendingPathComponent("frames").appendingPathComponent("seq1"))!
     XCTAssertEqual(frames.count, 2)
-    let t1 = frames[0].tensor
+    let t1 = frames[0]
     XCTAssertEqual(t1.shape, [200, 100, 3])
     XCTAssertEqual(t1[0, 0], Tensor([255, 0, 0]))
-    let t2 = frames[1].tensor
+    let t2 = frames[1]
     XCTAssertEqual(t2.shape, [200, 100, 3])
     XCTAssertEqual(t2[0, 0], Tensor([0, 255, 0]))
   }
