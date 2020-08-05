@@ -8,7 +8,7 @@ We have three coordinate systems for images:
   and column in a matrix. The origin is `(i=0, j=0)` in the top-left.
 - `(u, v)` are *float* coordinates, `u` is horizontal (associated with `j`) and
   `v` is vertical (associated with `i`).
-- (x, y) are *float* coordinates, like `(u, v)`, but are "calibrated": `(x=0.0,
+- `(x, y)` are *float* coordinates, like `(u, v)`, but are "calibrated": `(x=0.0,
   y=0.0)` is the optical axis.
 
 Pixel `(i, j)` is the square bounded by the corners with coordinates

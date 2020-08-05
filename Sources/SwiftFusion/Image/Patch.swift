@@ -32,13 +32,18 @@ extension Tensor where Scalar == Double {
       = bilinear
   ) -> Tensor<Scalar> {
     precondition(self.shape.count == 3, "image must have shape height x width x channelCount")
-    let patchShape: TensorShape = [Int(region.rows), Int(region.cols), self.shape[2]]
+    let patchShape: TensorShape = [region.rows, region.cols, self.shape[2]]
     var patch = Tensor<Scalar>(zeros: patchShape)
     for i in 0..<region.rows {
       for j in 0..<region.cols {
-        let vDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
-          - 0.5 * Vector2(Double(region.cols), Double(region.rows))
-        patch.differentiableUpdate(i, j, to: resample(self, region.center * vDest))
+        // The position of the destination pixel in the destination image, in `(u, v)` coordinates.
+        let uvDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
+
+        // The position of the destination pixel in the destination image, in coordinates where the
+        // center of the destination image is `(0, 0)`.
+        let xyDest = uvDest - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+
+        patch.differentiableUpdate(i, j, to: resample(self, region.center * xyDest))
       }
     }
     return patch
