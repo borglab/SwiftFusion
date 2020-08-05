@@ -21,7 +21,7 @@ let package = Package(
   dependencies: [
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
-    .package(url: "https://github.com/google/swift-benchmark.git", .branch("f70bf472b00aeaa05e2374373568c2fe459c11c7")),
+    .package(url: "https://github.com/google/swift-benchmark.git", .branch("master")),
 
     // There are some incompatible changes in penguin master but I need some new features so I have
     // temporarily switched this to a branch with the features but not the incompatible changes.
@@ -30,7 +30,7 @@ let package = Package(
 
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
-    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("master")),
+    .package(url: "https://github.com/ProfFan/swift-models.git", .branch("temp_bench")),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.

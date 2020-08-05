@@ -30,10 +30,10 @@
       },
       {
         "package": "swift-models",
-        "repositoryURL": "https://github.com/tensorflow/swift-models.git",
+        "repositoryURL": "https://github.com/ProfFan/swift-models.git",
         "state": {
-          "branch": "master",
-          "revision": "99f323e550f7f0c3ed32d31a3c5d11a0f3c51e4b",
+          "branch": "temp_bench",
+          "revision": "88f011a9504f2e668206681138eb944c00f4c171",
           "version": null
         }
       },
