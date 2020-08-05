@@ -91,3 +91,16 @@ public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
     self.tensor = tensor
   }
 }
+
+/// A `Tensor` with shape `[28, 62]`.
+public struct Tensor28x62: AdditiveArithmetic, FixedShapeTensor {
+  public typealias TangentVector = Self
+  public static var shape: TensorShape { [28, 62] }
+  @differentiable public var tensor: Tensor<Double>
+
+  @differentiable
+  public init(_ tensor: Tensor<Double>) {
+    precondition(tensor.shape == Self.shape)
+    self.tensor = tensor
+  }
+}
