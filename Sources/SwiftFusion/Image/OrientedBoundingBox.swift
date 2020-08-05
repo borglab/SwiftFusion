@@ -17,6 +17,7 @@ public struct OrientedBoundingBox: Differentiable {
   /// The pose of the region's center within the image.
   ///
   /// The translation component is in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
+  @differentiable
   public var center: Pose2
 
   /// The number of pixels along the height axis.
@@ -30,6 +31,7 @@ public struct OrientedBoundingBox: Differentiable {
   @noDerivative public let cols: Int
 
   /// Creates a instance with the given `center`, `rows`, and `cols`.
+  @differentiable
   public init(center: Pose2, rows: Int, cols: Int) {
     self.center = center
     self.rows = rows
@@ -38,6 +40,7 @@ public struct OrientedBoundingBox: Differentiable {
 
   /// The four corners of the region, in `(u, v)` coordinates as defined in
   /// `docs/ImageOperations.md`.
+  @differentiable
   public var corners: [Vector2] {
     func corner(_ uFlip: Double, _ vFlip: Double) -> Vector2 {
       return center.t + center.rot * (0.5 * Vector2(uFlip * Double(cols), vFlip * Double(rows)))
