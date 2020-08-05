@@ -19,7 +19,7 @@ final class OrientedBoundingBoxTests: XCTestCase {
   /// Test that we calculate the correct corners for the bounding box.
   func testCorners() {
     let box1 = OrientedBoundingBox(
-      center: Pose2(Rot2(0), Vector2(5, 10)), size: Vector2(100, 200))
+      center: Pose2(Rot2(0), Vector2(5, 10)), rows: 200, cols: 100)
     XCTAssertEqual(box1.corners, [
       Vector2(55, 110),
       Vector2(-45, 110),
@@ -28,7 +28,7 @@ final class OrientedBoundingBoxTests: XCTestCase {
     ])
 
     let box2 = OrientedBoundingBox(
-      center: Pose2(Rot2(.pi / 2), Vector2(5, 10)), size: Vector2(100, 200))
+      center: Pose2(Rot2(.pi / 2), Vector2(5, 10)), rows: 200, cols: 100)
     assertAllKeyPathEqual(box2.corners, [
       Vector2(-95, 60),
       Vector2(-95, -40),

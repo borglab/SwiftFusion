@@ -20,18 +20,19 @@ import SwiftFusion
 /// Each line of the file is an oriented bounding box, in the format:
 ///   <rotation (radians)> <x> <y>
 public func beeOrientedBoundingBoxes(file: URL) -> [OrientedBoundingBox]? {
-  // The size of the bee bounding box is hardcoded because it's the same for all the sequences in
-  // the dataset.
-  let size = Vector2(62, 28)
+  // The dimensions of the bee bounding box are hardcoded because they're the same for all the
+  // sequences in the dataset.
+  let rows = 28
+  let cols = 62
   guard let lines = try? String(contentsOf: file) else { return nil }
   return lines.split(separator: "\n").compactMap { line in
-    let cols = line.split(separator: " ")
-    guard cols.count == 3,
-      let r = Double(cols[0]),
-      let x = Double(cols[1]),
-      let y = Double(cols[2])
+    let lineCols = line.split(separator: " ")
+    guard lineCols.count == 3,
+      let r = Double(lineCols[0]),
+      let x = Double(lineCols[1]),
+      let y = Double(lineCols[2])
     else { return nil }
-    return OrientedBoundingBox(center: Pose2(Rot2(r), Vector2(x, y)), size: size)
+    return OrientedBoundingBox(center: Pose2(Rot2(r), Vector2(x, y)), rows: rows, cols: cols)
   }
 }
 
