@@ -21,12 +21,11 @@ import PenguinStructures
 extension ArrayStorage where Element: Factor {
   /// Returns the errors, at `x`, of the factors.
   func errors(at x: VariableAssignments) -> [Double] {
-    let x = Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
       self.map { f in
         f.error(at: Element.Variables(at: f.edges, in: varsBufs))
       }
     }
-  return x
   }
 }
 
