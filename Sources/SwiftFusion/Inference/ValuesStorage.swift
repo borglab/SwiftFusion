@@ -105,19 +105,18 @@ class DifferentiableArrayDispatch {
   /// The `TangentVector` type of the elements.
   final let tangentVectorType: Any.Type
 
-  /// A function returning the zero `TangentVector`s for each of the elements in the `ArrayStorage` whose
-  /// address is `storage`.
+  /// A function returning the zero `TangentVector`s for each of the elements in `self_`.
   ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `Differentiable` type.
-  final let tangentVectorZeros: (Self_) -> AnyArrayBuffer<VectorArrayDispatch>
+  /// - Requires: the elements of `self_` arguments have the type with which this dispatcher was
+  ///   initialized.
+  final let tangentVectorZeros: (_ self_: Self_) -> AnyArrayBuffer<VectorArrayDispatch>
 
-  /// A function that moves each element in the `ArrayStorage` whose address is `storage` along the
+  /// A function that moves each element of its first argument along the
   /// corresponding element of `directions`.
   ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element`
-  ///   has a subclass-specific `Differentiable` type.
-  /// - Requires: `directions.elementType == Element.TangentVector.self`.
+  /// - Requires: where `Element` is the type with which this dispatcher was initialized:
+  ///   - the elements of `self_` are of type `Element`.
+  ///   - the elements of directions are of type `Element.TangentVector`
   final let move: (inout Self_, _ directions: AnyElementArrayBuffer) -> Void
 
   /// Creates an instance for elements of type `Element`.
@@ -170,36 +169,29 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   /// The notional `Self` type of the methods in the dispatch table
   typealias Self_ = AnyArrayBuffer<AnyObject>
   
-  /// A function that adds `others` to the `ArrayStorage` whose address is `storage`.
+  /// A function that adds the elements of `addend` to the corresponding elements of `self_`
   ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `Vector` type.
-  /// - Requires: `others.elementType == Element`.
-  /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  final let add: (inout Self_, _ others: AnyElementArrayBuffer) -> Void 
+  /// - Requires: the arguments have elements of the same type with which this dispatcher was
+  ///   initialized.
+  final let add: (_ self_: inout Self_, _ addend: Self_) -> Void 
 
-  /// A function that scales each element of the `ArrayStorage` whose address is `storage` by
-  /// `factor`.
+  /// A function that scales each element of `self_` by `scaleFactor`
   ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `Vector` type.
-  final let scale: (inout Self_, _ factor: Double) -> Void
+  /// - Requires: `self_` has elements of the type with which this dispatcher was initialized.
+  final let scale: (_ self_: inout Self_, _ scaleFactor: Double) -> Void
 
-  /// A function returning the dot product of the `ArrayStorage` whose address is `storage` with `others`.
+  /// A function that returns the sum of the dot products of corresponding elements of `lhs` and
+  /// `rhs`.
   ///
-  /// This is the sum of the dot products of corresponding elements.
-  ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `Vector` type.
-  /// - Requires: `others.elementType == Element`.
-  /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  final let dot: (Self_, _ others: Self_) -> Double
+  /// - Requires: the arguments have elements of the same type with which this dispatcher was
+  ///   initialized.
+  final let dot: (_ lhs: Self_, _ rhs: Self_) -> Double
 
-  /// A function returning Jacobians that scale each element of `storage` by `scalar`.
+  /// A function that maps each element of `self_` into a Jacobian factor that scales the element by
+  /// `scalar`.
   ///
-  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
-  ///   subclass-specific `Vector` type.
-  final let jacobians: (Self_, _ scalar: Double) -> AnyGaussianFactorArrayBuffer
+  /// - Requires: `self_` has elements of the type with which this dispatcher was initialized.
+  final let jacobians: (_ self_: Self_, _ scalar: Double) -> AnyGaussianFactorArrayBuffer
 
   /// The type of a `ScalarJacobianFactor` that scales the elements.
   final let scalarJacobianType: Any.Type
