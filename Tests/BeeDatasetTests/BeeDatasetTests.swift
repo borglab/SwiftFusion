@@ -37,9 +37,9 @@ final class BeeDatasetTests: XCTestCase {
       file: datasetDirectory.appendingPathComponent("obbs").appendingPathComponent("seq1.txt"))!
     XCTAssertEqual(obbs.count, 2)
     XCTAssertEqual(obbs[0], OrientedBoundingBox(
-      center: Pose2(Rot2(1), Vector2(100, 200)), size: Vector2(62, 28)))
+      center: Pose2(Rot2(1), Vector2(100, 200)), rows: 28, cols: 62))
     XCTAssertEqual(obbs[1], OrientedBoundingBox(
-      center: Pose2(Rot2(1.5), Vector2(105, 201)), size: Vector2(62, 28)))
+      center: Pose2(Rot2(1.5), Vector2(105, 201)), rows: 28, cols: 62))
   }
 
   /// Directory of a fake dataset for tests.

@@ -59,8 +59,8 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor1
 
 /// Type shorthands used in the relaxed pose graph
 /// NOTE: Specializations are added in `FactorsStorage.swift`
-public typealias Jacobian9x3x3_1 = Array9<Tuple1<Matrix3>>
-public typealias Jacobian9x3x3_2 = Array9<Tuple2<Matrix3, Matrix3>>
+public typealias Jacobian9x3x3_1 = Array<Tuple1<Matrix3>>
+public typealias Jacobian9x3x3_2 = Array<Tuple2<Matrix3, Matrix3>>
 public typealias JacobianFactor9x3x3_1 = JacobianFactor<Jacobian9x3x3_1, Vector9>
 public typealias JacobianFactor9x3x3_2 = JacobianFactor<Jacobian9x3x3_2, Vector9>
 

@@ -203,9 +203,23 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     let dispatch: VectorFactorArrayDispatch
     let elementType = Type<Element>()
     typealias TangentVector = Element.LinearizableComponent.Variables.TangentVector
-    typealias Linearization<A: FixedSizeArray> = Type<JacobianFactor<A, Element.ErrorVector>>
-      where A.Element: Vector & DifferentiableVariableTuple
-    
+    typealias Linearization<A> = Type<JacobianFactor<A, Element.ErrorVector>>
+      where A: SourceInitializableCollection, A.Element: Vector & DifferentiableVariableTuple
+
+    // For small dimensions, we use a fixed size array in the linearization because the allocation
+    // and indirection overheads of a dynamically sized array are releatively big.
+    //
+    // For larger dimensions, dynamically sized array are more convenient (no need to define a
+    // new type and case for each size) and in some cases also happen to be faster than fixed size
+    // arrays.
+    //
+    // We chose 4 as the cutoff based on benchmark results:
+    // - "Pose2SLAM.FactorGraph", which heavily uses 3 dimensional error vectors, is ~30% faster
+    //   with a fixed size array than with a dynamically sized array.
+    // - "Pose3SLAM.FactorGraph", which heavily uses 6 dimensional error vectors, is ~3% faster
+    //   with a dynamically sized array than with a fixed size array.
+    // - "Pose3SLAM.sphere2500", which heavily uses 12 dimensional error vectors, has the same
+    //   performance with fixed size and dynamically sized arrays.
     switch Element.ErrorVector.dimension {
     case 1:
       dispatch = .init(elementType, linearization: Linearization<Array1<TangentVector>>())
@@ -215,24 +229,8 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
       dispatch = .init(elementType, linearization: Linearization<Array3<TangentVector>>())
     case 4:
       dispatch = .init(elementType, linearization: Linearization<Array4<TangentVector>>())
-    case 5:
-      dispatch = .init(elementType, linearization: Linearization<Array5<TangentVector>>())
-    case 6:
-      dispatch = .init(elementType, linearization: Linearization<Array6<TangentVector>>())
-    case 7:
-      dispatch = .init(elementType, linearization: Linearization<Array7<TangentVector>>())
-    case 8:
-      dispatch = .init(elementType, linearization: Linearization<Array8<TangentVector>>())
-    case 9:
-      dispatch = .init(elementType, linearization: Linearization<Array9<TangentVector>>())
-    case 10:
-      dispatch = .init(elementType, linearization: Linearization<Array10<TangentVector>>())
-    case 11:
-      dispatch = .init(elementType, linearization: Linearization<Array11<TangentVector>>())
-    case 12:
-      dispatch = .init(elementType, linearization: Linearization<Array12<TangentVector>>())
     default:
-      fatalError("ErrorVector dimension \(Element.ErrorVector.dimension) not implemented")
+      dispatch = .init(elementType, linearization: Linearization<Array<TangentVector>>())
     }
 
     self.init(storage: src.storage, dispatch: dispatch)
