@@ -95,14 +95,22 @@ public protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
   /// The indices used to address a `VariableTuple` scattered across per-type buffers.
   associatedtype Indices: TupleProtocol
 
-  /// Invokes `body` with the base addressess of buffers from `variableAssignments` storing
+  /// Invokes `body` with the base addressess of buffers from `v` storing
   /// instances of the variable types in `self`.
-  // TODO: `variableAssignments` should be the receiver.
+  // TODO: `v` should be the receiver.
   static func withMutableBufferBaseAddresses<R>(
-    _ variableAssignments: inout VariableAssignments,
+    _ v: inout VariableAssignments,
     _ body: (MutableBufferBaseAddresses) -> R
   ) -> R
 
+  /// Invokes `body` with the base addressess of buffers from `v` storing instances of the variable
+  /// types in `self`.
+  // TODO: `v` should be the receiver.
+  static func withBufferBaseAddresses<R>(
+    _ v: VariableAssignments,
+    _ body: (BufferBaseAddresses) -> R
+  ) -> R
+  
   /// Returns a copy of `p` through which memory can't be mutated.
   // TODO: Maybe `pointers` should be the receiver.
   static func withoutMutation(_ p: MutableBufferBaseAddresses) -> BufferBaseAddresses
@@ -114,21 +122,6 @@ public protocol VariableTuple: TupleProtocol where Tail: VariableTuple {
   func assign(into positions: Indices, in baseAddresses: MutableBufferBaseAddresses)
 }
 
-extension VariableTuple {
-  /// Invokes `body` with the base addressess of buffers from `variableAssignments` storing
-  /// instances of the variable types in `self`.
-  // TODO: `variableAssignments` should be the receiver.
-  static func withBufferBaseAddresses<R>(
-    _ variableAssignments: VariableAssignments,
-    _ body: (BufferBaseAddresses) -> R
-  ) -> R {
-    var v = variableAssignments
-    return withMutableBufferBaseAddresses(&v) {
-      body(withoutMutation($0))
-    }
-  }
-}
-
 extension Empty: VariableTuple {
   public typealias BufferBaseAddresses = Self
   public typealias MutableBufferBaseAddresses = Self
@@ -137,6 +130,13 @@ extension Empty: VariableTuple {
   public static func withMutableBufferBaseAddresses<R>(
     _ : inout VariableAssignments,
     _ body: (MutableBufferBaseAddresses) -> R
+  ) -> R {
+    return body(Empty())
+  }
+
+  public static func withBufferBaseAddresses<R>(
+    _ : VariableAssignments,
+    _ body: (BufferBaseAddresses) -> R
   ) -> R {
     return body(Empty())
   }
@@ -164,8 +164,8 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
   
   public typealias Indices = Tuple<TypedID<Head>, Tail.Indices>
 
-  /// Invokes `body` with the base addressess of buffers from `variableAssignments` storing
-  /// instances of the variable types in `self`.
+  /// Invokes `body` with the base addressess of buffers from `v` storing instances of the variable
+  /// types in `self`.
   public static func withMutableBufferBaseAddresses<R>(
     _ v: inout VariableAssignments,
     _ body: (MutableBufferBaseAddresses) -> R
@@ -181,6 +181,25 @@ extension Tuple: VariableTuple where Tail: VariableTuple {
     }
   }
 
+  /// Invokes `body` with the base addressess of buffers from `v` storing instances of the variable
+  /// types in `self`.
+  // TODO: `v` should be the receiver.
+  public static func withBufferBaseAddresses<R>(
+    _ v: VariableAssignments,
+    _ body: (BufferBaseAddresses) -> R
+  ) -> R {
+    let headPointer = v.storage[
+      existingKey: ObjectIdentifier(Head.self)
+    ][
+      existingElementType: Type<Head>()
+    ].withUnsafeBufferPointer { $0.baseAddress.unsafelyUnwrapped }
+
+    return Tail.withBufferBaseAddresses(v) {
+      body(.init(head: headPointer, tail: $0))
+    }
+  }
+  
+  
   public static func withoutMutation(_ p: MutableBufferBaseAddresses) -> BufferBaseAddresses {
     return BufferBaseAddresses(
       head: .init(p.head),
