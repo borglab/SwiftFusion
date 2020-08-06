@@ -21,9 +21,9 @@ import PenguinStructures
 extension ArrayStorage where Element: Factor {
   /// Returns the errors, at `x`, of the factors.
   func errors(at x: VariableAssignments) -> [Double] {
-    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
-      map { f in
-        f.error(at: Element.Variables(varsBufs, indices: f.edges))
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      self.map { f in
+        f.error(at: Element.Variables(at: f.edges, in: varsBufs))
       }
     }
   }
@@ -34,10 +34,10 @@ extension ArrayStorage where Element: Factor {
 extension ArrayStorage where Element: VectorFactor {
   /// Returns the error vectors, at `x`, of the factors.
   func errorVectors(at x: VariableAssignments) -> ArrayBuffer<Element.ErrorVector> {
-    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
-      .init(lazy.map { f in
-        f.errorVector(at: Element.Variables(varsBufs, indices: f.edges))
-      })
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(
+        self.lazy.map { f in
+          f.errorVector(at: Element.Variables(at: f.edges, in: varsBufs)) })
     }
   }
 
@@ -47,12 +47,13 @@ extension ArrayStorage where Element: VectorFactor {
   where Linearization.Variables == Element.LinearizableComponent.Variables.TangentVector,
         Linearization.ErrorVector == Element.ErrorVector
   {
-    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
-      .init(lazy.map { f in
-        let (fLinearizable, xLinearizable) =
-          f.linearizableComponent(at: Element.Variables(varsBufs, indices: f.edges))
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(
+        self.lazy.map { f in
+          let (fLinearizable, xLinearizable) =
+            f.linearizableComponent(at: Element.Variables(at: f.edges, in: varsBufs))
         return Linearization(linearizing: fLinearizable, at: xLinearizable)
-      })
+        })
     }
   }
 }
@@ -62,16 +63,17 @@ extension ArrayStorage where Element: VectorFactor {
 extension ArrayStorage where Element: GaussianFactor {
   /// Returns the error vectors, at `x`, of the factors.
   func errorVectors(at x: VariableAssignments) -> ArrayBuffer<Element.ErrorVector> {
-    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
-      .init(lazy.map { f in
-        f.errorVector(at: Element.Variables(varsBufs, indices: f.edges))
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(
+        lazy.map { f in
+          f.errorVector(at: Element.Variables(at: f.edges, in: varsBufs))
       })
     }
   }
 
   /// Returns the linear component of `errorVectors` at `x`.
   func errorVectors_linearComponent(_ x: VariableAssignments) -> ArrayBuffer<Element.ErrorVector> {
-    Element.Variables.withVariableBufferBaseUnsafePointers(x) { varsBufs in
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
       // Optimized version of
       //
       // ```
@@ -89,7 +91,7 @@ extension ArrayStorage where Element: GaussianFactor {
           for i in 0..<fs.count {
             (baseAddress + i).initialize(
               to: fs[i].errorVector_linearComponent(
-                Element.Variables(varsBufs, indices: fs[i].edges)))
+                Element.Variables(at: fs[i].edges, in: varsBufs)))
           }
         }
       }
@@ -103,13 +105,14 @@ extension ArrayStorage where Element: GaussianFactor {
     _ y: ArrayBuffer<Element.ErrorVector>,
     into result: inout VariableAssignments
   ) {
-    Element.Variables.withVariableBufferBaseUnsafeMutablePointers(&result) { varsBufs in
+    typealias Variables = Element.Variables
+    Variables.withMutableBufferBaseAddresses(&result) { varsBufs in
       withUnsafeMutableBufferPointer { fs in
         y.withUnsafeBufferPointer { es in
           for i in 0..<es.count {
-            let vars = Element.Variables(varsBufs, indices: fs[i].edges)
+            let vars = Variables(at: fs[i].edges, in: Variables.withoutMutation(varsBufs))
             let newVars = vars + fs[i].errorVector_linearComponent_adjoint(es[i])
-            newVars.store(into: varsBufs, indices: fs[i].edges)
+            newVars.assign(into: fs[i].edges, in: varsBufs)
           }
         }
       }

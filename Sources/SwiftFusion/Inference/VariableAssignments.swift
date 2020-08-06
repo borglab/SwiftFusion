@@ -80,17 +80,15 @@ public struct VariableAssignments {
 
   /// Accesses the stored value with the given ID.
   public subscript<T>(id: TypedID<T>) -> T {
-    _read {
-      let array = storage[ObjectIdentifier(T.self), default: Self.noSuchType]
-      yield ArrayBuffer<T>(unsafelyDowncasting: array)
-        .withUnsafeBufferPointer { b in b[id.perTypeID] }
+    get {
+      storage[
+        ObjectIdentifier(T.self), default: Self.noSuchType][
+        existingElementType: Type<T>()][id.perTypeID]
     }
     _modify {
-      defer { _fixLifetime(self) }
-      let array = storage[ObjectIdentifier(T.self), default: Self.noSuchType]
-      yield &(array.storage as! ArrayStorage<T>)
-        .withUnsafeMutableBufferPointer { b in b.baseAddress.unsafelyUnwrapped + id.perTypeID }
-        .pointee
+      yield &storage[
+        ObjectIdentifier(T.self), default: Self.noSuchType][
+        existingElementType: Type<T>()][id.perTypeID]
     }
   }
 }

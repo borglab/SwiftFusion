@@ -5,8 +5,8 @@
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
-          "branch": "marcrasi-collection-protocols",
-          "revision": "112ffef692811010aab04a6e1ae2fcd3b009f799",
+          "branch": "master",
+          "revision": "34449dabad0b86654f9914768fc0d062b652dcf4",
           "version": null
         }
       },

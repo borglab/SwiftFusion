@@ -19,10 +19,10 @@ import PenguinStructures
 
 // MARK: - Algorithms on arrays of `Differentiable` values.
 
-extension ArrayStorage where Element: Differentiable, Element.TangentVector: Vector {
+extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Vector {
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: ArrayBuffer<Element.TangentVector> {
-    withUnsafeMutableBufferPointer { vs in
+    withUnsafeBufferPointer { vs in
       .init(vs.lazy.map { $0.zeroTangentVector })
     }
   }
@@ -30,7 +30,7 @@ extension ArrayStorage where Element: Differentiable, Element.TangentVector: Vec
   /// Moves each element of `self` along the corresponding element of `directions`.
   ///
   /// - Requires: `directions.count == self.count`.
-  func move(along directions: ArrayBuffer<Element.TangentVector>) {
+  mutating func move(along directions: ArrayBuffer<Element.TangentVector>) {
     assert(directions.count == self.count)
     withUnsafeMutableBufferPointer { vs in
       directions.withUnsafeBufferPointer { ds in
@@ -44,11 +44,11 @@ extension ArrayStorage where Element: Differentiable, Element.TangentVector: Vec
 
 // MARK: - Algorithms on arrays of `Vector` values.
 
-extension ArrayStorage where Element: Vector {
+extension ArrayBuffer where Element: Vector {
   /// Adds `others` to `self`.
   ///
   /// - Requires: `others.count == count`.
-  func add(_ others: ArrayBuffer<Element>) {
+  mutating func add(_ others: ArrayBuffer<Element>) {
     assert(others.count == self.count)
     withUnsafeMutableBufferPointer { vs in
       others.withUnsafeBufferPointer { os in
@@ -60,7 +60,7 @@ extension ArrayStorage where Element: Vector {
   }
 
   /// Scales each element of `self` by `scalar`.
-  func scale(by scalar: Double) {
+  mutating func scale(by scalar: Double) {
     withUnsafeMutableBufferPointer { vs in
       for i in vs.indices {
         vs[i] *= scalar
@@ -75,7 +75,7 @@ extension ArrayStorage where Element: Vector {
   /// - Requires: `others.count == count`.
   func dot(_ others: ArrayBuffer<Element>) -> Double {
     assert(others.count == self.count)
-    return withUnsafeMutableBufferPointer { vs in
+    return withUnsafeBufferPointer { vs in
       others.withUnsafeBufferPointer { os in
         vs.indices.reduce(into: 0) { (result, i) in result += vs[i].dot(os[i]) }
       }
@@ -84,8 +84,10 @@ extension ArrayStorage where Element: Vector {
 
   /// Returns Jacobians that scale each element by `scalar`.
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
-    AnyGaussianFactorArrayBuffer(ArrayBuffer(enumerated().lazy.map { (i, _) in
-      ScalarJacobianFactor(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
+    AnyGaussianFactorArrayBuffer(
+      ArrayBuffer<ScalarJacobianFactor>(
+        enumerated().lazy.map { (i, _) in
+          .init(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
     }))
   }
 }
@@ -97,6 +99,9 @@ typealias AnyDifferentiableArrayBuffer = AnyArrayBuffer<DifferentiableArrayDispa
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Differentiable`
 /// elements.
 class DifferentiableArrayDispatch {
+  /// The notional `Self` type of the methods in the dispatch table
+  typealias Self_ = AnyArrayBuffer<AnyObject>
+  
   /// The `TangentVector` type of the elements.
   final let tangentVectorType: Any.Type
 
@@ -105,7 +110,7 @@ class DifferentiableArrayDispatch {
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `Differentiable` type.
-  final let tangentVectorZeros: (_ storage: UnsafeRawPointer) -> AnyArrayBuffer<VectorArrayDispatch>
+  final let tangentVectorZeros: (Self_) -> AnyArrayBuffer<VectorArrayDispatch>
 
   /// A function that moves each element in the `ArrayStorage` whose address is `storage` along the
   /// corresponding element of `directions`.
@@ -113,17 +118,16 @@ class DifferentiableArrayDispatch {
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element`
   ///   has a subclass-specific `Differentiable` type.
   /// - Requires: `directions.elementType == Element.TangentVector.self`.
-  final let move: (_ storage: UnsafeMutableRawPointer, _ directions: AnyElementArrayBuffer) -> Void
+  final let move: (inout Self_, _ directions: AnyElementArrayBuffer) -> Void
 
   /// Creates an instance for elements of type `Element`.
-  init<Element: Differentiable>(_: Type<Element>) where Element.TangentVector: Vector {
-    let storageType = Type<ArrayStorage<Element>>()
+  init<Element: Differentiable>(_ e: Type<Element>) where Element.TangentVector: Vector {
     tangentVectorType = Element.TangentVector.self
-    tangentVectorZeros = { storage in
-      .init(storage[as: storageType].tangentVectorZeros)
+    tangentVectorZeros = { self_ in
+      .init(self_[unsafelyAssumingElementType: e].tangentVectorZeros)
     }
-    move = { storage, directions in
-      storage[as: storageType].move(along: .init(unsafelyDowncasting: directions))
+    move = { self_, directions in
+      self_[unsafelyAssumingElementType: e].move(along: .init(unsafelyDowncasting: directions))
     }
   }
 }
@@ -147,13 +151,12 @@ extension AnyArrayBuffer where Dispatch: DifferentiableArrayDispatch {
 
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: AnyArrayBuffer<VectorArrayDispatch> {
-    withUnsafePointer(to: storage) { dispatch.tangentVectorZeros($0) }
+    dispatch.tangentVectorZeros(self.withoutCapabilities)
   }
 
   /// Moves each element along the corresponding element of `directions`.
   mutating func move(along directions: AnyElementArrayBuffer) {
-    ensureUniqueStorage()
-    withUnsafeMutablePointer(to: &storage) { dispatch.move($0, directions) }
+    dispatch.move(&self.withoutCapabilities, directions)
   }
 }
 
@@ -164,20 +167,23 @@ typealias AnyVectorArrayBuffer = AnyArrayBuffer<VectorArrayDispatch>
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Vector`
 /// elements.
 class VectorArrayDispatch: DifferentiableArrayDispatch {
+  /// The notional `Self` type of the methods in the dispatch table
+  typealias Self_ = AnyArrayBuffer<AnyObject>
+  
   /// A function that adds `others` to the `ArrayStorage` whose address is `storage`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `Vector` type.
   /// - Requires: `others.elementType == Element`.
   /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  final let add: (_ storage: UnsafeMutableRawPointer, _ others: AnyElementArrayBuffer) -> Void 
+  final let add: (inout Self_, _ others: AnyElementArrayBuffer) -> Void 
 
   /// A function that scales each element of the `ArrayStorage` whose address is `storage` by
   /// `factor`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `Vector` type.
-  final let scale: (_ storage: UnsafeMutableRawPointer, _ factor: Double) -> Void
+  final let scale: (inout Self_, _ factor: Double) -> Void
 
   /// A function returning the dot product of the `ArrayStorage` whose address is `storage` with `others`.
   ///
@@ -187,32 +193,31 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   ///   subclass-specific `Vector` type.
   /// - Requires: `others.elementType == Element`.
   /// - Requires: `others.count` is at least the count of the `ArrayStorage` at `storage`.
-  final let dot: (_ storage: UnsafeRawPointer, _ others: AnyElementArrayBuffer) -> Double
+  final let dot: (Self_, _ others: Self_) -> Double
 
   /// A function returning Jacobians that scale each element of `storage` by `scalar`.
   ///
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `Vector` type.
-  final let jacobians:
-    (_ storage: UnsafeRawPointer, _ scalar: Double) -> AnyGaussianFactorArrayBuffer
+  final let jacobians: (Self_, _ scalar: Double) -> AnyGaussianFactorArrayBuffer
 
   /// The type of a `ScalarJacobianFactor` that scales the elements.
   final let scalarJacobianType: Any.Type
 
   /// Creates an instance for elements of type `Element`.
   init<Element: Vector>(_: Type<Element>, _: () = ()) {
-    let storageType = Type<ArrayStorage<Element>>()
-    add = { storage, others in
-      storage[as: storageType].add(.init(unsafelyDowncasting: others))
+    let e = Type<Element>()
+    add = { buffer, others in
+      buffer[unsafelyAssumingElementType: e].add(.init(unsafelyDowncasting: others))
     }
-    scale = { storage, factor in
-      storage[as: storageType].scale(by: factor)
+    scale = { buffer, factor in
+      buffer[unsafelyAssumingElementType: e].scale(by: factor)
     }
-    dot = { storage, others in
-      storage[as: storageType].dot(.init(unsafelyDowncasting: others))
+    dot = { buffer, others in
+      buffer[unsafelyAssumingElementType: e].dot(.init(unsafelyDowncasting: others))
     }
-    jacobians = { storage, scalar in
-      storage[as: storageType].jacobians(scalar: scalar)
+    jacobians = { buffer, scalar in
+      buffer[unsafelyAssumingElementType: e].jacobians(scalar: scalar)
     }
     scalarJacobianType = ScalarJacobianFactor<Element>.self
     super.init(Type<Element>())
@@ -233,14 +238,12 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   ///
   /// - Requires: `others.count == count`.
   mutating func add(_ others: AnyElementArrayBuffer) {
-    ensureUniqueStorage()
-    withUnsafeMutablePointer(to: &storage) { dispatch.add($0, others) }
+    dispatch.add(&self.withoutCapabilities, others)
   }
 
   /// Scales each element of `self` by `factor`.
   mutating func scale(by factor: Double) {
-    ensureUniqueStorage()
-    withUnsafeMutablePointer(to: &storage) { dispatch.scale($0, factor) }
+    dispatch.scale(&self.withoutCapabilities, factor)
   }
 
   /// Returns the dot product of `self` with `others`.
@@ -249,11 +252,11 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   ///
   /// - Requires: `others.count == count`.
   func dot(_ others: AnyElementArrayBuffer) -> Double {
-    withUnsafePointer(to: storage) { dispatch.dot($0, others) }
+    dispatch.dot(self.withoutCapabilities, others)
   }
 
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
-    withUnsafePointer(to: storage) { dispatch.jacobians($0, scalar) }
+    dispatch.jacobians(self.withoutCapabilities, scalar)
   }
 
   var scalarJacobianType: Any.Type {
