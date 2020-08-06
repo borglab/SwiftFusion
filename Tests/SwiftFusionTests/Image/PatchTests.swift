@@ -27,19 +27,19 @@ final class PatchTests: XCTestCase {
     XCTAssertEqual(patch, expectedPatch)
   }
 
-  /// The derivative of a patch with respect to the input image is the identity restricted to the
-  /// patch region.
-  func testSliceDerivativeWithRespectToImage() {
-    let image = Tensor<Double>(randomUniform: [100, 100, 3])
-    let grad = gradient(at: image) { image in
-      image.patch(
-        at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), rows: 10, cols: 20)
-      ).sum()
-    }
-    var expectedGrad = Tensor<Double>(zeros: [100, 100, 3])
-    expectedGrad[25..<35, 50..<70] = Tensor(ones: [10, 20, 3])
-    XCTAssertEqual(grad, expectedGrad)
-  }
+  // /// The derivative of a patch with respect to the input image is the identity restricted to the
+  // /// patch region.
+  // func testSliceDerivativeWithRespectToImage() {
+  //   let image = Tensor<Double>(randomUniform: [100, 100, 3])
+  //   let grad = gradient(at: image) { image in
+  //     image.patch(
+  //       at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), rows: 10, cols: 20)
+  //     ).sum()
+  //   }
+  //   var expectedGrad = Tensor<Double>(zeros: [100, 100, 3])
+  //   expectedGrad[25..<35, 50..<70] = Tensor(ones: [10, 20, 3])
+  //   XCTAssertEqual(grad, expectedGrad)
+  // }
 
   /// Test cropping an example image.
   func testExampleImage() {
