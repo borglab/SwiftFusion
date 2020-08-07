@@ -17,7 +17,7 @@ import PenguinStructures
 /// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and
 /// materialized error vector.
 public struct JacobianFactor<
-  Rows: FixedSizeArray,
+  Rows: SourceInitializableCollection,
   ErrorVector: ScalarsInitializableVector
 >: LinearApproximationFactor where Rows.Element: Vector & DifferentiableVariableTuple {
   public typealias Variables = Rows.Element
@@ -71,15 +71,17 @@ public struct JacobianFactor<
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {
     // The compiler isn't able to optimize the closure away if we map `jacobian`, but it is able
     // to optimize the closure away if we map `jacobian`'s `UnsafeBufferPointer`.
-    jacobian.withUnsafeBufferPointer { rows in
+    let r = jacobian.withContiguousStorageIfAvailable { rows in
       ErrorVector(rows.lazy.map { $0.dot(x) })
     }
+    assert(r != nil, "Rows must have contiguous storage")
+    return r.unsafelyUnwrapped
   }
 
   public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {
     // We use `UnsafeBufferPointer`s to avoid forming collections that can't be optimized away.
-    y.withUnsafeBufferPointer { scalars in
-      jacobian.withUnsafeBufferPointer { rows in
+    let r = y.withUnsafeBufferPointer { scalars in
+      jacobian.withContiguousStorageIfAvailable { rows in
         // We reduce the range `0..<y.dimension` instead of `zip(scalars, rows)`, to
         // avoid forming collections that can't be optimized away.
         // TODO: This is not getting unrolled after `ErrorVector` is specialized. Convincing the
@@ -89,6 +91,8 @@ public struct JacobianFactor<
         }
       }
     }
+    assert(r != nil, "Rows must have contiguous storage")
+    return r.unsafelyUnwrapped
   }
 }
 

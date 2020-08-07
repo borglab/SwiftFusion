@@ -72,7 +72,7 @@ class ChordalInitializationTests: XCTestCase {
     let frf_j = JacobianFactor9x3x3_2(linearizing: frf, at: Tuple2(val[p0], val[p1]))
     
     let Rij = Matrix3(0.0,0.1,0.2,1.0,1.1,1.2,2.0,2.1,2.2)
-    let M9: Jacobian9x3x3_2 = Array9([
+    let M9: Jacobian9x3x3_2 = [
       Tuple2(Matrix3(-1,0,0,0,0,0,0,0,0), Matrix3(Rij[0, 0],Rij[0, 1],Rij[0, 2],0,0,0,0,0,0)),
       Tuple2(Matrix3(0,-1,0,0,0,0,0,0,0), Matrix3(Rij[1, 0],Rij[1, 1],Rij[1, 2],0,0,0,0,0,0)),
       Tuple2(Matrix3(0,0,-1,0,0,0,0,0,0), Matrix3(Rij[2, 0],Rij[2, 1],Rij[2, 2],0,0,0,0,0,0)),
@@ -82,7 +82,7 @@ class ChordalInitializationTests: XCTestCase {
       Tuple2(Matrix3(0,0,0,0,0,0,-1,0,0), Matrix3(0,0,0,0,0,0,Rij[0, 0],Rij[0, 1],Rij[0, 2])),
       Tuple2(Matrix3(0,0,0,0,0,0,0,-1,0), Matrix3(0,0,0,0,0,0,Rij[1, 0],Rij[1, 1],Rij[1, 2])),
       Tuple2(Matrix3(0,0,0,0,0,0,0,0,-1), Matrix3(0,0,0,0,0,0,Rij[2, 0],Rij[2, 1],Rij[2, 2]))
-    ])
+    ]
     
     let b = Vector9(0, 0, 0, 0, 0, 0, 0, 0, 0)
     
@@ -105,7 +105,7 @@ class ChordalInitializationTests: XCTestCase {
     
     let fpf_j = JacobianFactor9x3x3_1(linearizing: fpf, at: Tuple1(Matrix3.zero))
     
-    let I_9x9: Jacobian9x3x3_1 = Array9([
+    let I_9x9: Jacobian9x3x3_1 = [
       Tuple1(Matrix3(1,0,0,0,0,0,0,0,0)),
       Tuple1(Matrix3(0,1,0,0,0,0,0,0,0)),
       Tuple1(Matrix3(0,0,1,0,0,0,0,0,0)),
@@ -115,7 +115,7 @@ class ChordalInitializationTests: XCTestCase {
       Tuple1(Matrix3(0,0,0,0,0,0,1,0,0)),
       Tuple1(Matrix3(0,0,0,0,0,0,0,1,0)),
       Tuple1(Matrix3(0,0,0,0,0,0,0,0,1))
-    ])
+    ]
     
     // prior on the anchor orientation
     let jf_p = JacobianFactor9x3x3_1(jacobian: I_9x9,

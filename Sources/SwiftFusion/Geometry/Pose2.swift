@@ -36,6 +36,8 @@ import TensorFlow
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
 public struct Pose2: LieGroup, Equatable, KeyPathIterable {
+  public typealias TangentVector = Vector3
+
   // MARK: - Manifold conformance
 
   public var coordinateStorage: Pose2Coordinate
@@ -77,6 +79,14 @@ extension Pose2 {
   }
 }
 
+extension Pose2 {
+  /// Group action on `Vector2`.
+  @differentiable
+  public static func * (lhs: Pose2, rhs: Vector2) -> Vector2 {
+    lhs.coordinate * rhs
+  }
+}
+
 // MARK: - Global Coordinate System
 
 public struct Pose2Coordinate: Equatable, KeyPathIterable {
@@ -112,13 +122,19 @@ extension Pose2Coordinate: LieGroupCoordinate {
   /// Product of two transforms
   @differentiable
   public static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
-    Pose2Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
+    Pose2Coordinate(lhs.rot * rhs.rot, lhs * rhs.t)
   }
 
   /// Inverse of the rotation.
   @differentiable
   public func inverse() -> Pose2Coordinate {
     Pose2Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
+  }
+
+  /// Group action on `Vector2`.
+  @differentiable
+  public static func * (lhs: Pose2Coordinate, rhs: Vector2) -> Vector2 {
+    lhs.t + lhs.rot * rhs
   }
 }
 

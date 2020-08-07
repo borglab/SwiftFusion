@@ -370,7 +370,9 @@ extension FixedSizeMatrix: CustomStringConvertible {
 extension Vector {
   /// Accesses the `i`-th scalar.
   //
-  // This is fileprivate because it's
+  // This is fileprivate because it's convenient to subscript into the scalar index while
+  // implementing matrix operations, but it's misleading to subscript into the scalar index if
+  // the "vector" is a higher-rank thing like a matrix.
   fileprivate subscript(i: Int) -> Double {
     _read {
       boundsCheck(i)
