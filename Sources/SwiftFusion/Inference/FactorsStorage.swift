@@ -157,7 +157,7 @@ extension AnyArrayBuffer where Dispatch == FactorArrayDispatch {
 extension AnyArrayBuffer where Dispatch: FactorArrayDispatch {
   /// Returns the errors, at `x`, of the factors.
   func errors(at x: VariableAssignments) -> [Double] {
-    dispatch.errors(.init(self), x)
+    dispatch.errors(self.upcast, x)
   }
 }
 
@@ -248,12 +248,12 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
 extension AnyArrayBuffer where Dispatch: VectorFactorArrayDispatch {
   /// Returns the error vectors, at `x`, of the factors.
   func errorVectors(at x: VariableAssignments) -> AnyVectorArrayBuffer {
-    dispatch.errorVectors(.init(self), x)
+    dispatch.errorVectors(self.upcast, x)
   }
 
   /// Returns the linearizations, at `x`, of the factors.
   func linearized(at x: VariableAssignments) -> AnyGaussianFactorArrayBuffer {
-    dispatch.linearized(.init(self), x)
+    dispatch.linearized(self.upcast, x)
   }
 }
 
@@ -309,12 +309,12 @@ extension AnyArrayBuffer where Dispatch == GaussianFactorArrayDispatch {
 extension AnyArrayBuffer where Dispatch: GaussianFactorArrayDispatch {
   /// Returns the error vectors, at `x`, of the factors.
   func errorVectors(at x: VariableAssignments) -> AnyVectorArrayBuffer {
-    dispatch.errorVectors(.init(self), x)
+    dispatch.errorVectors(self.upcast, x)
   }
 
   /// Returns the linear component of `errorVectors` at `x`.
   func errorVectors_linearComponent(_ x: VariableAssignments) -> AnyVectorArrayBuffer {
-    dispatch.errorVectors_linearComponent(.init(self), x)
+    dispatch.errorVectors_linearComponent(self.upcast, x)
   }
 
   /// Accumulates the adjoint (aka "transpose" or "dual") of `errorVectors` at `y` into `result`.
@@ -325,6 +325,6 @@ extension AnyArrayBuffer where Dispatch: GaussianFactorArrayDispatch {
     _ y: AnyElementArrayBuffer,
     into result: inout VariableAssignments
   ) {
-    dispatch.errorVectors_linearComponent_adjoint(.init(self), y, &result)
+    dispatch.errorVectors_linearComponent_adjoint(self.upcast, y, &result)
   }
 }

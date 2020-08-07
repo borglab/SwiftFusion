@@ -12,7 +12,7 @@ extension AnyArrayBuffer {
 
   /// Accesses `self` as an `AnyArrayBuffer` with no exposed capabilities
   /// (i.e. `AnyArrayBuffer<AnyObject>`).
-  var withoutCapabilities: AnyArrayBuffer<AnyObject> {
+  var upcast: AnyArrayBuffer<AnyObject> {
     get { .init(self) }
     _modify {
       var x = AnyArrayBuffer<AnyObject>(unsafelyCasting: self)

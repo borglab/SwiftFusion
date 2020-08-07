@@ -101,12 +101,12 @@ extension AnyArrayBuffer where Dispatch: DifferentiableArrayDispatch {
 
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: AnyArrayBuffer<VectorArrayDispatch> {
-    dispatch.tangentVectorZeros(self.withoutCapabilities)
+    dispatch.tangentVectorZeros(self.upcast)
   }
 
   /// Moves each element along the corresponding element of `directions`.
   mutating func move(along directions: AnyElementArrayBuffer) {
-    dispatch.move(&self.withoutCapabilities, directions)
+    dispatch.move(&self.upcast, directions)
   }
 }
 
@@ -223,12 +223,12 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   ///
   /// - Requires: `others.count == count`.
   mutating func add(_ others: AnyElementArrayBuffer) {
-    dispatch.add(&self.withoutCapabilities, others)
+    dispatch.add(&self.upcast, others)
   }
 
   /// Scales each element of `self` by `factor`.
   mutating func scale(by factor: Double) {
-    dispatch.scale(&self.withoutCapabilities, factor)
+    dispatch.scale(&self.upcast, factor)
   }
 
   /// Returns the dot product of `self` with `others`.
@@ -237,11 +237,11 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   ///
   /// - Requires: `others.count == count`.
   func dot(_ others: Self) -> Double {
-    dispatch.dot(self.withoutCapabilities, others.withoutCapabilities)
+    dispatch.dot(self.upcast, others.upcast)
   }
 
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
-    dispatch.jacobians(self.withoutCapabilities, scalar)
+    dispatch.jacobians(self.upcast, scalar)
   }
 
   var scalarJacobianType: Any.Type {
