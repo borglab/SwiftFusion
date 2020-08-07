@@ -54,9 +54,9 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
     return result
   }
 
-  public static var dimension: Int { return ${dim} }
+  public var dimension: Int { return ${dim} }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: ${dim})
     % for (i, coordinate) in enumerate(coordinates):
     result[${i}].${coordinate} = 1
@@ -75,6 +75,10 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
   public var scalars: [Double] {
     return [${', '.join(coordinates)}]
   }
+}
+
+extension Vector${dim}: FixedSizeVector {
+  public static var dimension: Int { return ${dim} }
 }
 
 extension Vector${dim}: ElementaryFunctions {}

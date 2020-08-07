@@ -1,7 +1,9 @@
 import TensorFlow
 
 /// A `Tensor` with a statically known shape.
-public protocol FixedShapeTensor: Vector {
+///
+/// TODO(https://github.com/borglab/SwiftFusion/issues/152): Remove this.
+public protocol FixedShapeTensor: FixedSizeVector {
   /// The shape of an instance.
   static var shape: TensorShape { get }
 
@@ -40,15 +42,19 @@ extension FixedShapeTensor {
     self.init(Tensor(shape: Self.shape, scalars: Array(scalars)))
   }
 
+  public var dimension: Int {
+    Self.dimension
+  }
+
   public static var dimension: Int {
     shape.reduce(1, *)
   }
 
-  public static var standardBasis: [Self] {
+  public var standardBasis: [Self] {
     (0..<dimension).map { i in
       var b = Array(repeating: Double(0), count: dimension)
       b[i] = 1
-      return Self(Tensor(shape: shape, scalars: b))
+      return Self(Tensor(shape: Self.shape, scalars: b))
     }
   }
 

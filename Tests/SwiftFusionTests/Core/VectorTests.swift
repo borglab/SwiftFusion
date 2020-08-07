@@ -4,19 +4,17 @@ import XCTest
 
 import SwiftFusion
 
-/// Conform to this and call `runAllVectorTests()` to test all the `Vector`
+/// Conform to this and call `runAllFixedSizeVectorTests()` to test all the `FixedSizeVector`
 /// requirements on a concrete type.
-///
-/// Or call `runAllVectorTests()` to test all the `Vector` requirements.
-protocol VectorTests {
+protocol FixedSizeVectorTests {
   /// The concrete type that we are testing.
-  associatedtype Testee: Vector
+  associatedtype Testee: FixedSizeVector
 
   /// The dimension of the vector we are testing.
   static var dimension: Int { get }
 }
 
-extension VectorTests {
+extension FixedSizeVectorTests {
   /// A set of basis vectors.
   fileprivate var basisVectors: [Testee] {
     return (0..<Self.dimension).map { index in
@@ -32,8 +30,8 @@ extension VectorTests {
     return Testee(Array((0..<Self.dimension).map { start + Double($0) * stride }))
   }
 
-  /// Tests all `Vector` requirements.
-  func runAllVectorTests() {
+  /// Tests all `FixedSizeVector` requirements.
+  func runAllFixedSizeVectorTests() {
     testEquality()
     testMove()
     testAddMutating()

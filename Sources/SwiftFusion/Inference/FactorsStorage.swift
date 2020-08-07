@@ -199,7 +199,9 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
 
 extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: VectorFactor>(_ src: ArrayBuffer<Element>) {
+  init<Element: VectorFactor>(_ src: ArrayBuffer<Element>)
+    where Element.ErrorVector: FixedSizeVector
+  {
     let dispatch: VectorFactorArrayDispatch
     let elementType = Type<Element>()
     typealias TangentVector = Element.LinearizableComponent.Variables.TangentVector
