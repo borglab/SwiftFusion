@@ -54,7 +54,7 @@ extension Vector1: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 1 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 1)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
@@ -143,7 +143,7 @@ extension Vector2: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 2 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 2)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
@@ -249,7 +249,7 @@ extension Vector3: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 3 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 3)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
@@ -372,7 +372,7 @@ extension Vector4: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 4 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 4)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -512,7 +512,7 @@ extension Vector5: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 5 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 5)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -669,7 +669,7 @@ extension Vector6: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 6 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 6)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -843,7 +843,7 @@ extension Vector7: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 7 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 7)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1034,7 +1034,7 @@ extension Vector8: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 8 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 8)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1242,7 +1242,7 @@ extension Vector9: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 9 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 9)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1467,7 +1467,7 @@ extension Vector10: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 10 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 10)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1709,7 +1709,7 @@ extension Vector11: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 11 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 11)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
@@ -1968,7 +1968,7 @@ extension Vector12: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 12 }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 12)
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1

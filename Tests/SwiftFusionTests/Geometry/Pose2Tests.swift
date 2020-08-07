@@ -3,6 +3,14 @@ import XCTest
 
 import SwiftFusion
 
+fileprivate func jacobian<A: Differentiable>(
+  of f: @differentiable(A) -> Pose2,
+  at p: A
+) -> [A.TangentVector] {
+  let pb = pullback(at: p, in: f)
+  return Pose2.TangentVector.standardBasis.map { pb($0) }
+}
+
 final class Pose2Tests: XCTestCase {
   /// test between for trivial values
   func testBetweenIdentitiesTrivial() {
@@ -291,7 +299,8 @@ final class Pose2Tests: XCTestCase {
       return Vector1(d.rot.theta * d.rot.theta + d.t.x * d.t.x + d.t.y * d.t.y)
     }
 
-    let j = jacobian(of: f, at: pts)
+    let pb = pullback(at: pts, in: f)
+    let j = Vector1.TangentVector.standardBasis.map { pb($0) }
     // print("J(f) = \(j[0].base as AnyObject)")
     for item in j[0] {
       XCTAssertEqual(item, Pose2.TangentVector.zero)
