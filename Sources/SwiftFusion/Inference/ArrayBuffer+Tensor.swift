@@ -30,6 +30,7 @@ extension ArrayBuffer {
     elementwise a0: ArrayBuffer<E0>, _ a1: ArrayBuffer<E1>,
     _ combine: (_ a0x: E0, _ a1x: E1)->Element
   ) {
+    assert(a0.count == a1.count)
     self.init(ArrayStorage(elementwise: a0.storage, a1.storage, combine))
   }
 
@@ -37,12 +38,14 @@ extension ArrayBuffer {
   /// `self` and `a`, using `combine` (if supplied) to initialize new storage when required.
   ///
   /// - Requires: `self.count == a.count`
+  ///
   // @differentiable(wrt: (self, a) where Element: Differentiable, E: Differentiable)
   mutating func update<E>(
     elementwiseWith a: ArrayBuffer<E>,
     _ updateElement: /*@differentiable*/ (_ myX: inout Element, _ aX: E)->Void,
     _ combine: Optional</*@differentiable*/ (_ a0x: Element, _ a1x: E)->Element> = nil
   ) {
+    assert(self.count == a.count)
     while true {
       if storage.memoryIsUniquelyReferenced() {
         storage.update(elementwiseWith: a.storage, updateElement)
@@ -58,12 +61,10 @@ extension ArrayBuffer {
     }
   }
 
-  /// Calls `updateElement(&myX, aX)` on each pair of corresponding elements `myX` and `aX` of
-  /// `self` and `a`, using `combine` (if supplied) to initialize new storage when required.
+  /// Calls `updateElement(&myX, aX)` on each element `myX`, using `combine` (if supplied) to
+  /// initialize new storage when required.
   ///
-  /// - Requires: `self.count == a.count`
   // @differentiable(wrt: (self, a) where Element: Differentiable, E: Differentiable)
-  // DWA TODO: Fix comment
   mutating func update<T>(
     elementwise a: T,
     _ updateElement: /*@differentiable*/ (_ myX: inout Element, _ aX: T)->Void,
@@ -90,6 +91,7 @@ extension ArrayBuffer: Equatable where Element: AdditiveArithmetic {
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
   public static func == (lhs: ArrayBuffer, rhs: ArrayBuffer) -> Bool {
+    assert(lhs.tensorShapeIsCompatible(withThatOf: rhs))
     return lhs.storage == rhs.storage
   }
 }
@@ -123,6 +125,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   @differentiable(where Element: Differentiable)
   public static func - (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
     if rhs.isEmpty { return lhs }
+    if lhs.isEmpty { return .init(rhs.lazy.map { .zero - $0 }) }
     return .init(elementwise: lhs, rhs, -)
   }
 
@@ -161,6 +164,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   @differentiable(where Element: Differentiable)
   public static func -= (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
+    if lhs.isEmpty { lhs = lhs - rhs }
     else { lhs.update(elementwiseWith: rhs, -=, -) }
   }
 

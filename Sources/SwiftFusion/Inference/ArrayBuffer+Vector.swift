@@ -65,8 +65,8 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// - Requires: `self.tensorShapeIsCompatible(withThatOf: other)`
   @differentiable
   public func dot(_ other: ArrayBuffer) -> Double {
-    if self.isEmpty || other.isEmpty { return 0 }
     assert(self.tensorShapeIsCompatible(withThatOf: other))
+    if self.isEmpty || other.isEmpty { return 0 }
     return self.withUnsafeBufferPointer { lhs in
       other.withUnsafeBufferPointer { rhs in
         (0..<lhs.count).reduce(0) { sum, i in sum + lhs[i].dot(rhs[i]) }
@@ -168,6 +168,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   @differentiable
   private static func minusEquals(_ lhs: inout ArrayBuffer, _ rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
+    else if lhs.isEmpty { lhs = lhs - rhs }
     else { lhs.update(elementwiseWith: rhs, -=, -) }
   }
 

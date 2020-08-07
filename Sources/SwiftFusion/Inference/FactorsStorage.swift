@@ -109,6 +109,7 @@ extension ArrayStorage where Element: GaussianFactor {
     Variables.withMutableBufferBaseAddresses(&result) { varsBufs in
       withUnsafeMutableBufferPointer { fs in
         y.withUnsafeBufferPointer { es in
+          assert(fs.count == es.count)
           for i in 0..<es.count {
             let vars = Variables(at: fs[i].edges, in: Variables.withoutMutation(varsBufs))
             let newVars = vars + fs[i].errorVector_linearComponent_adjoint(es[i])
@@ -263,7 +264,7 @@ class GaussianFactorArrayDispatch: VectorFactorArrayDispatch {
   /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
   ///   subclass-specific `GaussianFactor` type.
   final let errorVectors_linearComponent:
-    (_ storage: UnsafeRawPointer,_ x: VariableAssignments) -> AnyVectorArrayBuffer
+    (_ self_: UnsafeRawPointer,_ x: VariableAssignments) -> AnyVectorArrayBuffer
 
   /// A function that accumulates the adjoint (aka "transpose" or "dual") of `errorVectors` at `y`
   /// into `result`.
