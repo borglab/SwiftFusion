@@ -65,7 +65,7 @@ class ValuesStorageTests: XCTestCase {
 
   func testVectorDot() {
     let v1 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 2, 3), Vector3(4, 5, 6)]))
-    let v2 = AnyElementArrayBuffer(ArrayBuffer([Vector3(1, 1, 1), Vector3(2, 2, 2)]))
+    let v2 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 1, 1), Vector3(2, 2, 2)]))
     XCTAssertEqual(v1.dot(v2), 36)
   }
 
