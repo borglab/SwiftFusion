@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import Foundation
+import TensorFlow
 
 /// Runs one step of the RWM algorithm with symmetric proposal.
 /// Inspired by tfp [RandomWalkMetropolis](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc/RandomWalkMetropolis)
@@ -21,10 +22,16 @@ public class RandomWalkMetropolis<State> : TransitionKernel {
   
   let target_log_prob_fn: (State) -> Double
   let new_state_fn : (State)->State
+  var sourceOfEntropy: AnyRandomNumberGenerator
   
-  public init(target_log_prob_fn: @escaping (State) -> Double, new_state_fn : @escaping (State)->State) {
+  public init(
+    sourceOfEntropy: RandomNumberGenerator = SystemRandomNumberGenerator(),
+    target_log_prob_fn: @escaping (State) -> Double,
+    new_state_fn : @escaping (State)->State
+  ) {
     self.target_log_prob_fn = target_log_prob_fn
     self.new_state_fn = new_state_fn
+    self.sourceOfEntropy = .init(sourceOfEntropy)
   }
   
   /// Runs one iteration of Random Walk Metropolis.
@@ -42,7 +49,7 @@ public class RandomWalkMetropolis<State> : TransitionKernel {
     // If p(x')/p(x) >= 1 , i.e., log_accept_ratio >= 0, we always accept
     // otherwise we accept randomly with probability p(x')/p(x).
     // We do this by randomly sampling u from [0,1], and comparing log(u) with log_accept_ratio.
-    let u = Double.random(in: 0..<1)
+    let u = Double.random(in: 0..<1, using: &sourceOfEntropy)
     if (log(u) <= log_accept_ratio) {
       return (new_state, new_log_prob)
     } else {

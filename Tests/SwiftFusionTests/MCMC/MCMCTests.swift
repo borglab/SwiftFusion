@@ -20,6 +20,7 @@ class MCMCTests: XCTestCase {
     // new_state_fn is a symmetric (required for Metropolis) proposal density,
     // in this case perturbing x with uniformly sampled perturbations.
     let kernel = RandomWalkMetropolis(
+      sourceOfEntropy: ARC4RandomNumberGenerator(seed: 42),
       target_log_prob_fn: {(x:Double) in -0.5*x*x}, //  tfd.Normal(loc=dtype(0), scale=dtype(1))
       new_state_fn: {(x:Double) in x + Double.random(in: -1..<1)}
     )
