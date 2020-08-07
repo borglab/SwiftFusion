@@ -68,20 +68,6 @@ extension ArrayBuffer where Element: Vector {
     }
   }
 
-  /// Returns the dot product of `self` with `others`.
-  ///
-  /// This is the sum of the dot products of corresponding elements.
-  ///
-  /// - Requires: `others.count == count`.
-  func dot(_ others: ArrayBuffer<Element>) -> Double {
-    assert(others.count == self.count)
-    return withUnsafeBufferPointer { vs in
-      others.withUnsafeBufferPointer { os in
-        vs.indices.reduce(into: 0) { (result, i) in result += vs[i].dot(os[i]) }
-      }
-    }
-  }
-
   /// Returns Jacobians that scale each element by `scalar`.
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
     AnyGaussianFactorArrayBuffer(
