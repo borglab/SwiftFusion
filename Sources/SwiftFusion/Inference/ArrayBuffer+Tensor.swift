@@ -101,33 +101,31 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   /// Returns the sum of `lhs` and `rhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  // DWA TODO: @differentiable(where Element: Differentiable)
+  @differentiable(where Element: Differentiable)
   public static func + (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
     if lhs.isEmpty { return rhs }
     if rhs.isEmpty { return lhs }
     return .init(elementwise: lhs, rhs, +)
   }
 
-  /* DWA TODO
   @usableFromInline
+  @derivative(of: +)
   static func vjp_plus(lhs: ArrayBuffer, rhs: ArrayBuffer) 
     -> (value: ArrayBuffer, pullback: (TangentVector)->(TangentVector, TangentVector))
   where Element: Differentiable
   {
     (lhs + rhs, { x in (x, x) })
   }
-   */
   
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  // DWA TODO: @differentiable(where Element: Differentiable)
+  @differentiable(where Element: Differentiable)
   public static func - (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
     if rhs.isEmpty { return lhs }
     return .init(elementwise: lhs, rhs, -)
   }
 
-  /* DWA TODO
   @usableFromInline
   @derivative(of: -)
   static func vjp_minus(lhs: ArrayBuffer, rhs: ArrayBuffer) 
@@ -136,19 +134,17 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   {
     (lhs - rhs, { x in (x, .zero - x) })
   }
-   */
   
   /// Replaces `lhs` with the sum of `lhs` and `rhs`
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  // DWA TODO: @differentiable(where Element: Differentiable)
+  @differentiable(where Element: Differentiable)
   public static func += (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     else if lhs.isEmpty { lhs = rhs }
     else { lhs.update(elementwiseWith: rhs, +=, +) }
   }
 
-  /* DWA TODO
   @usableFromInline
   @derivative(of: +=)
   static func vjp_plusEquals(lhs: inout ArrayBuffer, rhs: ArrayBuffer) 
@@ -158,18 +154,16 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
     lhs += rhs
     return ((), { x in x })
   }
-   */
   
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  // DWA TODO: @differentiable(where Element: Differentiable)
+  @differentiable(where Element: Differentiable)
   public static func -= (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     else { lhs.update(elementwiseWith: rhs, -=, -) }
   }
 
-  /* DWA TODO
   @usableFromInline
   @derivative(of: -=)
   static func vjp_minusEquals(lhs: inout ArrayBuffer, rhs: ArrayBuffer) 
@@ -179,6 +173,5 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
     lhs -= rhs
     return ((), { x in .zero - x })
   }
-   */
 }
 
