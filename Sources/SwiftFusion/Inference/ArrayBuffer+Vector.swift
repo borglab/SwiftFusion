@@ -179,13 +179,4 @@ extension ArrayBuffer: Vector where Element: Vector {
     lhs -= rhs
     return ((), { x in .zero - x })
   }
-
-  /// Creates an instance whose elements are `scalars`.
-  ///
-  /// Precondition: `scalars` must have an element count that `Self` can hold (e.g. if `Self` is a
-  /// fixed-size vectors, then `scalars` must have exactly the right number of elements).
-  // TODO: remove?
-  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
-    fatalError("can't implement this")
-  }
 }
