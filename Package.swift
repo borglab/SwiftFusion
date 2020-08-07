@@ -54,7 +54,10 @@ let package = Package(
       path: "Examples/Pose3SLAMG2O"),
     .testTarget(
       name: "SwiftFusionTests",
-      dependencies: ["SwiftFusion"]),
+      dependencies: [
+        "SwiftFusion",
+        .product(name: "ModelSupport", package: "swift-models"),
+      ]),
     .testTarget(
       name: "BeeDatasetTests",
       dependencies: ["BeeDataset"]),
