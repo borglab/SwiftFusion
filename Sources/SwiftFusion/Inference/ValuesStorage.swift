@@ -20,6 +20,7 @@ import PenguinStructures
 // MARK: - Algorithms on arrays of `Differentiable` values.
 
 extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Vector {
+  // DWA TODO: replace this with the use of zeroTangentVectorInitializer
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: ArrayBuffer<Element.TangentVector> {
     withUnsafeBufferPointer { vs in
@@ -31,29 +32,7 @@ extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Vect
 // MARK: - Algorithms on arrays of `Vector` values.
 
 extension ArrayBuffer where Element: Vector {
-  /// Adds `others` to `self`.
-  ///
-  /// - Requires: `others.count == count`.
-  mutating func add(_ others: ArrayBuffer<Element>) {
-    assert(others.count == self.count)
-    withUnsafeMutableBufferPointer { vs in
-      others.withUnsafeBufferPointer { os in
-        for i in vs.indices {
-          vs[i] += os[i]
-        }
-      }
-    }
-  }
-
-  /// Scales each element of `self` by `scalar`.
-  mutating func scale(by scalar: Double) {
-    withUnsafeMutableBufferPointer { vs in
-      for i in vs.indices {
-        vs[i] *= scalar
-      }
-    }
-  }
-
+  // DWA TODO: Where does this belong?  Should it be part of a protocol?
   /// Returns Jacobians that scale each element by `scalar`.
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
     AnyGaussianFactorArrayBuffer(
@@ -172,10 +151,10 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   init<Element: Vector>(_: Type<Element>, _: () = ()) {
     let e = Type<Element>()
     add = { buffer, others in
-      buffer[unsafelyAssumingElementType: e].add(.init(unsafelyDowncasting: others))
+      buffer[unsafelyAssumingElementType: e] += others[unsafelyAssumingElementType: e]
     }
-    scale = { buffer, factor in
-      buffer[unsafelyAssumingElementType: e].scale(by: factor)
+    scale = { buffer, scaleFactor in
+      buffer[unsafelyAssumingElementType: e] *= scaleFactor
     }
     dot = { buffer, others in
       buffer[unsafelyAssumingElementType: e].dot(.init(unsafelyDowncasting: others))
