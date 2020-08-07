@@ -36,6 +36,8 @@ import TensorFlow
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
 public struct Pose2: LieGroup, Equatable, KeyPathIterable {
+  public typealias TangentVector = Vector3
+
   // MARK: - Manifold conformance
 
   public var coordinateStorage: Pose2Coordinate
