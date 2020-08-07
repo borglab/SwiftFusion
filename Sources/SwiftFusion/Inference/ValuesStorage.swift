@@ -26,20 +26,6 @@ extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Vect
       .init(vs.lazy.map { $0.zeroTangentVector })
     }
   }
-
-  /// Moves each element of `self` along the corresponding element of `directions`.
-  ///
-  /// - Requires: `directions.count == self.count`.
-  mutating func move(along directions: ArrayBuffer<Element.TangentVector>) {
-    assert(directions.count == self.count)
-    withUnsafeMutableBufferPointer { vs in
-      directions.withUnsafeBufferPointer { ds in
-        for i in vs.indices {
-          vs[i].move(along: ds[i])
-        }
-      }
-    }
-  }
 }
 
 // MARK: - Algorithms on arrays of `Vector` values.
