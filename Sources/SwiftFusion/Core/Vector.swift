@@ -8,6 +8,9 @@ import TensorFlow
 // have Euclidean structure and standard basis, so we'll reserve the short name `Vector` for
 // such vectors and use a longer name like `GeneralizedVector` for the generalized vector spaces.
 public protocol Vector: Differentiable where Self.TangentVector == Self {
+  /// The number of components of this vector.
+  var dimension: Int { get }
+
   // MARK: - AdditiveArithmetic requirements, refined to require differentiability.
 
   @differentiable
@@ -39,8 +42,40 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   @differentiable
   func dot(_ other: Self) -> Double
 
-  // MARK: - Methods for setting/accessing scalars.
+  // MARK: - Methods for accessing the standard basis and for manipulating the coordinates under
+  // the standard basis.
 
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  ///
+  /// A default is provided that is correct for types that are represented as contiguous scalars
+  /// in memory.
+  func withUnsafeBufferPointer<R>(
+    _ body: (UnsafeBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  ///
+  /// A default is provided that is correct for types that are represented as contiguous scalars
+  /// in memory.
+  mutating func withUnsafeMutableBufferPointer<R>(
+    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  /// The standard orthonormal basis.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  var standardBasis: [Self] { get }
+}
+
+/// A `Vector` whose instances can be initialized for a collection of scalars.
+public protocol ScalarsInitializableVector: Vector {
   /// Creates an instance whose elements are `scalars`.
   ///
   /// Note: Depends on a determined standard basis, and therefore would not be available on a
@@ -51,42 +86,18 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   ///
   /// TODO: Maybe make this failable.
   init<Source: Collection>(_ scalars: Source) where Source.Element == Double
-
-  /// Returns the result of calling `body` on the scalars of `self`.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  ///
-  /// A default is provided that returns a pointer to `self`.
-  func withUnsafeBufferPointer<R>(
-    _ body: (UnsafeBufferPointer<Double>) throws -> R
-  ) rethrows -> R
-
-  /// Returns the result of calling `body` on the scalars of `self`.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  ///
-  /// A default is provided that returns a pointer to `self`.
-  mutating func withUnsafeMutableBufferPointer<R>(
-    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
-  ) rethrows -> R
-
-  // MARK: - Methods relating to static dimension.
-  // TODO: Make these per-instance so that we can support dynamically-sized vectors.
-
-  /// The dimension of the vector.
-  static var dimension: Int { get }
-
-  /// The standard orthonormal basis.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  static var standardBasis: [Self] { get }
 }
 
-/// Convenient operations on Euclidean vector spaces that can be implemented in terms of the
-/// primitive operations.
+/// A `Vector` whose instances all have the same `dimension`.
+///
+/// Note: This is a temporary shim to help incrementally remove the assumption that vectors have a
+/// static `dimension`. New code should prefer `Vector` so that it does not rely on a static `dimension`.
+public protocol FixedSizeVector: ScalarsInitializableVector {
+  /// The `dimension` of an instance.
+  static var dimension: Int { get }
+}
+
+/// Vector space operations that can be implemented in terms of others.
 extension Vector {
   @differentiable
   public static prefix func - (_ v: Self) -> Self {
@@ -102,11 +113,7 @@ extension Vector {
   public var norm: Double {
     return squaredNorm.squareRoot()
   }
-}
 
-/// Default implementations of some vector space operations in terms of other vector space
-/// operations.
-extension Vector {
   @differentiable
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = lhs
@@ -129,18 +136,18 @@ extension Vector {
   }
 }
 
-/// Default implementations of raw memory access, for vectors represented as contiguous scalars.
+/// Default implementations of raw memory access.
 extension Vector {
   /// Returns the result of calling `body` on the scalars of `self`.
   public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R {
-    return try withUnsafePointer(to: self) { p in
+    return try withUnsafePointer(to: self) { [dimension = self.dimension] p in
       try body(
           UnsafeBufferPointer<Double>(
               start: UnsafeRawPointer(p)
                   .assumingMemoryBound(to: Double.self),
-              count: Self.dimension))
+              count: dimension))
     }
   }
 
@@ -148,45 +155,62 @@ extension Vector {
   public mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
-    return try withUnsafeMutablePointer(to: &self) { p in
+    return try withUnsafeMutablePointer(to: &self) { [dimension = self.dimension] p in
       try body(
           UnsafeMutableBufferPointer<Double>(
               start: UnsafeMutableRawPointer(p)
                   .assumingMemoryBound(to: Double.self),
-              count: Self.dimension))
+              count: dimension))
     }
   }
 }
 
-/// Implementation of `subscript`.
+/// Conversion to `Tensor`.
 extension Vector {
-  /// Accesses the scalar at `i`.
-  subscript(i: Int) -> Double {
-    _read {
-      boundsCheck(i)
-      yield withUnsafeBufferPointer { $0.baseAddress.unsafelyUnwrapped[i] }
-    }
-    _modify {
-      boundsCheck(i)
-      defer { _fixLifetime(self) }
-      yield &withUnsafeMutableBufferPointer { $0.baseAddress }.unsafelyUnwrapped[i]
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  @differentiable(where Self: ScalarsInitializableVector)
+  public var flatTensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
     }
   }
 
-  /// Traps with a suitable error message if `i` is not the position of an
-  /// element in `self`.
-  private func boundsCheck(_ i: Int) {
-    precondition(i >= 0 && i < Self.dimension, "index out of range")
+  @derivative(of: flatTensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+    where Self: ScalarsInitializableVector
+  {
+    return (self.flatTensor, { Self(flatTensor: $0) })
   }
 }
 
-/// Conversions between `Vector`s with compatible shapes.
-extension Vector {
+/// Conversion from `Tensor`.
+extension ScalarsInitializableVector {
+  /// Creates an instance with the same scalars as `flatTensor`.
+  @differentiable
+  public init(flatTensor: Tensor<Double>) {
+    self.init(flatTensor.scalars)
+  }
+
+  @derivative(of: init(flatTensor:))
+  @usableFromInline
+  static func vjpInit(flatTensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(flatTensor: flatTensor), { $0.flatTensor })
+  }
+}
+
+/// Conversions between `FixedSizeVector`s with compatible shapes.
+extension FixedSizeVector {
+  public static var standardBasis: [Self] { Self.zero.standardBasis }
+
   /// Creates a vector with the same scalars as `v`.
   ///
   /// - Requires: `Self.dimension == V.dimension`.
   @differentiable
-  public init<V: Vector>(_ v: V) {
+  public init<V: FixedSizeVector>(_ v: V) {
     precondition(Self.dimension == V.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
@@ -200,7 +224,7 @@ extension Vector {
 
   @derivative(of: init(_:))
   @usableFromInline
-  static func vjpInit<V: Vector>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
+  static func vjpInit<V: FixedSizeVector>(_ v: V) -> (value: Self, pullback: (Self) -> V) {
     return (
       Self(v),
       { t in V(t) }
@@ -211,7 +235,7 @@ extension Vector {
   ///
   /// - Requires: `Self.dimension == V1.dimension + V2.dimension`.
   @differentiable
-  public init<V1: Vector, V2: Vector>(concatenating v1: V1, _ v2: V2) {
+  public init<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) {
     precondition(Self.dimension == V1.dimension + V2.dimension)
     self = Self.zero
     self.withUnsafeMutableBufferPointer { rBuf in
@@ -230,7 +254,7 @@ extension Vector {
 
   @derivative(of: init(concatenating:_:))
   @usableFromInline
-  static func vjpInit<V1: Vector, V2: Vector>(concatenating v1: V1, _ v2: V2) -> (
+  static func vjpInit<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) -> (
     value: Self,
     pullback: (Self) -> (V1, V2)
   ) {
@@ -254,40 +278,5 @@ extension Vector {
         }
       }
     )
-  }
-}
-
-/// Conversions to/from `Tensor`.
-extension Vector {
-  /// Creates an instance with the same scalars as `flatTensor`.
-  ///
-  /// - Reqiures: `flatTensor.shape == [Self.dimension]`.
-  @differentiable
-  public init(flatTensor: Tensor<Double>) {
-    precondition(flatTensor.shape == [Self.dimension])
-    self.init(flatTensor.scalars)
-  }
-
-  @derivative(of: init(flatTensor:))
-  @usableFromInline
-  static func vjpInit(flatTensor: Tensor<Double>) -> (
-    value: Self,
-    pullback: (Self) -> Tensor<Double>
-  ) {
-    return (Self(flatTensor: flatTensor), { $0.flatTensor })
-  }
-
-  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
-  @differentiable
-  public var flatTensor: Tensor<Double> {
-    withUnsafeBufferPointer { b in
-      return Tensor<Double>(shape: [b.count], scalars: b)
-    }
-  }
-
-  @derivative(of: flatTensor)
-  @usableFromInline
-  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) {
-    return (self.flatTensor, { Self(flatTensor: $0) })
   }
 }
