@@ -55,6 +55,10 @@ let package = Package(
       name: "Pose3SLAMG2O",
       dependencies: ["SwiftFusion", "TensorBoardX", "SwiftToolsSupport"],
       path: "Examples/Pose3SLAMG2O"),
+    .target(
+      name: "PatchSpeed",
+      dependencies: ["SwiftFusion"],
+      path: "Examples/PatchSpeed"),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: ["SwiftFusion"]),
