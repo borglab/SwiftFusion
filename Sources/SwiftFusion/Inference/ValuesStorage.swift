@@ -19,7 +19,7 @@ import PenguinStructures
 
 // MARK: - Algorithms on arrays of `Differentiable` values.
 
-extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Vector {
+extension ArrayBuffer where Element: Differentiable {
   // DWA TODO: replace this with the use of zeroTangentVectorInitializer
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: ArrayBuffer<Element.TangentVector> {
