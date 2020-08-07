@@ -232,7 +232,7 @@ extension FixedSizeMatrix: FixedSizeVector {
     return shape[0] * shape[1]
   }
 
-  public var standardBasis: [Self] {
+  public static var standardBasis: [Self] {
     (0..<dimension).map { i in
       var v = Self.zero
       v[i] = 1

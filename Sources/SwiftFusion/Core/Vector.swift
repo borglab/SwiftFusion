@@ -66,12 +66,6 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R
-
-  /// The standard orthonormal basis.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  var standardBasis: [Self] { get }
 }
 
 /// A `Vector` whose instances can be initialized for a collection of scalars.
@@ -204,8 +198,6 @@ extension ScalarsInitializableVector {
 
 /// Conversions between `FixedSizeVector`s with compatible shapes.
 extension FixedSizeVector {
-  public static var standardBasis: [Self] { Self.zero.standardBasis }
-
   /// Creates a vector with the same scalars as `v`.
   ///
   /// - Requires: `Self.dimension == V.dimension`.

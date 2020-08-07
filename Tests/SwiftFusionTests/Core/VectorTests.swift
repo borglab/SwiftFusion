@@ -45,7 +45,6 @@ extension FixedSizeVectorTests {
     testSquaredNorm()
     testNorm()
     testDimension()
-    testStandardBasis()
     testWithUnsafeBufferPointer()
     testWithUnsafeMutableBufferPointer()
     testInitFromFlatTensor()
@@ -230,12 +229,6 @@ extension FixedSizeVectorTests {
   /// Tests that the dimension is correct.
   func testDimension() {
     XCTAssertEqual(Testee.dimension, Self.dimension)
-  }
-
-  /// Tests that the standard basis is correct.
-  func testStandardBasis() {
-    let actualStandardBasis = Array(Testee.standardBasis)
-    XCTAssertEqual(actualStandardBasis, self.basisVectors)
   }
 
   func testWithUnsafeBufferPointer() {

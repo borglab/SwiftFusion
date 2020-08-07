@@ -73,8 +73,6 @@ extension Empty: Vector {
 
   @differentiable
   public func dot(_ other: Self) -> Double { return 0 }
-
-  public var standardBasis: [Self] { return [] }
 }
 
 extension Tuple: Vector
@@ -102,11 +100,6 @@ where Head: Vector, Tail: Vector {
   @differentiable
   public func dot(_ other: Self) -> Double {
     return head.dot(other.head) + tail.dot(other.tail)
-  }
-
-  public var standardBasis: [Self] {
-    return head.standardBasis.map { Self(head: $0, tail: Tail.zero) }
-      + tail.standardBasis.map { Self(head: Head.zero, tail: $0) }
   }
 }
 

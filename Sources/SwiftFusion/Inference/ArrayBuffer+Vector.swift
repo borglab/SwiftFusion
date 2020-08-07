@@ -16,10 +16,6 @@ import PenguinStructures
 extension ArrayBuffer: Vector where Element: Vector {
   public var dimension: Int { self.lazy.map(\.dimension).reduce(0, +) }
   
-  public var standardBasis: [Self] {
-    fatalError()
-  }
-  
   /// Replaces lhs with the product of `lhs` and `rhs`.
   @differentiable
   public static func *= (lhs: inout ArrayBuffer, rhs: Double) -> Void {
