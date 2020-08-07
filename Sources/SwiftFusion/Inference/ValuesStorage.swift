@@ -19,25 +19,12 @@ import PenguinStructures
 
 // MARK: - Algorithms on arrays of `Differentiable` values.
 
-extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Vector {
+extension ArrayBuffer where Element: Differentiable {
+  // DWA TODO: replace this with the use of zeroTangentVectorInitializer
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: ArrayBuffer<Element.TangentVector> {
     withUnsafeBufferPointer { vs in
       .init(vs.lazy.map { $0.zeroTangentVector })
-    }
-  }
-
-  /// Moves each element of `self` along the corresponding element of `directions`.
-  ///
-  /// - Requires: `directions.count == self.count`.
-  mutating func move(along directions: ArrayBuffer<Element.TangentVector>) {
-    assert(directions.count == self.count)
-    withUnsafeMutableBufferPointer { vs in
-      directions.withUnsafeBufferPointer { ds in
-        for i in vs.indices {
-          vs[i].move(along: ds[i])
-        }
-      }
     }
   }
 }
@@ -45,43 +32,7 @@ extension ArrayBuffer where Element: Differentiable, Element.TangentVector: Vect
 // MARK: - Algorithms on arrays of `Vector` values.
 
 extension ArrayBuffer where Element: Vector {
-  /// Adds `others` to `self`.
-  ///
-  /// - Requires: `others.count == count`.
-  mutating func add(_ others: ArrayBuffer<Element>) {
-    assert(others.count == self.count)
-    withUnsafeMutableBufferPointer { vs in
-      others.withUnsafeBufferPointer { os in
-        for i in vs.indices {
-          vs[i] += os[i]
-        }
-      }
-    }
-  }
-
-  /// Scales each element of `self` by `scalar`.
-  mutating func scale(by scalar: Double) {
-    withUnsafeMutableBufferPointer { vs in
-      for i in vs.indices {
-        vs[i] *= scalar
-      }
-    }
-  }
-
-  /// Returns the dot product of `self` with `others`.
-  ///
-  /// This is the sum of the dot products of corresponding elements.
-  ///
-  /// - Requires: `others.count == count`.
-  func dot(_ others: ArrayBuffer<Element>) -> Double {
-    assert(others.count == self.count)
-    return withUnsafeBufferPointer { vs in
-      others.withUnsafeBufferPointer { os in
-        vs.indices.reduce(into: 0) { (result, i) in result += vs[i].dot(os[i]) }
-      }
-    }
-  }
-
+  // DWA TODO: Where does this belong?  Should it be part of a protocol?
   /// Returns Jacobians that scale each element by `scalar`.
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
     AnyGaussianFactorArrayBuffer(
@@ -94,11 +45,11 @@ extension ArrayBuffer where Element: Vector {
 
 // MARK: - Type-erased arrays of `Differentiable` values.
 
-typealias AnyDifferentiableArrayBuffer = AnyArrayBuffer<DifferentiableArrayDispatch>
+public typealias AnyDifferentiableArrayBuffer = AnyArrayBuffer<DifferentiableArrayDispatch>
 
 /// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Differentiable`
 /// elements.
-class DifferentiableArrayDispatch {
+public class DifferentiableArrayDispatch {
   /// The notional `Self` type of the methods in the dispatch table
   typealias Self_ = AnyArrayBuffer<AnyObject>
   
@@ -150,35 +101,62 @@ extension AnyArrayBuffer where Dispatch: DifferentiableArrayDispatch {
 
   /// Returns the zero `TangentVector`s of the contained elements.
   var tangentVectorZeros: AnyArrayBuffer<VectorArrayDispatch> {
-    dispatch.tangentVectorZeros(self.withoutCapabilities)
+    dispatch.tangentVectorZeros(self.upcast)
   }
 
   /// Moves each element along the corresponding element of `directions`.
   mutating func move(along directions: AnyElementArrayBuffer) {
-    dispatch.move(&self.withoutCapabilities, directions)
+    dispatch.move(&self.upcast, directions)
   }
 }
 
 // MARK: - Type-erased arrays of `Vector` values.
 
-typealias AnyVectorArrayBuffer = AnyArrayBuffer<VectorArrayDispatch>
+public typealias AnyVectorArrayBuffer = AnyArrayBuffer<VectorArrayDispatch>
 
-/// An `AnyArrayBuffer` dispatcher that provides algorithm implementations for `Vector`
-/// elements.
-class VectorArrayDispatch: DifferentiableArrayDispatch {
-  /// The notional `Self` type of the methods in the dispatch table
-  typealias Self_ = AnyArrayBuffer<AnyObject>
-  
+/// An dispatcher that provides algorithm implementations for `Vector` semantics of
+/// `AnyArrayBuffer`s having `Vector` elements.
+public class VectorArrayDispatch: DifferentiableArrayDispatch {
+  /// A function returning `true` iff `lhs` is equal to `rhs`
+  ///
+  /// - Requires: the arguments have elements of the same type with which this dispatcher was
+  ///   initialized.
+  final let equals: (_ lhs: AnyVectorArrayBuffer, _ rhs: AnyVectorArrayBuffer) -> Bool
+
+  /// A function that returns the elementwise sum of `lhs` and `rhs`
+  ///
+  /// - Requires: the arguments have elements of the same type with which this dispatcher was
+  ///   initialized.
+  final let sum: (_ lhs: inout Self_, _ rhs: Self_) -> AnyVectorArrayBuffer 
+
   /// A function that adds the elements of `addend` to the corresponding elements of `self_`
   ///
   /// - Requires: the arguments have elements of the same type with which this dispatcher was
   ///   initialized.
   final let add: (_ self_: inout Self_, _ addend: Self_) -> Void 
 
+  /// A function that returns the elementwise difference of `lhs -  rhs`
+  ///
+  /// - Requires: the arguments have elements of the same type with which this dispatcher was
+  ///   initialized.
+  final let difference: (_ lhs: inout Self_, _ rhs: Self_) -> AnyVectorArrayBuffer
+  
+  /// A function that subtracts the elements of `subtrahend` from the corresponding elements of
+  /// `self_`
+  ///
+  /// - Requires: the arguments have elements of the same type with which this dispatcher was
+  ///   initialized.
+  final let subtract: (_ self_: inout Self_, _ subtrahend: Self_) -> Void 
+
   /// A function that scales each element of `self_` by `scaleFactor`
   ///
   /// - Requires: `self_` has elements of the type with which this dispatcher was initialized.
   final let scale: (_ self_: inout Self_, _ scaleFactor: Double) -> Void
+
+  /// A function that returns the elements of `self_` scaled by `scaleFactor`
+  ///
+  /// - Requires: `self_` has elements of the type with which this dispatcher was initialized.
+  final let scaled: (_ self_: Self_, _ scaleFactor: Double) -> AnyVectorArrayBuffer
 
   /// A function that returns the sum of the dot products of corresponding elements of `lhs` and
   /// `rhs`.
@@ -197,22 +175,37 @@ class VectorArrayDispatch: DifferentiableArrayDispatch {
   final let scalarJacobianType: Any.Type
 
   /// Creates an instance for elements of type `Element`.
-  init<Element: Vector>(_: Type<Element>, _: () = ()) {
-    let e = Type<Element>()
-    add = { buffer, others in
-      buffer[unsafelyAssumingElementType: e].add(.init(unsafelyDowncasting: others))
+  init<Element: Vector>(_ e: Type<Element>, _: () = ()) {
+    equals = { lhs, rhs in
+      lhs[unsafelyAssumingElementType: e] == rhs[unsafelyAssumingElementType: e]
     }
-    scale = { buffer, factor in
-      buffer[unsafelyAssumingElementType: e].scale(by: factor)
+    sum = { lhs, rhs in
+      .init(lhs[unsafelyAssumingElementType: e] + rhs[unsafelyAssumingElementType: e])
     }
-    dot = { buffer, others in
-      buffer[unsafelyAssumingElementType: e].dot(.init(unsafelyDowncasting: others))
+    add = { lhs, rhs in
+      lhs[unsafelyAssumingElementType: e] += rhs[unsafelyAssumingElementType: e]
     }
-    jacobians = { buffer, scalar in
-      buffer[unsafelyAssumingElementType: e].jacobians(scalar: scalar)
+    difference = { lhs, rhs in
+      .init(
+        lhs[unsafelyAssumingElementType: e] - rhs[unsafelyAssumingElementType: e])
+    }
+    subtract = { lhs, rhs in
+      lhs[unsafelyAssumingElementType: e] -= rhs[unsafelyAssumingElementType: e]
+    }
+    scale = { target, scaleFactor in
+      target[unsafelyAssumingElementType: e] *= scaleFactor
+    }
+    scaled = { target, scaleFactor in
+      .init(scaleFactor * target[unsafelyAssumingElementType: e])
+    }
+    dot = { lhs, rhs in
+      lhs[unsafelyAssumingElementType: e].dot(rhs[unsafelyAssumingElementType: e])
+    }
+    jacobians = { target, scaleFactor in
+      .init(target[unsafelyAssumingElementType: e].jacobians(scalar: scaleFactor))
     }
     scalarJacobianType = ScalarJacobianFactor<Element>.self
-    super.init(Type<Element>())
+    super.init(e)
   }
 }
 
@@ -230,12 +223,12 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   ///
   /// - Requires: `others.count == count`.
   mutating func add(_ others: AnyElementArrayBuffer) {
-    dispatch.add(&self.withoutCapabilities, others)
+    dispatch.add(&self.upcast, others)
   }
 
   /// Scales each element of `self` by `factor`.
   mutating func scale(by factor: Double) {
-    dispatch.scale(&self.withoutCapabilities, factor)
+    dispatch.scale(&self.upcast, factor)
   }
 
   /// Returns the dot product of `self` with `others`.
@@ -243,12 +236,12 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   /// This is the sum of the dot products of corresponding elements.
   ///
   /// - Requires: `others.count == count`.
-  func dot(_ others: AnyElementArrayBuffer) -> Double {
-    dispatch.dot(self.withoutCapabilities, others)
+  func dot(_ others: Self) -> Double {
+    dispatch.dot(self.upcast, others.upcast)
   }
 
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
-    dispatch.jacobians(self.withoutCapabilities, scalar)
+    dispatch.jacobians(self.upcast, scalar)
   }
 
   var scalarJacobianType: Any.Type {

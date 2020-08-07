@@ -32,7 +32,8 @@ extension AllVectors {
   /// Precondition: All the variables in `self` are vectors.
   public var squaredNorm: Double {
     return storage.values.reduce(into: 0) { (result, value) in
-      result += AnyVectorArrayBuffer(unsafelyCasting: value).dot(value)
+      let v = AnyVectorArrayBuffer(unsafelyCasting: value)
+      result += v.dot(v)
     }
   }
 

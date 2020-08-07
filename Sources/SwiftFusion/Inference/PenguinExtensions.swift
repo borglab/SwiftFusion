@@ -12,7 +12,7 @@ extension AnyArrayBuffer {
 
   /// Accesses `self` as an `AnyArrayBuffer` with no exposed capabilities
   /// (i.e. `AnyArrayBuffer<AnyObject>`).
-  var withoutCapabilities: AnyArrayBuffer<AnyObject> {
+  var upcast: AnyArrayBuffer<AnyObject> {
     get { .init(self) }
     _modify {
       var x = AnyArrayBuffer<AnyObject>(unsafelyCasting: self)
@@ -21,6 +21,14 @@ extension AnyArrayBuffer {
       yield &x
     }
   }
+}
+
+extension ArrayStorage: CustomDebugStringConvertible {
+  public var debugDescription: String { "ArrayStorage(\(Array(self)))" }
+}
+
+extension ArrayBuffer: CustomDebugStringConvertible {
+  public var debugDescription: String { "ArrayBuffer(\(Array(self)))" }
 }
 
 // =================================================================================================
