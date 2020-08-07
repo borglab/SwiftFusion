@@ -23,6 +23,14 @@ extension AnyArrayBuffer {
   }
 }
 
+extension ArrayStorage: CustomDebugStringConvertible {
+  public var debugDescription: String { "ArrayStorage(\(Array(self)))" }
+}
+
+extension ArrayBuffer: CustomDebugStringConvertible {
+  public var debugDescription: String { "ArrayBuffer(\(Array(self)))" }
+}
+
 // =================================================================================================
 // Standard library extensions
 
