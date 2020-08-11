@@ -76,6 +76,8 @@ extension FixedShapeTensor {
     self.tensor = Tensor(shape: Self.shape, scalars: scalars)
     return r
   }
+
+  public static var zero: Self { .init(Tensor(zeros: Self.shape)) }
 }
 
 // Copy this implementation and modify the `shape` to create `FixedShapeTensor`s with other shapes.
@@ -83,6 +85,19 @@ extension FixedShapeTensor {
 public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
   public typealias TangentVector = Tensor10x10
   public static var shape: TensorShape { [10, 10] }
+  @differentiable public var tensor: Tensor<Double>
+
+  @differentiable
+  public init(_ tensor: Tensor<Double>) {
+    precondition(tensor.shape == Self.shape)
+    self.tensor = tensor
+  }
+}
+
+/// A `Tensor` with shape `[28, 62, 1]`.
+public struct Tensor28x62x1: AdditiveArithmetic, FixedShapeTensor {
+  public typealias TangentVector = Self
+  public static var shape: TensorShape { [28, 62, 1] }
   @differentiable public var tensor: Tensor<Double>
 
   @differentiable

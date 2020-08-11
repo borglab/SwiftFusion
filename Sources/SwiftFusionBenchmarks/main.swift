@@ -16,6 +16,7 @@ import Benchmark
 
 Benchmark.main([
   patchBenchmark,
+  ppcaTrackingBenchmark,
   pose2SLAM,
   pose3SLAM
 ])
