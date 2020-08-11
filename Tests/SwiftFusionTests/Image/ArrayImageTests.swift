@@ -12,10 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Benchmark
+import ModelSupport
+import SwiftFusion
+import TensorFlow
+import XCTest
 
-Benchmark.main([
-  patchBenchmark,
-  pose2SLAM,
-  pose3SLAM
-])
+final class ArrayImageTests: XCTestCase {
+  func testCreateBlank() {
+    let rows = 10
+    let cols = 10
+    let channels = 3
+    let image = ArrayImage(rows: rows, cols: cols, channels: channels)
+    for i in 0..<rows {
+      for j in 0..<cols {
+        for k in 0..<channels {
+          XCTAssertEqual(image[i, j, k], 0)
+        }
+      }
+    }
+  }
+}
