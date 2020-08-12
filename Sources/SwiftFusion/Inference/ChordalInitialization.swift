@@ -57,6 +57,20 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor1
   }
 }
 
+fileprivate extension Vector9 {
+  init(_ m: Matrix3) {
+    self.s0 = m[0, 0]
+    self.s1 = m[0, 1]
+    self.s2 = m[0, 2]
+    self.s3 = m[1, 0]
+    self.s4 = m[1, 1]
+    self.s5 = m[1, 2]
+    self.s6 = m[2, 0]
+    self.s7 = m[2, 1]
+    self.s8 = m[2, 2]
+  }
+}
+
 /// Type shorthands used in the relaxed pose graph
 /// NOTE: Specializations are added in `FactorsStorage.swift`
 public typealias Jacobian9x3x3_1 = Array<Tuple1<Matrix3>>

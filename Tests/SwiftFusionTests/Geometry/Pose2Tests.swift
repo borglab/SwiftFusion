@@ -248,7 +248,7 @@ final class Pose2Tests: XCTestCase {
       assertEqual(
         Tensor<Double>(stacking: jacobian(
           of: identity,
-          at: Pose2(randomWithCovariance: eye(rowCount: 3))).map { $0.flatTensor }),
+          at: Pose2(randomWithCovariance: eye(rowCount: 3))).map { $0.tensor }),
         expected,
         accuracy: 1e-10
       )
@@ -261,7 +261,7 @@ final class Pose2Tests: XCTestCase {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
       let expected = -pose.AdjointMatrix
       assertEqual(
-        Tensor<Double>(stacking: jacobian(of: { $0.inverse() }, at: pose).map { $0.flatTensor }),
+        Tensor<Double>(stacking: jacobian(of: { $0.inverse() }, at: pose).map { $0.tensor }),
         expected,
         accuracy: 1e-10
       )
@@ -276,12 +276,12 @@ final class Pose2Tests: XCTestCase {
       let expectedWrtLhs = rhs.inverse().AdjointMatrix
       let expectedWrtRhs: Tensor<Double> = eye(rowCount: 3)
       assertEqual(
-        Tensor<Double>(stacking: jacobian(of: { $0 * rhs }, at: lhs).map { $0.flatTensor }),
+        Tensor<Double>(stacking: jacobian(of: { $0 * rhs }, at: lhs).map { $0.tensor }),
         expectedWrtLhs,
         accuracy: 1e-10
       )
       assertEqual(
-        Tensor<Double>(stacking: jacobian(of: { lhs * $0 }, at: rhs).map { $0.flatTensor }),
+        Tensor<Double>(stacking: jacobian(of: { lhs * $0 }, at: rhs).map { $0.tensor }),
         expectedWrtRhs,
         accuracy: 1e-10
       )
@@ -327,12 +327,12 @@ final class Pose2Tests: XCTestCase {
     ])
 
     assertEqual(
-      Tensor<Double>(stacking: jacobian(of: { between($0, wT2) }, at: wT1).map { $0.flatTensor }),
+      Tensor<Double>(stacking: jacobian(of: { between($0, wT2) }, at: wT1).map { $0.tensor }),
       expectedWrtLhs,
       accuracy: 1e-10
     )
     assertEqual(
-      Tensor<Double>(stacking: jacobian(of: { between(wT1, $0) }, at: wT2).map { $0.flatTensor }),
+      Tensor<Double>(stacking: jacobian(of: { between(wT1, $0) }, at: wT2).map { $0.tensor }),
       expectedWrtRhs,
       accuracy: 1e-10
     )
@@ -344,13 +344,13 @@ final class Pose2Tests: XCTestCase {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
       for v in Pose2.TangentVector.standardBasis {
         assertEqual(
-          pose.Adjoint(v).flatTensor,
-          pose.coordinate.defaultAdjoint(v).flatTensor,
+          pose.Adjoint(v).tensor,
+          pose.coordinate.defaultAdjoint(v).tensor,
           accuracy: 1e-10
         )
         assertEqual(
-          pose.AdjointTranspose(v).flatTensor,
-          pose.coordinate.defaultAdjointTranspose(v).flatTensor,
+          pose.AdjointTranspose(v).tensor,
+          pose.coordinate.defaultAdjointTranspose(v).tensor,
           accuracy: 1e-10
         )
       }

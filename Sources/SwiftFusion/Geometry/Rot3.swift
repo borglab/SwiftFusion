@@ -95,8 +95,9 @@ public extension Rot3 {
     let S = Tensor<Double>(shape: [3], scalars: [1, 1, det]).diagonal()
     
     let R = matmul(V!, matmul(S, U!.transposed()))
-    
-    let M_r = Matrix3(R.scalars)
+   
+    let scalars = R.scalars
+    let M_r = Matrix3(rows: Vector3(scalars[0..<3]), Vector3(scalars[3..<6]), Vector3(scalars[6..<9]))
     
     return Rot3(coordinate: Matrix3Coordinate(M_r))
   }
@@ -210,11 +211,10 @@ extension Matrix3Coordinate: ManifoldCoordinate {
 
   @differentiable(wrt: global)
   public func localCoordinate(_ global: Matrix3Coordinate) -> Vector3 {
-    let relative = self.inverse() * global
-    let R = Vector9(relative.R)
-    let (R11, R12, R13) = (R.s0, R.s1, R.s2)
-    let (R21, R22, R23) = (R.s3, R.s4, R.s5)
-    let (R31, R32, R33) = (R.s6, R.s7, R.s8)
+    let R = (self.inverse() * global).R
+    let (R11, R12, R13) = (R[0, 0], R[0, 1], R[0, 2])
+    let (R21, R22, R23) = (R[1, 0], R[1, 1], R[1, 2])
+    let (R31, R32, R33) = (R[2, 0], R[2, 1], R[2, 2])
 
     let tr = R11 + R22 + R33
 

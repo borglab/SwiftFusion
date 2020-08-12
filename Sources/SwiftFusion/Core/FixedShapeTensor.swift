@@ -38,10 +38,6 @@ extension FixedShapeTensor {
     (self.tensor * other.tensor).sum().scalarized()
   }
 
-  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
-    self.init(Tensor(shape: Self.shape, scalars: Array(scalars)))
-  }
-
   public var dimension: Int {
     Self.dimension
   }
@@ -49,6 +45,8 @@ extension FixedShapeTensor {
   public static var dimension: Int {
     shape.reduce(1, *)
   }
+
+  public static var zero: Self { Self(Tensor(zeros: shape)) }
 
   public var standardBasis: [Self] {
     (0..<dimension).map { i in

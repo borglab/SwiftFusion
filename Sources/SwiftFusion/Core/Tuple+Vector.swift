@@ -111,12 +111,8 @@ extension Empty: FixedSizeVector {
   }
 }
 
-extension Tuple: FixedSizeVector, ScalarsInitializableVector
+extension Tuple: FixedSizeVector
   where Head: FixedSizeVector, Tail: FixedSizeVector
 {
   public static var dimension: Int { Head.dimension + Tail.dimension }
-  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
-    let i = scalars.index(scalars.startIndex, offsetBy: Head.dimension)
-    self.init(head: .init(scalars[..<i]), tail: .init(scalars[i...]))
-  }
 }

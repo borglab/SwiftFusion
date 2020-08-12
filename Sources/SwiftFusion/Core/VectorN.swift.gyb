@@ -83,4 +83,36 @@ extension Vector${dim}: FixedSizeVector {
 
 extension Vector${dim}: ElementaryFunctions {}
 
+/// Converstion to/from `Tensor`.
+extension Vector${dim} {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
+
 % end

@@ -29,7 +29,25 @@ public struct BetweenFactorAlternative: LinearizableFactor2 {
     let actualMotion = between(start, end)
     let R = actualMotion.coordinate.rot.coordinate.R + (-1) * difference.rot.coordinate.R
     let t = actualMotion.t - difference.t
-    
+
     return Vector12(concatenating: R, t)
+  }
+}
+
+fileprivate extension Vector12 {
+  @differentiable
+  init(concatenating m: Matrix3, _ v: Vector3) {
+    self.s0 = m[0, 0]
+    self.s1 = m[0, 1]
+    self.s2 = m[0, 2]
+    self.s3 = m[1, 0]
+    self.s4 = m[1, 1]
+    self.s5 = m[1, 2]
+    self.s6 = m[2, 0]
+    self.s7 = m[2, 1]
+    self.s8 = m[2, 2]
+    self.s9 = v.x
+    self.s10 = v.y
+    self.s11 = v.z
   }
 }

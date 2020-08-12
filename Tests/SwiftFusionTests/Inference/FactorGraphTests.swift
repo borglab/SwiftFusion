@@ -116,11 +116,11 @@ class FactorGraphTests: XCTestCase {
     
     let s: Double = 0.10
     let id0 = x.store(p0)
-    let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
+    let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
     
     var fg = FactorGraph()
     fg.store(PriorFactor(id0, p0))
@@ -161,11 +161,11 @@ class FactorGraphTests: XCTestCase {
       
       let s: Double = 0.9
       let id0 = x.store(p0)
-      let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
+      let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
       
       var fg = FactorGraph()
       fg.store(PriorFactor(id0, p0))
@@ -213,11 +213,11 @@ class FactorGraphTests: XCTestCase {
       
       let s = 0.9
       let id0 = x.store(p0)
-      let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
-      let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(flatTensor: s * Tensor(randomNormal: [6]))))
+      let id1 = x.store(hexagon[hexagonId[1]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id2 = x.store(hexagon[hexagonId[2]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id3 = x.store(hexagon[hexagonId[3]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id4 = x.store(hexagon[hexagonId[4]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
+      let id5 = x.store(hexagon[hexagonId[5]].retract(Vector6(tensor: s * Tensor(randomNormal: [6]))))
       
       var fg = FactorGraph()
       fg.store(PriorFactor(id0, p0))

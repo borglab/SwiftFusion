@@ -18,16 +18,20 @@ extension FixedSizeVectorTests {
   /// A set of basis vectors.
   fileprivate var basisVectors: [Testee] {
     return (0..<Self.dimension).map { index in
-      var v = Array(repeating: Double(0), count: Self.dimension)
-      v[index] = 1
-      return Testee(v)
+      var unit = Testee.zero
+      unit.withUnsafeMutableBufferPointer { b in b[index] = 1.0  }
+      return unit
     }
   }
 
   /// Make a vector whose first element is `start` and whose subsequent elements increment by
   /// `stride`.
   fileprivate func makeVector(from start: Double, stride: Double) -> Testee {
-    return Testee(Array((0..<Self.dimension).map { start + Double($0) * stride }))
+    var r = Testee.zero
+    for i in 0..<Self.dimension {
+      r.withUnsafeMutableBufferPointer { b in b[i] = start + Double(i) * stride  }
+    }
+    return r
   }
 
   /// Tests all `FixedSizeVector` requirements.
@@ -47,8 +51,6 @@ extension FixedSizeVectorTests {
     testDimension()
     testWithUnsafeBufferPointer()
     testWithUnsafeMutableBufferPointer()
-    testInitFromFlatTensor()
-    testFlatTensor()
   }
 
   /// Tests ==.
@@ -247,70 +249,5 @@ extension FixedSizeVectorTests {
       }
     }
     XCTAssertEqual(v, makeVector(from: 0, stride: -1))
-  }
-
-  func testInitFromFlatTensor() {
-    let t = Tensor(shape: [Self.dimension], scalars: Array(0..<Self.dimension).map { Double($0) })
-    let v = Testee(flatTensor: t)
-    let expectedV = makeVector(from: 0, stride: 1)
-    XCTAssertEqual(v, expectedV)
-
-    let (value, pb) = valueWithPullback(at: t) { Testee(flatTensor: $0) }
-    XCTAssertEqual(value, expectedV)
-    for b in basisVectors {
-      XCTAssertEqual(pb(b), b.flatTensor)
-    }
-  }
-
-  func testFlatTensor() {
-    let v = makeVector(from: 0, stride: 1)
-    let t = v.flatTensor
-    let expectedT = Tensor(shape: [Self.dimension], scalars: Array(0..<Self.dimension).map { Double($0) })
-    XCTAssertEqual(t, expectedT)
-
-    let (value, pb) = valueWithPullback(at: v) { $0.flatTensor }
-    XCTAssertEqual(value, expectedT)
-    for b in basisVectors {
-      XCTAssertEqual(pb(b.flatTensor), b)
-    }
-  }
-}
-
-/// Tests methods that involve multiple distinct euclidean vector types.
-class MultipleVectorTests: XCTestCase {
-  /// Tests converting from one type to another type with the same number of elements.
-  func testConversion() {
-    let v = Vector9(0, 1, 2, 3, 4, 5, 6, 7, 8)
-    let m = Matrix3(0, 1, 2, 3, 4, 5, 6, 7, 8)
-    XCTAssertEqual(Vector9(m), v)
-
-    let (value, pb) = valueWithPullback(at: m) { Vector9($0) }
-    XCTAssertEqual(value, v)
-    for (bV, bM) in zip(Vector9.standardBasis, Matrix3.standardBasis) {
-      XCTAssertEqual(pb(bV), bM)
-    }
-  }
-
-  /// Tests concatenating two vectors.
-  func testConcatenate() {
-    let v1 = Vector2(0, 1)
-    let v2 = Vector3(2, 3, 4)
-    let expected = Vector5(0, 1, 2, 3, 4)
-    XCTAssertEqual(Vector5(concatenating: v1, v2), expected)
-
-    let (value, pb) = valueWithPullback(at: v1, v2) { Vector5(concatenating: $0, $1) }
-    XCTAssertEqual(value, expected)
-
-    XCTAssertEqual(pb(Vector5(1, 0, 0, 0, 0)).0, Vector2(1, 0))
-    XCTAssertEqual(pb(Vector5(0, 1, 0, 0, 0)).0, Vector2(0, 1))
-    XCTAssertEqual(pb(Vector5(0, 0, 1, 0, 0)).0, Vector2(0, 0))
-    XCTAssertEqual(pb(Vector5(0, 0, 0, 1, 0)).0, Vector2(0, 0))
-    XCTAssertEqual(pb(Vector5(0, 0, 0, 0, 1)).0, Vector2(0, 0))
-
-    XCTAssertEqual(pb(Vector5(1, 0, 0, 0, 0)).1, Vector3(0, 0, 0))
-    XCTAssertEqual(pb(Vector5(0, 1, 0, 0, 0)).1, Vector3(0, 0, 0))
-    XCTAssertEqual(pb(Vector5(0, 0, 1, 0, 0)).1, Vector3(1, 0, 0))
-    XCTAssertEqual(pb(Vector5(0, 0, 0, 1, 0)).1, Vector3(0, 1, 0))
-    XCTAssertEqual(pb(Vector5(0, 0, 0, 0, 1)).1, Vector3(0, 0, 1))
   }
 }

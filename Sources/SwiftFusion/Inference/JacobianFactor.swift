@@ -16,7 +16,7 @@ import PenguinStructures
 
 /// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and
 /// materialized error vector.
-public struct JacobianFactor<Rows: SourceInitializableCollection, ErrorVector: ScalarsInitializableVector>:
+public struct JacobianFactor<Rows: SourceInitializableCollection, ErrorVector: Vector>:
   LinearApproximationFactor
 where
   Rows.Element: Vector & DifferentiableVariableTuple
@@ -76,13 +76,13 @@ where
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {
-    // The compiler isn't able to optimize the closure away if we map `jacobian`, but it is able
-    // to optimize the closure away if we map `jacobian`'s `UnsafeBufferPointer`.
-    let r = jacobian.withContiguousStorageIfAvailable { rows in
-      ErrorVector(rows.lazy.map { $0.dot(x) })
+    var r = ErrorVector.zero
+    r.withUnsafeMutableBufferPointer { b in
+      for (i, r) in jacobian.enumerated() {
+        b[i] = r.dot(x)
+      }
     }
-    assert(r != nil, "Rows must have contiguous storage")
-    return r.unsafelyUnwrapped
+    return r
   }
 
   public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {

@@ -7,15 +7,15 @@ final class Pose3Tests: XCTestCase {
   /// Tests that the manifold invariant holds for Pose2
   func testManifoldIdentity() {
     for _ in 0..<10 {
-      let p = Pose3.fromTangent(Vector6(flatTensor: Tensor<Double>(randomNormal: [6])))
-      let q = Pose3.fromTangent(Vector6(flatTensor: Tensor<Double>(randomNormal: [6])))
+      let p = Pose3.fromTangent(Vector6(tensor: Tensor<Double>(randomNormal: [6])))
+      let q = Pose3.fromTangent(Vector6(tensor: Tensor<Double>(randomNormal: [6])))
       let actual: Pose3 = Pose3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-10)
     }
   }
   
   func testTrivialRotation() {
-    let p = Pose3.fromTangent(Vector6(flatTensor: Tensor<Double>([0.3, 0, 0, 0, 0, 0])))
+    let p = Pose3.fromTangent(Vector6(tensor: Tensor<Double>([0.3, 0, 0, 0, 0, 0])))
     let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
     
     assertAllKeyPathEqual(p.rot, R, accuracy: 1e-10)
@@ -24,7 +24,7 @@ final class Pose3Tests: XCTestCase {
   func testTrivialFull1() {
     let P = Vector3(0.2,0.7,-2)
     let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
-    let p = Pose3.fromTangent(Vector6(flatTensor: Tensor<Double>([0.3, 0, 0, 0.2, 0.394742, -2.08998])))
+    let p = Pose3.fromTangent(Vector6(tensor: Tensor<Double>([0.3, 0, 0, 0.2, 0.394742, -2.08998])))
     assertAllKeyPathEqual(p.rot, R, accuracy: 1e-10)
     assertAllKeyPathEqual(p.t, P, accuracy: 1e-5)
   }
@@ -32,7 +32,7 @@ final class Pose3Tests: XCTestCase {
   func testTrivialFull2() {
     let P = Vector3(3.5,-8.2,4.2)
     let R = Rot3.fromTangent(Vector3(0.3, 0, 0))
-    let t12 = Vector6(flatTensor: Tensor<Double>(repeating: 0.1, shape: [6]))
+    let t12 = Vector6(tensor: Tensor<Double>(repeating: 0.1, shape: [6]))
     let t1 = Pose3(R, P)
     let t2 = Pose3(coordinate: t1.coordinate.retract(t12))
     assertAllKeyPathEqual(t1.coordinate.localCoordinate(t2.coordinate), t12, accuracy: 1e-5)
@@ -106,11 +106,11 @@ final class Pose3Tests: XCTestCase {
     var val = VariableAssignments()
     let s: Double = 0.10
     let _ = val.store(p0)
-    let _ = val.store(hexagon_val[hexagon_id[1]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let _ = val.store(hexagon_val[hexagon_id[2]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let _ = val.store(hexagon_val[hexagon_id[3]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let _ = val.store(hexagon_val[hexagon_id[4]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
-    let _ = val.store(hexagon_val[hexagon_id[5]].retract(Vector6(flatTensor: s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[1]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[2]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[3]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[4]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
+    let _ = val.store(hexagon_val[hexagon_id[5]].retract(Vector6(tensor: s * Tensor<Double>(randomNormal: [6]))))
 
     // optimize
     for _ in 0..<16 {
@@ -132,11 +132,11 @@ final class Pose3Tests: XCTestCase {
   /// Tests that the custom implementation of `Adjoint` is correct.
   func testAdjoint() {
     for _ in 0..<10 {
-      let pose = Pose3.fromTangent(Vector6(flatTensor: Tensor<Double>(randomNormal: [6])))
+      let pose = Pose3.fromTangent(Vector6(tensor: Tensor<Double>(randomNormal: [6])))
       for v in Pose3.TangentVector.standardBasis {
         assertEqual(
-          pose.Adjoint(v).flatTensor,
-          pose.coordinate.defaultAdjoint(v).flatTensor,
+          pose.Adjoint(v).tensor,
+          pose.coordinate.defaultAdjoint(v).tensor,
           accuracy: 1e-10
         )
       }
@@ -146,11 +146,11 @@ final class Pose3Tests: XCTestCase {
   /// Tests that the custom implementation of `AdjointTranspose` is correct.
   func testAdjointTranspose() {
     for _ in 0..<10 {
-      let pose = Pose3.fromTangent(Vector6(flatTensor: Tensor<Double>(randomNormal: [6])))
+      let pose = Pose3.fromTangent(Vector6(tensor: Tensor<Double>(randomNormal: [6])))
       for v in Pose3.TangentVector.standardBasis {
         assertEqual(
-          pose.AdjointTranspose(v).flatTensor,
-          pose.coordinate.defaultAdjointTranspose(v).flatTensor,
+          pose.AdjointTranspose(v).tensor,
+          pose.coordinate.defaultAdjointTranspose(v).tensor,
           accuracy: 1e-10
         )
       }
