@@ -13,7 +13,97 @@
 // limitations under the License.
 import PenguinStructures
 
+public struct NestedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : Comparable {
+  fileprivate var outer: OuterIndex
+  fileprivate var inner: InnerIndex?
+
+  public static func <(lhs: Self, rhs: Self) -> Bool {
+    if lhs.outer < rhs.outer { return true }
+    if lhs.outer != rhs.outer { return false }
+    guard let l1 = lhs.inner else { return false }
+    guard let r1 = rhs.inner else { return true }
+    return l1 < r1
+  }
+
+  private init(outer: OuterIndex, inner: InnerIndex?) {
+    self.outer = outer
+    self.inner = inner
+  }
+  
+  internal init<OuterCollection: Collection, InnerCollection: Collection>(
+    firstValidIn c: OuterCollection, innerCollection: (OuterCollection.Element)->InnerCollection
+  )
+    where OuterCollection.Index == OuterIndex, InnerCollection.Index == InnerIndex
+  {
+    if let i = c.firstIndex(where: { !innerCollection($0).isEmpty }) {
+      self.init(outer: i, inner: innerCollection(c[i]).startIndex)
+    }
+    else {
+      self.init(endIn: c)
+    }
+  }
+  
+  internal init<C: Collection>(firstValidIn c: C)
+    where C.Index == OuterIndex, C.Element: Collection, C.Element.Index == InnerIndex
+  {
+    self.init(firstValidIn: c) { $0 }
+  }
+  
+  internal init<C: Collection>(endIn c: C) where C.Index == OuterIndex
+  {
+    self.init(outer: c.endIndex, inner: nil)
+  }
+
+  init<OuterCollection: Collection, InnerCollection: Collection>(
+    nextAfter i: Self, in c: OuterCollection,
+    innerCollection: (OuterCollection.Element)->InnerCollection
+  )
+    where OuterCollection.Index == OuterIndex, InnerCollection.Index == InnerIndex
+  {
+    let c1 = innerCollection(c[i.outer])
+    let nextInner = c1.index(after: i.inner!)
+    if nextInner != c1.endIndex {
+      self.init(outer: i.outer, inner: nextInner)
+      return
+    }
+    let nextOuter = c.index(after: i.outer)
+    self.init(firstValidIn: c[nextOuter...], innerCollection: innerCollection)
+  }  
+}
+
 extension ArrayBuffer: Vector where Element: Vector {
+  public struct Scalars: MutableCollection {
+    var base: ArrayBuffer
+
+    public typealias Index = NestedIndex<ArrayBuffer.Index, Element.Scalars.Index>
+    
+    public subscript(i: Index) -> Double {
+      get { base[i.outer].scalars[i.inner!] }
+      _modify { yield &base[i.outer].scalars[i.inner!] }
+    }
+    public var startIndex: Index {
+      .init(firstValidIn: base, innerCollection: \.scalars)
+    }
+    public var endIndex: Index {
+      .init(endIn: base)
+    }
+    public func index(after i: Index) -> Index {
+      .init(nextAfter: i, in: base, innerCollection: \.scalars)
+    }
+  }
+  
+  public var scalars: Scalars {
+    get {
+      Scalars(base: self)
+    }
+    _modify {
+      var io = Scalars(base: self)
+      self = ArrayBuffer() // Avoid CoWs
+      yield &io
+      swap(&self, &io.base)
+    }
+  }
+  
   public var dimension: Int { self.lazy.map(\.dimension).reduce(0, +) }
   
   /// Replaces lhs with the product of `lhs` and `rhs`.

@@ -83,11 +83,31 @@ extension FixedShapeTensor {
 public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
   public typealias TangentVector = Tensor10x10
   public static var shape: TensorShape { [10, 10] }
-  @differentiable public var tensor: Tensor<Double>
+  
+  @differentiable public var tensor: Tensor<Double> {
+    get { scalars.storage }
+    set { scalars.storage = newValue }
+  }
+
+  public struct Scalars
+    : RandomAccessCollection, MutableCollection, Differentiable, AdditiveArithmetic
+  {
+    fileprivate var storage: Tensor<Double>
+    
+    public var startIndex: Int { 0 }
+    public var endIndex: Int { 100 }
+    
+    public subscript(i: Int) -> Double {
+      get { storage[i / 10, i % 10].scalarized() }
+      set { storage[i / 10, i % 10] = Tensor(newValue) }
+    }
+  }
+  
+  @differentiable public var scalars: Scalars
 
   @differentiable
   public init(_ tensor: Tensor<Double>) {
     precondition(tensor.shape == Self.shape)
-    self.tensor = tensor
+    self.scalars = Scalars(storage: tensor)
   }
 }

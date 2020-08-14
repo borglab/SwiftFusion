@@ -8,6 +8,10 @@ import TensorFlow
 // have Euclidean structure and standard basis, so we'll reserve the short name `Vector` for
 // such vectors and use a longer name like `GeneralizedVector` for the generalized vector spaces.
 public protocol Vector: Differentiable where Self.TangentVector == Self {
+  associatedtype Scalars: MutableCollection where Scalars.Element == Double
+
+  var scalars: Scalars { get set }
+  
   /// The number of components of this vector.
   var dimension: Int { get }
 
@@ -41,31 +45,6 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   /// generalized vector.
   @differentiable
   func dot(_ other: Self) -> Double
-
-  // MARK: - Methods for accessing the standard basis and for manipulating the coordinates under
-  // the standard basis.
-
-  /// Returns the result of calling `body` on the scalars of `self`.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  ///
-  /// A default is provided that is correct for types that are represented as contiguous scalars
-  /// in memory.
-  func withUnsafeBufferPointer<R>(
-    _ body: (UnsafeBufferPointer<Double>) throws -> R
-  ) rethrows -> R
-
-  /// Returns the result of calling `body` on the scalars of `self`.
-  ///
-  /// Note: Depends on a determined standard basis, and therefore would not be available on a
-  /// generalized vector.
-  ///
-  /// A default is provided that is correct for types that are represented as contiguous scalars
-  /// in memory.
-  mutating func withUnsafeMutableBufferPointer<R>(
-    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
-  ) rethrows -> R
 }
 
 /// A `Vector` whose instances can be initialized for a collection of scalars.

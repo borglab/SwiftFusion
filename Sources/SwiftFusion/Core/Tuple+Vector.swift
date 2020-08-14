@@ -60,6 +60,8 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
 }
 
 extension Empty: Vector {
+  public typealias Scalars = Array0<Double>
+  public var scalars: Scalars { get { .init() } set {  } }
   public var dimension: Int { return 0 }
 
   @differentiable
@@ -77,6 +79,14 @@ extension Empty: Vector {
 
 extension Tuple: Vector
 where Head: Vector, Tail: Vector {
+  public var scalars: Concatenation<Head.Scalars, Tail.Scalars> {
+    get { head.scalars.concatenated(to: tail.scalars) }
+    set {
+      head.scalars = newValue.first
+      tail.scalars = newValue.second
+    }
+  }
+  
   public var dimension: Int { return head.dimension + tail.dimension }
 
   @differentiable

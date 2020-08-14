@@ -72,8 +72,27 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
     % end
   }
 
-  public var scalars: [Double] {
-    return [${', '.join(coordinates)}]
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    internal var base: Vector${dim}
+    public var startIndex: Int { 0 }
+    public var endIndex: Int { base.dimension }
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) { $0[i] }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        p = withUnsafeMutablePointer(to: &self) { $0 }
+        yield &p[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
