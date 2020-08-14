@@ -45,6 +45,18 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   /// generalized vector.
   @differentiable
   func dot(_ other: Self) -> Double
+
+  // DWA TODO: Remove these requirements!
+  
+  /// Returns the result of calling `body` on the scalars of `self`.
+  func withUnsafeBufferPointer<R>(
+    _ body: (UnsafeBufferPointer<Double>) throws -> R
+  ) rethrows -> R
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  mutating func withUnsafeMutableBufferPointer<R>(
+    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+  ) rethrows -> R
 }
 
 /// A `Vector` whose instances can be initialized for a collection of scalars.
