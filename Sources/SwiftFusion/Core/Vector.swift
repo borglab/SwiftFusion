@@ -46,10 +46,8 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   @differentiable
   func dot(_ other: Self) -> Double
 
-  // `Tensor.init(shape:scalars:)` requires that scalars conform to `RandomAccessCollection`
-  // (historical baggage) or we wouldn't need this requirement.
-  @differentiable(where Self: ScalarsInitializableVector)
-  var flatTensor: Tensor<Double> { get }
+  // MARK: - Methods for accessing the standard basis and for manipulating the coordinates under
+  // the standard basis.
 
   #if true
   // DWA TODO: Remove these requirements!
@@ -182,30 +180,6 @@ extension Vector {
   @derivative(of: flatTensor)
   @usableFromInline
   func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
-    where Self: ScalarsInitializableVector
-  {
-    return (self.flatTensor, { Self(flatTensor: $0) })
-  }
-}
-
-/// Conversion to `Tensor`.
-extension Vector where Scalars: RandomAccessCollection {
-  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
-  @differentiable(where Self: ScalarsInitializableVector)
-  public var flatTensor: Tensor<Double> {
-    flatTensor_RandomAccessScalars
-  }
-
-  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
-  @differentiable(where Self: ScalarsInitializableVector)
-  public var flatTensor_RandomAccessScalars: Tensor<Double> {
-    Tensor<Double>(shape: [scalars.count], scalars: scalars)
-  }
-
-  @derivative(of: flatTensor_RandomAccessScalars)
-  @usableFromInline
-  func vjpFlatTensor_RandomAccessScalars()
-    -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
     where Self: ScalarsInitializableVector
   {
     return (self.flatTensor, { Self(flatTensor: $0) })
