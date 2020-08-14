@@ -46,17 +46,36 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   @differentiable
   func dot(_ other: Self) -> Double
 
+  // `Tensor.init(shape:scalars:)` requires that scalars conform to `RandomAccessCollection`
+  // (historical baggage) or we wouldn't need this requirement.
+  @differentiable(where Self: ScalarsInitializableVector)
+  var flatTensor: Tensor<Double> { get }
+
+  #if true
   // DWA TODO: Remove these requirements!
   
   /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  ///
+  /// A default is provided that is correct for types that are represented as contiguous scalars
+  /// in memory.
   func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
   ) rethrows -> R
 
   /// Returns the result of calling `body` on the scalars of `self`.
+  ///
+  /// Note: Depends on a determined standard basis, and therefore would not be available on a
+  /// generalized vector.
+  ///
+  /// A default is provided that is correct for types that are represented as contiguous scalars
+  /// in memory.
   mutating func withUnsafeMutableBufferPointer<R>(
     _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R
+  #endif
 }
 
 /// A `Vector` whose instances can be initialized for a collection of scalars.
@@ -121,6 +140,7 @@ extension Vector {
   }
 }
 
+#if true
 /// Default implementations of raw memory access.
 extension Vector {
   /// Returns the result of calling `body` on the scalars of `self`.
@@ -149,20 +169,43 @@ extension Vector {
     }
   }
 }
+#endif
 
 /// Conversion to `Tensor`.
 extension Vector {
   /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
   @differentiable(where Self: ScalarsInitializableVector)
   public var flatTensor: Tensor<Double> {
-    withUnsafeBufferPointer { b in
-      return Tensor<Double>(shape: [b.count], scalars: b)
-    }
+    Tensor<Double>(shape: [scalars.count], scalars: Array(scalars))
   }
 
   @derivative(of: flatTensor)
   @usableFromInline
   func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+    where Self: ScalarsInitializableVector
+  {
+    return (self.flatTensor, { Self(flatTensor: $0) })
+  }
+}
+
+/// Conversion to `Tensor`.
+extension Vector where Scalars: RandomAccessCollection {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  @differentiable(where Self: ScalarsInitializableVector)
+  public var flatTensor: Tensor<Double> {
+    flatTensor_RandomAccessScalars
+  }
+
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  @differentiable(where Self: ScalarsInitializableVector)
+  public var flatTensor_RandomAccessScalars: Tensor<Double> {
+    Tensor<Double>(shape: [scalars.count], scalars: scalars)
+  }
+
+  @derivative(of: flatTensor_RandomAccessScalars)
+  @usableFromInline
+  func vjpFlatTensor_RandomAccessScalars()
+    -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
     where Self: ScalarsInitializableVector
   {
     return (self.flatTensor, { Self(flatTensor: $0) })
@@ -196,13 +239,7 @@ extension FixedSizeVector {
   public init<V: FixedSizeVector>(_ v: V) {
     precondition(Self.dimension == V.dimension)
     self = Self.zero
-    self.withUnsafeMutableBufferPointer { rBuf in
-      v.withUnsafeBufferPointer { vBuf in
-        for (i, s) in vBuf.enumerated() {
-          rBuf[i] = s
-        }
-      }
-    }
+    self.scalars.assign(v.scalars)
   }
 
   @derivative(of: init(_:))
@@ -221,18 +258,7 @@ extension FixedSizeVector {
   public init<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) {
     precondition(Self.dimension == V1.dimension + V2.dimension)
     self = Self.zero
-    self.withUnsafeMutableBufferPointer { rBuf in
-      v1.withUnsafeBufferPointer { v1Buf in
-        for (i, s) in v1Buf.enumerated() {
-          rBuf[i] = s
-        }
-      }
-      v2.withUnsafeBufferPointer { v2Buf in
-        for (i, s) in v2Buf.enumerated() {
-          rBuf[i + V1.dimension] = s
-        }
-      }
-    }
+    scalars.assign(v1.scalars.concatenated(to: v2.scalars))
   }
 
   @derivative(of: init(concatenating:_:))
@@ -244,21 +270,11 @@ extension FixedSizeVector {
     return (
       Self(concatenating: v1, v2),
       { t in
-        t.withUnsafeBufferPointer { tBuf in
-          var t1 = V1.zero
-          t1.withUnsafeMutableBufferPointer { t1Buf in
-            for i in t1Buf.indices {
-              t1Buf[i] = tBuf[i]
-            }
-          }
-          var t2 = V2.zero
-          t2.withUnsafeMutableBufferPointer { t2Buf in
-            for i in t2Buf.indices {
-              t2Buf[i] = tBuf[i + V1.dimension]
-            }
-          }
-          return (t1, t2)
-        }
+        var r: (V1, V2) = (.zero, .zero)
+        let p = t.scalars.index(atOffset: V1.dimension)
+        r.0.scalars.assign(t.scalars[..<p])
+        r.1.scalars.assign(t.scalars[p...])
+        return r
       }
     )
   }

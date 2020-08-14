@@ -75,3 +75,62 @@ extension Dictionary {
   }
 }
 
+extension MutableCollection {
+  mutating func writePrefix<I: IteratorProtocol>(from source: inout I)
+    -> (writtenCount: Int, unwrittenStart: Index)
+    where I.Element == Element
+  {
+    var writtenCount = 0
+    var unwrittenStart = startIndex
+    while unwrittenStart != endIndex {
+      guard let x = source.next() else { break }
+      self[unwrittenStart] = x
+      self.formIndex(after: &unwrittenStart)
+      writtenCount += 1
+    }
+    return (writtenCount, unwrittenStart)
+  }
+
+  mutating func writePrefix<Source: Collection>(from source: Source)
+    -> (writtenCount: Int, unwrittenStart: Index, unreadStart: Source.Index)
+    where Source.Element == Element
+  {
+    var writtenCount = 0
+    var unwrittenStart = startIndex
+    var unreadStart = source.startIndex
+    while unwrittenStart != endIndex && unreadStart != source.endIndex {
+      self[unwrittenStart] = source[unreadStart]
+      self.formIndex(after: &unwrittenStart)
+      source.formIndex(after: &unreadStart)
+      writtenCount += 1
+    }
+    return (writtenCount, unwrittenStart, unreadStart)
+  }
+
+  @discardableResult
+  mutating func assign<Source: Sequence>(_ sourceElements: Source) -> Int
+    where Source.Element == Element
+  {
+    var stream = sourceElements.makeIterator()
+    let (count, unwritten) = writePrefix(from: &stream)
+    precondition(unwritten == endIndex, "source too short")
+    precondition(stream.next() == nil, "source too long")
+    return count
+  }
+  
+  @discardableResult
+  mutating func assign<Source: Collection>(_ sourceElements: Source) -> Int
+    where Source.Element == Element
+  {
+    let (writtenCount, unwritten, unread) = writePrefix(from: sourceElements)
+    precondition(unwritten == endIndex, "source too short")
+    precondition(unread == sourceElements.endIndex, "source too long")
+    return writtenCount
+  }
+}
+
+extension Collection {
+  func index(atOffset n: Int) -> Index {
+    index(startIndex, offsetBy: n)
+  }
+}
