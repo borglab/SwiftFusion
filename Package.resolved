@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser",
         "state": {
           "branch": null,
-          "revision": "eb51f949cdd0c9d88abba9ce79d37eb7ea1231d0",
-          "version": "0.2.0"
+          "revision": "3e7d2fe99da091dcc1e4a7dd22fc3cfc2dca7937",
+          "version": "0.2.2"
         }
       },
       {
@@ -24,7 +24,7 @@
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
           "branch": "master",
-          "revision": "3d24a938ea553a3977cfbf8199d42839c9061c3f",
+          "revision": "f70bf472b00aeaa05e2374373568c2fe459c11c7",
           "version": null
         }
       },
@@ -32,7 +32,7 @@
         "package": "swift-models",
         "repositoryURL": "https://github.com/tensorflow/swift-models.git",
         "state": {
-          "branch": "master",
+          "branch": null,
           "revision": "99f323e550f7f0c3ed32d31a3c5d11a0f3c51e4b",
           "version": null
         }
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {
           "branch": null,
-          "revision": "f33185acd089405d365982ccab2f58469052a545",
-          "version": "1.10.2"
+          "revision": "cc10a0a3149579d36bc546d97064884cb818f324",
+          "version": "1.11.0"
         }
       },
       {

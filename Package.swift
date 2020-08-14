@@ -27,7 +27,7 @@ let package = Package(
 
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
-    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("master")),
+    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("99f323e550f7f0c3ed32d31a3c5d11a0f3c51e4b")),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.

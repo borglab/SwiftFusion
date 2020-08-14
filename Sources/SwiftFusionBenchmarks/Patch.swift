@@ -13,9 +13,18 @@
 // limitations under the License.
 
 import Benchmark
+import SwiftFusion
+import TensorFlow
 
-Benchmark.main([
-  patchBenchmark,
-  pose2SLAM,
-  pose3SLAM
-])
+let patchBenchmark = BenchmarkSuite(name: "Patch") { suite in
+  /// Measures speed of taking a 100x100x1 patch from a 500x500x1 image.
+  suite.benchmark(
+    "100x100x1 patch from 500x500x1 image",
+    settings: Iterations(1), TimeUnit(.ms)
+  ) {
+    let rows = 100
+    let cols = 100
+    let image = Tensor<Double>(randomNormal: [500, 500, 1])
+    _ = image.patch(at: OrientedBoundingBox(center: Pose2(100, 100, 0.5), rows: rows, cols: cols))
+  }
+}
