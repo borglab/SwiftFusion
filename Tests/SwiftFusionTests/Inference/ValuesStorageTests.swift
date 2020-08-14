@@ -72,7 +72,7 @@ class ValuesStorageTests: XCTestCase {
   func assertElementsEqual<Dispatch, Elements>(
     _ actual: AnyArrayBuffer<Dispatch>,
     _ expected: Elements,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) where Elements: Collection, Elements.Element: Equatable {
     guard let typedActual = ArrayBuffer<Elements.Element>(actual) else {
