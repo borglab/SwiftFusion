@@ -118,6 +118,7 @@ extension FixedSizeMatrix: Differentiable {
 
 extension FixedSizeMatrix: FixedSizeVector {
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    public typealias Indices = Range<Int>
     fileprivate var base: FixedSizeMatrix
     public var startIndex: Int { 0 }
     public var endIndex: Int { base.withUnsafeBufferPointer { $0.count } }

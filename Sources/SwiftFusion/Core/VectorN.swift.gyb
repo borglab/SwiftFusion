@@ -73,18 +73,22 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
   }
 
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    public typealias Indices = Range<Int>
     internal var base: Vector${dim}
     public var startIndex: Int { 0 }
     public var endIndex: Int { base.dimension }
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
-        return withUnsafePointer(to: self) { $0[i] }
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
       }
       _modify {
         precondition(i >= 0 && i < endIndex)
-        p = withUnsafeMutablePointer(to: &self) { $0 }
-        yield &p[i]
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
         _fixLifetime(self)
       }
     }
