@@ -117,6 +117,27 @@ extension FixedSizeMatrix: Differentiable {
 }
 
 extension FixedSizeMatrix: FixedSizeVector {
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    fileprivate var base: FixedSizeMatrix
+    public var startIndex: Int { 0 }
+    public var endIndex: Int { base.withUnsafeBufferPointer { $0.count } }
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return base.withUnsafeBufferPointer { $0[i] }
+      }
+      set {
+        precondition(i >= 0 && i < endIndex)
+        base[i] = newValue
+      }
+    }
+  }
+  
+  public var scalars: Scalars {
+    get { Scalars(base: self) }
+    set { self = newValue.base }
+  }
+  
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in
