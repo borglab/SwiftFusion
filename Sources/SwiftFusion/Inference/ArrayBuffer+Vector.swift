@@ -43,12 +43,6 @@ public struct NestedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : Comp
     }
   }
   
-  internal init<C: Collection>(firstValidIn c: C)
-    where C.Index == OuterIndex, C.Element: Collection, C.Element.Index == InnerIndex
-  {
-    self.init(firstValidIn: c) { $0 }
-  }
-  
   internal init<C: Collection>(endIn c: C) where C.Index == OuterIndex
   {
     self.init(outer: c.endIndex, inner: nil)
