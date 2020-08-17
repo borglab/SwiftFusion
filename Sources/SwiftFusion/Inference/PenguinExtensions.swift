@@ -2,6 +2,64 @@
 
 import PenguinStructures
 
+public struct NestedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : Comparable {
+  fileprivate var outer: OuterIndex
+  fileprivate var inner: InnerIndex?
+
+  public static func <(lhs: Self, rhs: Self) -> Bool {
+    if lhs.outer < rhs.outer { return true }
+    if lhs.outer != rhs.outer { return false }
+    guard let l1 = lhs.inner else { return false }
+    guard let r1 = rhs.inner else { return true }
+    return l1 < r1
+  }
+
+  private init(outer: OuterIndex, inner: InnerIndex?) {
+    self.outer = outer
+    self.inner = inner
+  }
+  
+  internal init<OuterCollection: Collection, InnerCollection: Collection>(
+    firstValidIn c: OuterCollection, innerCollection: (OuterCollection.Element)->InnerCollection
+  )
+    where OuterCollection.Index == OuterIndex, InnerCollection.Index == InnerIndex
+  {
+    if let i = c.firstIndex(where: { !innerCollection($0).isEmpty }) {
+      self.init(outer: i, inner: innerCollection(c[i]).startIndex)
+    }
+    else {
+      self.init(endIn: c)
+    }
+  }
+  
+  internal init<C: Collection>(firstValidIn c: C)
+    where C.Index == OuterIndex, C.Element: Collection, C.Element.Index == InnerIndex
+  {
+    self.init(firstValidIn: c) { $0 }
+  }
+  
+  internal init<C: Collection>(endIn c: C) where C.Index == OuterIndex
+  {
+    self.init(outer: c.endIndex, inner: nil)
+  }
+
+  init<OuterCollection: Collection, InnerCollection: Collection>(
+    nextAfter i: Self, in c: OuterCollection,
+    innerCollection: (OuterCollection.Element)->InnerCollection
+  )
+    where OuterCollection.Index == OuterIndex, InnerCollection.Index == InnerIndex
+  {
+    let c1 = innerCollection(c[i.outer])
+    let nextInner = c1.index(after: i.inner!)
+    if nextInner != c1.endIndex {
+      self.init(outer: i.outer, inner: nextInner)
+      return
+    }
+    let nextOuter = c.index(after: i.outer)
+    self.init(firstValidIn: c[nextOuter...], innerCollection: innerCollection)
+  }  
+}
+
 extension AnyArrayBuffer {
   /// Appends `x`, returning the index of the appended element.
   ///
