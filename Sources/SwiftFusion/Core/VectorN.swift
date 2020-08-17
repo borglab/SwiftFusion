@@ -1,3 +1,6 @@
+// WARNING: This is a generated file. Do not edit it. Instead, edit the corresponding ".gyb" file.
+// See "generate.sh" in the root of this repository for instructions how to regenerate files.
+
 import TensorFlow
 
 
@@ -49,11 +52,22 @@ extension Vector1: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector1
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -71,6 +85,7 @@ extension Vector1: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -141,11 +156,22 @@ extension Vector2: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector2
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -163,6 +189,7 @@ extension Vector2: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -242,11 +269,22 @@ extension Vector3: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector3
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -264,6 +302,7 @@ extension Vector3: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -352,11 +391,22 @@ extension Vector4: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector4
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -374,6 +424,7 @@ extension Vector4: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -471,11 +522,22 @@ extension Vector5: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector5
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -493,6 +555,7 @@ extension Vector5: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -599,11 +662,22 @@ extension Vector6: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector6
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -621,6 +695,7 @@ extension Vector6: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -736,11 +811,22 @@ extension Vector7: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector7
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -758,6 +844,7 @@ extension Vector7: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -882,11 +969,22 @@ extension Vector8: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector8
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -904,6 +1002,7 @@ extension Vector8: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1037,11 +1136,22 @@ extension Vector9: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector9
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -1059,6 +1169,7 @@ extension Vector9: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1201,11 +1312,22 @@ extension Vector10: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector10
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -1223,6 +1345,7 @@ extension Vector10: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1374,11 +1497,22 @@ extension Vector11: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector11
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -1396,6 +1530,7 @@ extension Vector11: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1556,11 +1691,22 @@ extension Vector12: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
     internal var base: Vector12
+
+    /// The index of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The index one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -1578,6 +1724,7 @@ extension Vector12: AdditiveArithmetic, Vector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }

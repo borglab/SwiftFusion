@@ -1,7 +1,6 @@
 // WARNING: This is a generated file. Do not edit it. Instead, edit the corresponding ".gyb" file.
 // See "generate.sh" in the root of this repository for instructions how to regenerate files.
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 1)
 // Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,17 +21,13 @@
 
 import PenguinStructures
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 22)
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 33)
 
 // Artifact of Swift weakness.
 /// Do not use this. Use `Factor1` instead.
 public protocol Factor1_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 41)
 
   /// Returns the error at the given point.
   ///
@@ -45,10 +40,8 @@ public protocol Factor1: Factor, Factor1_
   where Variables == Tuple1<V0> {}
 
 extension Factor1 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 57)
 
   // Forwarding implementation.
   public func error(at x: Variables) -> Double {
@@ -59,10 +52,8 @@ extension Factor1 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `VectorFactor1` instead.
 public protocol VectorFactor1_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 71)
 
   typealias Variables = Tuple1<V0>
 
@@ -83,10 +74,8 @@ public protocol VectorFactor1: VectorFactor, VectorFactor1_
   where Variables == Tuple1<V0> {}
 
 extension VectorFactor1 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 95)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -109,10 +98,8 @@ extension VectorFactor1 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `LinearizableFactor1` instead.
 public protocol LinearizableFactor1_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 0-th variable type.
   associatedtype V0: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 121)
 
   typealias Variables = Tuple1<V0>
   typealias LinearizableComponent = Self
@@ -129,10 +116,8 @@ public protocol LinearizableFactor1: LinearizableFactor, LinearizableFactor1_
   where Variables == Tuple1<V0>, LinearizableComponent == Self {}
 
 extension LinearizableFactor1 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 141)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -146,20 +131,15 @@ extension LinearizableFactor1 {
   }
 }
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 22)
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 33)
 
 // Artifact of Swift weakness.
 /// Do not use this. Use `Factor2` instead.
 public protocol Factor2_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 41)
 
   /// Returns the error at the given point.
   ///
@@ -172,13 +152,10 @@ public protocol Factor2: Factor, Factor2_
   where Variables == Tuple2<V0, V1> {}
 
 extension Factor2 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 57)
 
   // Forwarding implementation.
   public func error(at x: Variables) -> Double {
@@ -189,13 +166,10 @@ extension Factor2 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `VectorFactor2` instead.
 public protocol VectorFactor2_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 71)
 
   typealias Variables = Tuple2<V0, V1>
 
@@ -216,13 +190,10 @@ public protocol VectorFactor2: VectorFactor, VectorFactor2_
   where Variables == Tuple2<V0, V1> {}
 
 extension VectorFactor2 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 95)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -245,13 +216,10 @@ extension VectorFactor2 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `LinearizableFactor2` instead.
 public protocol LinearizableFactor2_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 0-th variable type.
   associatedtype V0: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 1-th variable type.
   associatedtype V1: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 121)
 
   typealias Variables = Tuple2<V0, V1>
   typealias LinearizableComponent = Self
@@ -268,13 +236,10 @@ public protocol LinearizableFactor2: LinearizableFactor, LinearizableFactor2_
   where Variables == Tuple2<V0, V1>, LinearizableComponent == Self {}
 
 extension LinearizableFactor2 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 141)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -288,23 +253,17 @@ extension LinearizableFactor2 {
   }
 }
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 22)
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 33)
 
 // Artifact of Swift weakness.
 /// Do not use this. Use `Factor3` instead.
 public protocol Factor3_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 2-th variable type.
   associatedtype V2
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 41)
 
   /// Returns the error at the given point.
   ///
@@ -317,16 +276,12 @@ public protocol Factor3: Factor, Factor3_
   where Variables == Tuple3<V0, V1, V2> {}
 
 extension Factor3 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 57)
 
   // Forwarding implementation.
   public func error(at x: Variables) -> Double {
@@ -337,16 +292,12 @@ extension Factor3 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `VectorFactor3` instead.
 public protocol VectorFactor3_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 2-th variable type.
   associatedtype V2
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 71)
 
   typealias Variables = Tuple3<V0, V1, V2>
 
@@ -367,16 +318,12 @@ public protocol VectorFactor3: VectorFactor, VectorFactor3_
   where Variables == Tuple3<V0, V1, V2> {}
 
 extension VectorFactor3 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 95)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -399,16 +346,12 @@ extension VectorFactor3 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `LinearizableFactor3` instead.
 public protocol LinearizableFactor3_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 0-th variable type.
   associatedtype V0: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 1-th variable type.
   associatedtype V1: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 2-th variable type.
   associatedtype V2: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 121)
 
   typealias Variables = Tuple3<V0, V1, V2>
   typealias LinearizableComponent = Self
@@ -425,16 +368,12 @@ public protocol LinearizableFactor3: LinearizableFactor, LinearizableFactor3_
   where Variables == Tuple3<V0, V1, V2>, LinearizableComponent == Self {}
 
 extension LinearizableFactor3 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 141)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -448,26 +387,19 @@ extension LinearizableFactor3 {
   }
 }
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 22)
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 33)
 
 // Artifact of Swift weakness.
 /// Do not use this. Use `Factor4` instead.
 public protocol Factor4_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 2-th variable type.
   associatedtype V2
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 3-th variable type.
   associatedtype V3
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 41)
 
   /// Returns the error at the given point.
   ///
@@ -480,19 +412,14 @@ public protocol Factor4: Factor, Factor4_
   where Variables == Tuple4<V0, V1, V2, V3> {}
 
 extension Factor4 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 3-th variable.
   public var input3ID: TypedID<V3> { return edges.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 57)
 
   // Forwarding implementation.
   public func error(at x: Variables) -> Double {
@@ -503,19 +430,14 @@ extension Factor4 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `VectorFactor4` instead.
 public protocol VectorFactor4_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 2-th variable type.
   associatedtype V2
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 3-th variable type.
   associatedtype V3
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 71)
 
   typealias Variables = Tuple4<V0, V1, V2, V3>
 
@@ -536,19 +458,14 @@ public protocol VectorFactor4: VectorFactor, VectorFactor4_
   where Variables == Tuple4<V0, V1, V2, V3> {}
 
 extension VectorFactor4 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 3-th variable.
   public var input3ID: TypedID<V3> { return edges.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 95)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -571,19 +488,14 @@ extension VectorFactor4 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `LinearizableFactor4` instead.
 public protocol LinearizableFactor4_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 0-th variable type.
   associatedtype V0: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 1-th variable type.
   associatedtype V1: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 2-th variable type.
   associatedtype V2: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 3-th variable type.
   associatedtype V3: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 121)
 
   typealias Variables = Tuple4<V0, V1, V2, V3>
   typealias LinearizableComponent = Self
@@ -600,19 +512,14 @@ public protocol LinearizableFactor4: LinearizableFactor, LinearizableFactor4_
   where Variables == Tuple4<V0, V1, V2, V3>, LinearizableComponent == Self {}
 
 extension LinearizableFactor4 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 3-th variable.
   public var input3ID: TypedID<V3> { return edges.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 141)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -626,29 +533,21 @@ extension LinearizableFactor4 {
   }
 }
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 22)
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 33)
 
 // Artifact of Swift weakness.
 /// Do not use this. Use `Factor5` instead.
 public protocol Factor5_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 2-th variable type.
   associatedtype V2
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 3-th variable type.
   associatedtype V3
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 38)
   /// The 4-th variable type.
   associatedtype V4
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 41)
 
   /// Returns the error at the given point.
   ///
@@ -661,22 +560,16 @@ public protocol Factor5: Factor, Factor5_
   where Variables == Tuple5<V0, V1, V2, V3, V4> {}
 
 extension Factor5 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 3-th variable.
   public var input3ID: TypedID<V3> { return edges.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 54)
   /// The variable vertex for this factor's 4-th variable.
   public var input4ID: TypedID<V4> { return edges.tail.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 57)
 
   // Forwarding implementation.
   public func error(at x: Variables) -> Double {
@@ -687,22 +580,16 @@ extension Factor5 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `VectorFactor5` instead.
 public protocol VectorFactor5_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 0-th variable type.
   associatedtype V0
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 1-th variable type.
   associatedtype V1
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 2-th variable type.
   associatedtype V2
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 3-th variable type.
   associatedtype V3
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 68)
   /// The 4-th variable type.
   associatedtype V4
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 71)
 
   typealias Variables = Tuple5<V0, V1, V2, V3, V4>
 
@@ -723,22 +610,16 @@ public protocol VectorFactor5: VectorFactor, VectorFactor5_
   where Variables == Tuple5<V0, V1, V2, V3, V4> {}
 
 extension VectorFactor5 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 3-th variable.
   public var input3ID: TypedID<V3> { return edges.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 92)
   /// The variable vertex for this factor's 4-th variable.
   public var input4ID: TypedID<V4> { return edges.tail.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 95)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
@@ -761,22 +642,16 @@ extension VectorFactor5 {
 // Artifact of Swift weakness.
 /// Do not use this. Use `LinearizableFactor5` instead.
 public protocol LinearizableFactor5_ {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 0-th variable type.
   associatedtype V0: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 1-th variable type.
   associatedtype V1: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 2-th variable type.
   associatedtype V2: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 3-th variable type.
   associatedtype V3: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 118)
   /// The 4-th variable type.
   associatedtype V4: Differentiable
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 121)
 
   typealias Variables = Tuple5<V0, V1, V2, V3, V4>
   typealias LinearizableComponent = Self
@@ -793,22 +668,16 @@ public protocol LinearizableFactor5: LinearizableFactor, LinearizableFactor5_
   where Variables == Tuple5<V0, V1, V2, V3, V4>, LinearizableComponent == Self {}
 
 extension LinearizableFactor5 {
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 0-th variable.
   public var input0ID: TypedID<V0> { return edges.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 1-th variable.
   public var input1ID: TypedID<V1> { return edges.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 2-th variable.
   public var input2ID: TypedID<V2> { return edges.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 3-th variable.
   public var input3ID: TypedID<V3> { return edges.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 138)
   /// The variable vertex for this factor's 4-th variable.
   public var input4ID: TypedID<V4> { return edges.tail.tail.tail.tail.head }
-// ###sourceLocation(file: "Sources/SwiftFusion/Inference/FactorBoilerplate.swift.gyb", line: 141)
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
