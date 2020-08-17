@@ -52,7 +52,7 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   // the standard basis.
 
   #if true // set to false to find examples to be removed.
-  // DWA TODO: Remove these requirements!
+  // TODO(marcrasi): Remove these requirements!
   
   /// Returns the result of calling `body` on the scalars of `self`.
   ///
@@ -141,7 +141,7 @@ extension Vector {
 }
 
 #if true // set to false to find examples to be removed.
-// DWA TODO: Remove these requirements!
+// TODO(marcrasi): Remove these implementations!
 
 /// Default implementations of raw memory access.
 extension Vector {
