@@ -8,10 +8,10 @@ import TensorFlow
 // have Euclidean structure and standard basis, so we'll reserve the short name `Vector` for
 // such vectors and use a longer name like `GeneralizedVector` for the generalized vector spaces.
 public protocol Vector: Differentiable where Self.TangentVector == Self {
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   associatedtype Scalars: MutableCollection where Scalars.Element == Double
 
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   var scalars: Scalars { get set }
   
   /// The number of components of this vector.

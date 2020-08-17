@@ -89,7 +89,7 @@ public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
     set { scalars.storage = newValue }
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars
     : RandomAccessCollection, MutableCollection, Differentiable, AdditiveArithmetic
   {
@@ -101,14 +101,14 @@ public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
     /// The position one step beyond the last contained element.
     public var endIndex: Int { 100 }
 
-    /// Accesses tyhe scalar at `i`.
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get { storage[i / 10, i % 10].scalarized() }
       set { storage[i / 10, i % 10] = Tensor(newValue) }
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   @differentiable public var scalars: Scalars
 
   @differentiable

@@ -45,7 +45,7 @@ extension ArrayBuffer: Vector where Element: Vector {
     }
   }
 
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get {
       Scalars(base: self)

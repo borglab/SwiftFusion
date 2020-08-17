@@ -117,7 +117,7 @@ extension FixedSizeMatrix: Differentiable {
 }
 
 extension FixedSizeMatrix: FixedSizeVector {
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -145,7 +145,7 @@ extension FixedSizeMatrix: FixedSizeVector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { Scalars(base: self) }
     set { self = newValue.base }

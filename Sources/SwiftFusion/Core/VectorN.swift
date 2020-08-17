@@ -52,7 +52,7 @@ extension Vector1: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -85,7 +85,7 @@ extension Vector1: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -156,7 +156,7 @@ extension Vector2: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -189,7 +189,7 @@ extension Vector2: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -269,7 +269,7 @@ extension Vector3: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -302,7 +302,7 @@ extension Vector3: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -391,7 +391,7 @@ extension Vector4: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -424,7 +424,7 @@ extension Vector4: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -522,7 +522,7 @@ extension Vector5: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -555,7 +555,7 @@ extension Vector5: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -662,7 +662,7 @@ extension Vector6: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -695,7 +695,7 @@ extension Vector6: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -811,7 +811,7 @@ extension Vector7: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -844,7 +844,7 @@ extension Vector7: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -969,7 +969,7 @@ extension Vector8: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -1002,7 +1002,7 @@ extension Vector8: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1136,7 +1136,7 @@ extension Vector9: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -1169,7 +1169,7 @@ extension Vector9: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1312,7 +1312,7 @@ extension Vector10: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -1345,7 +1345,7 @@ extension Vector10: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1497,7 +1497,7 @@ extension Vector11: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -1530,7 +1530,7 @@ extension Vector11: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
@@ -1691,7 +1691,7 @@ extension Vector12: AdditiveArithmetic, Vector {
     index = scalars.index(after: index)
   }
 
-  /// A type that can represent all of the vector's scalar values in a standard basis.
+  /// A type that can represent all of this vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
     // Deduction of Indices fails without an explicit declaration.
     /// A type that can represent all the indices of elements in this collection.
@@ -1724,7 +1724,7 @@ extension Vector12: AdditiveArithmetic, Vector {
     }
   }
   
-  /// The vector's scalar values in a standard basis.
+  /// This vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { .init(base: self) }
     set { self = newValue.base  }
