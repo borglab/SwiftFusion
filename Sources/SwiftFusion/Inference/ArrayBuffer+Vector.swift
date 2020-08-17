@@ -17,7 +17,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   public struct Scalars: MutableCollection {
     var base: ArrayBuffer
 
-    public typealias Index = NestedIndex<ArrayBuffer.Index, Element.Scalars.Index>
+    public typealias Index = FlattenedIndex<ArrayBuffer.Index, Element.Scalars.Index>
     
     public subscript(i: Index) -> Double {
       get { base[i.outer].scalars[i.inner!] }

@@ -2,10 +2,16 @@
 
 import PenguinStructures
 
-public struct NestedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : Comparable {
-  fileprivate var outer: OuterIndex
-  fileprivate var inner: InnerIndex?
+/// A suitable `Index` type for a flattened view of a collection-of-collections having `OuterIndex`
+/// and `InnerIndex` as the `Index` types of the outer and inner collections, respectively.
+public struct FlattenedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : Comparable {
+  /// The position of `self` in the outer collection
+  public var outer: OuterIndex
+  
+  /// The position of `self` in the inner collection
+  public var inner: InnerIndex?
 
+  /// Returns `true` iff `lhs` precedes `rhs`.
   public static func <(lhs: Self, rhs: Self) -> Bool {
     if lhs.outer < rhs.outer { return true }
     if lhs.outer != rhs.outer { return false }
@@ -14,11 +20,14 @@ public struct NestedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : Comp
     return l1 < r1
   }
 
+  /// Creates an instance with the given stored properties.
   private init(outer: OuterIndex, inner: InnerIndex?) {
     self.outer = outer
     self.inner = inner
   }
-  
+
+  /// Returns an instance that represents the first position in the flattened view of `c`, where the
+  /// inner collection for each element `e` of `c` is `innerCollection(e)`.
   internal init<OuterCollection: Collection, InnerCollection: Collection>(
     firstValidIn c: OuterCollection, innerCollection: (OuterCollection.Element)->InnerCollection
   )
@@ -31,18 +40,23 @@ public struct NestedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : Comp
       self.init(endIn: c)
     }
   }
-  
+
+  /// Creates an instance that represents the first position in the flattened view of `c`, where the
+  /// inner collection for each element `e` of `c` is `e` itself.
   internal init<C: Collection>(firstValidIn c: C)
     where C.Index == OuterIndex, C.Element: Collection, C.Element.Index == InnerIndex
   {
     self.init(firstValidIn: c) { $0 }
   }
   
+  /// Creates an instance that represents the `endIndex` in a flattened view of `c`.
   internal init<C: Collection>(endIn c: C) where C.Index == OuterIndex
   {
     self.init(outer: c.endIndex, inner: nil)
   }
 
+  /// Creates an instance that represents the next position after `i` in a flattened view of `c`,
+  /// where the inner collection for each element `e` of `c` is `e` itself.
   init<OuterCollection: Collection, InnerCollection: Collection>(
     nextAfter i: Self, in c: OuterCollection,
     innerCollection: (OuterCollection.Element)->InnerCollection
