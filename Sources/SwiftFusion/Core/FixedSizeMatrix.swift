@@ -117,11 +117,22 @@ extension FixedSizeMatrix: Differentiable {
 }
 
 extension FixedSizeMatrix: FixedSizeVector {
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
     public typealias Indices = Range<Int>
+    
+    /// The vector whose scalars are reflected by `self`.
     fileprivate var base: FixedSizeMatrix
+    
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.withUnsafeBufferPointer { $0.count } }
+    
+    /// Accesses the scalar at `i`.
     public subscript(i: Int) -> Double {
       get {
         precondition(i >= 0 && i < endIndex)
@@ -134,6 +145,7 @@ extension FixedSizeMatrix: FixedSizeVector {
     }
   }
   
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars {
     get { Scalars(base: self) }
     set { self = newValue.base }

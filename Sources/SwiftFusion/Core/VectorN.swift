@@ -61,10 +61,10 @@ extension Vector1: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector1
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -165,10 +165,10 @@ extension Vector2: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector2
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -278,10 +278,10 @@ extension Vector3: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector3
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -400,10 +400,10 @@ extension Vector4: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector4
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -531,10 +531,10 @@ extension Vector5: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector5
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -671,10 +671,10 @@ extension Vector6: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector6
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -820,10 +820,10 @@ extension Vector7: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector7
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -978,10 +978,10 @@ extension Vector8: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector8
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -1145,10 +1145,10 @@ extension Vector9: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector9
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -1321,10 +1321,10 @@ extension Vector10: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector10
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -1506,10 +1506,10 @@ extension Vector11: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector11
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
@@ -1700,10 +1700,10 @@ extension Vector12: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector12
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.

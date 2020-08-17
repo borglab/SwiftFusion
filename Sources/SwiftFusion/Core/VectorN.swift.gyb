@@ -81,10 +81,10 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
     /// The vector whose scalars are reflected by `self`.
     internal var base: Vector${dim}
 
-    /// The index of the first element, or `endIndex` if `self.isEmpty`.
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
     
-    /// The index one step beyond the last contained element.
+    /// The position one step beyond the last contained element.
     public var endIndex: Int { base.dimension }
 
     /// Accesses the scalar at `i`.
