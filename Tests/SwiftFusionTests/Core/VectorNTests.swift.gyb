@@ -7,7 +7,7 @@ import SwiftFusion
 % import math
 % dims = range(1, 10)
 
-class ConcreteVectorTests: XCTestCase {
+class VectorNTests: XCTestCase {
   % for dim in dims:
   % if dim <= 3:
   %   coordinates = ['x', 'y', 'z'][0:dim]
@@ -25,16 +25,16 @@ class ConcreteVectorTests: XCTestCase {
     % end
   }
 
+  func testVector${dim}VectorConformance() {
+    let s = (0..<${dim}).lazy.map { Double($0) }
+    let v = Vector${dim}(${', '.join([str(v) for v in range(dim)])})
+    v.checkVectorSemantics(
+      expecting: s,
+      writing: (${dim}..<${2 * dim}).lazy.map { Double($0) },
+      maxSupportedScalarCount: ${dim})
+    v.scalars.checkRandomAccessCollectionSemantics(
+      expecting: s,
+      maxSupportedCount: ${dim})
+  }
   % end
 }
-
-% for dim in dims:
-/// Tests the `Vector` requirements.
-class Vector${dim}VectorTests: XCTestCase, FixedSizeVectorTests {
-  typealias Testee = Vector${dim}
-  static var dimension: Int { return ${dim} }
-  func testAll() {
-    runAllFixedSizeVectorTests()
-  }
-}
-% end

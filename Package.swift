@@ -56,6 +56,7 @@ let package = Package(
       name: "SwiftFusionTests",
       dependencies: [
         "SwiftFusion",
+        "PenguinTesting",
         .product(name: "ModelSupport", package: "swift-models"),
       ]),
     .testTarget(
