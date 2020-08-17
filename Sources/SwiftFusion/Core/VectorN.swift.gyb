@@ -72,8 +72,43 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
     % end
   }
 
-  public var scalars: [Double] {
-    return [${', '.join(coordinates)}]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector${dim}
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
