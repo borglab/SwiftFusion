@@ -325,3 +325,15 @@ class FixedSizeMatrixTests: XCTestCase {
     )
   }
 }
+
+fileprivate extension FixedSizeMatrix where Rows.Element == Vector2 {
+  /// Creates a matrix with `elements`, in row-major order.
+  ///
+  /// Requires: `elements.count == Self.shape[0] * Self.shape[1]`.
+  init<C: Collection>(_ elements: C) where C.Element == Double {
+    precondition(elements.count == Self.shape[0] * Self.shape[1])
+    self.init(rows: Rows((0..<Rows.count).lazy.map { i in
+      Rows.Element(elements.dropFirst(i * Self.shape[1]))
+    }))
+  }
+}

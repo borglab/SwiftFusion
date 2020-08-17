@@ -42,8 +42,8 @@ final class Rot3Tests: XCTestCase {
   /// Tests that the manifold invariant holds for Rot3
   func testManifoldIdentity() {
     for _ in 0..<30 {
-      let p = Rot3.fromTangent(Vector3(flatTensor: Tensor<Double>(randomNormal: [3])))
-      let q = Rot3.fromTangent(Vector3(flatTensor: Tensor<Double>(randomNormal: [3])))
+      let p = Rot3.fromTangent(Vector3(tensor: Tensor<Double>(randomNormal: [3])))
+      let q = Rot3.fromTangent(Vector3(tensor: Tensor<Double>(randomNormal: [3])))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-6)
     }
@@ -54,14 +54,14 @@ final class Rot3Tests: XCTestCase {
   func testManifoldIdentitySpecial1() {
     for i in -5..<5 {
       let p = Rot3.fromTangent(Vector3(Double(2*i - 1) * .pi, 0, 0))
-      let q = Rot3.fromTangent(Vector3(flatTensor: Tensor<Double>(randomNormal: [3])))
+      let q = Rot3.fromTangent(Vector3(tensor: Tensor<Double>(randomNormal: [3])))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-6)
     }
     
     for i in -5..<5 {
       let p = Rot3.fromTangent(Vector3(0, 0, Double(2*i - 1) * .pi))
-      let q = Rot3.fromTangent(Vector3(flatTensor: Tensor<Double>(randomNormal: [3])))
+      let q = Rot3.fromTangent(Vector3(tensor: Tensor<Double>(randomNormal: [3])))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-6)
     }
@@ -70,8 +70,8 @@ final class Rot3Tests: XCTestCase {
   /// Tests that the manifold invariant holds for Rot3
   func testManifoldIdentitySpecial2() {
     for _ in 0..<10 {
-      let p = Rot3.fromTangent(Vector3(flatTensor: 1e-10 * Tensor<Double>(randomNormal: [3])))
-      let q = Rot3.fromTangent(Vector3(flatTensor: Tensor<Double>(randomNormal: [3])))
+      let p = Rot3.fromTangent(Vector3(tensor: 1e-10 * Tensor<Double>(randomNormal: [3])))
+      let q = Rot3.fromTangent(Vector3(tensor: Tensor<Double>(randomNormal: [3])))
       let actual: Rot3 = Rot3(coordinate: p.coordinate.retract(p.coordinate.localCoordinate(q.coordinate)))
       assertAllKeyPathEqual(actual, q, accuracy: 1e-6)
     }
@@ -136,16 +136,16 @@ final class Rot3Tests: XCTestCase {
   /// Tests that the custom implementations of `Adjoint` and `AdjointTranspose` are correct.
   func testAdjoint() {
     for _ in 0..<10 {
-      let rot = Rot3.fromTangent(Vector3(flatTensor: Tensor<Double>(randomNormal: [3])))
+      let rot = Rot3.fromTangent(Vector3(tensor: Tensor<Double>(randomNormal: [3])))
       for v in Pose2.TangentVector.standardBasis {
         assertEqual(
-          rot.Adjoint(v).flatTensor,
-          rot.coordinate.defaultAdjoint(v).flatTensor,
+          rot.Adjoint(v).tensor,
+          rot.coordinate.defaultAdjoint(v).tensor,
           accuracy: 1e-10
         )
         assertEqual(
-          rot.AdjointTranspose(v).flatTensor,
-          rot.coordinate.defaultAdjointTranspose(v).flatTensor,
+          rot.AdjointTranspose(v).tensor,
+          rot.coordinate.defaultAdjointTranspose(v).tensor,
           accuracy: 1e-10
         )
       }

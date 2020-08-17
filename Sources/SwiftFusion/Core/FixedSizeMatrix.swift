@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import PenguinStructures
+import TensorFlow
 
 public typealias Matrix2 = FixedSizeMatrix<Array2<Vector2>>
 public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>
@@ -40,29 +41,30 @@ public struct FixedSizeMatrix<Rows: Equatable & FixedSizeArray>
   public static var shape: Array2<Int> { return Array2(Rows.count, Rows.Element.dimension) }
 
   /// Accesses the element at `row`, `column`.
+  @differentiable
   public subscript(row: Int, column: Int) -> Double {
-    _read {
-      yield rows[row][column]
+    get {
+      return rows[row][column]
     }
     _modify {
       yield &rows[row][column]
     }
+  }
+
+  @derivative(of: subscript)
+  @usableFromInline
+  func vjpSubscript(row: Int, column: Int) -> (value: Double, pullback: (Double) -> Self) {
+    return (self[row, column], { v in
+      var r = Self.zero
+      r[row, column] = v
+      return r
+    })
   }
 }
 
 // MARK: - Convenience initializers and static instances.
 
 extension FixedSizeMatrix {
-  /// Creates a matrix with `elements`, in row-major order.
-  ///
-  /// Requires: `elements.count == Self.shape[0] * Self.shape[1]`.
-  public init<C: Collection>(_ elements: C) where C.Element == Double {
-    precondition(elements.count == Self.shape[0] * Self.shape[1])
-    self.rows = Rows((0..<Rows.count).lazy.map { i in
-      Rows.Element(elements.dropFirst(i * Self.shape[1]))
-    })
-  }
-
   /// Creates a matrix with rows `r0`, `r1`, and `r2`.
   @differentiable
   public init(rows r0: Rows.Element, _ r1: Rows.Element, _ r2: Rows.Element) {
@@ -102,6 +104,11 @@ extension FixedSizeMatrix where Rows == Array3<Vector3> {
   ) {
     self.init(rows: Vector3(s00, s01, s02), Vector3(s10, s11, s12), Vector3(s20, s21, s22))
   }
+
+  /// `self` as a 3x3 `Tensor`.
+  public var tensor: Tensor<Double> {
+    return Tensor(stacking: [rows[0].tensor, rows[1].tensor, rows[2].tensor])
+  }
 }
 
 // MARK: - Conformances to vector space related protocols.
@@ -119,12 +126,8 @@ extension FixedSizeMatrix: Differentiable {
 extension FixedSizeMatrix: FixedSizeVector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-    lhs.withUnsafeMutableBufferPointer { bLhs in
-      rhs.withUnsafeBufferPointer { bRhs in
-        for i in 0..<Self.dimension {
-          bLhs[i] += bRhs[i]
-        }
-      }
+    for i in lhs.rows.indices {
+      lhs.rows[i] += rhs.rows[i]
     }
   }
 
@@ -140,12 +143,8 @@ extension FixedSizeMatrix: FixedSizeVector {
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-    lhs.withUnsafeMutableBufferPointer { bLhs in
-      rhs.withUnsafeBufferPointer { bRhs in
-        for i in 0..<Self.dimension {
-          bLhs[i] -= bRhs[i]
-        }
-      }
+    for i in lhs.rows.indices {
+      lhs.rows[i] -= rhs.rows[i]
     }
   }
 
@@ -161,10 +160,8 @@ extension FixedSizeMatrix: FixedSizeVector {
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-    lhs.withUnsafeMutableBufferPointer { b in
-      for i in 0..<Self.dimension {
-        b[i] *= rhs
-      }
+    for i in lhs.rows.indices {
+      lhs.rows[i] *= rhs
     }
   }
 
@@ -183,10 +180,8 @@ extension FixedSizeMatrix: FixedSizeVector {
 
   @differentiable
   public static func /= (_ lhs: inout Self, _ rhs: Double) {
-    lhs.withUnsafeMutableBufferPointer { b in
-      for i in 0..<Self.dimension {
-        b[i] /= rhs
-      }
+    for i in lhs.rows.indices {
+      lhs.rows[i] *= (1 / rhs)
     }
   }
 
@@ -211,11 +206,11 @@ extension FixedSizeMatrix: FixedSizeVector {
 
   @differentiable
   public func dot(_ other: Self) -> Double {
-    withUnsafeBufferPointer { b1 in
-      other.withUnsafeBufferPointer { b2 in
-        (0..<Self.dimension).reduce(0) { (r, i) in r + b1[i] * b2[i] }
-      }
+    var r: Double = 0
+    for i in self.rows.indices {
+      r += self.rows[i].dot(other.rows[i])
     }
+    return r
   }
 
   @derivative(of: dot)
@@ -355,7 +350,11 @@ extension FixedSizeMatrix: Equatable {}
 
 extension FixedSizeMatrix: KeyPathIterable {
   public var allKeyPaths: [PartialKeyPath<Self>] {
-    (0..<Self.dimension).map { \Self[$0] }
+    (0..<Self.shape[0]).flatMap { i in
+      (0..<Self.shape[1]).map { j in
+        \Self[i, j]
+      }
+    }
   }
 }
 

@@ -81,6 +81,38 @@ extension Vector1: FixedSizeVector {
 
 extension Vector1: ElementaryFunctions {}
 
+/// Converstion to/from `Tensor`.
+extension Vector1 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
+
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^2, with Euclidean inner product.
@@ -174,6 +206,38 @@ extension Vector2: FixedSizeVector {
 }
 
 extension Vector2: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector2 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -285,6 +349,38 @@ extension Vector3: FixedSizeVector {
 }
 
 extension Vector3: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector3 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -413,6 +509,38 @@ extension Vector4: FixedSizeVector {
 }
 
 extension Vector4: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector4 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -558,6 +686,38 @@ extension Vector5: FixedSizeVector {
 }
 
 extension Vector5: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector5 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -720,6 +880,38 @@ extension Vector6: FixedSizeVector {
 }
 
 extension Vector6: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector6 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -899,6 +1091,38 @@ extension Vector7: FixedSizeVector {
 }
 
 extension Vector7: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector7 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -1095,6 +1319,38 @@ extension Vector8: FixedSizeVector {
 }
 
 extension Vector8: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector8 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -1308,6 +1564,38 @@ extension Vector9: FixedSizeVector {
 }
 
 extension Vector9: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector9 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -1538,6 +1826,38 @@ extension Vector10: FixedSizeVector {
 }
 
 extension Vector10: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector10 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -1785,6 +2105,38 @@ extension Vector11: FixedSizeVector {
 }
 
 extension Vector11: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector11 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
 // ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
@@ -2049,4 +2401,36 @@ extension Vector12: FixedSizeVector {
 }
 
 extension Vector12: ElementaryFunctions {}
+
+/// Converstion to/from `Tensor`.
+extension Vector12 {
+  /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
+  public var tensor: Tensor<Double> {
+    withUnsafeBufferPointer { b in
+      return Tensor<Double>(shape: [b.count], scalars: b)
+    }
+  }
+
+  @derivative(of: tensor)
+  @usableFromInline
+  func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
+  {
+    return (self.tensor, { Self(tensor: $0) })
+  }
+
+  /// Creates an instance with the same scalars as `tensor`.
+  @differentiable
+  public init(tensor: Tensor<Double>) {
+    self.init(tensor.scalars)
+  }
+
+  @derivative(of: init(tensor:))
+  @usableFromInline
+  static func vjpInit(tensor: Tensor<Double>) -> (
+    value: Self,
+    pullback: (Self) -> Tensor<Double>
+  ) {
+    return (Self(tensor: tensor), { $0.tensor })
+  }
+}
 
