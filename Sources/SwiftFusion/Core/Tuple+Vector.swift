@@ -60,7 +60,10 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
 }
 
 extension Empty: Vector {
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   public typealias Scalars = Array0<Double>
+
+  /// The vector's scalar values in a standard basis.
   public var scalars: Scalars { get { .init() } set {  } }
   public var dimension: Int { return 0 }
 
@@ -79,6 +82,7 @@ extension Empty: Vector {
 
 extension Tuple: Vector
 where Head: Vector, Tail: Vector {
+  /// The vector's scalar values in a standard basis.
   public var scalars: Concatenation<Head.Scalars, Tail.Scalars> {
     get { head.scalars.concatenated(to: tail.scalars) }
     set {

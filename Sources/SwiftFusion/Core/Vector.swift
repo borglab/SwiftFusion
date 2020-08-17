@@ -8,8 +8,10 @@ import TensorFlow
 // have Euclidean structure and standard basis, so we'll reserve the short name `Vector` for
 // such vectors and use a longer name like `GeneralizedVector` for the generalized vector spaces.
 public protocol Vector: Differentiable where Self.TangentVector == Self {
+  /// A type that can represent all of the vector's scalar values in a standard basis.
   associatedtype Scalars: MutableCollection where Scalars.Element == Double
 
+  /// The vector's scalar values in a standard basis.
   var scalars: Scalars { get set }
   
   /// The number of components of this vector.
@@ -49,7 +51,7 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   // MARK: - Methods for accessing the standard basis and for manipulating the coordinates under
   // the standard basis.
 
-  #if true
+  #if true // set to false to find examples to be removed.
   // DWA TODO: Remove these requirements!
   
   /// Returns the result of calling `body` on the scalars of `self`.
@@ -138,7 +140,9 @@ extension Vector {
   }
 }
 
-#if true
+#if true // set to false to find examples to be removed.
+// DWA TODO: Remove these requirements!
+
 /// Default implementations of raw memory access.
 extension Vector {
   /// Returns the result of calling `body` on the scalars of `self`.

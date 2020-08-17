@@ -83,7 +83,7 @@ extension FixedShapeTensor {
 public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
   public typealias TangentVector = Tensor10x10
   public static var shape: TensorShape { [10, 10] }
-  
+
   @differentiable public var tensor: Tensor<Double> {
     get { scalars.storage }
     set { scalars.storage = newValue }
