@@ -27,7 +27,7 @@ extension ArrayImage {
         // The position of the destination pixel in the destination image, in `(u, v)` coordinates.
         let uvDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
 
-        // The position of the destination pixel in the source image, in coordinates where the
+        // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
         let xyDest = uvDest - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
@@ -52,7 +52,7 @@ extension ArrayImage {
           // The position of the destination pixel in the destination image, in `(u, v)` coordinates.
           let uvDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
 
-          // The position of the destination pixel in the source image, in coordinates where the
+          // The position of the destination pixel in the destination image, in coordinates where the
           // center of the destination image is `(0, 0)`.
           let xyDest = uvDest - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
@@ -85,20 +85,38 @@ extension ArrayImage {
     -> (patch: Self, jacobian: (dtheta: Self, du: Self, dv: Self))
   {
     var result = ArrayImage(rows: region.rows, cols: region.cols, channels: self.channels)
-    var dtheta = ArrayImage(rows: region.rows, cols: region.cols, channels: self.channels)
-    var du = ArrayImage(rows: region.rows, cols: region.cols, channels: self.channels)
-    var dv = ArrayImage(rows: region.rows, cols: region.cols, channels: self.channels)
+    var dtheta = ArrayImage(zerosLike: result)
+    var du = ArrayImage(zerosLike: result)
+    var dv = ArrayImage(zerosLike: result)
     for i in 0..<region.rows {
       for j in 0..<region.cols {
         // The position of the destination pixel in the destination image, in `(u, v)` coordinates.
         let uvDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
 
-        // The position of the destination pixel in the source image, in coordinates where the
+        // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
         let xyDest = uvDest - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
+        // The position of the destination pixel in the source image. These are the `(u, v)`
+        // coordinates of the source image that we sample from.
         let uvSrc: Vector2 = region.center * xyDest
 
+        // The derivatives of `uvSrc` with respect to the rotation and translation components of
+        // `region.center`.
+        //
+        // This follows from equation (11.2) in section "11 2D Rigid Transformations" of [1]:
+        //   Substitute
+        //     (R, t) = (region.center.rot, region.center.t)
+        //     p = xyDest
+        //     q = uvSrc
+        //   Then (11.2) says that the Jacobian of the action of `region.center` on `xyDest` is
+        //     [ R  R*R_pi/2*p
+        //       0           0 ]
+        //   The first two columns of the Jacobian give us the derivatives with respect to the
+        //   translation components of `region.center` and the last column gives us the derivative
+        //   with respect to the rotation component of `region.center`.
+        //
+        // [1] https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
         let duvSrc_dtheta = region.center.rot * Vector2(-xyDest.y, xyDest.x)
         let duvSrc_du = region.center.rot * Vector2(1, 0)
         let duvSrc_dv = region.center.rot * Vector2(0, 1)
@@ -133,7 +151,7 @@ extension Tensor where Scalar == Double {
     return self.shape.count == 2 ? result.reshaped(to: [region.rows, region.cols]) : result
   }
 
-  /// Returns the patch of `self` at `region`, and its Jacobian with respect to the center of the
+  /// Returns the patch of `self` at `region`, and its Jacobian with respect to the pose of the
   /// `region`.
   ///
   /// - Parameters:
@@ -182,11 +200,11 @@ public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> 
   // Weight of the `(_, sourceJ)` pixels in the interpolation.
   let weightJ = Double(sourceJ) + 1.5 - point.x
 
-  let s1 = source[sourceI, sourceJ, channel] * weightI * weightJ
-  let s2 = source[sourceI + 1, sourceJ, channel] * (1 - weightI) * weightJ
-  let s3 = source[sourceI, sourceJ + 1, channel] * weightI * (1 - weightJ)
-  let s4 = source[sourceI + 1, sourceJ + 1, channel] * (1 - weightI) * (1 - weightJ)
-  return s1 + s2 + s3 + s4
+  let s1 = source[sourceI, sourceJ, channel] * weightI
+  let s2 = source[sourceI + 1, sourceJ, channel] * (1 - weightI)
+  let s3 = source[sourceI, sourceJ + 1, channel] * weightI
+  let s4 = source[sourceI + 1, sourceJ + 1, channel] * (1 - weightI)
+  return (s1 + s2) * weightJ + (s3 + s4) * (1 - weightJ)
 }
 
 /// Returns the directional derivative of `bilinear` with respect to `point`, in direction `dPoint`.

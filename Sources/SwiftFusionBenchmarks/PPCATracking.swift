@@ -20,18 +20,12 @@ let ppcaTrackingBenchmark = BenchmarkSuite(name: "PPCATracking") { suite in
   /// Returns a factor graph with a single `PPCATrackingFactor` with randomly initialized
   /// parameters.
   func makeFactorGraphWithOnePPCATrackingFactor() -> (FactorGraph, VariableAssignments) {
-    let image = Tensor<Double>(randomNormal: [500, 500, 1])
-    let W = Tensor<Double>(
-      randomNormal: PPCATrackingFactor.Patch.shape + [PPCATrackingFactor.V1.dimension])
-    let mu = PPCATrackingFactor.Patch(
-      Tensor<Double>(randomNormal: PPCATrackingFactor.Patch.shape))
-
     var x = VariableAssignments()
     let poseId = x.store(Pose2(100, 100, 0))
     let latentId = x.store(Vector5.zero)
 
     var fg = FactorGraph()
-    fg.store(PPCATrackingFactor(poseId, latentId, measurement: image, W: W, mu: mu))
+    fg.store(PPCATrackingFactor.testFixture(poseId, latentId, seed: (1, 1)))
     return (fg, x)
   }
 

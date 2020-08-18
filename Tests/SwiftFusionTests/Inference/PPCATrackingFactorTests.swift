@@ -22,41 +22,38 @@ import PenguinStructures
 class PPCATrackingFactorTests: XCTestCase {
   /// Tests that the custom `linearized(at:)` method produces the same results at autodiff.
   func testLinearizedValue() {
-    // Initialize `factor` with random fields.
-    let image = Tensor<Double>(randomNormal: [500, 500, 1])
-    let W = Tensor<Double>(
-      randomNormal: PPCATrackingFactor.Patch.shape + [PPCATrackingFactor.V1.dimension])
-    let mu = PPCATrackingFactor.Patch(
-      Tensor<Double>(randomNormal: PPCATrackingFactor.Patch.shape))
-    let poseID = TypedID<Pose2>(0)
-    let latentID = TypedID<Vector5>(0)
-    let factor = PPCATrackingFactor(poseID, latentID, measurement: image, W: W, mu: mu)
+    let factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
 
     for _ in 0..<2 {
       let linearizationPoint = Tuple2(
-        Pose2(randomWithCovariance: eye(rowCount: 3)),
-        Vector5(flatTensor: Tensor(randomNormal: [5])))
+        Pose2(randomWithCovariance: eye(rowCount: 3), seed: (5, 5)),
+        Vector5(flatTensor: Tensor(randomNormal: [5], seed: (6, 6))))
 
       typealias Variables = PPCATrackingFactor.Variables.TangentVector
       typealias ErrorVector = PPCATrackingFactor.ErrorVector
+
+      // Below we compare custom and much faster differentiation with the autodiff version.
 
       let autodiff = JacobianFactor<Array<Variables>, ErrorVector>(
         linearizing: factor, at: linearizationPoint)
       let custom = factor.linearized(at: linearizationPoint)
 
+      // Compare the linearizations at zero (the error vector).
       XCTAssertEqual(
         custom.errorVector(at: Variables.zero), autodiff.errorVector(at: Variables.zero))
 
+      // Compare the Jacobian-vector-products (forward derivative).
       for _ in 0..<10 {
-        let v = Variables(flatTensor: Tensor(randomNormal: [Variables.dimension]))
+        let v = Variables(flatTensor: Tensor(randomNormal: [Variables.dimension], seed: (7, 7)))
         assertEqual(
           custom.errorVector_linearComponent(v).tensor,
           autodiff.errorVector_linearComponent(v).tensor,
           accuracy: 1e-6)
       }
 
+      // Compare the vector-Jacobian-products (reverse derivative).
       for _ in 0..<10 {
-        let e = ErrorVector(Tensor(randomNormal: ErrorVector.shape))
+        let e = ErrorVector(Tensor(randomNormal: ErrorVector.shape, seed: (8, 8)))
         assertEqual(
           custom.errorVector_linearComponent_adjoint(e).flatTensor,
           autodiff.errorVector_linearComponent_adjoint(e).flatTensor,
@@ -68,20 +65,21 @@ class PPCATrackingFactorTests: XCTestCase {
   /// Tests that factor graphs with a `PPCATrackingFactor`s linearize them using the custom
   /// linearization.
   func testFactorGraphUsesCustomLinearized() {
-    let image = Tensor<Double>(randomNormal: [500, 500, 1])
-    let W = Tensor<Double>(
-      randomNormal: PPCATrackingFactor.Patch.shape + [PPCATrackingFactor.V1.dimension])
-    let mu = PPCATrackingFactor.Patch(
-      Tensor<Double>(randomNormal: PPCATrackingFactor.Patch.shape))
-
     var x = VariableAssignments()
     let poseId = x.store(Pose2(100, 100, 0))
     let latentId = x.store(Vector5.zero)
 
     var fg = FactorGraph()
-    fg.store(PPCATrackingFactor(poseId, latentId, measurement: image, W: W, mu: mu))
+    fg.store(PPCATrackingFactor.testFixture(poseId, latentId, seed: (9, 9)))
 
     let gfg = fg.linearized(at: x)
+
+    // Assert that the linearized graph has the custom `LinearizedPPCATrackingFactor` that uses our
+    // faster custom Jacobian calculate the default `JacobianFactor` that calculates the Jacobian
+    // using autodiff.
+    //
+    // This works by checking that the first (only) element of the graph's storage can be cast to
+    // an array of `LinearizedPPCATrackingFactor`.
     XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedPPCATrackingFactor>()])
   }
 }

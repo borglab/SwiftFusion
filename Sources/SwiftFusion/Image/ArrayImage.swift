@@ -24,12 +24,20 @@ public struct ArrayImage: Differentiable {
   @noDerivative let cols: Int
   @noDerivative let channels: Int
 
-  /// Creates a black instance.
+  /// Creates an instance of all zero values with the given `rows`, `cols`, and `channels`.
   public init(rows: Int, cols: Int, channels: Int) {
     self.pixels = Array(repeating: 0, count: rows * cols * channels)
     self.rows = rows
     self.cols = cols
     self.channels = channels
+  }
+
+  /// Creates an instance of all zero values with the same shape as `template`.
+  public init(zerosLike template: Self) {
+    self.pixels = Array(repeating: 0, count: template.pixels.count)
+    self.rows = template.rows
+    self.cols = template.cols
+    self.channels = template.channels
   }
 
   /// Creates an instance from the given image `tensor`.
