@@ -98,7 +98,7 @@ public enum SimpleGaussianFactorGraph {
 
 extension URL {
   /// Creates a URL for the directory containing the caller's source file.
-  static func sourceFileDirectory(file: String = #file) -> URL {
+  static func sourceFileDirectory(file: String = #filePath) -> URL {
     return URL(fileURLWithPath: file).deletingLastPathComponent()
   }
 }
