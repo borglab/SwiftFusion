@@ -23,19 +23,25 @@ class Scratch: XCTestCase {
   let forwardMove = Pose2(1,0,0)
   let (z1, z2, z3) = (Pose2(10, 0, 0),Pose2(11, 0, 0),Pose2(12, 0, 0))
   var expectedTrackingError : Double = 0.0
+  
+  // Calculate error by hand in test fixture
   override func setUp() {
     super.setUp()
-    expectedTrackingError = 2 * origin.localCoordinate(z1).squaredNorm
+    expectedTrackingError = 0.5*(2 * origin.localCoordinate(z1).squaredNorm
       +  origin.localCoordinate(z2).squaredNorm
       +  origin.localCoordinate(z3).squaredNorm
-      +  2 * origin.localCoordinate(forwardMove).squaredNorm
+      +  2 * origin.localCoordinate(forwardMove).squaredNorm)
   }
+  
+  /// Create an example tracking graph
   func createTrackingFactorGraph() -> (FactorGraph, VariableAssignments) {
+    // First get 3 pose variables
     var variables = VariableAssignments()
     let x1 = variables.store(origin)
     let x2 = variables.store(origin)
     let x3 = variables.store(origin)
     
+    // Use ids x1,x2,x3 to create factors
     var graph = FactorGraph()
     graph.store(PriorFactor(x1, z1)) // prior
     graph.store(PriorFactor(x1, z1))
@@ -47,17 +53,18 @@ class Scratch: XCTestCase {
     return (graph, variables)
   }
   
+  /// Just a helper for debugging
   func printPoses(_ variables : VariableAssignments) {
     print(variables[TypedID<Pose2>(0)])
     print(variables[TypedID<Pose2>(1)])
     print(variables[TypedID<Pose2>(2)])
   }
   
-  /// Tracking example from Figure 2.a
+  /// Tracking example from Figure 2.a in Annual Reviews paper
   func testTrackingExample() {
     // create a factor graph
     var (graph, variables) = createTrackingFactorGraph()
-    _ = graph as FactorGraph
+    _ = graph as FactorGraph //
     
     // check number of factor types
     XCTAssertEqual(graph.storage.count, 2)
@@ -73,15 +80,18 @@ class Scratch: XCTestCase {
     printPoses(variables)
   }
   
+  /// Switching system example from Figure 2.b in that same paper
   func createSwitchingFactorGraph() -> (FactorGraph, VariableAssignments) {
     var variables = VariableAssignments()
     let x1 = variables.store(origin)
     let x2 = variables.store(origin)
     let x3 = variables.store(origin)
+    
+    // We now have discrete labels, as well
     let q1 = variables.store(0)
     let q2 = variables.store(0)
     
-    // Model parameters.
+    // Model parameters include a 3x3 transition matrix and 3 motion models.
     let labelCount = 3
     let transitionMatrix: [Double] = [
       0.8, 0.1, 0.1,
@@ -94,6 +104,7 @@ class Scratch: XCTestCase {
       Pose2(1, 0, -.pi / 4) // turn right
     ]
     
+    // Create the graph itself
     var graph = FactorGraph()
     graph.store(PriorFactor(x1, z1)) // prior
     graph.store(PriorFactor(x1, z1))
@@ -106,6 +117,7 @@ class Scratch: XCTestCase {
     return (graph, variables)
   }
   
+  /// Just a helper for debugging
   func printLabels(_ variables : VariableAssignments) {
     print(variables[TypedID<Int>(0)])
     print(variables[TypedID<Int>(1)])
@@ -134,7 +146,7 @@ class Scratch: XCTestCase {
     XCTAssertEqual(graph.storage.count, 3)
     
     // check error at initial estimate, allow slack to account for discrete transition
-    XCTAssertEqual(graph.error(at: variables), 467.0, accuracy:0.3)
+    XCTAssertEqual(graph.error(at: variables), 234, accuracy:0.3)
     
     // optimize
     var opt = LM()
@@ -155,7 +167,7 @@ class Scratch: XCTestCase {
     /// Proposal to change one label, and re-optimize
     let flipAndOptimize = {(x:VariableAssignments) -> VariableAssignments in
       let labelVars = x.storage[ObjectIdentifier(Int.self)]
-//      let positionVars = x.storage[ObjectIdentifier(Pose2.self)]
+      //  let positionVars = x.storage[ObjectIdentifier(Pose2.self)]
       
       // Randomly change one label.
       let i = Int.random(in: 0..<labelVars!.count)
