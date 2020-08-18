@@ -80,9 +80,9 @@ class ValuesStorageTests: XCTestCase {
         """
         Expected element type `\(Elements.Element.self)` but type-erased buffer has incompatible
         type `\(type(of: actual.storage!))`
-        """, file: file, line: line)
+        """, file: (file), line: line)
       return
     }
-    XCTAssertEqual(Array(typedActual), Array(expected), file: file, line: line)
+    XCTAssertEqual(Array(typedActual), Array(expected), file: (file), line: line)
   }
 }
