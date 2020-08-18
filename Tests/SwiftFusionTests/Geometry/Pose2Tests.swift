@@ -3,6 +3,14 @@ import XCTest
 
 import SwiftFusion
 
+fileprivate func jacobian<A: Differentiable>(
+  of f: @differentiable(A) -> Pose2,
+  at p: A
+) -> [A.TangentVector] {
+  let pb = pullback(at: p, in: f)
+  return Pose2.TangentVector.standardBasis.map { pb($0) }
+}
+
 final class Pose2Tests: XCTestCase {
   /// test between for trivial values
   func testBetweenIdentitiesTrivial() {
@@ -240,7 +248,7 @@ final class Pose2Tests: XCTestCase {
       assertEqual(
         Tensor<Double>(stacking: jacobian(
           of: identity,
-          at: Pose2(randomWithCovariance: eye(rowCount: 3))).map { $0.tensor }),
+          at: Pose2(randomWithCovariance: eye(rowCount: 3))).map { $0.flatTensor }),
         expected,
         accuracy: 1e-10
       )
@@ -253,7 +261,7 @@ final class Pose2Tests: XCTestCase {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
       let expected = -pose.AdjointMatrix
       assertEqual(
-        Tensor<Double>(stacking: jacobian(of: { $0.inverse() }, at: pose).map { $0.tensor }),
+        Tensor<Double>(stacking: jacobian(of: { $0.inverse() }, at: pose).map { $0.flatTensor }),
         expected,
         accuracy: 1e-10
       )
@@ -268,12 +276,12 @@ final class Pose2Tests: XCTestCase {
       let expectedWrtLhs = rhs.inverse().AdjointMatrix
       let expectedWrtRhs: Tensor<Double> = eye(rowCount: 3)
       assertEqual(
-        Tensor<Double>(stacking: jacobian(of: { $0 * rhs }, at: lhs).map { $0.tensor }),
+        Tensor<Double>(stacking: jacobian(of: { $0 * rhs }, at: lhs).map { $0.flatTensor }),
         expectedWrtLhs,
         accuracy: 1e-10
       )
       assertEqual(
-        Tensor<Double>(stacking: jacobian(of: { lhs * $0 }, at: rhs).map { $0.tensor }),
+        Tensor<Double>(stacking: jacobian(of: { lhs * $0 }, at: rhs).map { $0.flatTensor }),
         expectedWrtRhs,
         accuracy: 1e-10
       )
@@ -291,7 +299,8 @@ final class Pose2Tests: XCTestCase {
       return Vector1(d.rot.theta * d.rot.theta + d.t.x * d.t.x + d.t.y * d.t.y)
     }
 
-    let j = jacobian(of: f, at: pts)
+    let pb = pullback(at: pts, in: f)
+    let j = Vector1.TangentVector.standardBasis.map { pb($0) }
     // print("J(f) = \(j[0].base as AnyObject)")
     for item in j[0] {
       XCTAssertEqual(item, Pose2.TangentVector.zero)
@@ -318,12 +327,12 @@ final class Pose2Tests: XCTestCase {
     ])
 
     assertEqual(
-      Tensor<Double>(stacking: jacobian(of: { between($0, wT2) }, at: wT1).map { $0.tensor }),
+      Tensor<Double>(stacking: jacobian(of: { between($0, wT2) }, at: wT1).map { $0.flatTensor }),
       expectedWrtLhs,
       accuracy: 1e-10
     )
     assertEqual(
-      Tensor<Double>(stacking: jacobian(of: { between(wT1, $0) }, at: wT2).map { $0.tensor }),
+      Tensor<Double>(stacking: jacobian(of: { between(wT1, $0) }, at: wT2).map { $0.flatTensor }),
       expectedWrtRhs,
       accuracy: 1e-10
     )
@@ -335,13 +344,13 @@ final class Pose2Tests: XCTestCase {
       let pose = Pose2(randomWithCovariance: eye(rowCount: 3))
       for v in Pose2.TangentVector.standardBasis {
         assertEqual(
-          pose.Adjoint(v).tensor,
-          pose.coordinate.defaultAdjoint(v).tensor,
+          pose.Adjoint(v).flatTensor,
+          pose.coordinate.defaultAdjoint(v).flatTensor,
           accuracy: 1e-10
         )
         assertEqual(
-          pose.AdjointTranspose(v).tensor,
-          pose.coordinate.defaultAdjointTranspose(v).tensor,
+          pose.AdjointTranspose(v).flatTensor,
+          pose.coordinate.defaultAdjointTranspose(v).flatTensor,
           accuracy: 1e-10
         )
       }

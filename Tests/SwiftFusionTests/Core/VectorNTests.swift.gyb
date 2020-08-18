@@ -7,7 +7,7 @@ import SwiftFusion
 % import math
 % dims = range(1, 10)
 
-class ConcreteEuclideanVectorNTests: XCTestCase {
+class ConcreteVectorTests: XCTestCase {
   % for dim in dims:
   % if dim <= 3:
   %   coordinates = ['x', 'y', 'z'][0:dim]
@@ -29,12 +29,12 @@ class ConcreteEuclideanVectorNTests: XCTestCase {
 }
 
 % for dim in dims:
-/// Tests the `EuclideanVectorN` requirements.
-class Vector${dim}EuclideanVectorNTests: XCTestCase, EuclideanVectorTests {
+/// Tests the `Vector` requirements.
+class Vector${dim}VectorTests: XCTestCase, FixedSizeVectorTests {
   typealias Testee = Vector${dim}
   static var dimension: Int { return ${dim} }
   func testAll() {
-    runAllEuclideanVectorNTests()
+    runAllFixedSizeVectorTests()
   }
 }
 % end

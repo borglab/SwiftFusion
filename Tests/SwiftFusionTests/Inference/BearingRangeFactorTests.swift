@@ -1,7 +1,7 @@
 import SwiftFusion
 import XCTest
 
-/// Tests that `BearingRangeError` satisfies the `EuclideanVectorN` requirements.
+/// Tests that `BearingRangeError` satisfies the `Vector` requirements.
 final class BearingRangeFactorTests: XCTestCase {
   func testPlanarSLAM() {
     var fg = FactorGraph()

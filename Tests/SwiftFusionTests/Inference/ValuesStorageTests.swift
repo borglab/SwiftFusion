@@ -65,21 +65,21 @@ class ValuesStorageTests: XCTestCase {
 
   func testVectorDot() {
     let v1 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 2, 3), Vector3(4, 5, 6)]))
-    let v2 = AnyElementArrayBuffer(ArrayBuffer([Vector3(1, 1, 1), Vector3(2, 2, 2)]))
+    let v2 = AnyVectorArrayBuffer(ArrayBuffer([Vector3(1, 1, 1), Vector3(2, 2, 2)]))
     XCTAssertEqual(v1.dot(v2), 36)
   }
 
   func assertElementsEqual<Dispatch, Elements>(
     _ actual: AnyArrayBuffer<Dispatch>,
     _ expected: Elements,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) where Elements: Collection, Elements.Element: Equatable {
     guard let typedActual = ArrayBuffer<Elements.Element>(actual) else {
       XCTFail(
         """
-        Type-erased buffer has element type `\(actual.elementType)`, but expected element type \
-        `\(Elements.Element.self)`
+        Expected element type `\(Elements.Element.self)` but type-erased buffer has incompatible
+        type `\(type(of: actual.storage!))`
         """, file: file, line: line)
       return
     }

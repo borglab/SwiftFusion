@@ -51,7 +51,7 @@ public struct VariableAssignments {
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
   public mutating func store<T: Differentiable>(_ value: T) -> TypedID<T>
-    where T.TangentVector: EuclideanVectorN
+    where T.TangentVector: Vector
   {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
@@ -63,7 +63,7 @@ public struct VariableAssignments {
   }
 
   /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
-  public mutating func store<T: EuclideanVectorN>(_ value: T) -> TypedID<T> {
+  public mutating func store<T: Vector>(_ value: T) -> TypedID<T> {
     let perTypeID = storage[
       ObjectIdentifier(T.self),
       // Note: This is a safe upcast.
@@ -80,17 +80,15 @@ public struct VariableAssignments {
 
   /// Accesses the stored value with the given ID.
   public subscript<T>(id: TypedID<T>) -> T {
-    _read {
-      let array = storage[ObjectIdentifier(T.self), default: Self.noSuchType]
-      yield ArrayBuffer<T>(unsafelyDowncasting: array)
-        .withUnsafeBufferPointer { b in b[id.perTypeID] }
+    get {
+      storage[
+        ObjectIdentifier(T.self), default: Self.noSuchType][
+        existingElementType: Type<T>()][id.perTypeID]
     }
     _modify {
-      defer { _fixLifetime(self) }
-      let array = storage[ObjectIdentifier(T.self), default: Self.noSuchType]
-      yield &(array.storage as! ArrayStorage<T>)
-        .withUnsafeMutableBufferPointer { b in b.baseAddress.unsafelyUnwrapped + id.perTypeID }
-        .pointee
+      yield &storage[
+        ObjectIdentifier(T.self), default: Self.noSuchType][
+        existingElementType: Type<T>()][id.perTypeID]
     }
   }
 }

@@ -29,7 +29,7 @@ class AnyDifferentiableTests: XCTestCase {
     }
 
     let initialPoses = (0..<3).map { _ in Pose2(randomWithCovariance: eye(rowCount: 3)) }
-    let initialVectors = (0..<3).map { _ in Vector2(Tensor(randomNormal: [2])) }
+    let initialVectors = (0..<3).map { _ in Vector2(flatTensor: Tensor(randomNormal: [2])) }
     let elementsErased =
       initialPoses.map { AnyDifferentiable($0) } + initialVectors.map { AnyDifferentiable($0) }
 

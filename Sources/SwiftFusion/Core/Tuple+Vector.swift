@@ -59,45 +59,40 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
   }
 }
 
-extension Empty: EuclideanVector {
+extension Empty: Vector {
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public typealias Scalars = Array0<Double>
+
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars { get { .init() } set {  } }
+  public var dimension: Int { return 0 }
+
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {}
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {}
 
-  // MARK: - Scalar multiplication.
-
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {}
 
-  // MARK: - Euclidean structure.
-
-  /// The inner product of `self` with `other`.
   @differentiable
   public func dot(_ other: Self) -> Double { return 0 }
+}
 
-  // MARK: - Conversion from collections of scalars.
-
-  /// Creates an instance whose elements are `scalars`.
-  ///
-  /// Precondition: `scalars` must be empty.
-  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
-    assert(scalars.isEmpty)
-    self.init()
+extension Tuple: Vector
+where Head: Vector, Tail: Vector {
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Concatenation<Head.Scalars, Tail.Scalars> {
+    get { head.scalars.concatenated(to: tail.scalars) }
+    set {
+      head.scalars = newValue.first
+      tail.scalars = newValue.second
+    }
   }
-}
+  
+  public var dimension: Int { return head.dimension + tail.dimension }
 
-extension Empty: EuclideanVectorN {
-  /// The dimension of the vector.
-  public static var dimension: Int { return 0 }
-
-  /// A standard basis of vectors.
-  public static var standardBasis: [Self] { return [] }
-}
-
-extension Tuple: EuclideanVector, EuclideanVectorN
-where Head: EuclideanVectorN, Tail: EuclideanVectorN {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.head += rhs.head
@@ -110,45 +105,32 @@ where Head: EuclideanVectorN, Tail: EuclideanVectorN {
     lhs.tail -= rhs.tail
   }
 
-  // MARK: - Scalar multiplication.
-
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.head *= rhs
     lhs.tail *= rhs
   }
 
-  // MARK: - Euclidean structure.
-
-  /// The inner product of `self` with `other`.
   @differentiable
   public func dot(_ other: Self) -> Double {
     return head.dot(other.head) + tail.dot(other.tail)
   }
+}
 
-  // MARK: - Conversion from collections of scalars.
-
-  /// Creates an instance whose elements are `scalars`.
-  ///
-  /// The first `Head.dimension` scalars go in `self.head`, and the remaining `Tail.dimension`
-  /// scalars go in `self.tail`.
-  ///
-  /// Precondition: `scalars` must have exactly `Head.dimension + Tail.dimension` elements.
+extension Empty: FixedSizeVector {
+  public static var dimension: Int { 0 }
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
-    self.init(
-      head: Head(scalars.prefix(Head.dimension)),
-      tail: Tail(scalars.dropFirst(Head.dimension))
-    )
+    assert(scalars.isEmpty)
+    self.init()
   }
+}
 
-  // MARK: `EuclideanVectorN` requirements.
-
-  /// The dimension of the vector.
-  public static var dimension: Int { return Head.dimension + Tail.dimension }
-
-  /// A standard basis of vectors.
-  public static var standardBasis: [Self] {
-    return Head.standardBasis.map { Self(head: $0, tail: Tail.zero) }
-      + Tail.standardBasis.map { Self(head: Head.zero, tail: $0) }
+extension Tuple: FixedSizeVector, ScalarsInitializableVector
+  where Head: FixedSizeVector, Tail: FixedSizeVector
+{
+  public static var dimension: Int { Head.dimension + Tail.dimension }
+  public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
+    let i = scalars.index(scalars.startIndex, offsetBy: Head.dimension)
+    self.init(head: .init(scalars[..<i]), tail: .init(scalars[i...]))
   }
 }

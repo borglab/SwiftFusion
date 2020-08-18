@@ -16,10 +16,11 @@ import PenguinStructures
 
 /// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and
 /// materialized error vector.
-public struct JacobianFactor<
-  Rows: FixedSizeArray,
-  ErrorVector: EuclideanVectorN
->: LinearApproximationFactor where Rows.Element: EuclideanVectorN & DifferentiableVariableTuple {
+public struct JacobianFactor<Rows: SourceInitializableCollection, ErrorVector: ScalarsInitializableVector>:
+  LinearApproximationFactor
+where
+  Rows.Element: Vector & DifferentiableVariableTuple
+{
   public typealias Variables = Rows.Element
 
   /// The Jacobian matrix, as a fixed size array of rows.
@@ -47,7 +48,13 @@ public struct JacobianFactor<
   public init<F: LinearizableFactor>(linearizing f: F, at x: F.Variables)
   where F.Variables.TangentVector == Variables, F.ErrorVector == ErrorVector {
     let (value, pb) = valueWithPullback(at: x, in: f.errorVector)
-    let rows = Rows(ErrorVector.standardBasis.lazy.map(pb))
+    let rows = Rows(
+      (0..<value.dimension).lazy.map { d in
+        var unit = ErrorVector.zero
+        unit.withUnsafeMutableBufferPointer { b in b[d] = 1.0  }
+        return pb(unit)
+      })
+    
     self.jacobian = rows
     self.error = -value
     self.edges = F.Variables.linearized(f.edges)
@@ -71,24 +78,28 @@ public struct JacobianFactor<
   public func errorVector_linearComponent(_ x: Variables) -> ErrorVector {
     // The compiler isn't able to optimize the closure away if we map `jacobian`, but it is able
     // to optimize the closure away if we map `jacobian`'s `UnsafeBufferPointer`.
-    jacobian.withUnsafeBufferPointer { rows in
+    let r = jacobian.withContiguousStorageIfAvailable { rows in
       ErrorVector(rows.lazy.map { $0.dot(x) })
     }
+    assert(r != nil, "Rows must have contiguous storage")
+    return r.unsafelyUnwrapped
   }
 
   public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {
     // We use `UnsafeBufferPointer`s to avoid forming collections that can't be optimized away.
-    y.withUnsafeBufferPointer { scalars in
-      jacobian.withUnsafeBufferPointer { rows in
-        // We reduce the range `0..<ErrorVector.dimension` instead of `zip(scalars, rows)`, to
+    let r = y.withUnsafeBufferPointer { scalars in
+      jacobian.withContiguousStorageIfAvailable { rows in
+        // We reduce the range `0..<y.dimension` instead of `zip(scalars, rows)`, to
         // avoid forming collections that can't be optimized away.
         // TODO: This is not getting unrolled after `ErrorVector` is specialized. Convincing the
         // optimizer to unroll it might speed things up.
-        (0..<ErrorVector.dimension).reduce(into: Variables.zero) { (result, i) in
+        (0..<y.dimension).reduce(into: Variables.zero) { (result, i) in
           result += scalars[i] * rows[i]
         }
       }
     }
+    assert(r != nil, "Rows must have contiguous storage")
+    return r.unsafelyUnwrapped
   }
 }
 
@@ -96,13 +107,13 @@ public struct JacobianFactor<
 extension JacobianFactor {
   /// Creates a Jacobian factor with the given `jacobian`, `error`, and `edges`.
   ///
-  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  /// - Requires: `J1Rows.count == error.dimension`.
   public init<J1Rows>(
     jacobian j1: FixedSizeMatrix<J1Rows>,
     error: ErrorVector,
     edges: Variables.Indices
   ) where Rows.Element == Tuple1<J1Rows.Element> {
-    precondition(J1Rows.count == ErrorVector.dimension)
+    precondition(J1Rows.count == error.dimension)
     self.init(
       jacobian: Rows(j1.rows.lazy.map { Tuple1($0) }),
       error: error,
@@ -112,15 +123,15 @@ extension JacobianFactor {
 
   /// Creates a Jacobian factor with the given Jacobians, `error`, and `edges`.
   ///
-  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  /// - Requires: `J1Rows.count == error.dimension`.
   public init<J1Rows, J2Rows>(
     jacobians j1: FixedSizeMatrix<J1Rows>,
     _ j2: FixedSizeMatrix<J2Rows>,
     error: ErrorVector,
     edges: Variables.Indices
   ) where Rows.Element == Tuple2<J1Rows.Element, J2Rows.Element> {
-    precondition(J1Rows.count == ErrorVector.dimension)
-    precondition(J2Rows.count == ErrorVector.dimension)
+    precondition(J1Rows.count == error.dimension)
+    precondition(J2Rows.count == error.dimension)
     self.init(
       jacobian: Rows(zip(j1.rows, j2.rows).lazy.map { Tuple2($0.0, $0.1) }),
       error: error,
@@ -130,7 +141,7 @@ extension JacobianFactor {
 
   /// Creates a Jacobian factor with the given Jacobians, `error`, and `edges`.
   ///
-  /// - Requires: `J1Rows.count == ErrorVector.dimension`.
+  /// - Requires: `J1Rows.count == error.dimension`.
   public init<J1Rows, J2Rows, J3Rows>(
     jacobians j1: FixedSizeMatrix<J1Rows>,
     _ j2: FixedSizeMatrix<J2Rows>,
@@ -138,9 +149,9 @@ extension JacobianFactor {
     error: ErrorVector,
     edges: Variables.Indices
   ) where Rows.Element == Tuple3<J1Rows.Element, J2Rows.Element, J3Rows.Element> {
-    precondition(J1Rows.count == ErrorVector.dimension)
-    precondition(J2Rows.count == ErrorVector.dimension)
-    precondition(J3Rows.count == ErrorVector.dimension)
+    precondition(J1Rows.count == error.dimension)
+    precondition(J2Rows.count == error.dimension)
+    precondition(J3Rows.count == error.dimension)
     self.init(
       jacobian: Rows(zip(zip(j1.rows, j2.rows), j3.rows).lazy.map { Tuple3($0.0.0, $0.0.1, $0.1) }),
       error: error,

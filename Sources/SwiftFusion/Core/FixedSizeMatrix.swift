@@ -19,12 +19,15 @@ public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>
 
 /// A matrix whose dimensions are known at compile time.
 ///
-/// Stored as a fixed-size array of rows, where the rows are `EuclideanVectorN`. For example,
+/// Stored as a fixed-size array of rows, where the rows are `Vector`. For example,
 /// - `FixedSizeMatrix<Array3<Vector2>>`: A 3x2 matrix, where each row is a `Vector2`.
 /// - `FixedSizeMatrix<Array3<Tuple2<Vector2, Vector3>>`: A 3x5 matrix, where each row is a
 ///   `Tuple2<Vector2, Vector3>`.
+///
+/// TODO(https://github.com/borglab/SwiftFusion/issues/152): Rename to `Matrix` and remove the
+/// requirement that this is fixed size.
 public struct FixedSizeMatrix<Rows: Equatable & FixedSizeArray>
-  where Rows.Element: EuclideanVectorN
+  where Rows.Element: FixedSizeVector
 {
 
   /// The elements of the matrix, stored as a fixed-size array of row vectors.
@@ -113,7 +116,41 @@ extension FixedSizeMatrix: Differentiable {
   public typealias TangentVector = Self
 }
 
-extension FixedSizeMatrix: EuclideanVectorN {
+extension FixedSizeMatrix: FixedSizeVector {
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+    
+    /// The vector whose scalars are reflected by `self`.
+    fileprivate var base: FixedSizeMatrix
+    
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.withUnsafeBufferPointer { $0.count } }
+    
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return base.withUnsafeBufferPointer { $0[i] }
+      }
+      set {
+        precondition(i >= 0 && i < endIndex)
+        base[i] = newValue
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { Scalars(base: self) }
+    set { self = newValue.base }
+  }
+  
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in
@@ -221,13 +258,17 @@ extension FixedSizeMatrix: EuclideanVectorN {
     return (self.dot(other), { v in (v * other, v * self) })
   }
 
+  public var dimension: Int {
+    return Self.dimension
+  }
+
   public static var dimension: Int {
     return shape[0] * shape[1]
   }
 
   public static var standardBasis: [Self] {
     (0..<dimension).map { i in
-      var v = zero
+      var v = Self.zero
       v[i] = 1
       return v
     }
@@ -355,5 +396,32 @@ extension FixedSizeMatrix: KeyPathIterable {
 extension FixedSizeMatrix: CustomStringConvertible {
   public var description: String {
     "Matrix(" + rows.map { "\($0)" }.joined(separator: ", ") + ")"
+  }
+}
+
+// MARK: - Helper subscript for vector.
+
+extension Vector {
+  /// Accesses the `i`-th scalar.
+  //
+  // This is fileprivate because it's convenient to subscript into the scalar index while
+  // implementing matrix operations, but it's misleading to subscript into the scalar index if
+  // the "vector" is a higher-rank thing like a matrix.
+  fileprivate subscript(i: Int) -> Double {
+    _read {
+      boundsCheck(i)
+      yield withUnsafeBufferPointer { $0.baseAddress.unsafelyUnwrapped[i] }
+    }
+    _modify {
+      boundsCheck(i)
+      defer { _fixLifetime(self) }
+      yield &withUnsafeMutableBufferPointer { $0.baseAddress }.unsafelyUnwrapped[i]
+    }
+  }
+
+  /// Traps with a suitable error message if `i` is not the position of an
+  /// element in `self`.
+  private func boundsCheck(_ i: Int) {
+    precondition(i >= 0 && i < dimension, "index out of range")
   }
 }

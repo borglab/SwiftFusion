@@ -17,7 +17,7 @@ final class CGLSTests: XCTestCase {
     let expected = SimpleGaussianFactorGraph.correctDelta()
     
     for k in [SimpleGaussianFactorGraph.x1ID, SimpleGaussianFactorGraph.x2ID] {
-      assertEqual(x[k].tensor, expected[k].tensor, accuracy: 1e-6)
+      assertEqual(x[k].flatTensor, expected[k].flatTensor, accuracy: 1e-6)
     }
   }
 }

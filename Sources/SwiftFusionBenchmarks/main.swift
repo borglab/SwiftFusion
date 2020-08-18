@@ -15,6 +15,7 @@
 import Benchmark
 
 Benchmark.main([
+  patchBenchmark,
   pose2SLAM,
   pose3SLAM
 ])
