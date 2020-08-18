@@ -75,6 +75,7 @@ public struct FlattenedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : C
 }
 
 extension AnyArrayBuffer {
+  // TODO: retire in favor of subscript downcast + append?
   /// Appends `x`, returning the index of the appended element.
   ///
   /// - Requires: `self.elementType == T.self`.
