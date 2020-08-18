@@ -72,7 +72,7 @@ class ValuesStorageTests: XCTestCase {
   func assertElementsEqual<Dispatch, Elements>(
     _ actual: AnyArrayBuffer<Dispatch>,
     _ expected: Elements,
-    file: StaticString = #file,
+    file: StaticString = #filePath,
     line: UInt = #line
   ) where Elements: Collection, Elements.Element: Equatable {
     guard let typedActual = ArrayBuffer<Elements.Element>(actual) else {
@@ -80,9 +80,9 @@ class ValuesStorageTests: XCTestCase {
         """
         Expected element type `\(Elements.Element.self)` but type-erased buffer has incompatible
         type `\(type(of: actual.storage!))`
-        """, file: file, line: line)
+        """, file: (file), line: line)
       return
     }
-    XCTAssertEqual(Array(typedActual), Array(expected), file: file, line: line)
+    XCTAssertEqual(Array(typedActual), Array(expected), file: (file), line: line)
   }
 }

@@ -127,7 +127,7 @@ public class VectorArrayDispatch: DifferentiableArrayDispatch {
   ///
   /// - Requires: the arguments have elements of the same type with which this dispatcher was
   ///   initialized.
-  final let sum: (_ lhs: inout Self_, _ rhs: Self_) -> AnyVectorArrayBuffer 
+  final let sum: (_ lhs: Self_, _ rhs: Self_) -> AnyVectorArrayBuffer 
 
   /// A function that adds the elements of `addend` to the corresponding elements of `self_`
   ///
@@ -139,7 +139,7 @@ public class VectorArrayDispatch: DifferentiableArrayDispatch {
   ///
   /// - Requires: the arguments have elements of the same type with which this dispatcher was
   ///   initialized.
-  final let difference: (_ lhs: inout Self_, _ rhs: Self_) -> AnyVectorArrayBuffer
+  final let difference: (_ lhs: Self_, _ rhs: Self_) -> AnyVectorArrayBuffer
   
   /// A function that subtracts the elements of `subtrahend` from the corresponding elements of
   /// `self_`

@@ -71,9 +71,12 @@ extension Pose2 {
     self.init(Rot2(theta), Vector2(x, y))
   }
 
-  public init(randomWithCovariance covariance: Tensor<Double>) {
+  public init(
+    randomWithCovariance covariance: Tensor<Double>,
+    seed: TensorFlowSeed = Context.local.randomSeed
+  ) {
     self.init(0, 0, 0)
-    let r = matmul(cholesky(covariance), Tensor<Double>(randomNormal: [3, 1])).scalars
+    let r = matmul(cholesky(covariance), Tensor<Double>(randomNormal: [3, 1], seed: seed)).scalars
     let tv = Pose2.TangentVector(r[0], r[1], r[2])
     self.move(along: tv)
   }

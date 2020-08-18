@@ -58,6 +58,17 @@ extension ArrayStorage where Element: VectorFactor {
   }
 }
 
+extension ArrayStorage where Element == PPCATrackingFactor {
+  /// Returns the linearized factors at `x`, using the custom `PPCATrackingFactor` `linearized`
+  /// method instead of using autodiff on its `errorVector` method.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  func customLinearized(at x: VariableAssignments) -> ArrayBuffer<LinearizedPPCATrackingFactor> {
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(self.lazy.map { f in f.linearized(at: Element.Variables(at: f.edges, in: varsBufs)) })
+    }
+  }
+}
+
 // MARK: - Algorithms on arrays of `GaussianFactor`s.
 
 extension ArrayStorage where Element: GaussianFactor {
@@ -201,6 +212,21 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
     }
     super.init(e)
   }
+
+  /// Creates an instance for elements of type `PPCATrackingFactor`, using the custom
+  /// `PPCATrackingFactor` `linearized` method to do linearization.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  init(_ e: Type<PPCATrackingFactor>) {
+     errorVectors = { self_, x in
+      .init(self_[unsafelyAssumingElementType: e].storage.errorVectors(at: x))
+    }
+    linearized = { self_, x in
+      .init(
+        self_[unsafelyAssumingElementType: e].storage.customLinearized(at: x)
+      )
+    }
+    super.init(e)
+  }
 }
 
 extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
@@ -214,31 +240,37 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     typealias Linearization<A> = Type<JacobianFactor<A, Element.ErrorVector>>
       where A: SourceInitializableCollection, A.Element: Vector & DifferentiableVariableTuple
 
-    // For small dimensions, we use a fixed size array in the linearization because the allocation
-    // and indirection overheads of a dynamically sized array are releatively big.
-    //
-    // For larger dimensions, dynamically sized array are more convenient (no need to define a
-    // new type and case for each size) and in some cases also happen to be faster than fixed size
-    // arrays.
-    //
-    // We chose 4 as the cutoff based on benchmark results:
-    // - "Pose2SLAM.FactorGraph", which heavily uses 3 dimensional error vectors, is ~30% faster
-    //   with a fixed size array than with a dynamically sized array.
-    // - "Pose3SLAM.FactorGraph", which heavily uses 6 dimensional error vectors, is ~3% faster
-    //   with a dynamically sized array than with a fixed size array.
-    // - "Pose3SLAM.sphere2500", which heavily uses 12 dimensional error vectors, has the same
-    //   performance with fixed size and dynamically sized arrays.
-    switch Element.ErrorVector.dimension {
-    case 1:
-      dispatch = .init(elementType, linearization: Linearization<Array1<TangentVector>>())
-    case 2:
-      dispatch = .init(elementType, linearization: Linearization<Array2<TangentVector>>())
-    case 3:
-      dispatch = .init(elementType, linearization: Linearization<Array3<TangentVector>>())
-    case 4:
-      dispatch = .init(elementType, linearization: Linearization<Array4<TangentVector>>())
-    default:
-      dispatch = .init(elementType, linearization: Linearization<Array<TangentVector>>())
+    // If this is a `PPCATrackingFactor`, use the custom `linearized` method.
+    // TODO: Generalize this so that users can write custom linearizations for anything.
+    if Element.self == PPCATrackingFactor.self {
+      dispatch = .init(Type<PPCATrackingFactor>())
+    } else {
+      // For small dimensions, we use a fixed size array in the linearization because the allocation
+      // and indirection overheads of a dynamically sized array are releatively big.
+      //
+      // For larger dimensions, dynamically sized array are more convenient (no need to define a
+      // new type and case for each size) and in some cases also happen to be faster than fixed size
+      // arrays.
+      //
+      // We chose 4 as the cutoff based on benchmark results:
+      // - "Pose2SLAM.FactorGraph", which heavily uses 3 dimensional error vectors, is ~30% faster
+      //   with a fixed size array than with a dynamically sized array.
+      // - "Pose3SLAM.FactorGraph", which heavily uses 6 dimensional error vectors, is ~3% faster
+      //   with a dynamically sized array than with a fixed size array.
+      // - "Pose3SLAM.sphere2500", which heavily uses 12 dimensional error vectors, has the same
+      //   performance with fixed size and dynamically sized arrays.
+      switch Element.ErrorVector.dimension {
+      case 1:
+        dispatch = .init(elementType, linearization: Linearization<Array1<TangentVector>>())
+      case 2:
+        dispatch = .init(elementType, linearization: Linearization<Array2<TangentVector>>())
+      case 3:
+        dispatch = .init(elementType, linearization: Linearization<Array3<TangentVector>>())
+      case 4:
+        dispatch = .init(elementType, linearization: Linearization<Array4<TangentVector>>())
+      default:
+        dispatch = .init(elementType, linearization: Linearization<Array<TangentVector>>())
+      }
     }
 
     self.init(storage: src.storage, dispatch: dispatch)

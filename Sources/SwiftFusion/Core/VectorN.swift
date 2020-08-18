@@ -1,22 +1,16 @@
 // WARNING: This is a generated file. Do not edit it. Instead, edit the corresponding ".gyb" file.
 // See "generate.sh" in the root of this repository for instructions how to regenerate files.
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 1)
 import TensorFlow
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^1, with Euclidean inner product.
 public struct Vector1: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var x: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ x: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.x = x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -24,31 +18,23 @@ public struct Vector1: KeyPathIterable {
 extension Vector1: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.x += rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.x -= rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.x *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.x * other.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -56,22 +42,53 @@ extension Vector1: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 1)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.x = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [x]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector1
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -81,23 +98,16 @@ extension Vector1: FixedSizeVector {
 
 extension Vector1: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^2, with Euclidean inner product.
 public struct Vector2: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var x: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var y: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ x: Double, _ y: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.x = x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.y = y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -105,39 +115,27 @@ public struct Vector2: KeyPathIterable {
 extension Vector2: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.x += rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.y += rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.x -= rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.y -= rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.x *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.y *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.x * other.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.y * other.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -145,27 +143,56 @@ extension Vector2: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 2)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].y = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.x = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.y = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [x, y]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector2
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -175,27 +202,18 @@ extension Vector2: FixedSizeVector {
 
 extension Vector2: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^3, with Euclidean inner product.
 public struct Vector3: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var x: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var y: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var z: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ x: Double, _ y: Double, _ z: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.x = x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.y = y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.z = z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -203,47 +221,31 @@ public struct Vector3: KeyPathIterable {
 extension Vector3: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.x += rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.y += rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.z += rhs.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.x -= rhs.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.y -= rhs.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.z -= rhs.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.x *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.y *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.z *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.x * other.x
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.y * other.y
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.z * other.z
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -251,32 +253,59 @@ extension Vector3: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 3)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].x = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].y = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].z = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.x = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.y = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.z = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [x, y, z]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector3
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -286,31 +315,20 @@ extension Vector3: FixedSizeVector {
 
 extension Vector3: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^4, with Euclidean inner product.
 public struct Vector4: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -318,55 +336,35 @@ public struct Vector4: KeyPathIterable {
 extension Vector4: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -374,37 +372,62 @@ extension Vector4: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 4)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector4
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -414,35 +437,22 @@ extension Vector4: FixedSizeVector {
 
 extension Vector4: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^5, with Euclidean inner product.
 public struct Vector5: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -450,63 +460,39 @@ public struct Vector5: KeyPathIterable {
 extension Vector5: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -514,42 +500,65 @@ extension Vector5: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 5)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector5
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -559,39 +568,24 @@ extension Vector5: FixedSizeVector {
 
 extension Vector5: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^6, with Euclidean inner product.
 public struct Vector6: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s5: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s5 = s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -599,71 +593,43 @@ public struct Vector6: KeyPathIterable {
 extension Vector6: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s5 += rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s5 -= rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s5 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s5 * other.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -671,47 +637,68 @@ extension Vector6: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 6)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[5].s5 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s5 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4, s5]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector6
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -721,43 +708,26 @@ extension Vector6: FixedSizeVector {
 
 extension Vector6: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^7, with Euclidean inner product.
 public struct Vector7: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s5: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s6: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s5 = s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s6 = s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -765,79 +735,47 @@ public struct Vector7: KeyPathIterable {
 extension Vector7: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s5 += rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s6 += rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s5 -= rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s6 -= rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s5 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s6 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s5 * other.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s6 * other.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -845,52 +783,71 @@ extension Vector7: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 7)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[5].s5 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[6].s6 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s5 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s6 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4, s5, s6]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector7
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -900,47 +857,28 @@ extension Vector7: FixedSizeVector {
 
 extension Vector7: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^8, with Euclidean inner product.
 public struct Vector8: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s5: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s6: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s7: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s5 = s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s6 = s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s7 = s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -948,87 +886,51 @@ public struct Vector8: KeyPathIterable {
 extension Vector8: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s5 += rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s6 += rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s7 += rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s5 -= rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s6 -= rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s7 -= rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s5 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s6 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s7 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s5 * other.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s6 * other.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s7 * other.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -1036,57 +938,74 @@ extension Vector8: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 8)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[5].s5 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[6].s6 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[7].s7 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s5 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s6 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s7 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4, s5, s6, s7]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector8
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -1096,51 +1015,30 @@ extension Vector8: FixedSizeVector {
 
 extension Vector8: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^9, with Euclidean inner product.
 public struct Vector9: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s5: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s6: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s7: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s8: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s5 = s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s6 = s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s7 = s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s8 = s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -1148,95 +1046,55 @@ public struct Vector9: KeyPathIterable {
 extension Vector9: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s5 += rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s6 += rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s7 += rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s8 += rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s5 -= rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s6 -= rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s7 -= rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s8 -= rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s5 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s6 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s7 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s8 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s5 * other.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s6 * other.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s7 * other.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s8 * other.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -1244,62 +1102,77 @@ extension Vector9: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 9)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[5].s5 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[6].s6 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[7].s7 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[8].s8 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s5 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s6 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s7 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s8 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4, s5, s6, s7, s8]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector9
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -1309,55 +1182,32 @@ extension Vector9: FixedSizeVector {
 
 extension Vector9: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^10, with Euclidean inner product.
 public struct Vector10: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s5: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s6: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s7: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s8: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s9: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double, _ s9: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s5 = s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s6 = s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s7 = s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s8 = s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s9 = s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -1365,103 +1215,59 @@ public struct Vector10: KeyPathIterable {
 extension Vector10: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s5 += rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s6 += rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s7 += rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s8 += rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s9 += rhs.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s5 -= rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s6 -= rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s7 -= rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s8 -= rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s9 -= rhs.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s5 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s6 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s7 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s8 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s9 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s5 * other.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s6 * other.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s7 * other.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s8 * other.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s9 * other.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -1469,67 +1275,80 @@ extension Vector10: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 10)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[5].s5 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[6].s6 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[7].s7 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[8].s8 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[9].s9 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s5 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s6 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s7 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s8 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s9 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector10
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -1539,59 +1358,34 @@ extension Vector10: FixedSizeVector {
 
 extension Vector10: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^11, with Euclidean inner product.
 public struct Vector11: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s5: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s6: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s7: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s8: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s9: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s10: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double, _ s9: Double, _ s10: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s5 = s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s6 = s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s7 = s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s8 = s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s9 = s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s10 = s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -1599,111 +1393,63 @@ public struct Vector11: KeyPathIterable {
 extension Vector11: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s5 += rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s6 += rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s7 += rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s8 += rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s9 += rhs.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s10 += rhs.s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s5 -= rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s6 -= rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s7 -= rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s8 -= rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s9 -= rhs.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s10 -= rhs.s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s5 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s6 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s7 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s8 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s9 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s10 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s5 * other.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s6 * other.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s7 * other.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s8 * other.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s9 * other.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s10 * other.s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -1711,72 +1457,83 @@ extension Vector11: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 11)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[5].s5 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[6].s6 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[7].s7 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[8].s8 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[9].s9 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[10].s10 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s5 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s6 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s7 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s8 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s9 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s10 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector11
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 
@@ -1786,63 +1543,36 @@ extension Vector11: FixedSizeVector {
 
 extension Vector11: ElementaryFunctions {}
 
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 10)
 
 /// An element of R^12, with Euclidean inner product.
 public struct Vector12: KeyPathIterable {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s0: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s1: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s2: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s3: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s4: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s5: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s6: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s7: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s8: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s9: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s10: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 14)
   @differentiable public var s11: Double
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 16)
 
   @differentiable
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double, _ s9: Double, _ s10: Double, _ s11: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s0 = s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s1 = s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s2 = s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s3 = s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s4 = s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s5 = s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s6 = s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s7 = s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s8 = s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s9 = s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s10 = s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 20)
     self.s11 = s11
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 22)
   }
 }
 
@@ -1850,119 +1580,67 @@ public struct Vector12: KeyPathIterable {
 extension Vector12: AdditiveArithmetic, Vector {
   @differentiable
   public static func += (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s0 += rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s1 += rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s2 += rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s3 += rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s4 += rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s5 += rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s6 += rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s7 += rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s8 += rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s9 += rhs.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s10 += rhs.s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 30)
     lhs.s11 += rhs.s11
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 32)
   }
 
   @differentiable
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s0 -= rhs.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s1 -= rhs.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s2 -= rhs.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s3 -= rhs.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s4 -= rhs.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s5 -= rhs.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s6 -= rhs.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s7 -= rhs.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s8 -= rhs.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s9 -= rhs.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s10 -= rhs.s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 37)
     lhs.s11 -= rhs.s11
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 39)
   }
 
   @differentiable
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s0 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s1 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s2 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s3 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s4 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s5 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s6 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s7 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s8 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s9 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s10 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 44)
     lhs.s11 *= rhs
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 46)
   }
 
   @differentiable
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s0 * other.s0
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s1 * other.s1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s2 * other.s2
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s3 * other.s3
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s4 * other.s4
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s5 * other.s5
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s6 * other.s6
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s7 * other.s7
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s8 * other.s8
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s9 * other.s9
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s10 * other.s10
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 52)
     result += self.s11 * other.s11
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 54)
     return result
   }
 
@@ -1970,77 +1648,86 @@ extension Vector12: AdditiveArithmetic, Vector {
 
   public static var standardBasis: [Self] {
     var result = Array(repeating: Self.zero, count: 12)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[0].s0 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[1].s1 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[2].s2 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[3].s3 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[4].s4 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[5].s5 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[6].s6 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[7].s7 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[8].s8 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[9].s9 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[10].s10 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 62)
     result[11].s11 = 1
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 64)
     return result
   }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s0 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s1 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s2 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s3 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s4 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s5 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s6 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s7 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s8 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s9 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s10 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 70)
     self.s11 = scalars[index]
     index = scalars.index(after: index)
-// ###sourceLocation(file: "Sources/SwiftFusion/Core/VectorN.swift.gyb", line: 73)
   }
 
-  public var scalars: [Double] {
-    return [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11]
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars: RandomAccessCollection, MutableCollection {
+    // Deduction of Indices fails without an explicit declaration.
+    /// A type that can represent all the indices of elements in this collection.
+    public typealias Indices = Range<Int>
+
+    /// The vector whose scalars are reflected by `self`.
+    internal var base: Vector12
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { base.dimension }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get {
+        precondition(i >= 0 && i < endIndex)
+        return withUnsafePointer(to: self) {
+          UnsafeRawPointer($0).assumingMemoryBound(to: Double.self)[i]
+        }
+      }
+      _modify {
+        precondition(i >= 0 && i < endIndex)
+        let p = withUnsafeMutablePointer(to: &self) { $0 }
+        let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        yield &q[i]
+        _fixLifetime(self)
+      }
+    }
+  }
+  
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get { .init(base: self) }
+    set { self = newValue.base  }
   }
 }
 

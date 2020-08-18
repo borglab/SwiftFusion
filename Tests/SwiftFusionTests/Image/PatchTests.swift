@@ -111,4 +111,30 @@ final class PatchTests: XCTestCase {
     let expectedCenter = Pose2(Rot2(0), Vector2(65, 22.5))
     XCTAssertLessThan(expectedCenter.localCoordinate(x.center).norm, 0.1)
   }
+
+  /// Test that the result and jacobian of `patchWithJacobian` are the same as the result and
+  /// jacobian that we get from using autodiff on `patch`.
+  func testPatchWithJacobian() {
+    for _ in 0..<10 {
+      let image = Tensor<Double>(randomNormal: [100, 100, 1])
+      let obb = OrientedBoundingBox(
+        center: Pose2(randomWithCovariance: eye(rowCount: 3)), rows: 10, cols: 20)
+
+      // Calculate the expected value and jacobian using autodiff. We calculate the jacobian by
+      // pulling back all the basis vectors.
+      let (expectedValue, pb) = valueWithPullback(at: obb) { image.patch(at: $0) }
+      let expectedJacobian = Tensor<Double>(
+        stacking: (0..<(obb.rows * obb.cols)).map { i in
+          var basis = Tensor<Double>(zerosLike: expectedValue)
+          basis[i / obb.cols, i % obb.cols, 0] = Tensor(1)
+          return pb(basis).center.flatTensor
+        }
+      ).reshaped(to: [obb.rows, obb.cols, 1, Pose2.TangentVector.dimension])
+
+      // Compare to the result from `patchWithJacobian`.
+      let (value, jacobian) = image.patchWithJacobian(at: obb)
+      assertEqual(value, expectedValue, accuracy: 1e-6)
+      assertEqual(jacobian, expectedJacobian, accuracy: 1e-6)
+    }
+  }
 }
