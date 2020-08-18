@@ -13,10 +13,10 @@ import PenguinStructures
 @testable import SwiftFusion
 
 /// A between factor on `Pose2`.
-public typealias SwitchingBetweenFactor2 = SwitchingBetweenFactor<Pose2, Array3<Tuple2<Vector3, Vector3>>>
+public typealias SwitchingBetweenFactor2 = SwitchingBetweenFactor<Pose2>
 
 /// A between factor on `Pose3`.
-public typealias SwitchingBetweenFactor3 = SwitchingBetweenFactor<Pose3, Array6<Tuple2<Vector6, Vector6>>>
+public typealias SwitchingBetweenFactor3 = SwitchingBetweenFactor<Pose3>
 
 class Scratch: XCTestCase {
   let origin = Pose2(0,0,0)
