@@ -35,7 +35,6 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     graph.store(PriorFactor(TypedID(0), Pose3()))
     
     var optimizer = LM()
-    optimizer.verbosity = .SUMMARY
     optimizer.max_iteration = 30
     optimizer.max_inner_iteration = 200
     
@@ -67,7 +66,6 @@ let pose3SLAM = BenchmarkSuite(name: "Pose3SLAM") { suite in
     graph.store(PriorFactor(TypedID(0), Pose3()))
     
     var optimizer = LM()
-    optimizer.verbosity = .SUMMARY
     optimizer.max_iteration = 1
     optimizer.max_inner_iteration = 200
     
