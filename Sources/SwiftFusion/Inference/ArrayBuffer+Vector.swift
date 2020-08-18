@@ -14,6 +14,50 @@
 import PenguinStructures
 
 extension ArrayBuffer: Vector where Element: Vector {
+  public struct Scalars: MutableCollection {
+    /// The vector whose scalars are reflected by `self`.
+    var base: ArrayBuffer
+
+    /// A type representing a position in `Self`.
+    public typealias Index = FlattenedIndex<ArrayBuffer.Index, Element.Scalars.Index>
+    
+    /// Accesses the scalar at `i`.
+    public subscript(i: Index) -> Double {
+      get { base[i.outer].scalars[i.inner!] }
+      _modify { yield &base[i.outer].scalars[i.inner!] }
+    }
+    
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Index {
+      .init(firstValidIn: base, innerCollection: \.scalars)
+    }
+    
+    /// The position one step beyond the last contained element.
+    public var endIndex: Index {
+      .init(endIn: base)
+    }
+
+    /// Returns the position after `i`.
+    ///
+    /// - Requires: `i != endIndex`.
+    public func index(after i: Index) -> Index {
+      .init(nextAfter: i, in: base, innerCollection: \.scalars)
+    }
+  }
+
+  /// This vector's scalar values in a standard basis.
+  public var scalars: Scalars {
+    get {
+      Scalars(base: self)
+    }
+    _modify {
+      var io = Scalars(base: self)
+      self = ArrayBuffer() // Avoid CoWs
+      yield &io
+      swap(&self, &io.base)
+    }
+  }
+  
   public var dimension: Int { self.lazy.map(\.dimension).reduce(0, +) }
   
   /// Replaces lhs with the product of `lhs` and `rhs`.

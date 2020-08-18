@@ -37,6 +37,6 @@ do
 
 EOF
 
-  "$GYB" "$GENERATED_FILE.gyb" >> "$GENERATED_FILE"
+  "$GYB" --line-directive '' "$GENERATED_FILE.gyb" >> "$GENERATED_FILE"
   $SED -i'' "s|###sourceLocation(file: \"$(pwd)/|###sourceLocation(file: \"|" "$GENERATED_FILE"
 done
