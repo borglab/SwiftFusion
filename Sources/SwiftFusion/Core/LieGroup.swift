@@ -32,7 +32,7 @@ extension LieGroup {
   func vjpInverse() -> (value: Self, pullback: (TangentVector) -> TangentVector) {
     // Derivative from https://github.com/borglab/gtsam/blob/develop/doc/math.pdf section 5.3. We
     // use the transpose of the Adjoint because the pullback is the transpose of the differential.
-    return (self.inverse(), { TangentVector.zero - self.AdjointTranspose($0) })
+    return (self.inverse(), { -1 * self.AdjointTranspose($0) })
   }
 
   /// The group operation.
@@ -165,7 +165,7 @@ extension LieGroupCoordinate {
   /// their implementation against the default implementation.
   public func defaultAdjointTranspose(_ v: LocalCoordinate) -> LocalCoordinate {
     // This works because the pullback of a linear function is its transpose.
-    return pullback(at: LocalCoordinate.zero, in: { self.Adjoint($0) })(v)
+    return pullback(at: v.zeroTangentVectorInitializer(), in: { self.Adjoint($0) })(v)
   }
 }
 
