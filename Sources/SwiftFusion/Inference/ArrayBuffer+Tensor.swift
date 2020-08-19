@@ -135,7 +135,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
     -> (value: ArrayBuffer, pullback: (TangentVector)->(TangentVector, TangentVector))
   where Element: Differentiable
   {
-    (lhs - rhs, { x in (x, .zero - x) })
+    (lhs - rhs, { x in (x, x.zeroTangentVectorInitializer() - x) })
   }
   
   /// Replaces `lhs` with the sum of `lhs` and `rhs`
@@ -175,7 +175,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   where Element: Differentiable
   {
     lhs -= rhs
-    return ((), { x in .zero - x })
+    return ((), { x in x.zeroTangentVectorInitializer() - x })
   }
 }
 
