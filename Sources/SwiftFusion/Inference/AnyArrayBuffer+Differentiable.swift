@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// Contiguous storage for factor graph values (variable assignments, error vectors) of statically
-/// unknown type.
-
 import PenguinStructures
 
 extension AnyArrayBuffer where Dispatch == VectorArrayDispatch {
