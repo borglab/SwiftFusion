@@ -43,7 +43,7 @@ extension Empty: Differentiable {
   public mutating func move(along direction: TangentVector) {}
   
   public var zeroTangentVectorInitializer: () -> TangentVector {
-    { .zero }
+    { .init() }
   }
 }
 
@@ -55,7 +55,7 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
     tail.move(along: direction.tail)
   }
   public var zeroTangentVectorInitializer: () -> TangentVector {
-    { .zero }
+    { .init(head: head.zeroTangentVectorInitializer(), tail: tail.zeroTangentVectorInitializer()) }
   }
 }
 
