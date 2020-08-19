@@ -77,6 +77,6 @@ extension AnyArrayBuffer: Differentiable where Dispatch: DifferentiableArrayDisp
   }
 
   public var zeroTangentVectorInitializer: () -> TangentVector {
-    { .zero }
+    { .init(ArrayBuffer<Vector1>()) }
   }
 }
