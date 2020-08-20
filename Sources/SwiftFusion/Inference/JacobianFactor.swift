@@ -47,9 +47,9 @@ where
   /// Creates a factor that linearly approximates `f` at `x`.
   public init<F: LinearizableFactor>(linearizing f: F, at x: F.Variables)
   where F.Variables.TangentVector == Variables, F.ErrorVector == ErrorVector {
-    let (value, pb) = valueWithPullback(at: x, in: f.errorVector)
-    self.jacobian = Rows(StandardBasis<ErrorVector>(dimension: value.dimension).lazy.map(pb))
-    self.error = -value
+    let (negativeError, pb) = valueWithPullback(at: x, in: f.errorVector)
+    self.jacobian = Rows(StandardBasis(shapedLike: negativeError).lazy.map(pb))
+    self.error = -negativeError
     self.edges = F.Variables.linearized(f.edges)
   }
 

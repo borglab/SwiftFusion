@@ -84,7 +84,7 @@ extension FixedSizeMatrix {
   /// - Requires: `Self` is a square matrix. e.g. `Self.shape[0] == Self.shape[1]`.
   public static var identity: Self {
     precondition(isSquare)
-    return .init(rows: Rows(StandardBasis<Rows.Element>(dimension: shape[0])))
+    return .init(rows: Rows(Rows.Element.standardBasis))
   }
 }
 
@@ -104,7 +104,7 @@ extension FixedSizeMatrix where Rows == Array3<Vector3> {
 
 extension FixedSizeMatrix: AdditiveArithmetic {
   public static var zero: Self {
-    return Self(rows: Rows((0..<Rows.count).lazy.map { _ in Rows.Element.zero }))
+    return .init(rows: Rows(repeatElement(Rows.Element.zero, count: Rows.count)))
   }
 }
 
@@ -139,6 +139,11 @@ extension FixedSizeMatrix: FixedSizeVector {
         base[i] = newValue
       }
     }
+  }
+  
+  /// A zero value of the same shape as `self`.
+  public var zeroValue: Self {
+    .init(rows: Rows(rows.lazy.map { $0.zeroValue }))
   }
   
   /// This vector's scalar values in a standard basis.
