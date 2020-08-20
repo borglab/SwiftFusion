@@ -83,12 +83,8 @@ extension FixedSizeMatrix {
   ///
   /// - Requires: `Self` is a square matrix. e.g. `Self.shape[0] == Self.shape[1]`.
   public static var identity: Self {
-    precondition(Self.shape[0] == Self.shape[1])
-    var r = Self.zero
-    for i in 0..<Self.shape[0] {
-      r[i, i] = 1
-    }
-    return r
+    precondition(isSquare)
+    return .init(rows: Rows(StandardBasis<Rows.Element>(dimension: shape[0])))
   }
 }
 
