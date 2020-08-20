@@ -48,14 +48,7 @@ where
   public init<F: LinearizableFactor>(linearizing f: F, at x: F.Variables)
   where F.Variables.TangentVector == Variables, F.ErrorVector == ErrorVector {
     let (value, pb) = valueWithPullback(at: x, in: f.errorVector)
-    let rows = Rows(
-      (0..<value.dimension).lazy.map { d in
-        var unit = ErrorVector.zero
-        unit.withUnsafeMutableBufferPointer { b in b[d] = 1.0  }
-        return pb(unit)
-      })
-    
-    self.jacobian = rows
+    self.jacobian = Rows(StandardBasis<ErrorVector>(dimension: value.dimension).lazy.map(pb))
     self.error = -value
     self.edges = F.Variables.linearized(f.edges)
   }

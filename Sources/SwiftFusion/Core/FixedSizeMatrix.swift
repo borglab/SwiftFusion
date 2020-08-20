@@ -265,14 +265,6 @@ extension FixedSizeMatrix: FixedSizeVector {
   public static var dimension: Int {
     return shape[0] * shape[1]
   }
-
-  public static var standardBasis: [Self] {
-    (0..<dimension).map { i in
-      var v = Self.zero
-      v[i] = 1
-      return v
-    }
-  }
 }
 
 // MARK: - Matrix math.

@@ -50,14 +50,6 @@ extension FixedShapeTensor {
     shape.reduce(1, *)
   }
 
-  public var standardBasis: [Self] {
-    (0..<dimension).map { i in
-      var b = Array(repeating: Double(0), count: dimension)
-      b[i] = 1
-      return Self(Tensor(shape: Self.shape, scalars: b))
-    }
-  }
-
   /// Returns the result of calling `body` on the scalars of `self`.
   public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R

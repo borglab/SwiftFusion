@@ -92,6 +92,37 @@ public protocol ScalarsInitializableVector: Vector {
   init<Source: Collection>(_ scalars: Source) where Source.Element == Double
 }
 
+extension ScalarsInitializableVector {
+  /// Creates the `n`th unit vector in the standard basis having dimension `m`.
+  ///
+  /// Scalar values of the created instance are all zero except for the `n`th one, which is 1.
+  ///
+  /// - Requires: `n < m`
+  public init(standardBasisMember n: Int, of m: Int) {
+    precondition(n < m)
+    self.init(repeatElement(0.0, count: m))
+    // As of this writing, mutating is faster than initializing with the right value
+    scalars[scalars.index(atOffset: n)] = 1.0
+  }
+}
+
+/// The standard basis values of `V` with a given dimension.
+///
+/// The elements are the distinct vector values having a single non-zero scalar with value 1.
+public struct StandardBasis<V: ScalarsInitializableVector>: RandomAccessCollection {
+  // The dimension of V, and the number of elements in `self`.
+  var dimension: Int
+
+  /// The position of the first element, or `endIndex` if `self.isEmpty`.
+  public var startIndex: Int { 0 }
+  
+  /// The position one step beyond the last contained element.
+  public var endIndex: Int { dimension }
+  
+  /// Accesses the unit vector at `i`.
+  public subscript(i: Int) -> V { .init(standardBasisMember: i, of: dimension) }
+}
+  
 /// A `Vector` whose instances all have the same `dimension`.
 ///
 /// Note: This is a temporary shim to help incrementally remove the assumption that vectors have a
@@ -99,6 +130,10 @@ public protocol ScalarsInitializableVector: Vector {
 public protocol FixedSizeVector: ScalarsInitializableVector {
   /// The `dimension` of an instance.
   static var dimension: Int { get }
+}
+
+extension FixedSizeVector {
+  public static var standardBasis: StandardBasis<Self> { .init(dimension: dimension) }
 }
 
 /// Vector space operations that can be implemented in terms of others.
