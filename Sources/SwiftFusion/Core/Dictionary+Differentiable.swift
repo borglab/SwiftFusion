@@ -16,7 +16,7 @@ extension Dictionary: Differentiable where Value: Differentiable {
   }
 
   public var zeroTangentVectorInitializer: () -> TangentVector {
-    { mapValues { v in v.zeroTangentVectorInitializer() } }
+    { mapValues { v in v.zeroTangentVector } }
   }
 }
 

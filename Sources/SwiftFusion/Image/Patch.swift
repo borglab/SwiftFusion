@@ -46,7 +46,7 @@ extension ArrayImage {
     let channels = self.channels
     func outerPb(_ dOut: TangentVector) -> OrientedBoundingBox.TangentVector {
       var idx = 0
-      var dBox = region.zeroTangentVectorInitializer()
+      var dBox = region.zeroTangentVector
       for i in 0..<region.rows {
         for j in 0..<region.cols {
           // The position of the destination pixel in the destination image, in `(u, v)` coordinates.

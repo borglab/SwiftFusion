@@ -165,7 +165,7 @@ extension LieGroupCoordinate {
   /// their implementation against the default implementation.
   public func defaultAdjointTranspose(_ v: LocalCoordinate) -> LocalCoordinate {
     // This works because the pullback of a linear function is its transpose.
-    return pullback(at: v.zeroTangentVectorInitializer(), in: { self.Adjoint($0) })(v)
+    return pullback(at: v.zeroTangentVector, in: { self.Adjoint($0) })(v)
   }
 }
 

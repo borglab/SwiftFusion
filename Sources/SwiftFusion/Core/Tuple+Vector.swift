@@ -55,7 +55,7 @@ where Head: Differentiable, Tail: Differentiable, Tail.TangentVector: TupleProto
     tail.move(along: direction.tail)
   }
   public var zeroTangentVectorInitializer: () -> TangentVector {
-    { .init(head: head.zeroTangentVectorInitializer(), tail: tail.zeroTangentVectorInitializer()) }
+    { .init(head: head.zeroTangentVector, tail: tail.zeroTangentVector) }
   }
 }
 

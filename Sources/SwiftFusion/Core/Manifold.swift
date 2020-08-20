@@ -99,7 +99,7 @@ extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
 
     return (
       value: coordinateStorage,
-      pullback(at: zeroTangentVectorInitializer()) { self.coordinateStorage.retract($0) }
+      pullback(at: zeroTangentVector) { self.coordinateStorage.retract($0) }
     )
   }
 
