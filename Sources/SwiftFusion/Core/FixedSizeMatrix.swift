@@ -29,7 +29,6 @@ public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>
 public struct FixedSizeMatrix<Rows: Equatable & FixedSizeArray>
   where Rows.Element: FixedSizeVector
 {
-
   /// The elements of the matrix, stored as a fixed-size array of row vectors.
   public var rows: Rows
 
@@ -58,9 +57,18 @@ extension FixedSizeMatrix {
   /// Requires: `elements.count == Self.shape[0] * Self.shape[1]`.
   public init<C: Collection>(_ elements: C) where C.Element == Double {
     precondition(elements.count == Self.shape[0] * Self.shape[1])
-    self.rows = Rows((0..<Rows.count).lazy.map { i in
-      Rows.Element(elements.dropFirst(i * Self.shape[1]))
-    })
+    self.rows = .init(
+      elements.sliced(intoBatchesOfAtMost: Self.shape[1]).lazy.map(Rows.Element.init))
+  }
+
+  /// Creates a matrix with the given rows.
+  ///
+  /// - Requires: `rows.count == Self.shape[0]`.
+  /// - Requires: `rows.allSatisfy(count == Self.shape[1])`.
+  internal init<R: Collection>(rows: R) where R.Element == Rows.Element {
+    precondition(rows.count == Self.shape[0])
+    precondition(rows.allSatisfy { $0.dimension == Self.shape[1] })
+    self.rows = Rows(rows)
   }
 
   /// Creates a matrix with rows `r0`, `r1`, and `r2`.
@@ -108,7 +116,7 @@ extension FixedSizeMatrix where Rows == Array3<Vector3> {
 
 extension FixedSizeMatrix: AdditiveArithmetic {
   public static var zero: Self {
-    return Self(rows: Rows((0..<Rows.count).lazy.map { _ in Rows.Element.zero }))
+    .init(rows: repeatElement(.init(repeatElement(0.0, count: shape[1])), count: shape[0]))
   }
 }
 
@@ -287,12 +295,7 @@ extension FixedSizeMatrix {
   /// - Requires: `Self.isSquare`.
   public init(outerProduct lhs: Rows.Element, _ rhs: Rows.Element) {
     precondition(Self.isSquare, "init(outerProduct:_:) requires a square matrix")
-    self = Self.zero
-    for i in 0..<Self.shape[0] {
-      for j in 0..<Self.shape[0] {
-        self[i, j] = lhs[i] * rhs[j]
-      }
-    }
+    self.init(rows: lhs.scalars.lazy.map { l in .init(rhs.scalars.lazy.map { r in l * r }) })
   }
 
   /// Returns the transpose of `self`.
@@ -301,10 +304,11 @@ extension FixedSizeMatrix {
   @differentiable
   public func transposed() -> Self {
     precondition(Self.isSquare, "transposed() requires a square matrix")
-    var r = Self.zero
-    for i in 0..<Self.shape[0] {
-      for j in 0..<Self.shape[0] {
-        r[i, j] = self[j, i]
+    let d = Self.shape[0]
+    var r = self
+    for i in 0..<(d - 1) {
+      for j in i..<d {
+        (r[i, j], r[j, i]) = (r[j, i], r[i, j])
       }
     }
     return r
@@ -325,7 +329,7 @@ extension FixedSizeMatrix {
 @differentiable
 public func matvec<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: Rows.Element) -> Rows.Element {
   precondition(type(of: lhs).isSquare, "matvec only implemented for square matrices")
-  var r = Rows.Element.zero
+  var r = Rows.Element(repeatElement(0.0, count: rhs.dimension))
   for i in 0..<Rows.Element.dimension {
     for j in 0..<Rows.Element.dimension {
       r[i] += lhs[i, j] * rhs[j]
@@ -358,7 +362,9 @@ public func matmul<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: FixedSizeMatrix<Ro
   -> FixedSizeMatrix<Rows>
 {
   precondition(type(of: lhs).isSquare, "matmul only implemented for square matrices")
-  var r = FixedSizeMatrix<Rows>.zero
+  typealias R = FixedSizeMatrix<Rows>
+  let d = R.shape[0]
+  var r = R(rows: repeatElement(.init(repeatElement(0.0, count: d)), count: d))
   for line in 0..<Rows.Element.dimension {
     for i in 0..<Rows.Element.dimension {
       for j in 0..<Rows.Element.dimension {

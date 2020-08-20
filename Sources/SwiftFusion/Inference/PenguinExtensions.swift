@@ -207,3 +207,62 @@ extension Collection {
     index(startIndex, offsetBy: n)
   }
 }
+
+/// The consecutive `SubSequence`s of a `Base` collection having a given maximum size.
+struct Batched<Base: Collection>: Collection {
+  public let base: Base
+  public let maxBatchSize: Int
+  
+  init(_ base: Base, maxBatchSize: Int) {
+    precondition(maxBatchSize > 0)
+    self.base = base
+    self.maxBatchSize = maxBatchSize
+  }
+
+  struct Iterator: IteratorProtocol {
+    let slices: Batched
+    let position: Index
+
+    mutating func next() -> Base.SubSequence? {
+      position.sliceStart == position.sliceEnd ? nil : slices[position]
+    }
+  }
+
+  func makeIterator() -> Iterator { .init(slices: self, position: startIndex) }
+  
+  struct Index: Comparable {
+    var sliceStart, sliceEnd: Base.Index
+    static func < (lhs: Self, rhs: Self) -> Bool {
+      lhs.sliceStart < rhs.sliceStart
+    }
+  }
+
+  private func next(after i: Base.Index) -> Base.Index {
+    let limit = base.endIndex
+    return base.index(i, offsetBy: maxBatchSize, limitedBy: limit) ?? limit
+  }
+  
+  var startIndex: Index {
+    .init(sliceStart: base.startIndex, sliceEnd: next(after: base.startIndex))
+  }
+  
+  var endIndex: Index {
+    .init(sliceStart: base.endIndex, sliceEnd: base.endIndex)
+  }
+
+  func index(after i: Index) -> Index {
+    .init(sliceStart: i.sliceEnd, sliceEnd: next(after: i.sliceEnd))
+  }
+
+  func formIndex(after i: inout Index) {
+    (i.sliceStart, i.sliceEnd) = (i.sliceEnd, next(after: i.sliceEnd))
+  }
+
+  subscript(i: Index) -> Base.SubSequence { base[i.sliceStart..<i.sliceEnd] }
+}
+
+extension Collection {
+  func sliced(intoBatchesOfAtMost maxBatchSize: Int) -> Batched<Self> {
+    .init(self, maxBatchSize: maxBatchSize)
+  }
+}
