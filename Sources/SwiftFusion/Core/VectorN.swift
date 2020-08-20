@@ -40,12 +40,6 @@ extension Vector1: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return 1 }
 
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 1)
-    result[0].x = 1
-    return result
-  }
-
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
     self.x = scalars[index]
@@ -140,13 +134,6 @@ extension Vector2: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 2 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 2)
-    result[0].x = 1
-    result[1].y = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -250,14 +237,6 @@ extension Vector3: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 3 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 3)
-    result[0].x = 1
-    result[1].y = 1
-    result[2].z = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -369,15 +348,6 @@ extension Vector4: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 4 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 4)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -497,16 +467,6 @@ extension Vector5: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 5 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 5)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -634,17 +594,6 @@ extension Vector6: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 6 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 6)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    result[5].s5 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -780,18 +729,6 @@ extension Vector7: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 7 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 7)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    result[5].s5 = 1
-    result[6].s6 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -935,19 +872,6 @@ extension Vector8: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 8 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 8)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    result[5].s5 = 1
-    result[6].s6 = 1
-    result[7].s7 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -1099,20 +1023,6 @@ extension Vector9: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 9 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 9)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    result[5].s5 = 1
-    result[6].s6 = 1
-    result[7].s7 = 1
-    result[8].s8 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -1272,21 +1182,6 @@ extension Vector10: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 10 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 10)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    result[5].s5 = 1
-    result[6].s6 = 1
-    result[7].s7 = 1
-    result[8].s8 = 1
-    result[9].s9 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -1454,22 +1349,6 @@ extension Vector11: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 11 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 11)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    result[5].s5 = 1
-    result[6].s6 = 1
-    result[7].s7 = 1
-    result[8].s8 = 1
-    result[9].s9 = 1
-    result[10].s10 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
@@ -1645,23 +1524,6 @@ extension Vector12: AdditiveArithmetic, Vector {
   }
 
   public var dimension: Int { return 12 }
-
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: 12)
-    result[0].s0 = 1
-    result[1].s1 = 1
-    result[2].s2 = 1
-    result[3].s3 = 1
-    result[4].s4 = 1
-    result[5].s5 = 1
-    result[6].s6 = 1
-    result[7].s7 = 1
-    result[8].s8 = 1
-    result[9].s9 = 1
-    result[10].s10 = 1
-    result[11].s11 = 1
-    return result
-  }
 
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
