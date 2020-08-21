@@ -33,8 +33,7 @@ extension AnyArrayBuffer: Equatable where Dispatch: VectorArrayDispatch {
   }
 }
 
-extension AnyArrayBuffer where Dispatch: VectorArrayDispatch
-{
+extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   /// Returns the elementwise sum of `lhs` and `rhs`
   ///
   /// - Requires: the arguments have elements of the same type.
@@ -61,6 +60,14 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch
   /// - Requires: the arguments have elements of the same type.
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.dispatch.subtract(&lhs.upcast, rhs.upcast)
+  }
+
+  static func *= (_ lhs: inout Self, _ rhs: Double) {
+    lhs.dispatch.scale(&lhs.upcast, rhs)
+  }
+
+  static func * (_ lhs: Double, _ rhs: Self) -> Self {
+    .init(unsafelyCasting: rhs.dispatch.scaled(rhs.upcast, lhs))
   }
 }
 
