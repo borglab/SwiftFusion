@@ -39,6 +39,9 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   @differentiable
   static func * (_ lhs: Double, _ rhs: Self) -> Self
 
+  /// A zero value of the same shape as `self`.
+  var zeroValue: Self { get }
+
   // MARK: - Euclidean structure.
 
   /// The inner product of `self` with `other`.
@@ -78,6 +81,11 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   #endif
 }
 
+extension Vector {
+  /// A zero value of the same shape as `self`.
+  public var zeroValue: Self { 0.0 * self }
+}
+
 /// A `Vector` whose instances can be initialized for a collection of scalars.
 public protocol ScalarsInitializableVector: Vector {
   /// Creates an instance whose elements are `scalars`.
@@ -92,6 +100,57 @@ public protocol ScalarsInitializableVector: Vector {
   init<Source: Collection>(_ scalars: Source) where Source.Element == Double
 }
 
+/// A collection of the standard basis values of `V` with a given shape.
+///
+/// The elements are the distinct vector values having a single non-zero scalar with value 1.
+public struct StandardBasis<V: Vector>: Collection {
+  /// A zero value of the same shape as the elements of `self`
+  private let shapedZero: V
+
+  /// Creates an instance containing the basis values with the same shape as `template`.
+  ///
+  /// - Requires: `template` is zero-valued.
+  public init(shapedLikeZero template: V) {
+    assert(template == template.zeroValue)
+    shapedZero = template
+  }
+
+  /// Creates an instance containing the basis values with the same shape as `template`.
+  public init(shapedLike template: V) {
+    shapedZero = template.zeroValue
+  }
+  
+  /// A position in the collection of basis vectors.
+  public typealias Index = V.Scalars.Index
+  
+  /// The position of the first element, or `endIndex` if `self.isEmpty`.
+  public var startIndex: Index { shapedZero.scalars.startIndex }
+  
+  /// The position one step beyond the last contained element.
+  public var endIndex: Index { shapedZero.scalars.endIndex }
+  
+  /// Accesses the unit vector at `i`.
+  public subscript(i: Index) -> V {
+    var r = shapedZero
+    r.scalars[i] = 1
+    return r
+  }
+
+  /// Returns the position after `i`.
+  ///
+  /// - Requires: `i != endIndex`.
+  public func index(after i: Index) -> Index {
+    shapedZero.scalars.index(after: i)
+  }
+
+  /// Moves `i` to the next position.
+  ///
+  /// - Requires: `i != endIndex`.
+  public func formIndex(after i: inout Index) {
+    shapedZero.scalars.formIndex(after: &i)
+  }
+}
+  
 /// A `Vector` whose instances all have the same `dimension`.
 ///
 /// Note: This is a temporary shim to help incrementally remove the assumption that vectors have a
@@ -99,6 +158,18 @@ public protocol ScalarsInitializableVector: Vector {
 public protocol FixedSizeVector: ScalarsInitializableVector {
   /// The `dimension` of an instance.
   static var dimension: Int { get }
+}
+
+extension FixedSizeVector {
+  /// A zero value of the same shape as `self`.
+  public var zeroValue: Self {
+    .init(repeatElement(0.0, count: dimension))
+  }
+
+  /// The standard basis values of `Self`.
+  public static var standardBasis: StandardBasis<Self> {
+    .init(shapedLikeZero: .init(repeatElement(0.0, count: dimension)))
+  }
 }
 
 /// Vector space operations that can be implemented in terms of others.

@@ -56,14 +56,6 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
 
   public var dimension: Int { return ${dim} }
 
-  public static var standardBasis: [Self] {
-    var result = Array(repeating: Self.zero, count: ${dim})
-    % for (i, coordinate) in enumerate(coordinates):
-    result[${i}].${coordinate} = 1
-    % end
-    return result
-  }
-
   public init<Source: Collection>(_ scalars: Source) where Source.Element == Double {
     var index = scalars.startIndex
     % for coordinate in coordinates:
