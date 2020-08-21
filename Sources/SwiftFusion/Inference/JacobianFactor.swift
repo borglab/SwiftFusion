@@ -79,6 +79,7 @@ where
   }
 
   public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {
+    // TODO(marcrasi): I was unable to remove .zero here.
     // We use `UnsafeBufferPointer`s to avoid forming collections that can't be optimized away.
     let r = y.withUnsafeBufferPointer { scalars in
       jacobian.withContiguousStorageIfAvailable { rows in

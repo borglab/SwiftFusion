@@ -287,8 +287,7 @@ extension FixedSizeVector {
   @differentiable
   public init<V: FixedSizeVector>(_ v: V) {
     precondition(Self.dimension == V.dimension)
-    self = Self.zero
-    self.scalars.assign(v.scalars)
+    self.init(v.scalars)
   }
 
   @derivative(of: init(_:))
@@ -306,8 +305,7 @@ extension FixedSizeVector {
   @differentiable
   public init<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) {
     precondition(Self.dimension == V1.dimension + V2.dimension)
-    self = Self.zero
-    scalars.assign(v1.scalars.concatenated(to: v2.scalars))
+    self.init(v1.scalars.concatenated(to: v2.scalars))
   }
 
   @derivative(of: init(concatenating:_:))
@@ -319,11 +317,8 @@ extension FixedSizeVector {
     return (
       Self(concatenating: v1, v2),
       { t in
-        var r: (V1, V2) = (.zero, .zero)
         let p = t.scalars.index(atOffset: V1.dimension)
-        r.0.scalars.assign(t.scalars[..<p])
-        r.1.scalars.assign(t.scalars[p...])
-        return r
+        return (.init(t.scalars[..<p]), .init(t.scalars[p...]))
       }
     )
   }

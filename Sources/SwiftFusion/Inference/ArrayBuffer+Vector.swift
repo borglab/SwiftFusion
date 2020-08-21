@@ -64,7 +64,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   @differentiable
   public static func *= (lhs: inout ArrayBuffer, rhs: Double) -> Void {
     if lhs.isEmpty { return }
-    if rhs == 0 { lhs = .zero }
+    if rhs == 0 { lhs = .init() }
     else {
       lhs.update(elementwise: rhs, *=, { l, r in r * l })
     }
@@ -88,7 +88,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   @differentiable
   public static func * (lhs: Double, rhs: ArrayBuffer) -> ArrayBuffer {
     if rhs.isEmpty { return rhs }
-    if lhs == 0 { return .zero }
+    if lhs == 0 { return .init() }
     return .init(rhs.lazy.map { lhs * $0 })
   }
 
@@ -165,7 +165,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   private static func vjp_minus(lhs: ArrayBuffer, rhs: ArrayBuffer) 
     -> (value: ArrayBuffer, pullback: (TangentVector)->(TangentVector, TangentVector))
   {
-    (lhs - rhs, { x in (x, .zero - x) })
+    (lhs - rhs, { x in (x, -1 * x) })
   }
   
   /// Replaces `lhs` with the sum of `lhs` and `rhs`
@@ -217,6 +217,6 @@ extension ArrayBuffer: Vector where Element: Vector {
     -> (value: Void, pullback: (inout TangentVector)->(TangentVector))
   {
     lhs -= rhs
-    return ((), { x in .zero - x })
+    return ((), { x in -1 * x })
   }
 }
