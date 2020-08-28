@@ -78,7 +78,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let (generatedAppearance, generatedAppearance_H_latent) = appearanceModel(latent.flatTensor)
     assert(generatedAppearance.shape == Patch.shape)
     assert(generatedAppearance_H_latent.shape == Patch.shape + [LatentCode.dimension])
-    return LinearizedAppearanceTrackingFactor(
+    return LinearizedAppearanceTrackingFactor<LatentCode>(
       error: Patch(actualAppearance - generatedAppearance),
       errorVector_H_pose: -actualAppearance_H_pose,
       errorVector_H_latent: generatedAppearance_H_latent,
@@ -141,7 +141,7 @@ public struct LinearizedAppearanceTrackingFactor<LatentCode: FixedSizeVector>: G
   public func errorVector_linearComponent(_ x: Variables) -> AppearanceTrackingFactor<LatentCode>.Patch {
     let pose = x.head
     let latent = x.tail.head
-    return AppearanceTrackingFactor.Patch(
+    return AppearanceTrackingFactor<LatentCode>.Patch(
       matmul(errorVector_H_pose, pose.flatTensor.expandingShape(at: 1)).squeezingShape(at: 3)
        + matmul(errorVector_H_latent, latent.flatTensor.expandingShape(at: 1)).squeezingShape(at: 3))
   }
