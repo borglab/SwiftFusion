@@ -82,4 +82,95 @@ class PPCATrackingFactorTests: XCTestCase {
     // an array of `LinearizedPPCATrackingFactor`.
     XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedPPCATrackingFactor>()])
   }
+
+  func testGenerativeTrackingFactor() {
+    let ppca = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+    let mu = ppca.mu.tensor.tiled(multiples: [1, 1, 3])
+    let W = ppca.W.tiled(multiples: [1, 1, 3, 1])
+    let factor = AppearanceTrackingFactor(
+      ppca.edges.head, ppca.edges.tail.head,
+      measurement: ppca.measurement.tiled(multiples: [1, 1, 3]),
+      appearanceModel: { latentCode in
+        let appearance = mu + matmul(W, latentCode.expandingShape(at: 1)).squeezingShape(at: 3)
+        let jacobian = W
+        return (appearance, jacobian)
+      }
+    )
+
+    func tileizePatch(_ p: PPCATrackingFactor.Patch) -> AppearanceTrackingFactor<Vector5>.Patch {
+      AppearanceTrackingFactor.Patch(p.tensor.tiled(multiples: [1, 1, 3]))
+    }
+
+    for _ in 0..<2 {
+      let linearizationPoint = Tuple2(
+        Pose2(randomWithCovariance: eye(rowCount: 3), seed: (5, 5)),
+        Vector5(flatTensor: Tensor(randomNormal: [5], seed: (6, 6))))
+
+      typealias Variables = PPCATrackingFactor.Variables.TangentVector
+      typealias ErrorVector = PPCATrackingFactor.ErrorVector
+
+      let ppcaLinearized = ppca.linearized(at: linearizationPoint)
+      let factorLinearized = factor.linearized(at: linearizationPoint)
+
+      // Compare the linearizations at zero (the error vector).
+      XCTAssertEqual(
+        factorLinearized.errorVector(at: Variables.zero),
+        tileizePatch(ppcaLinearized.errorVector(at: Variables.zero)))
+
+      // Compare the Jacobian-vector-products (forward derivative).
+      for _ in 0..<10 {
+        let v = Variables(flatTensor: Tensor(randomNormal: [Variables.dimension], seed: (7, 7)))
+        assertEqual(
+          factorLinearized.errorVector_linearComponent(v).tensor,
+          ppcaLinearized.errorVector_linearComponent(v).tensor.tiled(multiples: [1, 1, 3]),
+          accuracy: 1e-6)
+      }
+
+      // Compare the vector-Jacobian-products (reverse derivative).
+      for _ in 0..<10 {
+        let e = ErrorVector(Tensor(randomNormal: ErrorVector.shape, seed: (8, 8)))
+        let et = tileizePatch(e)
+        let a: Tuple2<Pose2.TangentVector, Vector5> = factorLinearized.errorVector_linearComponent_adjoint(et)
+        let b: Tuple2<Pose2.TangentVector, Vector5> = ppcaLinearized.errorVector_linearComponent_adjoint(e)
+        assertEqual(
+          a.flatTensor, b.flatTensor * 3,
+          accuracy: 1e-6)
+      }
+    }
+  }
+
+  /// Tests that factor graphs with a `PPCATrackingFactor`s linearize them using the custom
+  /// linearization.
+  func testFactorGraphUsesCustomLinearizedGenerativeFactor() {
+    let ppca = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+    let mu = ppca.mu.tensor.tiled(multiples: [1, 1, 3])
+    let W = ppca.W.tiled(multiples: [1, 1, 3, 1])
+    let factor = AppearanceTrackingFactor(
+      ppca.edges.head, ppca.edges.tail.head,
+      measurement: ppca.measurement.tiled(multiples: [1, 1, 3]),
+      appearanceModel: { latentCode in
+        let appearance = mu + matmul(W, latentCode.expandingShape(at: 1)).squeezingShape(at: 3)
+        let jacobian = W
+        return (appearance, jacobian)
+      }
+    )
+
+    var x = VariableAssignments()
+    let poseId = x.store(Pose2(100, 100, 0))
+    let latentId = x.store(Vector5.zero)
+
+    var fg = FactorGraph()
+    fg.store(factor)
+
+    let gfg = fg.linearized(at: x)
+
+    // Assert that the linearized graph has the custom `LinearizedAppearanceTrackingFactor` that uses our
+    // faster custom Jacobian calculate the default `JacobianFactor` that calculates the Jacobian
+    // using autodiff.
+    //
+    // This works by checking that the first (only) element of the graph's storage can be cast to
+    // an array of `LinearizedAppearanceTrackingFactor<Vector5>`.
+    XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedAppearanceTrackingFactor<Vector5>>()])
+  }
+
 }
