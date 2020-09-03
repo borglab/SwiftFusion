@@ -126,10 +126,23 @@ extension AnyArrayBuffer where Dispatch == VectorArrayDispatch {
   
   @derivative(of: *)
   @usableFromInline
-  static func vjp_timesEqual(lhs: Double, rhs: Self)
+  static func vjp_times(lhs: Double, rhs: Self)
     -> (value: Self, pullback: (TangentVector)->(Double, TangentVector))
   {
     return (lhs * rhs, { tangent in (rhs.dot(tangent), lhs * tangent) })
+  }
+
+  @derivative(of: *=)
+  @usableFromInline
+  static func vjp_timesEqual(lhs: inout Self, rhs: Double)
+    -> (value: Void, pullback: (inout TangentVector) -> Double)
+  {
+    defer { lhs *= rhs }
+    return ((), { [lhs = lhs] dlhs in
+      let drhs = lhs.dot(dlhs)
+      dlhs *= rhs
+      return drhs
+    })
   }
 
   @derivative(of: dot)
