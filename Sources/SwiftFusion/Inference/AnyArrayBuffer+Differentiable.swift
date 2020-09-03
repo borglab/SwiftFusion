@@ -62,17 +62,16 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
     lhs.dispatch.subtract(&lhs.upcast, rhs.upcast)
   }
 
-  static func *= (_ lhs: inout Self, _ rhs: Double) {
+  public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.dispatch.scale(&lhs.upcast, rhs)
   }
 
-  static func * (_ lhs: Double, _ rhs: Self) -> Self {
+  public static func * (_ lhs: Double, _ rhs: Self) -> Self {
     .init(unsafelyCasting: rhs.dispatch.scaled(rhs.upcast, lhs))
   }
 }
 
-extension AnyArrayBuffer: AdditiveArithmetic where Dispatch == VectorArrayDispatch
-{
+extension AnyArrayBuffer: AdditiveArithmetic where Dispatch == VectorArrayDispatch {
   public static var zero: Self { .init(ArrayBuffer<Vector1>()) }
 }
 
@@ -87,3 +86,11 @@ extension AnyArrayBuffer: Differentiable where Dispatch: DifferentiableArrayDisp
     { .init(ArrayBuffer<Vector1>()) }
   }
 }
+
+/*
+extension AnyArrayBuffer: Vector where Dispatch == VectorArrayDispatch {
+  var scalars: AnyMutableCollection<Double> {
+    get { .init() }
+  }
+}
+*/

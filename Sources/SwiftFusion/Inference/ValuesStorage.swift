@@ -236,7 +236,7 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   /// This is the sum of the dot products of corresponding elements.
   ///
   /// - Requires: `others.count == count`.
-  func dot(_ others: Self) -> Double {
+  public func dot(_ others: Self) -> Double {
     dispatch.dot(self.upcast, others.upcast)
   }
 
