@@ -41,6 +41,30 @@ public struct FlattenedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : C
     }
   }
 
+  /// Replaces `self` with the next position in the flattened view of `c`, where the inner
+  /// collection for each element `e` of `c` is `innerCollection(e)`.
+  internal mutating func formNextValid<OuterCollection: Collection, InnerCollection: Collection>(
+    in c: OuterCollection, innerCollection: (OuterCollection.Element)->InnerCollection
+  )
+    where OuterCollection.Index == OuterIndex, InnerCollection.Index == InnerIndex
+  {
+    let c1 = innerCollection(c[outer])
+    var i = inner!
+    c1.formIndex(after: &i)
+    inner = i
+    if i != c1.endIndex { return }
+    self = .init(firstValidIn: c[outer...].dropFirst(), innerCollection: innerCollection)
+  }
+
+  /// Replaces `self` with the next position in the flattened view of `c`, where the inner
+  /// collection for each element `e` of `c` is `e` itself.
+  internal mutating func formNextValid<OuterCollection: Collection>(in c: OuterCollection)
+    where OuterCollection.Index == OuterIndex, OuterCollection.Element: Collection,
+          OuterCollection.Element.Index == InnerIndex
+  {
+    formNextValid(in: c) { $0 }
+  }
+
   /// Creates an instance that represents the first position in the flattened view of `c`, where the
   /// inner collection for each element `e` of `c` is `e` itself.
   internal init<C: Collection>(firstValidIn c: C)
@@ -56,7 +80,7 @@ public struct FlattenedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : C
   }
 
   /// Creates an instance that represents the next position after `i` in a flattened view of `c`,
-  /// where the inner collection for each element `e` of `c` is `e` itself.
+  /// where the inner collection for each element `e` of `c` is `innerCollection(e)`.
   init<OuterCollection: Collection, InnerCollection: Collection>(
     nextAfter i: Self, in c: OuterCollection,
     innerCollection: (OuterCollection.Element)->InnerCollection
@@ -71,6 +95,15 @@ public struct FlattenedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : C
     }
     let nextOuter = c.index(after: i.outer)
     self.init(firstValidIn: c[nextOuter...], innerCollection: innerCollection)
+  }  
+
+  /// Creates an instance that represents the next position after `i` in a flattened view of `c`,
+  /// where the inner collection for each element `e` of `c` is `e` itself.
+  init<OuterCollection: Collection>(nextAfter i: Self, in c: OuterCollection)
+    where OuterCollection.Index == OuterIndex, OuterCollection.Element: Collection,
+          OuterCollection.Element.Index == InnerIndex
+  {
+    self.init(nextAfter: i, in: c) { $0 }
   }  
 }
 
@@ -507,7 +540,172 @@ extension AnyMutableCollection: MutableCollection {
   }
 }
 
-                                      
+// =================================================================================================
+
+public struct FlattenedMutableCollection<Base: MutableCollection>
+  where Base.Element: MutableCollection
+{
+  var base: Base
+    
+  init(_ base: Base) {
+    self.base = base
+  }
+}
+
+/*
+extension Sequence {
+  func reduceUntil<R>(
+    _ initialValue: R, combine: (R, Element) throws -> (R, done: Bool)
+  ) rethrows -> R {
+    var r = initialValue
+    var i = makeIterator()
+    while let e = i.next() {
+      let (r1, done) = try combine(r, i.next())
+      r = r1
+      if done { break }
+    }
+    return r
+  }
+}
+ */
+
+extension FlattenedMutableCollection: Sequence {
+  public typealias Element = Base.Element.Element
+  
+  public struct Iterator: IteratorProtocol {
+    var outer: Base.Iterator
+    var inner: Base.Element.Iterator?
+
+    init(outer: Base.Iterator, inner: Base.Element.Iterator? = nil) {
+      self.outer = outer
+      self.inner = inner
+    }
+
+    public mutating func next() -> Element? {
+      while true {
+        if let r = inner?.next() { return r }
+        guard let o = outer.next() else { return nil }
+        inner = o.makeIterator()
+      }
+    }
+  }
+
+  public func makeIterator() -> Iterator { Iterator(outer: base.makeIterator()) }
+
+  // https://bugs.swift.org/browse/SR-13486 points out that the withContiguousStorageIfAvailable
+  // method is dangerously underspecified, so we don't implement it here.
+  
+  public func _customContainsEquatableElement(_ e: Element) -> Bool? {
+    let m = base.lazy.map({ $0._customContainsEquatableElement(e) })
+    if let x = m.first(where: { $0 != false }) {
+      return x
+    }
+    return false
+  }
+
+  public __consuming func _copyContents(
+    initializing t: UnsafeMutableBufferPointer<Element>
+  ) -> (Iterator, UnsafeMutableBufferPointer<Element>.Index) {
+    var r = 0
+    var outer = base.makeIterator()
+
+    while r < t.count, let e = outer.next() {
+      var (inner, r1) = e._copyContents(
+        initializing: .init(start: t.baseAddress.map { $0 + r }, count: t.count - r))
+      r += r1
+
+      // See if we ran out of target space before reaching the end of the inner collection.  I think
+      // this will be rare, so instead of using an O(N) `e.count` and comparing with `r1` in all
+      // passes of the outer loop, spend `inner` seeing if we reached the end and reconstitute it in
+      // O(N) if not.
+      if inner.next() != nil {
+        @inline(never)
+        func earlyExit() -> (Iterator, UnsafeMutableBufferPointer<Element>.Index) {
+          var i = e.makeIterator()
+          for _ in 0..<r1 { _ = i.next() }
+          return (.init(outer: outer, inner: i), r)
+        }
+        return earlyExit()
+      }
+    }
+    return (.init(outer: outer, inner: nil), r)
+  }
+}
+
+extension FlattenedMutableCollection: MutableCollection {
+  public typealias Index = FlattenedIndex<Base.Index, Base.Element.Index>
+  
+  public var startIndex: Index { .init(firstValidIn: base) }
+  
+  public var endIndex: Index { .init(endIn: base) }
+  
+  public func index(after x: Index) -> Index { .init(nextAfter: x, in: base) }
+  
+  public func formIndex(after x: inout Index) { x.formNextValid(in: base) }
+  
+  public subscript(i: Index) -> Element {
+    get { base[i.outer][i.inner!] }
+    set { base[i.outer][i.inner!] = newValue }
+    _modify { yield &base[i.outer][i.inner!] }
+  }
+  
+  public var isEmpty: Bool { base.allSatisfy { $0.isEmpty } }
+  public var count: Int { base.lazy.map(\.count).reduce(0, +) }
+
+  /* TODO: implement or discard
+  func _customIndexOfEquatableElement(_ element: Element) -> Index?? {
+    
+  }
+
+  func _customLastIndexOfEquatableElement(_ element: Element) -> Index?? {
+    
+  }
+  
+  /// Returns an index that is the specified distance from the given index.
+  func index(_ i: Index, offsetBy distance: Int) -> Index {
+  }
+
+  /// Returns an index that is the specified distance from the given index,
+  /// unless that distance is beyond a given limiting index.
+  func index(
+    _ i: Index, offsetBy distance: Int, limitedBy limit: Index
+  ) -> Index? {
+    vtable[0].indexOffsetByLimitedBy(self, i, distance, limit)
+  }
+
+  /// Returns the distance between two indices.
+  func distance(from start: Index, to end: Index) -> Int {
+    vtable[0].distance(self, start, end)
+  }
+  
+  // https://bugs.swift.org/browse/SR-13486 points out that these two
+  // methods are dangerously underspecified, so we don't implement them here.
+  public mutating func _withUnsafeMutableBufferPointerIfSupported<R>(
+    _ body: (inout UnsafeMutableBufferPointer<Element>) throws -> R
+  ) rethrows -> R? {
+  }
+
+  public mutating func withContiguousMutableStorageIfAvailable<R>(
+    _ body: (inout UnsafeMutableBufferPointer<Element>) throws -> R
+  ) rethrows -> R? {
+  }
+  
+  /// Reorders the elements of the collection such that all the elements
+  /// that match the given predicate are after all the elements that don't
+  /// match.
+  ///
+  /// - Complexity: O(*n*), where *n* is the length of the collection.
+  public mutating func partition(
+    by belongsInSecondPartition: (Element) throws -> Bool
+  ) rethrows -> Index {
+  }
+
+  /// Exchanges the values at the specified indices of the collection.
+  public mutating func swapAt(_ i: Index, _ j: Index) {
+  }
+   */
+}
+                                        
 // =================================================================================================
 // Standard library extensions
 
