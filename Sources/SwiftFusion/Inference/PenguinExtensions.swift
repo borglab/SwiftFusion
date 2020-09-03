@@ -381,6 +381,8 @@ public struct AnyMutableCollection<Element> {
       )
     }
   }
+  
+  public var asAny: Any { storage.asAny }
 }
 
 extension AnyMutableCollection: Sequence {
