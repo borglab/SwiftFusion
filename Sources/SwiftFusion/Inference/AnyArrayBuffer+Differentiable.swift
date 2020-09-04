@@ -81,7 +81,7 @@ extension AnyArrayBuffer where Dispatch == VectorArrayDispatch {
   /// This is the sum of the dot products of corresponding elements.
   ///
   /// - Requires: `others.count == count`.
-  @differentiable(wrt: (self, others))
+  @differentiable
   public func dot(_ others: Self) -> Double {
     dispatch.dot(self.upcast, others.upcast)
   }
@@ -91,7 +91,7 @@ extension AnyArrayBuffer where Dispatch == VectorArrayDispatch {
   }
 
   @usableFromInline
-  @derivative(of: +, wrt: (lhs, rhs))
+  @derivative(of: +)
   static func vjp_plus(lhs: Self, rhs: Self) 
     -> (value: Self, pullback: (TangentVector)->(TangentVector, TangentVector))
   {
