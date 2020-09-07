@@ -67,7 +67,7 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   
   /// Returns the result of acting `self` on `v`.
   @differentiable
-  static func * (r: Rot3, p: Vector3) -> Vector3 {
+  public static func * (r: Rot3, p: Vector3) -> Vector3 {
     r.rotate(p)
   }
 }
