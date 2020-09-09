@@ -62,9 +62,9 @@ extension Rot2 {
     Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
 
-  /// Syntactic sugar for rotate()
+  /// Returns the result of acting `self` on `v`, syntactic sugar for rotate()
   @differentiable
-  static public func * (r: Rot2, p: Vector2) -> Vector2 {
+  public static func * (r: Rot2, p: Vector2) -> Vector2 {
     r.rotate(p)
   }
 }

@@ -113,9 +113,14 @@ final class Rot2Tests: XCTestCase {
     let R = Rot2(0.5)
 
     let expected = Vector2(-0.08126851531803325,  2.2345906623849485)
+    let actual1 = R.rotate(x)
+    let actual2 = R * x
 
-    XCTAssertEqual(R.rotate(x), expected)
-    XCTAssertEqual(R * x, expected)
+    XCTAssertEqual(actual1.x, expected.x, accuracy: 1e-9)
+    XCTAssertEqual(actual1.y, expected.y, accuracy: 1e-9)
+
+    XCTAssertEqual(actual2.x, expected.x, accuracy: 1e-9)
+    XCTAssertEqual(actual2.y, expected.y, accuracy: 1e-9)
   }
 
   // Check group action: unrotate
@@ -123,6 +128,9 @@ final class Rot2Tests: XCTestCase {
     let x = Vector2(1.0, 2.0)
     let R = Rot2(0.5)
 
-    XCTAssertEqual(R.unrotate(R.rotate(x)), x)
+    let actual = R.unrotate(R.rotate(x))
+
+    XCTAssertEqual(actual.x, x.x, accuracy: 1e-9)
+    XCTAssertEqual(actual.y, x.y, accuracy: 1e-9)
   }
 }
