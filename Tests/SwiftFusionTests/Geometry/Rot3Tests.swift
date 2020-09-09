@@ -189,4 +189,34 @@ final class Rot3Tests: XCTestCase {
     let diff_normal = R1.localCoordinate(R2)
     assertAllKeyPathEqual(diff, diff_normal, accuracy: 1e-2)
   }
+
+    // Check group action: rotate
+  func testRotate() {
+    let x = Vector3(1.0, -2.0, 3.0)
+    let R = Rot3.fromTangent(Vector3(0.1, 0.2, -0.3))
+
+    let expected = Vector3(0.871509606555838, -2.5663299211301474, 2.5796165880985145)
+    let actual1 = R.rotate(x)
+    let actual2 = R * x
+
+    XCTAssertEqual(actual1.x, expected.x, accuracy: 1e-9)
+    XCTAssertEqual(actual1.y, expected.y, accuracy: 1e-9)
+    XCTAssertEqual(actual1.z, expected.z, accuracy: 1e-9)
+
+    XCTAssertEqual(actual2.x, expected.x, accuracy: 1e-9)
+    XCTAssertEqual(actual2.y, expected.y, accuracy: 1e-9)
+    XCTAssertEqual(actual2.z, expected.z, accuracy: 1e-9)
+  }
+
+  // Check group action: unrotate
+  func testUnrotate() {
+    let x = Vector3(1.0, -2.0, 3.0)
+    let R = Rot3.fromTangent(Vector3(0.1, 0.2, -0.3))
+
+    let actual = R.unrotate(R.rotate(x))
+
+    XCTAssertEqual(actual.x, x.x, accuracy: 1e-9)
+    XCTAssertEqual(actual.y, x.y, accuracy: 1e-9)
+    XCTAssertEqual(actual.z, x.z, accuracy: 1e-9)
+  }
 }

@@ -55,13 +55,13 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   
   /// Returns the result of acting `self` on `v`.
   @differentiable
-  func rotate(_ v: Vector3) -> Vector3 {
+  public func rotate(_ v: Vector3) -> Vector3 {
     return coordinate.rotate(v)
   }
   
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
-  func unrotate(_ v: Vector3) -> Vector3 {
+  public func unrotate(_ v: Vector3) -> Vector3 {
     return coordinate.unrotate(v)
   }
   
