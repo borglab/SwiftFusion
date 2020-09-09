@@ -156,4 +156,37 @@ final class Pose3Tests: XCTestCase {
       }
     }
   }
+
+  /// Tests group action: translate only
+  func testActionTranslate() {
+    let x = Vector3(1.0, -2.0, 3.0)
+    let pose = Pose3(Rot3(), Vector3(3.0, -4.0, -5.0))
+
+    let expected = Vector3(4.0, -6.0, -2.0)
+    let actual = pose * x
+
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
+  }
+
+  /// Tests group action: rotate only
+  func testActionRotate() {
+    let x = Vector3(1.0, -2.0, 3.0)
+    let pose = Pose3(Rot3.fromTangent(Vector3(0.1, 0.2, -0.3)), Vector3(0, 0, 0))
+
+    let expected = Vector3(0.871509606555838, -2.5663299211301474, 2.5796165880985145)
+    let actual = pose * x
+
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
+  }
+
+  /// Tests group action: translate and rotate
+  func testActionTranslateRotate() {
+    let x = Vector3(1.0, -2.0, 3.0)
+    let pose = Pose3(Rot3.fromTangent(Vector3(0.1, 0.2, -0.3)), Vector3(3.0, -4.0, -5.0))
+
+    let expected = Vector3(3.871509606555838, -6.566329921130148, -2.4203834119014855)
+    let actual = pose * x
+
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
+  }
 }

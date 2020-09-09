@@ -357,8 +357,30 @@ final class Pose2Tests: XCTestCase {
     }
   }
 
-  // Check group action
-  func testAction() {
+  /// Tests group action: translate only
+  func testActionTranslate() {
+    let x = Vector2(1.0, -2.0)
+    let pose = Pose2(-3.0, 4.0, 0.0)
+
+    let expected = Vector2(-2.0, 2.0)
+    let actual = pose * x
+
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
+  }
+
+  /// Tests group action: rotate only
+  func testActionRotate() {
+    let x = Vector2(1.0, 2.0)
+    let pose = Pose2(0.0, 0.0, 0.5)
+
+    let expected = Vector2(-0.08126851531803325,  2.2345906623849485)
+    let actual = pose * x
+
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
+  }
+
+  /// Tests group action: translate and rotate
+  func testActionTranslateRotate() {
     let x = Vector2(1.0, -2.0)
     let pose = Pose2(-3.0, 4.0, 0.5)
 

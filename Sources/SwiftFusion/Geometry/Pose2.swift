@@ -138,7 +138,7 @@ extension Pose2Coordinate: LieGroupCoordinate {
 extension Pose2Coordinate {
   /// Group action on `Vector2`.
   @differentiable
-  public static func * (lhs: Pose2Coordinate, rhs: Vector2) -> Vector2 {
+  static func * (lhs: Pose2Coordinate, rhs: Vector2) -> Vector2 {
     lhs.t + lhs.rot * rhs
   }
 }
