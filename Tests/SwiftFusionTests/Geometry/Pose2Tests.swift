@@ -365,7 +365,6 @@ final class Pose2Tests: XCTestCase {
     let expected = Vector2(-1.1635663609012212, 2.7242604148234575)
     let actual = pose * x
 
-    XCTAssertEqual(actual.x, expected.x, accuracy: 1e-9)
-    XCTAssertEqual(actual.y, expected.y, accuracy: 1e-9)
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
   }
 }

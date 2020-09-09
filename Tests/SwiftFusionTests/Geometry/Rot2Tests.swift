@@ -116,11 +116,8 @@ final class Rot2Tests: XCTestCase {
     let actual1 = R.rotate(x)
     let actual2 = R * x
 
-    XCTAssertEqual(actual1.x, expected.x, accuracy: 1e-9)
-    XCTAssertEqual(actual1.y, expected.y, accuracy: 1e-9)
-
-    XCTAssertEqual(actual2.x, expected.x, accuracy: 1e-9)
-    XCTAssertEqual(actual2.y, expected.y, accuracy: 1e-9)
+    assertAllKeyPathEqual(actual1, expected, accuracy: 1e-9)
+    assertAllKeyPathEqual(actual2, expected, accuracy: 1e-9)
   }
 
   // Check group action: unrotate
@@ -130,7 +127,6 @@ final class Rot2Tests: XCTestCase {
 
     let actual = R.unrotate(R.rotate(x))
 
-    XCTAssertEqual(actual.x, x.x, accuracy: 1e-9)
-    XCTAssertEqual(actual.y, x.y, accuracy: 1e-9)
+    assertAllKeyPathEqual(actual, x, accuracy: 1e-9)
   }
 }
