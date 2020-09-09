@@ -190,7 +190,7 @@ final class Rot3Tests: XCTestCase {
     assertAllKeyPathEqual(diff, diff_normal, accuracy: 1e-2)
   }
 
-    // Check group action: rotate
+  // Check group action: rotate
   func testRotate() {
     let x = Vector3(1.0, -2.0, 3.0)
     let R = Rot3.fromTangent(Vector3(0.1, 0.2, -0.3))

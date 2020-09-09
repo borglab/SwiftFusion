@@ -53,16 +53,16 @@ extension Rot2 {
   /// Returns the result of acting `self` on `v`.
   @differentiable
   public func rotate(_ v: Vector2) -> Vector2 {
-    Vector2(c * v.x - s * v.y, s * v.x + c * v.y)
+    coordinate.rotate(v)
   }
 
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
   public func unrotate(_ v: Vector2) -> Vector2 {
-    Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
+    coordinate.unrotate(v)
   }
 
-  /// Returns the result of acting `self` on `v`, syntactic sugar for rotate()
+  /// Returns the result of acting `self` on `v`
   @differentiable
   public static func * (r: Rot2, p: Vector2) -> Vector2 {
     r.rotate(p)
@@ -120,6 +120,20 @@ extension Rot2Coordinate: ManifoldCoordinate {
   @differentiable(wrt: global)
   public func localCoordinate(_ global: Self) -> Vector1 {
     Vector1((self.inverse() * global).theta)
+  }
+}
+
+extension Rot2Coordinate {
+  /// Returns the result of acting `self` on `v`.
+  @differentiable
+  func rotate(_ v: Vector2) -> Vector2 {
+    Vector2(c * v.x - s * v.y, s * v.x + c * v.y)
+  }
+
+  /// Returns the result of acting the inverse of `self` on `v`.
+  @differentiable
+  func unrotate(_ v: Vector2) -> Vector2 {
+    Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
 }
 
