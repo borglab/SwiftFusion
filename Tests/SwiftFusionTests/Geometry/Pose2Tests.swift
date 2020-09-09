@@ -356,4 +356,16 @@ final class Pose2Tests: XCTestCase {
       }
     }
   }
+
+  // Check group action
+  func testAction() {
+    let x = Vector2(1.0, -2.0)
+    let pose = Pose2(-3.0, 4.0, 0.5)
+
+    let expected = Vector2(-1.1635663609012212, 2.7242604148234575)
+    let actual = pose * x
+
+    XCTAssertEqual(actual.x, expected.x, accuracy: 1e-9)
+    XCTAssertEqual(actual.y, expected.y, accuracy: 1e-9)
+  }
 }

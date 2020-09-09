@@ -133,7 +133,9 @@ extension Pose2Coordinate: LieGroupCoordinate {
   public func inverse() -> Pose2Coordinate {
     Pose2Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
   }
+}
 
+extension Pose2Coordinate {
   /// Group action on `Vector2`.
   @differentiable
   public static func * (lhs: Pose2Coordinate, rhs: Vector2) -> Vector2 {
