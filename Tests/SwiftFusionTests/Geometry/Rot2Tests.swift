@@ -106,4 +106,23 @@ final class Rot2Tests: XCTestCase {
 
     XCTAssertEqual(R1.theta, R2.theta, accuracy: 1e-5)
   }
+
+  // Check group action: rotate
+  func testRotate() {
+    let x = Vector2(1.0, 2.0)
+    let R = Rot2(0.5)
+
+    let expected = Vector2(-0.08126851531803325,  2.2345906623849485)
+
+    XCTAssertEqual(R.rotate(x), expected)
+    XCTAssertEqual(R * x, expected)
+  }
+
+  // Check group action: unrotate
+  func testUnrotate() {
+    let x = Vector2(1.0, 2.0)
+    let R = Rot2(0.5)
+
+    XCTAssertEqual(R.unrotate(R.rotate(x)), x)
+  }
 }
