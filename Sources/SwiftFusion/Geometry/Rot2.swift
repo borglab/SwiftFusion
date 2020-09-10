@@ -48,7 +48,7 @@ extension Rot2: CustomDebugStringConvertible {
   }
 }
 
-/// Group actions
+/// Group actions.
 extension Rot2 {
   /// Returns the result of acting `self` on `v`.
   @differentiable

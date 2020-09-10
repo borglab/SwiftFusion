@@ -54,7 +54,7 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   }  
 }
 
-/// Group actions
+/// Group actions.
 extension Rot3 {
   /// Returns the result of acting `self` on `v`.
   @differentiable
