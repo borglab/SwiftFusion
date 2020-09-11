@@ -17,6 +17,8 @@ import ModelSupport
 import SwiftFusion
 
 /// An ordered collection of frames from a video of bees.
+///
+/// Note: Use `BeeVideo` instead. This is for backwards compatibility with old code.
 public struct BeeFrames: RandomAccessCollection {
   public let directory: URL
   public let frameCount: Int

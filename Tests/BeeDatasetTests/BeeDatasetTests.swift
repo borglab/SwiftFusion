@@ -42,6 +42,14 @@ final class BeeDatasetTests: XCTestCase {
       center: Pose2(Rot2(1.5), Vector2(105, 201)), rows: 28, cols: 62))
   }
 
+  /// Tests that we can load a `BeeVideo`.
+  func testLoadBeeVideo() {
+    let v = BeeVideo(videoName: "bee_video_1")!
+    XCTAssertEqual(v.frames.count, 96)
+    XCTAssertEqual(v.tracks.count, 1)
+    XCTAssertEqual(v.tracks[0].count, 96)
+  }
+
   /// Directory of a fake dataset for tests.
   let datasetDirectory = URL.sourceFileDirectory().appendingPathComponent("fakeDataset")
 }

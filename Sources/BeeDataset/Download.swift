@@ -17,6 +17,8 @@ import Foundation
 
 /// Downloads the bee dataset (if it's not already present), and returns its URL on the local
 /// system.
+///
+/// Note: Use `BeeVideo` instead. This is for backwards compatibility with old code.
 internal func downloadBeeDatasetIfNotPresent() -> URL {
   let downloadDir = DatasetUtilities.defaultDirectory.appendingPathComponent(
     "bees_v2", isDirectory: true)
