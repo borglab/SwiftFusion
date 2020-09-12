@@ -169,7 +169,7 @@ fileprivate func makeVTableCache() -> VTableCache {
   return r
 }
 
-/// Returns a pointer the table corresponding to `tableID`, creating it by invoking `create` if it
+/// Returns a pointer to the table corresponding to `tableID`, creating it by invoking `create` if it
 /// is not already available.
 fileprivate func demandVTable<Table>(_ tableID: Array2<TypeID>, create: ()->Table)
   -> UnsafePointer<Table>
@@ -263,8 +263,7 @@ enum AnyMutableCollectionExistentialDispatch<C: MutableCollection>
   }
 }
 
-/// A type-erased mutable collection similar to the standard library's `AnyCollection`, but with
-/// parameterized type-erasure substrate.
+/// A type-erased mutable collection similar to the standard library's `AnyCollection`.
 public struct AnyMutableCollection<Element> {
   typealias Storage = AnyValue
   private var storage: Storage
