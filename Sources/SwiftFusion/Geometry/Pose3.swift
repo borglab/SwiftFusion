@@ -38,8 +38,8 @@ public struct Pose3: LieGroup, Equatable, KeyPathIterable {
 extension Pose3 {
   /// Group action on `Vector3`.
   @differentiable
-  public static func * (_ lhs: Pose3, _ rhs: Vector3) -> Vector3 {
-    lhs.coordinate * rhs
+  public static func * (_ aTb: Pose3, _ bp: Vector3) -> Vector3 {
+    aTb.coordinate * bp
   }
 }
 
@@ -108,8 +108,8 @@ extension Pose3Coordinate: LieGroupCoordinate {
 extension Pose3Coordinate {
   /// Group action on `Vector3`.
   @differentiable
-  static func * (_ lhs: Pose3Coordinate, _ rhs: Vector3) -> Vector3 {
-    lhs.t + lhs.rot * rhs
+  static func * (_ aTb: Pose3Coordinate, _ bp: Vector3) -> Vector3 {
+    aTb.rot * bp + aTb.t
   }
 }
 

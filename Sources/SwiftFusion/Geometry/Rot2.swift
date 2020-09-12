@@ -62,10 +62,10 @@ extension Rot2 {
     coordinate.unrotate(v)
   }
 
-  /// Returns the result of acting `self` on `v`.
+  /// Returns the result of acting `aRb` on `bp`.
   @differentiable
-  public static func * (r: Rot2, p: Vector2) -> Vector2 {
-    r.rotate(p)
+  public static func * (aRb: Rot2, bp: Vector2) -> Vector2 {
+    aRb.rotate(bp)
   }
 }
 
