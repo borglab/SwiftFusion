@@ -359,33 +359,35 @@ final class Pose2Tests: XCTestCase {
 
   /// Tests group action: translate only
   func testActionTranslate() {
-    let x = Vector2(1.0, -2.0)
-    let pose = Pose2(-3.0, 4.0, 0.0)
+    let p = Vector2(4.0, -2.0)
+    let T = Pose2(-3.0, 4.0, 0.0)
 
-    let expected = Vector2(-2.0, 2.0)
-    let actual = pose * x
+    let expected = Vector2(1.0, 2.0)
+    let actual = T * p
 
     assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
   }
 
   /// Tests group action: rotate only
   func testActionRotate() {
-    let x = Vector2(1.0, 2.0)
-    let pose = Pose2(0.0, 0.0, 0.5)
+    let p = Vector2(4.0, -2.0)
+    let T = Pose2(0.0, 0.0, 60.0 * .pi / 180.0)
 
-    let expected = Vector2(-0.08126851531803325,  2.2345906623849485)
-    let actual = pose * x
+    // Rotation by +60 deg
+    let expected = Vector2(2.0 + .sqrt(3.0), 2.0 * .sqrt(3.0) - 1.0)
+    let actual = T * p
 
     assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
   }
 
   /// Tests group action: translate and rotate
   func testActionTranslateRotate() {
-    let x = Vector2(1.0, -2.0)
-    let pose = Pose2(-3.0, 4.0, 0.5)
+    let p = Vector2(4.0, -2.0)
+    let T = Pose2(-3.0, 4.0, 60.0 * .pi / 180.0)
 
-    let expected = Vector2(-1.1635663609012212, 2.7242604148234575)
-    let actual = pose * x
+    // Rotation by +60 deg followed by translation by -3.0, 4.0
+    let expected = Vector2(-1.0 + .sqrt(3.0), 2.0 * .sqrt(3.0) + 3.0)
+    let actual = T * p
 
     assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
   }

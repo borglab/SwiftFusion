@@ -109,12 +109,13 @@ final class Rot2Tests: XCTestCase {
 
   // Check group action: rotate
   func testRotate() {
-    let x = Vector2(1.0, 2.0)
-    let R = Rot2(0.5)
+    let p = Vector2(4.0, -2.0)
+    let R = Rot2(60.0 * .pi / 180.0)
 
-    let expected = Vector2(-0.08126851531803325,  2.2345906623849485)
-    let actual1 = R.rotate(x)
-    let actual2 = R * x
+    // Rotation by +60 deg
+    let expected = Vector2(2.0 + .sqrt(3.0), 2.0 * .sqrt(3.0) - 1.0)
+    let actual1 = R.rotate(p)
+    let actual2 = R * p
 
     assertAllKeyPathEqual(actual1, expected, accuracy: 1e-9)
     assertAllKeyPathEqual(actual2, expected, accuracy: 1e-9)
@@ -122,11 +123,12 @@ final class Rot2Tests: XCTestCase {
 
   // Check group action: unrotate
   func testUnrotate() {
-    let x = Vector2(1.0, 2.0)
-    let R = Rot2(0.5)
+    let p = Vector2(4.0, -2.0)
+    let R = Rot2(60.0 * .pi / 180.0)
 
-    let actual = R.unrotate(R.rotate(x))
+    // Should be identity
+    let actual = R.unrotate(R.rotate(p))
 
-    assertAllKeyPathEqual(actual, x, accuracy: 1e-9)
+    assertAllKeyPathEqual(actual, p, accuracy: 1e-9)
   }
 }
