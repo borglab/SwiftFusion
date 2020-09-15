@@ -46,7 +46,7 @@ final class BeeDatasetTests: XCTestCase {
   func testLoadBeeVideo() {
     let v = BeeVideo(videoName: "bee_video_1")!
     XCTAssertEqual(v.frames.count, 96)
-    XCTAssertEqual(v.tracks.count, 1)
+    XCTAssertGreaterThanOrEqual(v.tracks.count, 2)
     XCTAssertEqual(v.tracks[0].count, 96)
   }
 
