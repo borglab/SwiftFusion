@@ -8,7 +8,7 @@
         <svg v-bind:width="svgWidth" v-bind:height="svgHeight" v-bind:view-box.camel="svgViewBox" v-on:click="clickFrame">
           <image v-bind:href="frameUrl" x="0" y="0" v-bind:width="frameWidth" v-bind:height="frameHeight" />
           <g v-bind:transform="bbTransform">
-            <circle v-bind:cx="halfBBWidth" cy="0" r="5" fill="red" />
+            <circle v-bind:cx="bbWidth" v-bind:cy="halfBBHeight" r="5" fill="red" />
             <rect v-bind:width="bbWidth" x="0" y="0" v-bind:height="bbHeight" style="fill:none;" stroke="red" stroke-width="2" />
           </g>
         </svg>

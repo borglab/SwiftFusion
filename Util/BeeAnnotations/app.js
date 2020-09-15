@@ -39,6 +39,9 @@ var app = new Vue({
     halfBBWidth: function() {
       return this.bbWidth / 2;
     },
+    halfBBHeight: function() {
+      return this.bbHeight / 2;
+    },
     track: function() {
       var t = "";
       t += this.bbHeight + " " + this.bbWidth + "\n";
