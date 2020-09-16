@@ -21,13 +21,13 @@ public class RandomWalkMetropolis<State> : TransitionKernel {
   public typealias Results = Double // target_log_prob_fn of previously accepted state
   
   let target_log_prob_fn: (State) -> Double
-  let new_state_fn : (State)->State
+  let new_state_fn : (State, inout AnyRandomNumberGenerator)->State
   var sourceOfEntropy: AnyRandomNumberGenerator
   
   public init(
     sourceOfEntropy: RandomNumberGenerator = SystemRandomNumberGenerator(),
     target_log_prob_fn: @escaping (State) -> Double,
-    new_state_fn : @escaping (State)->State
+    new_state_fn : @escaping (State, inout AnyRandomNumberGenerator)->State
   ) {
     self.target_log_prob_fn = target_log_prob_fn
     self.new_state_fn = new_state_fn
@@ -39,7 +39,7 @@ public class RandomWalkMetropolis<State> : TransitionKernel {
   public func one_step(_ current_state: State, _ previous_kernel_results: Results) -> (State, Results) {
     
     // calculate next state, and new log probability
-    let new_state = new_state_fn(current_state)
+    let new_state = new_state_fn(current_state, &sourceOfEntropy)
     let new_log_prob = target_log_prob_fn(new_state)
     
     // Calculate log of acceptance ratio p(x')/p(x) = log p(x') - log p(x)
