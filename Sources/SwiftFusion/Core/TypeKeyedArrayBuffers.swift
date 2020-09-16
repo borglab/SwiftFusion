@@ -121,6 +121,32 @@ extension TypeKeyedArrayBuffers {
       try update(&target, p)
     }
   }
+
+  /// Returns the result of calling `updated` on each buffer of self, passing the buffer having the
+  /// same `key` in `parameter` as a second argument.
+  ///
+  /// - Requires: the element type of the result of updated() is the same as that of its first
+  ///   argument.
+  /// - Requires: `self.hasSameStructure(as: parameter)`
+  public func updatedBuffers<OtherElementAPI, OtherConstruction>(
+    homomorphicArgument parameter: TypeKeyedArrayBuffers<OtherElementAPI, OtherConstruction>,
+    _ updated: (
+      _ myBuffer: AnyArrayBuffer<ElementAPI>,
+      _ parameter: AnyArrayBuffer<OtherElementAPI>) throws -> AnyArrayBuffer<ElementAPI>
+  ) rethrows -> Self {
+    precondition(
+      _storage.count == parameter._storage.count,
+      "parameter must have same structure as `self`")
+
+    return try .init(
+      _storage: .init(
+        uniqueKeysWithValues: _storage.lazy.map { (k, v) in
+          guard let p = parameter._storage[k] else {
+            fatalError("parameter must have same structure as `self`")
+          }
+          return (k, try updated(v, p))
+        }))
+  }
 }
 
 extension ArrayBuffersByElementType {
