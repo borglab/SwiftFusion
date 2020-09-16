@@ -30,6 +30,7 @@ public struct OrientedBoundingBox: Differentiable {
   @noDerivative public let cols: Int
 
   /// Creates a instance with the given `center`, `rows`, and `cols`.
+  @differentiable
   public init(center: Pose2, rows: Int, cols: Int) {
     self.center = center
     self.rows = rows

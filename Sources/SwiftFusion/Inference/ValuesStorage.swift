@@ -174,6 +174,11 @@ public class VectorArrayDispatch: DifferentiableArrayDispatch {
   /// The type of a `ScalarJacobianFactor` that scales the elements.
   final let scalarJacobianType: Any.Type
 
+  final let scalars_get: (_ self_: Self_) -> AnyMutableCollection<Double>
+  final let scalars_set: (_ self_: inout Self_, _ newValue: AnyMutableCollection<Double>) -> Void
+
+  final let dimension: (_ self_: Self_) -> Int
+  
   /// Creates an instance for elements of type `Element`.
   init<Element: Vector>(_ e: Type<Element>, _: () = ()) {
     equals = { lhs, rhs in
@@ -205,6 +210,16 @@ public class VectorArrayDispatch: DifferentiableArrayDispatch {
       .init(target[unsafelyAssumingElementType: e].jacobians(scalar: scaleFactor))
     }
     scalarJacobianType = ScalarJacobianFactor<Element>.self
+
+    scalars_get = { self_ in .init(FlattenedScalars(self_[unsafelyAssumingElementType: e])) }
+    scalars_set = { self_, newValue in
+      // TODO: see if we need to and can make this more efficient.
+      self_[unsafelyAssumingElementType: e].scalars.assign(newValue)
+    }
+
+    dimension = { self_ in
+      self_[unsafelyAssumingElementType: e].lazy.map(\.dimension).reduce(0, +)
+    }
     super.init(e)
   }
 }
@@ -229,19 +244,6 @@ extension AnyArrayBuffer where Dispatch: VectorArrayDispatch {
   /// Scales each element of `self` by `factor`.
   mutating func scale(by factor: Double) {
     dispatch.scale(&self.upcast, factor)
-  }
-
-  /// Returns the dot product of `self` with `others`.
-  ///
-  /// This is the sum of the dot products of corresponding elements.
-  ///
-  /// - Requires: `others.count == count`.
-  func dot(_ others: Self) -> Double {
-    dispatch.dot(self.upcast, others.upcast)
-  }
-
-  func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
-    dispatch.jacobians(self.upcast, scalar)
   }
 
   var scalarJacobianType: Any.Type {

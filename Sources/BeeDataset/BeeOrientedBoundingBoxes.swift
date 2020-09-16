@@ -19,6 +19,8 @@ import SwiftFusion
 ///
 /// Each line of the file is an oriented bounding box, in the format:
 ///   <rotation (radians)> <x> <y>
+///
+/// Note: Use `BeeVideo` instead. This is for backwards compatibility with old code.
 public func beeOrientedBoundingBoxes(file: URL) -> [OrientedBoundingBox]? {
   // The dimensions of the bee bounding box are hardcoded because they're the same for all the
   // sequences in the dataset.
@@ -46,6 +48,8 @@ public func beeOrientedBoundingBoxes(file: URL) -> [OrientedBoundingBox]? {
 /// WARNING: The indices of the bounding boxes seem like they are not perfectly aligned with the
 /// indices of the `BeeFrames` from the same sequence. (For example, frame `i` might correspond to
 /// bounding box `i - 1` or `i - 2`).
+///
+/// Note: Use `BeeVideo` instead. This is for backwards compatibility with old code.
 public func beeOrientedBoundingBoxes(sequenceName: String) -> [OrientedBoundingBox]? {
   let dir = downloadBeeDatasetIfNotPresent()
   return beeOrientedBoundingBoxes(

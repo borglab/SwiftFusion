@@ -47,16 +47,9 @@ where
   /// Creates a factor that linearly approximates `f` at `x`.
   public init<F: LinearizableFactor>(linearizing f: F, at x: F.Variables)
   where F.Variables.TangentVector == Variables, F.ErrorVector == ErrorVector {
-    let (value, pb) = valueWithPullback(at: x, in: f.errorVector)
-    let rows = Rows(
-      (0..<value.dimension).lazy.map { d in
-        var unit = ErrorVector.zero
-        unit.withUnsafeMutableBufferPointer { b in b[d] = 1.0  }
-        return pb(unit)
-      })
-    
-    self.jacobian = rows
-    self.error = -value
+    let (negativeError, pb) = valueWithPullback(at: x, in: f.errorVector)
+    self.jacobian = Rows(StandardBasis(shapedLike: negativeError).lazy.map(pb))
+    self.error = -negativeError
     self.edges = F.Variables.linearized(f.edges)
   }
 
@@ -86,6 +79,7 @@ where
   }
 
   public func errorVector_linearComponent_adjoint(_ y: ErrorVector) -> Variables {
+    // TODO(marcrasi): I was unable to remove .zero here.
     // We use `UnsafeBufferPointer`s to avoid forming collections that can't be optimized away.
     let r = y.withUnsafeBufferPointer { scalars in
       jacobian.withContiguousStorageIfAvailable { rows in

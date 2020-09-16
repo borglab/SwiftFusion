@@ -50,14 +50,6 @@ extension FixedShapeTensor {
     shape.reduce(1, *)
   }
 
-  public var standardBasis: [Self] {
-    (0..<dimension).map { i in
-      var b = Array(repeating: Double(0), count: dimension)
-      b[i] = 1
-      return Self(Tensor(shape: Self.shape, scalars: b))
-    }
-  }
-
   /// Returns the result of calling `body` on the scalars of `self`.
   public func withUnsafeBufferPointer<R>(
     _ body: (UnsafeBufferPointer<Double>) throws -> R
@@ -76,12 +68,14 @@ extension FixedShapeTensor {
     self.tensor = Tensor(shape: Self.shape, scalars: scalars)
     return r
   }
+
+  public static var zero: Self { .init(Tensor(zeros: Self.shape)) }
 }
 
 // Copy this implementation and modify the `shape` to create `FixedShapeTensor`s with other shapes.
 /// A `Tensor` with shape `[10, 10]`.
 public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
-  public typealias TangentVector = Tensor10x10
+  public typealias TangentVector = Self
   public static var shape: TensorShape { [10, 10] }
 
   @differentiable public var tensor: Tensor<Double> {
@@ -94,10 +88,10 @@ public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
     : RandomAccessCollection, MutableCollection, Differentiable, AdditiveArithmetic
   {
     fileprivate var storage: Tensor<Double>
-    
-    /// The position of the first element, or `endIndex` if `self.isEmpty`.    
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
     public var startIndex: Int { 0 }
-    
+
     /// The position one step beyond the last contained element.
     public var endIndex: Int { 100 }
 
@@ -107,7 +101,46 @@ public struct Tensor10x10: AdditiveArithmetic, FixedShapeTensor {
       set { storage[i / 10, i % 10] = Tensor(newValue) }
     }
   }
-  
+
+  /// This vector's scalar values in a standard basis.
+  @differentiable public var scalars: Scalars
+
+  @differentiable
+  public init(_ tensor: Tensor<Double>) {
+    precondition(tensor.shape == Self.shape)
+    self.scalars = Scalars(storage: tensor)
+  }
+}
+
+/// A `Tensor` with shape `[28, 62, 1]`.
+public struct Tensor28x62x1: AdditiveArithmetic, FixedShapeTensor {
+  public typealias TangentVector = Self
+  public static var shape: TensorShape { [28, 62, 1] }
+
+  @differentiable public var tensor: Tensor<Double> {
+    get { scalars.storage }
+    set { scalars.storage = newValue }
+  }
+
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars
+    : RandomAccessCollection, MutableCollection, Differentiable, AdditiveArithmetic
+  {
+    fileprivate var storage: Tensor<Double>
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { 28 * 62 * 1 }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get { storage[i / 62, i % 62, 0].scalarized() }
+      set { storage[i / 62, i % 62, 0] = Tensor(newValue) }
+    }
+  }
+
   /// This vector's scalar values in a standard basis.
   @differentiable public var scalars: Scalars
 

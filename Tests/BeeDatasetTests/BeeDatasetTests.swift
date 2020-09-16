@@ -42,13 +42,21 @@ final class BeeDatasetTests: XCTestCase {
       center: Pose2(Rot2(1.5), Vector2(105, 201)), rows: 28, cols: 62))
   }
 
+  /// Tests that we can load a `BeeVideo`.
+  func testLoadBeeVideo() {
+    let v = BeeVideo(videoName: "bee_video_1")!
+    XCTAssertEqual(v.frames.count, 96)
+    XCTAssertGreaterThanOrEqual(v.tracks.count, 2)
+    XCTAssertEqual(v.tracks[0].count, 96)
+  }
+
   /// Directory of a fake dataset for tests.
   let datasetDirectory = URL.sourceFileDirectory().appendingPathComponent("fakeDataset")
 }
 
 extension URL {
   /// Creates a URL for the directory containing the caller's source file.
-  static func sourceFileDirectory(file: String = #file) -> URL {
+  static func sourceFileDirectory(file: String = #filePath) -> URL {
     return URL(fileURLWithPath: file).deletingLastPathComponent()
   }
 }

@@ -3,6 +3,7 @@ import TensorFlow
 import XCTest
 
 import SwiftFusion
+import PenguinTesting
 
 /// Conform to this and call `runAllFixedSizeVectorTests()` to test all the `FixedSizeVector`
 /// requirements on a concrete type.
@@ -49,6 +50,7 @@ extension FixedSizeVectorTests {
     testWithUnsafeMutableBufferPointer()
     testInitFromFlatTensor()
     testFlatTensor()
+    testStandardBasis()
   }
 
   /// Tests ==.
@@ -273,6 +275,13 @@ extension FixedSizeVectorTests {
     for b in basisVectors {
       XCTAssertEqual(pb(b.flatTensor), b)
     }
+  }
+
+  func testStandardBasis() {
+    Vector4.standardBasis.checkCollectionSemantics(
+      expecting: [
+        Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0),
+        Vector4(0, 0, 1, 0), Vector4(0, 0, 0, 1)])
   }
 }
 

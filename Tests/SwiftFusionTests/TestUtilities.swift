@@ -11,7 +11,7 @@ func assertEqual<T: TensorFlowFloatingPoint>(
   guard x.shape == y.shape else {
     XCTFail(
       "shape mismatch: \(x.shape) is not equal to \(y.shape)",
-      file: file,
+      file: (file),
       line: line
     )
     return
@@ -19,7 +19,7 @@ func assertEqual<T: TensorFlowFloatingPoint>(
   XCTAssert(
     abs(x - y).max().scalarized() < accuracy,
     "value mismatch:\n\(x)\nis not equal to\n\(y)\nwith accuracy \(accuracy)",
-    file: file,
+    file: (file),
     line: line
   )
 }
@@ -39,7 +39,7 @@ func assertAllKeyPathEqual<T: KeyPathIterable>(
     XCTAssert(
       false,
       "value mismatch:\n\(x)\nis not equal to\n\(y)\nwith accuracy \(accuracy)",
-      file: file,
+      file: (file),
       line: line
     )
   }
@@ -98,7 +98,7 @@ public enum SimpleGaussianFactorGraph {
 
 extension URL {
   /// Creates a URL for the directory containing the caller's source file.
-  static func sourceFileDirectory(file: String = #file) -> URL {
+  static func sourceFileDirectory(file: String = #filePath) -> URL {
     return URL(fileURLWithPath: file).deletingLastPathComponent()
   }
 }
