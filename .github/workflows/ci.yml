@@ -9,6 +9,7 @@ jobs:
         uses: actions/checkout@master
       - name: Install toolchain
         run: |
+          sudo xcode-select -s /Applications/Xcode_12_beta.app
           wget https://storage.googleapis.com/swift-tensorflow-artifacts/macos-toolchains/swift-tensorflow-DEVELOPMENT-2020-08-26-a-osx.pkg
           sudo installer -pkg swift-tensorflow-DEVELOPMENT-2020-08-26-a-osx.pkg -target /
           echo "::set-env name=PATH::/Library/Developer/Toolchains/swift-latest/usr/bin:${PATH}"
