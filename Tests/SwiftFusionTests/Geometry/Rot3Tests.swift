@@ -189,4 +189,61 @@ final class Rot3Tests: XCTestCase {
     let diff_normal = R1.localCoordinate(R2)
     assertAllKeyPathEqual(diff, diff_normal, accuracy: 1e-2)
   }
+
+  // Check group action: basic rotations
+  func testRotateBasic() {
+    let p = Vector3(2.0, -4.0, 6.0)
+    let Rx = Rot3.fromTangent(Vector3(60.0 * .pi / 180.0, 0.0, 0.0))
+    let Ry = Rot3.fromTangent(Vector3(0.0, -30.0 * .pi / 180.0, 0.0))
+    let Rz = Rot3.fromTangent(Vector3(0.0, 0.0, 150.0 * .pi / 180.0))
+
+    // Basic rotations along coordinate axes
+    let expectedRx = Vector3(2.0, -2.0 - 3.0 * .sqrt(3.0), -2.0 * .sqrt(3.0) + 3.0)
+    let expectedRy = Vector3(.sqrt(3.0) - 3.0, -4.0, 1.0 + 3.0 * .sqrt(3.0))
+    let expectedRz = Vector3(-.sqrt(3.0) + 2.0, 1.0 + 2.0 * .sqrt(3.0), 6.0)
+
+    let actualRx1 = Rx.rotate(p)
+    let actualRx2 = Rx * p
+    let actualRy1 = Ry.rotate(p)
+    let actualRy2 = Ry * p
+    let actualRz1 = Rz.rotate(p)
+    let actualRz2 = Rz * p
+
+    assertAllKeyPathEqual(actualRx1, expectedRx, accuracy: 1e-9)
+    assertAllKeyPathEqual(actualRx2, expectedRx, accuracy: 1e-9)
+    assertAllKeyPathEqual(actualRy1, expectedRy, accuracy: 1e-9)
+    assertAllKeyPathEqual(actualRy2, expectedRy, accuracy: 1e-9)
+    assertAllKeyPathEqual(actualRz1, expectedRz, accuracy: 1e-9)
+    assertAllKeyPathEqual(actualRz2, expectedRz, accuracy: 1e-9)
+  }
+
+  // Check group action: rotation along arbitrary axis
+  func testRotateArbitrary() {
+    let p = Vector3(1.0, -2.0, 3.0)
+    let R = Rot3.fromTangent(Vector3(0.1, 0.2, -0.3))
+
+    // Expected value generated using the following Python script:
+    // import numpy as np
+    // import cv2
+    // np.set_printoptions(precision=16)
+    // R = cv2.Rodrigues(np.array([0.1, 0.2, -0.3]))[0]
+    // R.dot(np.array([1.0, -2.0, 3.0]))
+    let expected = Vector3(0.871509606555838, -2.5663299211301474, 2.5796165880985145)
+    let actual1 = R.rotate(p)
+    let actual2 = R * p
+
+    assertAllKeyPathEqual(actual1, expected, accuracy: 1e-9)
+    assertAllKeyPathEqual(actual2, expected, accuracy: 1e-9)
+  }
+
+  // Check group action: unrotate
+  func testUnrotate() {
+    let p = Vector3(1.0, -2.0, 3.0)
+    let R = Rot3.fromTangent(Vector3(0.1, 0.2, -0.3))
+
+    // Should be identity
+    let actual = R.unrotate(R.rotate(p))
+
+    assertAllKeyPathEqual(actual, p, accuracy: 1e-9)
+  }
 }

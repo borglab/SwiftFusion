@@ -35,6 +35,14 @@ public struct Pose3: LieGroup, Equatable, KeyPathIterable {
   }
 }
 
+extension Pose3 {
+  /// Group action on `Vector3`.
+  @differentiable
+  public static func * (_ aTb: Pose3, _ bp: Vector3) -> Vector3 {
+    aTb.coordinate * bp
+  }
+}
+
 // MARK: - Global Coordinate System
 
 public struct Pose3Coordinate: Equatable, KeyPathIterable {
@@ -94,6 +102,14 @@ extension Pose3Coordinate: LieGroupCoordinate {
   @differentiable
   public func inverse() -> Pose3Coordinate {
     Pose3Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
+  }
+}
+
+extension Pose3Coordinate {
+  /// Group action on `Vector3`.
+  @differentiable
+  static func * (_ aTb: Pose3Coordinate, _ bp: Vector3) -> Vector3 {
+    aTb.rot * bp + aTb.t
   }
 }
 
