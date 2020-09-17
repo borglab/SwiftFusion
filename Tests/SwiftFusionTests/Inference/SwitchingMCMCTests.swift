@@ -165,12 +165,12 @@ class Scratch: XCTestCase {
     let num_burnin_steps = 30
     
     /// Proposal to change one label, and re-optimize
-    let flipAndOptimize = {(x:VariableAssignments) -> VariableAssignments in
+    let flipAndOptimize = {(x:VariableAssignments, r: inout AnyRandomNumberGenerator) -> VariableAssignments in
       let labelVars = x.storage[ObjectIdentifier(Int.self)]
       //  let positionVars = x.storage[ObjectIdentifier(Pose2.self)]
       
       // Randomly change one label.
-      let i = Int.random(in: 0..<labelVars!.count)
+      let i = Int.random(in: 0..<labelVars!.count, using: &r)
       let id = TypedID<Int>(i)
       var y = x
       y[id] = Int.random(in: 0..<3)
