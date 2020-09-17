@@ -51,24 +51,27 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
       txy+twz, 1.0-(txx+tzz), tyz-twx,
       txz-twy, tyz+twx, 1.0-(txx+tyy)
     )
-  }
-  
+  }  
+}
+
+/// Group actions.
+extension Rot3 {
   /// Returns the result of acting `self` on `v`.
   @differentiable
-  func rotate(_ v: Vector3) -> Vector3 {
-    return coordinate.rotate(v)
+  public func rotate(_ v: Vector3) -> Vector3 {
+    coordinate.rotate(v)
   }
   
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
-  func unrotate(_ v: Vector3) -> Vector3 {
-    return coordinate.unrotate(v)
+  public func unrotate(_ v: Vector3) -> Vector3 {
+    coordinate.unrotate(v)
   }
   
-  /// Returns the result of acting `self` on `v`.
+  /// Returns the result of acting `aRb` on `bp`.
   @differentiable
-  static func * (r: Rot3, p: Vector3) -> Vector3 {
-    r.rotate(p)
+  public static func * (aRb: Rot3, bp: Vector3) -> Vector3 {
+    aRb.rotate(bp)
   }
 }
 
@@ -146,12 +149,12 @@ extension Matrix3Coordinate: LieGroupCoordinate {
 
   @differentiable(wrt: v)
   public func Adjoint(_ v: Vector3) -> Vector3 {
-    return rotate(v)
+    rotate(v)
   }
 
   @differentiable(wrt: v)
   public func AdjointTranspose(_ v: Vector3) -> Vector3 {
-    return unrotate(v)
+    unrotate(v)
   }
 }
 
@@ -160,13 +163,13 @@ extension Matrix3Coordinate {
   /// Returns the result of acting `self` on `v`.
   @differentiable
   func rotate(_ v: Vector3) -> Vector3 {
-    return matvec(R, v)
+    matvec(R, v)
   }
 
   /// Returns the result of acting the inverse of `self` on `v`.
   @differentiable
   func unrotate(_ v: Vector3) -> Vector3 {
-    return matvec(R.transposed(), v)
+    matvec(R.transposed(), v)
   }
 }
 
