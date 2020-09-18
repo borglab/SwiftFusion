@@ -31,7 +31,7 @@ public class RandomWalkMetropolis<State> : TransitionKernel {
   ) {
     self.target_log_prob_fn = target_log_prob_fn
     self.new_state_fn = new_state_fn
-    self.sourceOfEntropy = .init(sourceOfEntropy)
+    self.sourceOfEntropy = sourceOfEntropy
   }
   
   /// Runs one iteration of Random Walk Metropolis.
