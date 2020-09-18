@@ -106,4 +106,29 @@ final class Rot2Tests: XCTestCase {
 
     XCTAssertEqual(R1.theta, R2.theta, accuracy: 1e-5)
   }
+
+  // Check group action: rotate
+  func testRotate() {
+    let p = Vector2(4.0, -2.0)
+    let R = Rot2(60.0 * .pi / 180.0)
+
+    // Rotation by +60 deg
+    let expected = Vector2(2.0 + .sqrt(3.0), 2.0 * .sqrt(3.0) - 1.0)
+    let actual1 = R.rotate(p)
+    let actual2 = R * p
+
+    assertAllKeyPathEqual(actual1, expected, accuracy: 1e-9)
+    assertAllKeyPathEqual(actual2, expected, accuracy: 1e-9)
+  }
+
+  // Check group action: unrotate
+  func testUnrotate() {
+    let p = Vector2(4.0, -2.0)
+    let R = Rot2(60.0 * .pi / 180.0)
+
+    // Should be identity
+    let actual = R.unrotate(R.rotate(p))
+
+    assertAllKeyPathEqual(actual, p, accuracy: 1e-9)
+  }
 }

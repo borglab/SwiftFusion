@@ -156,4 +156,53 @@ final class Pose3Tests: XCTestCase {
       }
     }
   }
+
+  /// Tests group action: translate only
+  func testActionTranslate() {
+    let p = Vector3(1.0, -2.0, 3.0)
+    let T = Pose3(Rot3(), Vector3(3.0, -4.0, -5.0))
+
+    let expected = Vector3(4.0, -6.0, -2.0)
+    let actual = T * p
+
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
+  }
+
+  /// Tests group action: rotate only, basic rotations
+  func testActionRotate() {
+    let p = Vector3(2.0, -4.0, 6.0)
+    let Tx = Pose3(Rot3.fromTangent(Vector3(60.0 * .pi / 180.0, 0.0, 0.0)), Vector3(0.0, 0.0, 0.0))
+    let Ty = Pose3(Rot3.fromTangent(Vector3(0.0, -30.0 * .pi / 180.0, 0.0)), Vector3(0.0, 0.0, 0.0))
+    let Tz = Pose3(Rot3.fromTangent(Vector3(0.0, 0.0, 150.0 * .pi / 180.0)), Vector3(0.0, 0.0, 0.0))
+
+    // Basic rotations along coordinate axes
+    let expectedRx = Vector3(2.0, -2.0 - 3.0 * .sqrt(3.0), -2.0 * .sqrt(3.0) + 3.0)
+    let expectedRy = Vector3(.sqrt(3.0) - 3.0, -4.0, 1.0 + 3.0 * .sqrt(3.0))
+    let expectedRz = Vector3(-.sqrt(3.0) + 2.0, 1.0 + 2.0 * .sqrt(3.0), 6.0)
+
+    let actualRx = Tx * p
+    let actualRy = Ty * p
+    let actualRz = Tz * p
+
+    assertAllKeyPathEqual(actualRx, expectedRx, accuracy: 1e-9)
+    assertAllKeyPathEqual(actualRy, expectedRy, accuracy: 1e-9)
+    assertAllKeyPathEqual(actualRz, expectedRz, accuracy: 1e-9)
+  }
+
+  /// Tests group action: translate and rotate
+  func testActionTranslateRotate() {
+    let p = Vector3(1.0, -2.0, 3.0)
+    let T = Pose3(Rot3.fromTangent(Vector3(0.1, 0.2, -0.3)), Vector3(3.0, -4.0, -5.0))
+
+    // Expected value generated using the following Python script:
+    // import numpy as np
+    // import cv2
+    // np.set_printoptions(precision=16)
+    // R = cv2.Rodrigues(np.array([0.1, 0.2, -0.3]))[0]
+    // R.dot(np.array([1.0, -2.0, 3.0])) + np.array([3.0, -4.0, -5.0])
+    let expected = Vector3(3.871509606555838, -6.566329921130148, -2.4203834119014855)
+    let actual = T * p
+
+    assertAllKeyPathEqual(actual, expected, accuracy: 1e-9)
+  }
 }

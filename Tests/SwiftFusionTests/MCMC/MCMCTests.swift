@@ -15,14 +15,16 @@ class MCMCTests: XCTestCase {
   /// Sampling from the Standard Normal Distribution.
   /// Inspired by testRWM1DUniform from tfp
   func testRWM1DUniform() throws {
+    let deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
+    
     // Create kernel for MCMC sampler:
     // target_log_prob_fn is proportional to log p(x), where p is a zero-mean Gaussian
     // new_state_fn is a symmetric (required for Metropolis) proposal density,
     // in this case perturbing x with uniformly sampled perturbations.
     let kernel = RandomWalkMetropolis(
-      sourceOfEntropy: ARC4RandomNumberGenerator(seed: 42),
-      target_log_prob_fn: {(x:Double) in -0.5*x*x}, //  tfd.Normal(loc=dtype(0), scale=dtype(1))
-      new_state_fn: {(x:Double) in x + Double.random(in: -1..<1)}
+      sourceOfEntropy: deterministicEntropy,
+      target_log_prob_fn: {(x: Double) in -0.5*x*x}, //  tfd.Normal(loc=dtype(0), scale=dtype(1))
+      new_state_fn: {(x: Double, r: inout AnyRandomNumberGenerator) in x + Double.random(in: -1..<1, using: &r)}
     )
     
     // Run the sampler for 2500 steps, discarding the first 500 asa burn-in
