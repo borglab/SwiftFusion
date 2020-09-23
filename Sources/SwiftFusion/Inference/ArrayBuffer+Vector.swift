@@ -221,3 +221,16 @@ extension ArrayBuffer: Vector where Element: Vector {
     return ((), { x in -1 * x })
   }
 }
+
+extension ArrayBuffer where Element: Vector {
+  // DWA TODO: Where does this belong?  Should it be part of a protocol?
+  /// Returns Jacobians that scale each element by `scalar`.
+  func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
+    AnyGaussianFactorArrayBuffer(
+      ArrayBuffer<ScalarJacobianFactor>(
+        enumerated().lazy.map { (i, _) in
+          .init(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
+    }))
+  }
+}
+
