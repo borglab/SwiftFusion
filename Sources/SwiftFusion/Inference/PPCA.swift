@@ -28,6 +28,9 @@ public struct PPCA {
   /// Weight Matrix
   public var W: Tensor<Double>
   
+  /// Inverse of Weight Matrix
+  public var W_inv: Tensor<Double>?
+
   /// Bias
   public var mu: Patch
 
@@ -41,17 +44,20 @@ public struct PPCA {
     self.latent_size = W.shape[3]
     self.W = W
     self.mu = mu
+    self.W_inv = nil
   }
 
   public init(latentSize: Int) {
-    self.W = .init()
-    self.mu = .init()
+    self.W = Tensor([.nan])
+    self.W_inv = nil
+    self.mu = Tensor([.nan])
     self.latent_size = latentSize
   }
 
-  /// [N, H, W, C]
+  /// Train a PPCA model
+  /// images should be a Tensor of shape [N, H, W, C]
   public mutating func train(images: Tensor<Double>) {
-    precondition(images.rank == 4, "Wrong image shape")
+    precondition(images.rank == 4, "Wrong image shape \(images.shape)")
     let (N_, H_, W_, C_) = (images.shape[0], images.shape[1], images.shape[2], images.shape[3])
     
     self.mu = images.mean(alongAxes: [0])
@@ -62,11 +68,30 @@ public struct PPCA {
     self.W = matmul(J_u![0..<J_u!.shape[0], 0..<latent_size], (J_s[0..<latent_size] - sigma_2).diagonal()).reshaped(to: [H_, W_, C_, latent_size])
   }
 
-  /// Error Vector for PPCA Factor
-  /// e = W*a + mu - measured
+  /// Generate an image according to a latent
   @differentiable
   public func generate(_ latent: Tensor<Double>) -> Patch {
-    precondition(latent.rank == 2 && latent.shape[1] == 1, "wrong latent dimension")
+    precondition(latent.rank == 1 || (latent.rank == 2 && latent.shape[1] == 1), "wrong latent dimension \(latent.shape)")
+    if(latent.rank == 1) {
+      return mu + matmul(W, latent.expandingShape(at: [1])).squeezingShape(at: 3)
+    }
     return mu + matmul(W, latent).squeezingShape(at: 3)
+  }
+
+  /// Generate an image according to a latent
+  public mutating func encode(_ image: Patch) -> Tensor<Double> {
+    precondition(image.rank == 3, "wrong latent dimension \(image.shape)")
+    let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
+    
+    if self.W_inv == nil {
+      self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
+    }
+
+    return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
+  }
+
+  /// Generate an image according to a latent
+  public func generateWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch.TangentVector) {
+    return (generate(latent), W)
   }
 }

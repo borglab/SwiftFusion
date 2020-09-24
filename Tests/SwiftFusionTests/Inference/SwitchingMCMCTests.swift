@@ -154,8 +154,8 @@ class Scratch: XCTestCase {
     
     
     // print
-    printLabels(variables)
-    printPoses(variables)
+    // printLabels(variables)
+    // printPoses(variables)
 
     // Create initial state for MCMC sampler
     let current_state = variables
@@ -176,14 +176,14 @@ class Scratch: XCTestCase {
       y[id] = Int.random(in: 0..<3)
       
       // Pose2SLAM to find new proposed positions.
-      print("Pose2SLAM starting at:")
-      self.printLabels(y)
-      self.printPoses(y)
+      // print("Pose2SLAM starting at:")
+      // self.printLabels(y)
+      // self.printPoses(y)
       do {
         try opt.optimize(graph: graph, initial: &y)
       } catch {
         // TODO: Investigate why the optimizer fails to make progress when it's near the solution.
-        print("ignoring optimizer error")
+        // print("ignoring optimizer error")
       }
 
       // Check that we found a local minimum by asserting that the gradient is 0. The optimizer
@@ -192,11 +192,11 @@ class Scratch: XCTestCase {
       let grad = self.errorGradient(graph, y)
       XCTAssertEqual(grad.squaredNorm, 0, accuracy: 0.1)
 
-      print("Pose2SLAM solution:")
-      self.printLabels(y)
-      self.printPoses(y)
-      print("Gradient of error function at solution:")
-      self.printGradient(grad)
+      // print("Pose2SLAM solution:")
+      // self.printLabels(y)
+      // self.printPoses(y)
+      // print("Gradient of error function at solution:")
+      // self.printGradient(grad)
       return y
     }
     

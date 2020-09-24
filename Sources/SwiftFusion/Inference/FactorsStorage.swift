@@ -69,11 +69,22 @@ extension ArrayStorage where Element == PPCATrackingFactor {
   }
 }
 
-extension ArrayStorage where Element == AppearanceTrackingFactor<Vector5> {
+extension ArrayStorage where Element == AppearanceTrackingFactor<Vector5, Tensor28x62x3> {
   /// Returns the linearized factors at `x`, using the custom `AppearanceTrackingFactor` `linearized`
   /// method instead of using autodiff on its `errorVector` method.
   // TODO: Generalize this so that users can write custom linearizations for anything.
-  func customLinearized(at x: VariableAssignments) -> ArrayBuffer<LinearizedAppearanceTrackingFactor<Vector5>> {
+  func customLinearized(at x: VariableAssignments) -> ArrayBuffer<LinearizedAppearanceTrackingFactor<Vector5, Tensor28x62x3>> {
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(self.lazy.map { f in f.linearized(at: Element.Variables(at: f.edges, in: varsBufs)) })
+    }
+  }
+}
+
+extension ArrayStorage where Element == AppearanceTrackingFactor<Vector5, Tensor28x62x1> {
+  /// Returns the linearized factors at `x`, using the custom `AppearanceTrackingFactor` `linearized`
+  /// method instead of using autodiff on its `errorVector` method.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  func customLinearized(at x: VariableAssignments) -> ArrayBuffer<LinearizedAppearanceTrackingFactor<Vector5, Tensor28x62x1>> {
     Element.Variables.withBufferBaseAddresses(x) { varsBufs in
       .init(self.lazy.map { f in f.linearized(at: Element.Variables(at: f.edges, in: varsBufs)) })
     }
@@ -242,7 +253,22 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
   /// Creates an instance for elements of type `AppearanceTrackingFactor`, using the custom
   /// `AppearanceTrackingFactor` `linearized` method to do linearization.
   // TODO: Generalize this so that users can write custom linearizations for anything.
-  init(_ e: Type<AppearanceTrackingFactor<Vector5>>) {
+  init(_ e: Type<AppearanceTrackingFactor<Vector5, Tensor28x62x3>>) {
+     errorVectors = { self_, x in
+      .init(self_[unsafelyAssumingElementType: e].storage.errorVectors(at: x))
+    }
+    linearized = { self_, x in
+      .init(
+        self_[unsafelyAssumingElementType: e].storage.customLinearized(at: x)
+      )
+    }
+    super.init(e)
+  }
+
+  /// Creates an instance for elements of type `AppearanceTrackingFactor`, using the custom
+  /// `AppearanceTrackingFactor` `linearized` method to do linearization.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  init(_ e: Type<AppearanceTrackingFactor<Vector5, Tensor28x62x1>>) {
      errorVectors = { self_, x in
       .init(self_[unsafelyAssumingElementType: e].storage.errorVectors(at: x))
     }
@@ -271,8 +297,10 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     // TODO: Generalize this so that users can write custom linearizations for anything.
     if Element.self == PPCATrackingFactor.self {
       dispatch = .init(Type<PPCATrackingFactor>())
-    } else if Element.self == AppearanceTrackingFactor<Vector5>.self {
-      dispatch = .init(Type<AppearanceTrackingFactor<Vector5>>())
+    } else if Element.self == AppearanceTrackingFactor<Vector5, Tensor28x62x3>.self {
+      dispatch = .init(Type<AppearanceTrackingFactor<Vector5, Tensor28x62x3>>())
+    } else if Element.self == AppearanceTrackingFactor<Vector5, Tensor28x62x3>.self {
+      dispatch = .init(Type<AppearanceTrackingFactor<Vector5, Tensor28x62x1>>())
     } else {
       // For small dimensions, we use a fixed size array in the linearization because the allocation
       // and indirection overheads of a dynamically sized array are releatively big.

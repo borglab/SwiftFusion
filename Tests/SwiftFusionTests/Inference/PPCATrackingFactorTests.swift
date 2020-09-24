@@ -24,6 +24,12 @@ class PPCATrackingFactorTests: XCTestCase {
   func testLinearizedValue() {
     let factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
 
+    let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
+    let generic_factor = AppearanceTrackingFactor<Vector5, Tensor28x62x1>(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: factor.measurement, appearanceModel: ppca.generateWithJacobian
+    )
+
     for _ in 0..<2 {
       let linearizationPoint = Tuple2(
         Pose2(randomWithCovariance: eye(rowCount: 3), seed: (5, 5)),
@@ -36,7 +42,7 @@ class PPCATrackingFactorTests: XCTestCase {
 
       let autodiff = JacobianFactor<Array<Variables>, ErrorVector>(
         linearizing: factor, at: linearizationPoint)
-      let custom = factor.linearized(at: linearizationPoint)
+      let custom = generic_factor.linearized(at: linearizationPoint)
 
       // Compare the linearizations at zero (the error vector).
       XCTAssertEqual(
@@ -84,21 +90,15 @@ class PPCATrackingFactorTests: XCTestCase {
   }
 
   func testGenerativeTrackingFactor() {
-    let ppca = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
-    let mu = ppca.mu.tensor.tiled(multiples: [1, 1, 3])
-    let W = ppca.W.tiled(multiples: [1, 1, 3, 1])
-    let factor = AppearanceTrackingFactor(
-      ppca.edges.head, ppca.edges.tail.head,
-      measurement: ppca.measurement.tiled(multiples: [1, 1, 3]),
-      appearanceModel: { latentCode in
-        let appearance = mu + matmul(W, latentCode.expandingShape(at: 1)).squeezingShape(at: 3)
-        let jacobian = W
-        return (appearance, jacobian)
-      }
+    let ppca_factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+    let ppca = PPCA(W: ppca_factor.W.tiled(multiples: [1, 1, 3, 1]), mu: ppca_factor.mu.tensor.tiled(multiples: [1, 1, 3]))
+    let generic_factor = AppearanceTrackingFactor<Vector5, Tensor28x62x3>(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]), appearanceModel: ppca.generateWithJacobian
     )
 
-    func tileizePatch(_ p: PPCATrackingFactor.Patch) -> AppearanceTrackingFactor<Vector5>.Patch {
-      AppearanceTrackingFactor.Patch(p.tensor.tiled(multiples: [1, 1, 3]))
+    func tileizePatch(_ p: PPCATrackingFactor.Patch) -> Tensor28x62x3 {
+      Tensor28x62x3(p.tensor.tiled(multiples: [1, 1, 3]))
     }
 
     for _ in 0..<2 {
@@ -109,8 +109,8 @@ class PPCATrackingFactorTests: XCTestCase {
       typealias Variables = PPCATrackingFactor.Variables.TangentVector
       typealias ErrorVector = PPCATrackingFactor.ErrorVector
 
-      let ppcaLinearized = ppca.linearized(at: linearizationPoint)
-      let factorLinearized = factor.linearized(at: linearizationPoint)
+      let ppcaLinearized = ppca_factor.linearized(at: linearizationPoint)
+      let factorLinearized = generic_factor.linearized(at: linearizationPoint)
 
       // Compare the linearizations at zero (the error vector).
       XCTAssertEqual(
@@ -142,17 +142,11 @@ class PPCATrackingFactorTests: XCTestCase {
   /// Tests that factor graphs with a `PPCATrackingFactor`s linearize them using the custom
   /// linearization.
   func testFactorGraphUsesCustomLinearizedGenerativeFactor() {
-    let ppca = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
-    let mu = ppca.mu.tensor.tiled(multiples: [1, 1, 3])
-    let W = ppca.W.tiled(multiples: [1, 1, 3, 1])
-    let factor = AppearanceTrackingFactor(
-      ppca.edges.head, ppca.edges.tail.head,
-      measurement: ppca.measurement.tiled(multiples: [1, 1, 3]),
-      appearanceModel: { latentCode in
-        let appearance = mu + matmul(W, latentCode.expandingShape(at: 1)).squeezingShape(at: 3)
-        let jacobian = W
-        return (appearance, jacobian)
-      }
+    let ppca_factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+    let ppca = PPCA(W: ppca_factor.W.tiled(multiples: [1, 1, 3, 1]), mu: ppca_factor.mu.tensor.tiled(multiples: [1, 1, 3]))
+    let generic_factor = AppearanceTrackingFactor<Vector5, Tensor28x62x3>(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]), appearanceModel: ppca.generateWithJacobian
     )
 
     var x = VariableAssignments()
@@ -160,7 +154,7 @@ class PPCATrackingFactorTests: XCTestCase {
     let latentId = x.store(Vector5.zero)
 
     var fg = FactorGraph()
-    fg.store(factor)
+    fg.store(generic_factor)
 
     let gfg = fg.linearized(at: x)
 
@@ -170,7 +164,7 @@ class PPCATrackingFactorTests: XCTestCase {
     //
     // This works by checking that the first (only) element of the graph's storage can be cast to
     // an array of `LinearizedAppearanceTrackingFactor<Vector5>`.
-    XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedAppearanceTrackingFactor<Vector5>>()])
+    XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedAppearanceTrackingFactor<Vector5, Tensor28x62x3>>()])
   }
 
 }
