@@ -4,7 +4,12 @@
 
 import TensorFlow
 
+/// Calculate the pseudo-inverse of a matrix
+/// Input: [M, N]
+/// Output: [N, M]
 public func pinv<Scalar: TensorFlowFloatingPoint>(_ m: Tensor<Scalar>) -> Tensor<Scalar> {
+  precondition(m.rank == 2, "Wrong input dimension for pinv()")
+  
   let (J_s, J_u, J_v) = m.svd(computeUV: true, fullMatrices: true)
   
   let m = J_v!.shape[1]
