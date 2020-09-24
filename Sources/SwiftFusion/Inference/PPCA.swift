@@ -15,7 +15,7 @@
 import TensorFlow
 import PenguinStructures
 
-/// A factor that matches a patch on a latent variable.
+/// A class performing common activities in the PPCA framework.
 /// The decomposition used here is in:
 /// M. E. Tipping and C. M. Bishop, Probabilistic Principal Component Analysis,
 /// Journal of the Royal Statistical Society. Series B, Vol. 61, No. 3 (1999), pp. 611-622
@@ -56,6 +56,7 @@ public struct PPCA {
 
   /// Train a PPCA model
   /// images should be a Tensor of shape [N, H, W, C]
+  /// Input: [N, H, W, C]
   public mutating func train(images: Tensor<Double>) {
     precondition(images.rank == 4, "Wrong image shape \(images.shape)")
     let (N_, H_, W_, C_) = (images.shape[0], images.shape[1], images.shape[2], images.shape[3])
@@ -69,6 +70,7 @@ public struct PPCA {
   }
 
   /// Generate an image according to a latent
+  /// Input: [latent_size] or [latent_size, 1]
   @differentiable
   public func generate(_ latent: Tensor<Double>) -> Patch {
     precondition(latent.rank == 1 || (latent.rank == 2 && latent.shape[1] == 1), "wrong latent dimension \(latent.shape)")
@@ -79,6 +81,8 @@ public struct PPCA {
   }
 
   /// Generate an image according to a latent
+  /// Input: [H, W, C]
+  /// Output: [latent_size]
   public mutating func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3, "wrong latent dimension \(image.shape)")
     let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
@@ -90,7 +94,8 @@ public struct PPCA {
     return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
   }
 
-  /// Generate an image according to a latent
+  /// Generate an image and corresponding Jacobian according to a latent
+  /// Input: [latent_size] or [latent_size, 1]
   public func generateWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch.TangentVector) {
     return (generate(latent), W)
   }
