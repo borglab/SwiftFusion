@@ -2,6 +2,7 @@ import PenguinStructures
 import TensorFlow
 
 /// A factor over a target's pose and appearance in an image.
+/// NOTE: This is deprecated in preference of the AppearanceTrackingFactor with a PPCA model
 public struct PPCATrackingFactor: LinearizableFactor2 {
   /// The first adjacent variable, the pose of the target in the image.
   ///

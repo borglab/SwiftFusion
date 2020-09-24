@@ -17,98 +17,104 @@ import TensorFlow
 import XCTest
 
 import PenguinStructures
-import SwiftFusion
+@testable import SwiftFusion
 
-/// This class tests the PPCA (Probablistic PCA) algorithm.
 class PPCATests: XCTestCase {
+  /// Tests that the derivative of the new AppearanceTrackingFactor matches the old PPCATrackingFactor
+  func testLinearizedValue() {
+    let factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
 
-  /// Tests simple forward pass with zero error
-  func testSimplePPCAForwardZero() {
-    var x = VariableAssignments()
-    let latentKey = x.store(Vector5(1, 1, 1, 1, 1))
-    let imagePatch = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
-    let mu = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
-    let W = Tensor<Double>(zeros: [10, 10, 5])
-    var graph = FactorGraph()
-    graph.store(PPCAFactor(latentKey, measured: imagePatch, W: W, mu: mu))
-    graph.store(PriorFactor<Vector5>(latentKey, Vector5(1, 1, 1, 1, 1)))
+    let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
+    let generic_factor = AppearanceTrackingFactor<Vector5, Tensor28x62x1>(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: factor.measurement, appearanceModel: ppca.generateWithJacobian
+    )
 
-    XCTAssertEqual(graph.error(at: x), 0.0)
-  }
+    for _ in 0..<2 {
+      let linearizationPoint = Tuple2(
+        Pose2(randomWithCovariance: eye(rowCount: 3), seed: (5, 5)),
+        Vector5(flatTensor: Tensor(randomNormal: [5], seed: (6, 6))))
 
-  /// Tests a trivial forward pass with 0.5 * 1^2 error
-  func testSimplePPCAForwardSimple() {
-    var x = VariableAssignments()
-    let latentKey = x.store(Vector5(1, 1, 1, 1, 1))
-    let imagePatch = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
-    let mu = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
-    var W = Tensor<Double>(zeros: [10, 10, 5])
-    W[0, 0, 0] = Tensor(1.0)
-    var graph = FactorGraph()
-    graph.store(PPCAFactor(latentKey, measured: imagePatch, W: W, mu: mu))
-    graph.store(PriorFactor<Vector5>(latentKey, Vector5(1, 1, 1, 1, 1)))
+      typealias Variables = PPCATrackingFactor.Variables.TangentVector
+      typealias ErrorVector = PPCATrackingFactor.ErrorVector
 
-    // Only W[0,0,0] is 1, so cost is 0.5 * 1^2 = 0.5
-    XCTAssertEqual(graph.error(at: x), 0.5)
-  }
+      // Below we compare custom and much faster differentiation with the autodiff version.
 
-  /// Tests whether the factor is properly linearized with correct derivatives
-  func testSimplePPCALinearization() {
-    let imagePatch = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
-    let mu = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
+      let autodiff = JacobianFactor<Array<Variables>, ErrorVector>(
+        linearizing: factor, at: linearizationPoint)
+      let custom = generic_factor.linearized(at: linearizationPoint)
 
-    var W = Tensor<Double>(zeros: [10, 10, 5])
-    W[0, 0, 0] = Tensor(1.0)
-    W[0, 0, 1] = Tensor(1.0)
-    W[0, 0, 2] = Tensor(1.0)
-    W[0, 0, 3] = Tensor(1.0)
-    W[0, 0, 4] = Tensor(1.0)
+      // Compare the linearizations at zero (the error vector).
+      XCTAssertEqual(
+        custom.errorVector(at: Variables.zero), autodiff.errorVector(at: Variables.zero))
 
-    let ppcaFactor = PPCAFactor(TypedID(0), measured: imagePatch, W: W, mu: mu)
-    let jf = JacobianFactor100x5_1(linearizing: ppcaFactor, at: Tuple1(Vector5(1, 1, 1, 1, 1)))
-    let jacobianPPCA = Tensor<Double>(stacking: jf.jacobian.map { $0.flatTensor })
+      // Compare the Jacobian-vector-products (forward derivative).
+      for _ in 0..<10 {
+        let v = Variables(flatTensor: Tensor(randomNormal: [Variables.dimension], seed: (7, 7)))
+        assertEqual(
+          custom.errorVector_linearComponent(v).tensor,
+          autodiff.errorVector_linearComponent(v).tensor,
+          accuracy: 1e-6)
+      }
 
-    var expectedJacobianPPCA = Tensor<Double>(zeros: [100, 5])
-    expectedJacobianPPCA[0, 0] = Tensor(1.0)
-    expectedJacobianPPCA[0, 1] = Tensor(1.0)
-    expectedJacobianPPCA[0, 2] = Tensor(1.0)
-    expectedJacobianPPCA[0, 3] = Tensor(1.0)
-    expectedJacobianPPCA[0, 4] = Tensor(1.0)
-
-    assertEqual(jacobianPPCA, expectedJacobianPPCA, accuracy: 1e-10)
-  }
-
-  /// Tests solving a factor graph with PPCA factors
-  func testSimplePPCASolve() {
-    var x = VariableAssignments()
-    let latentKey = x.store(Vector5(1, 1, 1, 1, 1))
-
-    /// imagePatch will only have one pixel with value 1
-    var imagePatch = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
-    imagePatch.tensor[0, 0] = Tensor(1.0)
-
-    let mu = Tensor10x10(Tensor<Double>(zeros: [10, 10]))
-
-    /// Weight only applies to first pixel
-    var W = Tensor<Double>(zeros: [10, 10, 5])
-    W[0, 0, 0] = Tensor(1.0)
-    W[0, 0, 1] = Tensor(-1.0)
-    W[0, 0, 2] = Tensor(0.0)
-    W[0, 0, 3] = Tensor(1.0)
-    W[0, 0, 4] = Tensor(-1.0)
-
-    var graph = FactorGraph()
-    graph.store(PPCAFactor(latentKey, measured: imagePatch, W: W, mu: mu))
-    graph.store(PriorFactor<Vector5>(latentKey, Vector5(1, 1, 1, 1, 1)))
-
-    for _ in 0..<1 {
-      let gfg = graph.linearized(at: x)
-      var dx = x.tangentVectorZeros
-      var optimizer = GenericCGLS(precision: 1e-6, max_iteration: 500)
-      optimizer.optimize(gfg: gfg, initial: &dx)
-      x.move(along: dx)
+      // Compare the vector-Jacobian-products (reverse derivative).
+      for _ in 0..<10 {
+        let e = ErrorVector(Tensor(randomNormal: ErrorVector.shape, seed: (8, 8)))
+        assertEqual(
+          custom.errorVector_linearComponent_adjoint(e).flatTensor,
+          autodiff.errorVector_linearComponent_adjoint(e).flatTensor,
+          accuracy: 1e-6)
+      }
     }
-
-    assertAllKeyPathEqual(x[latentKey], Vector5(1.2, 0.8, 1.0, 1.2, 0.8), accuracy: 1e-7)
   }
+
+  /// Tests that factor graphs with a `PPCATrackingFactor`s linearize them using the custom
+  /// linearization.
+  func testFactorGraphUsesCustomLinearized() {
+    var x = VariableAssignments()
+    let poseId = x.store(Pose2(100, 100, 0))
+    let latentId = x.store(Vector5.zero)
+
+    var fg = FactorGraph()
+    fg.store(PPCATrackingFactor.testFixture(poseId, latentId, seed: (9, 9)))
+
+    let gfg = fg.linearized(at: x)
+
+    // Assert that the linearized graph has the custom `LinearizedPPCATrackingFactor` that uses our
+    // faster custom Jacobian calculate the default `JacobianFactor` that calculates the Jacobian
+    // using autodiff.
+    //
+    // This works by checking that the first (only) element of the graph's storage can be cast to
+    // an array of `LinearizedPPCATrackingFactor`.
+    XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedPPCATrackingFactor>()])
+  }
+
+  /// Tests that factor graphs with a `PPCATrackingFactor`s linearize them using the custom
+  /// linearization.
+  func testFactorGraphUsesCustomLinearizedGenerativeFactor() {
+    let ppca_factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+    let ppca = PPCA(W: ppca_factor.W.tiled(multiples: [1, 1, 3, 1]), mu: ppca_factor.mu.tensor.tiled(multiples: [1, 1, 3]))
+    let generic_factor = AppearanceTrackingFactor<Vector5, Tensor28x62x3>(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]), appearanceModel: ppca.generateWithJacobian
+    )
+
+    var x = VariableAssignments()
+    let _ = x.store(Pose2(100, 100, 0))
+    let _ = x.store(Vector5.zero)
+
+    var fg = FactorGraph()
+    fg.store(generic_factor)
+
+    let gfg = fg.linearized(at: x)
+
+    // Assert that the linearized graph has the custom `LinearizedAppearanceTrackingFactor` that uses our
+    // faster custom Jacobian calculate the default `JacobianFactor` that calculates the Jacobian
+    // using autodiff.
+    //
+    // This works by checking that the first (only) element of the graph's storage can be cast to
+    // an array of `LinearizedAppearanceTrackingFactor<Vector5>`.
+    XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedAppearanceTrackingFactor<Vector5, Tensor28x62x3>>()])
+  }
+
 }
