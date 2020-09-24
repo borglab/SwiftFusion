@@ -6,6 +6,7 @@ import XCTest
 import PenguinStructures
 
 final class BeePPCATests: XCTestCase {
+  /// Sanity test that nothing underlying the PPCA algorithm has changed
   func testPPCA() {
     let frames = BeeFrames(sequenceName: "seq4")!
     let obbs = beeOrientedBoundingBoxes(sequenceName: "seq4")!
@@ -23,6 +24,7 @@ final class BeePPCATests: XCTestCase {
     XCTAssertEqual(sqrt((patch - recon).squared().mean()).scalar!, 10.049659587270698, accuracy: 1e-5)
   }
 
+  /// Test whether we can actually track a bee with our PPCATrackingFactor
   func testPPCATracking() {
     let frames = BeeFrames(sequenceName: "seq4")!
     let obbs = beeOrientedBoundingBoxes(sequenceName: "seq4")!
@@ -32,8 +34,6 @@ final class BeePPCATests: XCTestCase {
     let stacked_bw = Tensor(stacking: images_bw)
     var ppca = PPCA(latentSize: 5)
     ppca.train(images: stacked_bw)
-
-    let (W, mu) = (ppca.W, ppca.mu)
     
     var fg = FactorGraph()
     var v = VariableAssignments()
@@ -42,9 +42,8 @@ final class BeePPCATests: XCTestCase {
     let initialLatent = Vector5(flatTensor: ppca.encode(frames[0].patch(at: obbs[0]).mean(alongAxes: [2])).flattened())
     let latentId = v.store(initialLatent)
 
-    fg.store(PPCATrackingFactor(poseId, latentId, measurement: frames[1].mean(alongAxes: [2]), W: W, mu: Tensor28x62x1(mu.squeezingShape(at:[0]))))
+    fg.store(AppearanceTrackingFactor<Vector5, Tensor28x62x1>(poseId, latentId, measurement: frames[1].mean(alongAxes: [2]), appearanceModel: ppca.generateWithJacobian))
     fg.store(PriorFactor(latentId, initialLatent))
-    // print("\(fg.linearized(at: v))")
 
     var optimizer = LM()
     optimizer.verbosity = .SILENT
