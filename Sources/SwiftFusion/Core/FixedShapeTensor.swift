@@ -189,3 +189,42 @@ public struct Tensor28x62x3: AdditiveArithmetic, FixedShapeTensor {
     self.scalars = Scalars(storage: tensor)
   }
 }
+
+/// A `Tensor` with shape `[110, 220, 3]`.
+public struct Tensor110x220x3: AdditiveArithmetic, FixedShapeTensor {
+  public typealias TangentVector = Self
+  public static var shape: TensorShape { [110, 220, 3] }
+
+  @differentiable public var tensor: Tensor<Double> {
+    get { scalars.storage }
+    set { scalars.storage = newValue }
+  }
+
+  /// A type that can represent all of this vector's scalar values in a standard basis.
+  public struct Scalars
+    : RandomAccessCollection, MutableCollection, Differentiable, AdditiveArithmetic
+  {
+    fileprivate var storage: Tensor<Double>
+
+    /// The position of the first element, or `endIndex` if `self.isEmpty`.
+    public var startIndex: Int { 0 }
+
+    /// The position one step beyond the last contained element.
+    public var endIndex: Int { 110 * 220 * 3 }
+
+    /// Accesses the scalar at `i`.
+    public subscript(i: Int) -> Double {
+      get { storage[i / (220 * 3), (i / 3) % 220, i % 3].scalarized() }
+      set { storage[i / (220 * 3), (i / 3) % 220, i % 3] = Tensor(newValue) }
+    }
+  }
+
+  /// This vector's scalar values in a standard basis.
+  @differentiable public var scalars: Scalars
+
+  @differentiable
+  public init(_ tensor: Tensor<Double>) {
+    precondition(tensor.shape == Self.shape)
+    self.scalars = Scalars(storage: tensor)
+  }
+}
