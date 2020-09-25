@@ -37,7 +37,7 @@ extension ArrayBuffer where Element: Vector {
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
     AnyGaussianFactorArrayBuffer(
       ArrayBuffer<ScalarJacobianFactor>(
-        enumerated().lazy.map { (i, _) in
+        indices.lazy.map { i in
           .init(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
     }))
   }
