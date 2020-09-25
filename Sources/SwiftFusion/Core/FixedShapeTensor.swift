@@ -146,7 +146,7 @@ public struct Tensor28x62x1: AdditiveArithmetic, FixedShapeTensor {
 
   @differentiable
   public init(_ tensor: Tensor<Double>) {
-    precondition(tensor.shape == Self.shape)
+    precondition(tensor.shape == Self.shape, "actual \(tensor.shape) not equal to expected \(Self.shape)")
     self.scalars = Scalars(storage: tensor)
   }
 }

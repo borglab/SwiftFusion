@@ -61,7 +61,7 @@ public struct PPCA {
     precondition(images.rank == 4, "Wrong image shape \(images.shape)")
     let (N_, H_, W_, C_) = (images.shape[0], images.shape[1], images.shape[2], images.shape[3])
     
-    self.mu = images.mean(alongAxes: [0])
+    self.mu = images.mean(squeezingAxes: [0])
     let images_flattened = (images - mu).reshaped(to: [N_, H_ * W_ * C_]).transposed()
     let (J_s, J_u, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
     
