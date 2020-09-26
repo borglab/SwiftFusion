@@ -228,9 +228,15 @@ extension ArrayBuffer where Element: Vector {
   func jacobians(scalar: Double) -> AnyGaussianFactorArrayBuffer {
     AnyGaussianFactorArrayBuffer(
       ArrayBuffer<ScalarJacobianFactor>(
-        enumerated().lazy.map { (i, _) in
+        indices.lazy.map { i in
           .init(edges: Tuple1(TypedID<Element>(i)), scalar: scalar)
     }))
   }
 }
 
+extension AnyVectorArrayBuffer {
+  // Creates the special zero value.
+  init(zero: Void) {
+    self.init(storage: ArrayBuffer<Never>().storage, dispatch: .init(zero: ()))
+  }
+}

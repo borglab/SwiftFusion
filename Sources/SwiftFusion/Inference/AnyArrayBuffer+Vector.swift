@@ -155,11 +155,10 @@ extension AnyVectorArrayBuffer {
 }
 
 extension AnyVectorArrayBuffer: AdditiveArithmetic {
-  public static var zero: Self { .init(ArrayBuffer<Vector1>()) }
+  public static var zero: Self { .init(zero: ()) }
 }
 
 extension AnyVectorArrayBuffer: Vector {
-  
   public var scalars: AnyMutableCollection<Double> {
     get { dispatch.scalars_get(self.upcast) }
     set { dispatch.scalars_set(&self.upcast, newValue) }
@@ -167,6 +166,25 @@ extension AnyVectorArrayBuffer: Vector {
 
   public var dimension: Int {
     dispatch.dimension(self.upcast)
+  }
+  
+  // DWA TODO: Remove these two things when they stop being requirements of Vector.
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  public func withUnsafeBufferPointer<R>(
+    _ body: (UnsafeBufferPointer<Double>) throws -> R
+  ) rethrows -> R {
+    try Array(scalars).withUnsafeBufferPointer(body)
+  }
+
+  /// Returns the result of calling `body` on the scalars of `self`.
+  public mutating func withUnsafeMutableBufferPointer<R>(
+    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+  ) rethrows -> R {
+    var buffer = Array(scalars)
+    let r = try buffer.withUnsafeMutableBufferPointer { try body($0) }
+    scalars.assign(buffer)
+    return r
   }
 }
 
@@ -281,6 +299,50 @@ public class VectorArrayDispatch: DifferentiableArrayDispatch {
       self_[unsafelyAssumingElementType: e].lazy.map(\.dimension).reduce(0, +)
     }
     super.init(e)
+  }
+
+  /// Creates an instance for zero vector values.
+  override init(zero _: ()) {
+    equals = { lhs, rhs in
+      rhs.isEmpty || rhs == lhs
+    }
+    sum = { lhs, rhs in .init(unsafelyCasting: rhs) }
+    add = { lhs, rhs in
+      if !rhs.isEmpty {
+        lhs = rhs
+      }
+    }
+    difference = { lhs, rhs in
+      rhs.isEmpty ? .init(unsafelyCasting: lhs) : -1.0 * AnyVectorArrayBuffer(unsafelyCasting: rhs)
+    }
+    subtract = { lhs, rhs in
+      if !rhs.isEmpty {
+        lhs = .init(-1.0 * AnyVectorArrayBuffer(unsafelyCasting: rhs))
+      }
+    }
+    scale = { target, scaleFactor in }
+    scaled = { target, scaleFactor in
+      .init(unsafelyCasting: target)
+    }
+    dot = { lhs, rhs in
+      0.0
+    }
+    jacobians = { target, scaleFactor in
+      fatalError("cannot implement")
+    }
+    scalarJacobianType = ScalarJacobianFactor<Vector1>.self
+
+    scalars_get = { self_ in
+      .init(FlattenedScalars(self_[unsafelyAssumingElementType: Type<Vector1>()]))
+    }
+    scalars_set = { self_, newValue in
+      assert(newValue.isEmpty || newValue.allSatisfy { $0 == 0 })
+    }
+
+    dimension = { self_ in
+      0 // fatalError()?
+    }
+    super.init(zero: ())
   }
 }
 

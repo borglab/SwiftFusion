@@ -22,7 +22,7 @@ extension AnyArrayBuffer: Differentiable where Dispatch: DifferentiableArrayDisp
   }
 
   public var zeroTangentVectorInitializer: () -> TangentVector {
-    { .init(ArrayBuffer<Vector1>()) }
+    { .init(zero: ()) }
   }
 }
 
@@ -59,6 +59,17 @@ public class DifferentiableArrayDispatch {
     }
     move = { self_, directions in
       self_[unsafelyAssumingElementType: e].move(along: .init(unsafelyDowncasting: directions))
+    }
+  }
+
+  /// Creates an instance for zero vector values.
+  init(zero: Void) {
+    tangentVectorType = Never.self
+    tangentVectorZeros = { self_ in
+      .init(zero: ())
+    }
+    move = { self_, directions in
+      assert(directions.isEmpty, "can't move the zero vector")
     }
   }
 }
