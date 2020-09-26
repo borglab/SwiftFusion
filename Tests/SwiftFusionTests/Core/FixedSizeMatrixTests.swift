@@ -27,12 +27,12 @@ class FixedSizeMatrixTests: XCTestCase {
   func testVectorConformance() {
     let s1 = (0..<6).lazy.map { Double($0) }
     let v1 = Matrix3x2(s1)
-    v1.checkVectorSemantics(expecting: s1, writing: (6..<12).lazy.map { Double($0) })
+    v1.checkVectorSemantics(expectingScalars: s1, writingScalars: (6..<12).lazy.map { Double($0) })
     v1.scalars.checkRandomAccessCollectionSemantics(expecting: s1)
 
     let s2 = (0..<9).lazy.map { Double($0) }
     let v2 = Matrix3(s2)
-    v2.checkVectorSemantics(expecting: s2, writing: (9..<18).lazy.map { Double($0) })
+    v2.checkVectorSemantics(expectingScalars: s2, writingScalars: (9..<18).lazy.map { Double($0) })
     v2.scalars.checkRandomAccessCollectionSemantics(expecting: s2)
   }
 

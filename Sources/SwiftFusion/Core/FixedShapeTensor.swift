@@ -70,10 +70,6 @@ extension FixedShapeTensor {
   }
 
   public static var zero: Self { .init(Tensor(zeros: Self.shape)) }
-
-  public var zeroTangentVectorInitializer: () -> Self {
-    { .init(Tensor(zeros: Self.shape)) }
-  }
 }
 
 // Copy this implementation and modify the `shape` to create `FixedShapeTensor`s with other shapes.

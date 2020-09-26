@@ -51,7 +51,9 @@ class FixedShapeTensorTests: XCTestCase {
   func testVectorConformance() {
     let s = (0..<100).lazy.map { Double($0) }
     let v = Tensor10x10(Tensor(rangeFrom: 0, to: 100, stride: 1).reshaped(to: Tensor10x10.shape))
-    v.checkVectorSemantics(expecting: s, writing: (100..<200).lazy.map { Double($0) })
+    v.checkVectorSemantics(
+      expectingScalars: s,
+      writingScalars: (100..<200).lazy.map { Double($0) })
     v.scalars.checkRandomAccessCollectionSemantics(expecting: s)
   }
 }

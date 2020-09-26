@@ -11,11 +11,15 @@ extension Vector {
   /// XCTests `self`'s semantic conformance to `Vector`, expecting its scalars to match
   /// `expectedScalars`.
   ///
+  /// - Parameter distinctScalars: scalars that are elementwise distinct from `expectedScalars`.
+  ///   These are written to the scalars collection to test mutable collection semantics.
+  /// - Parameter maxSupportedScalarCount: the maximum number of scalars  that instances of `Self`
+  ///   can have.
   /// - Requires: `!distinctScalars.elementsEqual(self.scalars)`.
   /// - Complexity: O(N²), where N is `self.dimension`.
   func checkVectorSemantics<S1: Collection, S2: Collection>(
-    expecting expectedScalars: S1,
-    writing distinctScalars: S2,
+    expectingScalars expectedScalars: S1,
+    writingScalars distinctScalars: S2,
     maxSupportedScalarCount: Int = Int.max
   ) where S1.Element == Double, S2.Element == Double {
 
@@ -29,8 +33,8 @@ extension Vector {
 
     // Check that setting `scalars` actually changes it.
     var mutableSelf = self
-    for (i, e) in zip(mutableSelf.scalars.indices, distinctScalars) { mutableSelf.scalars[i] = e }
-    XCTAssertTrue(mutableSelf.scalars.elementsEqual(distinctScalars))
+    mutableSelf.scalars = mutableScalars
+    XCTAssertTrue(mutableSelf.scalars.elementsEqual(mutableScalars))
 
     // MARK: - Check the `dimension` property semantics.
 
@@ -39,9 +43,9 @@ extension Vector {
     // MARK: - Check the mathematical vector operation (`+`, `+=`, `-`, `-=`, `*`, `*=`, `dot`,
     // `zeroValue`) semantics.
 
-    /// Returns a vector with the same `scalars.indices` as `self` but with the scalars replaced
-    /// by the stride from `start` by `stride`.
-    func stride(from start: Double, by stride: Double) -> Self {
+    /// Returns `self` with its scalars replaced with `start`, `start + stride`,
+    /// `start + 2 * stride`, etc.
+    func strideVector(from start: Double, by stride: Double) -> Self {
       var r = self
       for (i, e) in zip(
         r.scalars.indices,
@@ -52,8 +56,8 @@ extension Vector {
       return r
     }
 
-    let v1 = stride(from: 1, by: 1)
-    let v2 = stride(from: 10, by: 10)
+    let v1 = strideVector(from: 1, by: 1)
+    let v2 = strideVector(from: 10, by: 10)
 
     // Check that the additive identity (`zeroValue`) satisfies identities.
     zeroValue.checkPlus(zeroValue, equals: zeroValue)
@@ -72,11 +76,11 @@ extension Vector {
     v1.checkTimes(1, equals: v1)
     v1.checkTimes(-1, equals: -v1)
     // Check that addition gives the expected result.
-    let expectedV1PlusV2 = stride(from: 11, by: 11)
+    let expectedV1PlusV2 = strideVector(from: 11, by: 11)
     v1.checkPlus(v2, equals: expectedV1PlusV2)
     v2.checkPlus(v1, equals: expectedV1PlusV2)
     // Check that subtraction gives the expected result.
-    let expectedV1MinusV2 = stride(from: -9, by: -9)
+    let expectedV1MinusV2 = strideVector(from: -9, by: -9)
     v1.checkMinus(v2, equals: expectedV1MinusV2)
     v2.checkMinus(v1, equals: -expectedV1MinusV2)
     // Check that dot product gives the expected result.
@@ -86,15 +90,12 @@ extension Vector {
     v2.checkDot(v1, equals: expectedV1DotV2)
 
     // Check that scalar multiplication gives the expected result.
-    v1.checkTimes(7, equals: stride(from: 7, by: 7))
+    v1.checkTimes(7, equals: strideVector(from: 7, by: 7))
 
     // MARK: - Check unsafe buffer semantics.
 
     self.withUnsafeBufferPointer { b in
-      XCTAssertEqual(b.count, expectedScalars.count)
-      for (actual, expected) in zip(b, expectedScalars) {
-        XCTAssertEqual(actual, expected)
-      }
+      XCTAssertTrue(b.elementsEqual(expectedScalars))
     }
 
     mutableSelf = self
@@ -186,7 +187,7 @@ extension Vector {
   }
 }
 
-class VectorConversionTests: XCTestCase {
+class VectorExtensionTests: XCTestCase {
   /// Tests converting from one type to another type with the same number of elements.
   func testConversion() {
     let v = Vector9(0, 1, 2, 3, 4, 5, 6, 7, 8)

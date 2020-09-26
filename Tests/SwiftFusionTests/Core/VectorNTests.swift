@@ -20,8 +20,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<1).lazy.map { Double($0) }
     let v = Vector1(0)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (1..<2).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (1..<2).lazy.map { Double($0) },
       maxSupportedScalarCount: 1)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -39,8 +39,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<2).lazy.map { Double($0) }
     let v = Vector2(0, 1)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (2..<4).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (2..<4).lazy.map { Double($0) },
       maxSupportedScalarCount: 2)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -59,8 +59,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<3).lazy.map { Double($0) }
     let v = Vector3(0, 1, 2)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (3..<6).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (3..<6).lazy.map { Double($0) },
       maxSupportedScalarCount: 3)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -80,8 +80,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<4).lazy.map { Double($0) }
     let v = Vector4(0, 1, 2, 3)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (4..<8).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (4..<8).lazy.map { Double($0) },
       maxSupportedScalarCount: 4)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -102,8 +102,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<5).lazy.map { Double($0) }
     let v = Vector5(0, 1, 2, 3, 4)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (5..<10).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (5..<10).lazy.map { Double($0) },
       maxSupportedScalarCount: 5)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -125,8 +125,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<6).lazy.map { Double($0) }
     let v = Vector6(0, 1, 2, 3, 4, 5)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (6..<12).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (6..<12).lazy.map { Double($0) },
       maxSupportedScalarCount: 6)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -149,8 +149,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<7).lazy.map { Double($0) }
     let v = Vector7(0, 1, 2, 3, 4, 5, 6)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (7..<14).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (7..<14).lazy.map { Double($0) },
       maxSupportedScalarCount: 7)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -174,8 +174,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<8).lazy.map { Double($0) }
     let v = Vector8(0, 1, 2, 3, 4, 5, 6, 7)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (8..<16).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (8..<16).lazy.map { Double($0) },
       maxSupportedScalarCount: 8)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
@@ -200,8 +200,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<9).lazy.map { Double($0) }
     let v = Vector9(0, 1, 2, 3, 4, 5, 6, 7, 8)
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (9..<18).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (9..<18).lazy.map { Double($0) },
       maxSupportedScalarCount: 9)
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,

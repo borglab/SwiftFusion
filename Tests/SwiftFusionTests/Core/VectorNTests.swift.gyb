@@ -29,8 +29,8 @@ class VectorNTests: XCTestCase {
     let s = (0..<${dim}).lazy.map { Double($0) }
     let v = Vector${dim}(${', '.join([str(v) for v in range(dim)])})
     v.checkVectorSemantics(
-      expecting: s,
-      writing: (${dim}..<${2 * dim}).lazy.map { Double($0) },
+      expectingScalars: s,
+      writingScalars: (${dim}..<${2 * dim}).lazy.map { Double($0) },
       maxSupportedScalarCount: ${dim})
     v.scalars.checkRandomAccessCollectionSemantics(
       expecting: s,
