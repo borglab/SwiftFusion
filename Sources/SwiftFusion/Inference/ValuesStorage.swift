@@ -226,7 +226,7 @@ public class VectorArrayDispatch: DifferentiableArrayDispatch {
 
 extension AnyArrayBuffer where Dispatch == VectorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: Vector>(_ src: ArrayBuffer<Element>) {
+  public init<Element: Vector>(_ src: ArrayBuffer<Element>) {
     self.init(
       storage: src.storage,
       dispatch: VectorArrayDispatch(Type<Element>()))

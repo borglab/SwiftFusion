@@ -5,36 +5,36 @@ import XCTest
 import SwiftFusion
 
 % import math
-% dims = range(1, 10)
+% vectorSizes = range(1, 10)
 
-class ConcreteVectorTests: XCTestCase {
-  % for dim in dims:
-  % if dim <= 3:
-  %   coordinates = ['x', 'y', 'z'][0:dim]
+class VectorNTests: XCTestCase {
+  % for N in vectorSizes:
+  % if N <= 3:
+  %   coordinates = ['x', 'y', 'z'][0:N]
   % else:
-  %   coordinates = ['s%d' % i for i in range(dim)]
+  %   coordinates = ['s%d' % i for i in range(N)]
   % end
-  % values1 = range(1, dim + 1)
-  % values2 = range(dim + 1, 2 * dim + 1)
+  % values1 = range(1, N + 1)
+  % values2 = range(N + 1, 2 * N + 1)
 
   /// Test that initializing a vector from coordinate values works.
-  func testVector${dim}Init() {
-    let vector1 = Vector${dim}(${', '.join([str(v) for v in values1])})
+  func testVector${N}Init() {
+    let vector1 = Vector${N}(${', '.join([str(v) for v in values1])})
     % for (index, coordinate) in enumerate(coordinates):
     XCTAssertEqual(vector1.${coordinate}, ${values1[index]})
     % end
   }
 
+  func testVector${N}VectorConformance() {
+    let s = (0..<${N}).lazy.map { Double($0) }
+    let v = Vector${N}(${', '.join([str(v) for v in range(N)])})
+    v.checkVectorSemantics(
+      expectingScalars: s,
+      writingScalars: (${N}..<${2 * N}).lazy.map { Double($0) },
+      maxSupportedScalarCount: ${N})
+    v.scalars.checkRandomAccessCollectionSemantics(
+      expecting: s,
+      maxSupportedCount: ${N})
+  }
   % end
 }
-
-% for dim in dims:
-/// Tests the `Vector` requirements.
-class Vector${dim}VectorTests: XCTestCase, FixedSizeVectorTests {
-  typealias Testee = Vector${dim}
-  static var dimension: Int { return ${dim} }
-  func testAll() {
-    runAllFixedSizeVectorTests()
-  }
-}
-% end

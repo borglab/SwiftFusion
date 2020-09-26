@@ -158,6 +158,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   @differentiable
   private static func minus (_ lhs: ArrayBuffer, _ rhs: ArrayBuffer) -> ArrayBuffer {
     if rhs.isEmpty { return lhs }
+    if lhs.isEmpty { return .init(rhs.lazy.map { $0.zeroValue - $0 }) }
     return .init(elementwise: lhs, rhs, -)
   }
 
