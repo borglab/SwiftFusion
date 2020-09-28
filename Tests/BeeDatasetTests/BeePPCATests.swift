@@ -42,7 +42,7 @@ final class BeePPCATests: XCTestCase {
     let initialLatent = Vector5(flatTensor: ppca.encode(frames[0].patch(at: obbs[0]).mean(alongAxes: [2])).flattened())
     let latentId = v.store(initialLatent)
 
-    fg.store(AppearanceTrackingFactor<Vector5, Tensor28x62x1>(poseId, latentId, measurement: frames[1].mean(alongAxes: [2]), appearanceModel: ppca.generateWithJacobian))
+    fg.store(AppearanceTrackingFactor(poseId, latentId, measurement: frames[1].mean(alongAxes: [2]), appearanceModel: ppca.generateWithJacobian))
     fg.store(PriorFactor(latentId, initialLatent))
 
     var optimizer = LM()

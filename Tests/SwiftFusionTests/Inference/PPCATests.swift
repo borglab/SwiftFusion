@@ -25,7 +25,7 @@ class PPCATests: XCTestCase {
     let factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
 
     let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
-    let generic_factor = AppearanceTrackingFactor<Vector5, Tensor28x62x1>(
+    let generic_factor = AppearanceTrackingFactor(
       TypedID<Pose2>(0), TypedID<Vector5>(0),
       measurement: factor.measurement, appearanceModel: ppca.generateWithJacobian
     )
@@ -59,7 +59,7 @@ class PPCATests: XCTestCase {
 
       // Compare the vector-Jacobian-products (reverse derivative).
       for _ in 0..<10 {
-        let e = ErrorVector(Tensor(randomNormal: ErrorVector.shape, seed: (8, 8)))
+        let e = ErrorVector(Tensor(randomNormal: factor.mu.shape, seed: (8, 8)))
         assertEqual(
           custom.errorVector_linearComponent_adjoint(e).flatTensor,
           autodiff.errorVector_linearComponent_adjoint(e).flatTensor,
@@ -94,7 +94,7 @@ class PPCATests: XCTestCase {
   func testFactorGraphUsesCustomLinearizedGenerativeFactor() {
     let ppca_factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
     let ppca = PPCA(W: ppca_factor.W.tiled(multiples: [1, 1, 3, 1]), mu: ppca_factor.mu.tensor.tiled(multiples: [1, 1, 3]))
-    let generic_factor = AppearanceTrackingFactor<Vector5, Tensor28x62x3>(
+    let generic_factor = AppearanceTrackingFactor(
       TypedID<Pose2>(0), TypedID<Vector5>(0),
       measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]), appearanceModel: ppca.generateWithJacobian
     )
@@ -114,7 +114,8 @@ class PPCATests: XCTestCase {
     //
     // This works by checking that the first (only) element of the graph's storage can be cast to
     // an array of `LinearizedAppearanceTrackingFactor<Vector5>`.
-    XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedAppearanceTrackingFactor<Vector5, Tensor28x62x3>>()])
+    XCTAssertNotNil(
+      gfg.storage.first!.value[elementType: Type<LinearizedAppearanceTrackingFactor<Vector5>>()])
   }
 
 }

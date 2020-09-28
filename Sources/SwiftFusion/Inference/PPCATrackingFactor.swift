@@ -15,7 +15,7 @@ public struct PPCATrackingFactor: LinearizableFactor2 {
   public typealias V1 = Vector5
 
   /// A region cropped from the image.
-  public typealias Patch = Tensor28x62x1
+  public typealias Patch = TensorVector
 
   /// The IDs of the variables adjacent to this factor.
   public let edges: Variables.Indices
@@ -25,7 +25,7 @@ public struct PPCATrackingFactor: LinearizableFactor2 {
 
   /// The PPCA appearance model weight matrix.
   ///
-  /// The shape is `Patch.shape + [V1.dimension]`.
+  /// The shape is `mu.shape + [V1.dimension]`.
   public var W: Tensor<Double>
 
   /// The PPCA appearance model mean.
@@ -33,7 +33,7 @@ public struct PPCATrackingFactor: LinearizableFactor2 {
 
   /// Creates an instance.
   ///
-  /// - Requires `W.shape == Patch.shape + [V1.dimension]`.
+  /// - Requires `W.shape == mu.shape + [V1.dimension]`.
   public init(
     _ poseId: TypedID<Pose2>,
     _ latentId: TypedID<Vector5>,
@@ -41,7 +41,7 @@ public struct PPCATrackingFactor: LinearizableFactor2 {
     W: Tensor<Double>,
     mu: Patch
   ) {
-    precondition(W.shape == Patch.shape + [V1.dimension])
+    precondition(W.shape == mu.shape + [V1.dimension])
     self.edges = Tuple2(poseId, latentId)
     self.measurement = measurement
     self.W = W
@@ -74,7 +74,7 @@ public struct PPCATrackingFactor: LinearizableFactor2 {
   /// Returns the oriented region of the image at `center`, with the size of the patch we are
   /// tracking.
   private func region(_ center: Pose2) -> OrientedBoundingBox {
-    OrientedBoundingBox(center: center, rows: Patch.shape[0], cols: Patch.shape[1])
+    OrientedBoundingBox(center: center, rows: mu.shape[0], cols: mu.shape[1])
   }
 }
 
@@ -90,7 +90,7 @@ public struct LinearizedPPCATrackingFactor: GaussianFactor {
   /// The linear transformation mapping small changes in input variables to small changes in error
   /// around the linearization point.
   ///
-  /// The shape is `PPCATrackingFactor.Patch.shape + [Variables.dimension]`.
+  /// The shape is `error.shape + [Variables.dimension]`.
   public let errorVector_H_pose_latent: Tensor<Double>
 
   /// The IDs of the variables adjacent to this factor.
@@ -98,15 +98,14 @@ public struct LinearizedPPCATrackingFactor: GaussianFactor {
 
   /// Creates an instance with the given `errorVector` and `errorVector_H_pose_latent`.
   ///
-  /// - Requires: `errorVector_H_pose_latent.shape
-  //    == PPCATrackingFactor.Patch.shape + [Variables.dimension]`.
+  /// - Requires: `errorVector_H_pose_latent.shape == error.shape + [Variables.dimension]`.
   public init(
     error: PPCATrackingFactor.Patch,
     errorVector_H_pose_latent: Tensor<Double>,
     edges: Variables.Indices
   ) {
     precondition(
-      errorVector_H_pose_latent.shape == PPCATrackingFactor.Patch.shape + [Variables.dimension])
+      errorVector_H_pose_latent.shape == error.shape + [Variables.dimension])
     self.error = error
     self.errorVector_H_pose_latent = errorVector_H_pose_latent
     self.edges = edges
@@ -129,9 +128,9 @@ public struct LinearizedPPCATrackingFactor: GaussianFactor {
   public func errorVector_linearComponent_adjoint(_ y: PPCATrackingFactor.Patch) -> Variables {
     Variables(
       flatTensor: matmul(
-        errorVector_H_pose_latent.reshaped(to: [PPCATrackingFactor.Patch.dimension, Variables.dimension]),
+        errorVector_H_pose_latent.reshaped(to: [error.dimension, Variables.dimension]),
         transposed: true,
-        y.tensor.reshaped(to: [PPCATrackingFactor.Patch.dimension, 1])
+        y.tensor.reshaped(to: [error.dimension, 1])
       ).squeezingShape(at: 1)
     )
   }
@@ -149,10 +148,10 @@ extension PPCATrackingFactor {
   ) -> Self {
     let image = Tensor<Double>(randomNormal: [500, 500, 1], seed: seed)
     let W = Tensor<Double>(
-      randomNormal: PPCATrackingFactor.Patch.shape + [PPCATrackingFactor.V1.dimension],
+      randomNormal: [28, 62, 1] + [PPCATrackingFactor.V1.dimension],
       seed: seed)
     let mu = PPCATrackingFactor.Patch(
-      Tensor<Double>(randomNormal: PPCATrackingFactor.Patch.shape, seed: seed))
+      Tensor<Double>(randomNormal: W.shape[0..<3], seed: seed))
     return PPCATrackingFactor(poseID, latentID, measurement: image, W: W, mu: mu)
   }
 }
