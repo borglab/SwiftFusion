@@ -153,7 +153,7 @@ public struct LM {
           lambda = lambda * lambda_factor
         }
         
-        if model_fidelity > 0.5 && delta_error < precision {
+        if model_fidelity > 0.5 && delta_error < precision || this_error < precision {
           if verbosity >= .SUMMARY {
             print("[LM INNER] reached the target precision, exiting")
           }

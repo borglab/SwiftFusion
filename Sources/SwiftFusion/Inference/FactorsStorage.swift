@@ -69,6 +69,17 @@ extension ArrayStorage where Element == PPCATrackingFactor {
   }
 }
 
+extension ArrayStorage where Element == AppearanceTrackingFactor<Vector5> {
+  /// Returns the linearized factors at `x`, using the custom `AppearanceTrackingFactor` `linearized`
+  /// method instead of using autodiff on its `errorVector` method.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  func customLinearized(at x: VariableAssignments) -> ArrayBuffer<LinearizedAppearanceTrackingFactor<Vector5>> {
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(self.lazy.map { f in f.linearized(at: Element.Variables(at: f.edges, in: varsBufs)) })
+    }
+  }
+}
+
 // MARK: - Algorithms on arrays of `GaussianFactor`s.
 
 extension ArrayStorage where Element: GaussianFactor {
@@ -227,13 +238,26 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
     }
     super.init(e)
   }
+
+  /// Creates an instance for elements of type `AppearanceTrackingFactor`, using the custom
+  /// `AppearanceTrackingFactor` `linearized` method to do linearization.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  init(_ e: Type<AppearanceTrackingFactor<Vector5>>) {
+     errorVectors = { self_, x in
+      .init(self_[unsafelyAssumingElementType: e].storage.errorVectors(at: x))
+    }
+    linearized = { self_, x in
+      .init(
+        self_[unsafelyAssumingElementType: e].storage.customLinearized(at: x)
+      )
+    }
+    super.init(e)
+  }
 }
 
 extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: VectorFactor>(_ src: ArrayBuffer<Element>)
-    where Element.ErrorVector: FixedSizeVector
-  {
+  init<Element: VectorFactor>(_ src: ArrayBuffer<Element>) {
     let dispatch: VectorFactorArrayDispatch
     let elementType = Type<Element>()
     typealias TangentVector = Element.LinearizableComponent.Variables.TangentVector
@@ -244,6 +268,8 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
     // TODO: Generalize this so that users can write custom linearizations for anything.
     if Element.self == PPCATrackingFactor.self {
       dispatch = .init(Type<PPCATrackingFactor>())
+    } else if Element.self == AppearanceTrackingFactor<Vector5>.self {
+      dispatch = .init(Type<AppearanceTrackingFactor<Vector5>>())
     } else {
       // For small dimensions, we use a fixed size array in the linearization because the allocation
       // and indirection overheads of a dynamically sized array are releatively big.
@@ -259,14 +285,14 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
       //   with a dynamically sized array than with a fixed size array.
       // - "Pose3SLAM.sphere2500", which heavily uses 12 dimensional error vectors, has the same
       //   performance with fixed size and dynamically sized arrays.
-      switch Element.ErrorVector.dimension {
-      case 1:
+      switch TypeID(Element.ErrorVector.self) {
+      case TypeID(Vector1.self):
         dispatch = .init(elementType, linearization: Linearization<Array1<TangentVector>>())
-      case 2:
+      case TypeID(Vector2.self):
         dispatch = .init(elementType, linearization: Linearization<Array2<TangentVector>>())
-      case 3:
+      case TypeID(Vector3.self):
         dispatch = .init(elementType, linearization: Linearization<Array3<TangentVector>>())
-      case 4:
+      case TypeID(Vector4.self):
         dispatch = .init(elementType, linearization: Linearization<Array4<TangentVector>>())
       default:
         dispatch = .init(elementType, linearization: Linearization<Array<TangentVector>>())
