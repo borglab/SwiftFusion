@@ -19,7 +19,7 @@ final class BeePPCATests: XCTestCase {
 
     let patch = frames[0].patch(at: obbs[0]).mean(alongAxes: [2])
     
-    let recon = ppca.generate(ppca.encode(patch))
+    let recon = ppca.decode(ppca.encode(patch))
 
     XCTAssertEqual(sqrt((patch - recon).squared().mean()).scalar!, 10.049659587270698, accuracy: 1e-5)
   }
@@ -42,7 +42,10 @@ final class BeePPCATests: XCTestCase {
     let initialLatent = Vector5(flatTensor: ppca.encode(frames[0].patch(at: obbs[0]).mean(alongAxes: [2])).flattened())
     let latentId = v.store(initialLatent)
 
-    fg.store(AppearanceTrackingFactor(poseId, latentId, measurement: frames[1].mean(alongAxes: [2]), appearanceModel: ppca.generateWithJacobian))
+    // Tracking factor on the next frame
+    fg.store(AppearanceTrackingFactor(poseId, latentId, measurement: frames[1].mean(alongAxes: [2]), appearanceModel: ppca.decodeWithJacobian))
+
+    // Prior on latent initialized by PPCA decode on the previous frame
     fg.store(PriorFactor(latentId, initialLatent))
 
     var optimizer = LM()

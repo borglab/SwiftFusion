@@ -72,7 +72,7 @@ public struct PPCA {
   /// Generate an image according to a latent
   /// Input: [latent_size] or [latent_size, 1]
   @differentiable
-  public func generate(_ latent: Tensor<Double>) -> Patch {
+  public func decode(_ latent: Tensor<Double>) -> Patch {
     precondition(latent.rank == 1 || (latent.rank == 2 && latent.shape[1] == 1), "wrong latent dimension \(latent.shape)")
     if(latent.rank == 1) {
       return mu + matmul(W, latent.expandingShape(at: [1])).squeezingShape(at: 3)
@@ -87,8 +87,11 @@ public struct PPCA {
     precondition(image.rank == 3, "wrong latent dimension \(image.shape)")
     let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
     
+    // TODO: Cache A^TA?
     if self.W_inv == nil {
-      self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
+      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
+      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
+      self.W_inv = matmul(matmul(W_m.transposed(), W_m), W_m.transposed())
     }
 
     return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
@@ -96,7 +99,7 @@ public struct PPCA {
 
   /// Generate an image and corresponding Jacobian according to a latent
   /// Input: [latent_size] or [latent_size, 1]
-  public func generateWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch.TangentVector) {
-    return (generate(latent), W)
+  public func decodeWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch.TangentVector) {
+    return (decode(latent), W)
   }
 }
