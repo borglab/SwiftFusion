@@ -1,6 +1,10 @@
 # SwiftFusion
 
-Differentiable Swift based sensor fusion library.
+Differentiable Swift based sensor fusion library. 
+
+Think factor graphs a la [GTSAM](https://gtsam.org/) coupled with deep learning, [Jax](https://github.com/google/jax)/[TensorFlow](https://www.tensorflow.org/) style. Based on [Swift for TensorFlow](https://www.tensorflow.org/swift).
+
+Still very early, but feel free to explore! Subject to *massive* change :-)
 
 ## Run tests
 

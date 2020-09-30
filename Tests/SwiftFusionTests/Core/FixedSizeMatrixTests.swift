@@ -24,6 +24,18 @@ fileprivate typealias Matrix3x2 = FixedSizeMatrix<Array3<Vector2>>
 fileprivate typealias Matrix3x2_3x3 = FixedSizeMatrix<Array3<Tuple2<Vector2, Vector3>>>
 
 class FixedSizeMatrixTests: XCTestCase {
+  func testVectorConformance() {
+    let s1 = (0..<6).lazy.map { Double($0) }
+    let v1 = Matrix3x2(s1)
+    v1.checkVectorSemantics(expectingScalars: s1, writingScalars: (6..<12).lazy.map { Double($0) })
+    v1.scalars.checkRandomAccessCollectionSemantics(expecting: s1)
+
+    let s2 = (0..<9).lazy.map { Double($0) }
+    let v2 = Matrix3(s2)
+    v2.checkVectorSemantics(expectingScalars: s2, writingScalars: (9..<18).lazy.map { Double($0) })
+    v2.scalars.checkRandomAccessCollectionSemantics(expecting: s2)
+  }
+
   func testShape() {
     XCTAssertEqual(Matrix3.shape, Array2(3, 3))
     XCTAssertEqual(Matrix3x2.shape, Array2(3, 2))
