@@ -89,9 +89,10 @@ public struct PPCA {
     
     // TODO: Cache A^TA?
     if self.W_inv == nil {
-      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
-      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
-      self.W_inv = matmul(matmul(W_m.transposed(), W_m), W_m.transposed())
+      self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
+      // The following is numerically unstable!
+      // let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
+      // self.W_inv = matmul(matmul(W_m.transposed(), W_m), W_m.transposed())
     }
 
     return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
