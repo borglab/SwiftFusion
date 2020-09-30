@@ -56,6 +56,7 @@ public struct TensorVector {
   }
 
   @derivative(of: tensor)
+  @usableFromInline
   func vjpTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self) {
     (tensor, { Self($0) })
   }
