@@ -19,10 +19,16 @@ import XCTest
 import PenguinStructures
 @testable import SwiftFusion
 
-class PPCATrackingFactorTests: XCTestCase {
-  /// Tests that the custom `linearized(at:)` method produces the same results at autodiff.
+class PPCATests: XCTestCase {
+  /// Tests that the derivative of the new AppearanceTrackingFactor matches the old PPCATrackingFactor
   func testLinearizedValue() {
     let factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+
+    let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
+    let generic_factor = AppearanceTrackingFactor(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: factor.measurement, appearanceModel: ppca.decodeWithJacobian
+    )
 
     for _ in 0..<2 {
       let linearizationPoint = Tuple2(
@@ -36,7 +42,7 @@ class PPCATrackingFactorTests: XCTestCase {
 
       let autodiff = JacobianFactor<Array<Variables>, ErrorVector>(
         linearizing: factor, at: linearizationPoint)
-      let custom = factor.linearized(at: linearizationPoint)
+      let custom = generic_factor.linearized(at: linearizationPoint)
 
       // Compare the linearizations at zero (the error vector).
       XCTAssertEqual(
@@ -53,7 +59,7 @@ class PPCATrackingFactorTests: XCTestCase {
 
       // Compare the vector-Jacobian-products (reverse derivative).
       for _ in 0..<10 {
-        let e = ErrorVector(Tensor(randomNormal: ErrorVector.shape, seed: (8, 8)))
+        let e = ErrorVector(Tensor(randomNormal: factor.mu.shape, seed: (8, 8)))
         assertEqual(
           custom.errorVector_linearComponent_adjoint(e).flatTensor,
           autodiff.errorVector_linearComponent_adjoint(e).flatTensor,
@@ -82,4 +88,34 @@ class PPCATrackingFactorTests: XCTestCase {
     // an array of `LinearizedPPCATrackingFactor`.
     XCTAssertNotNil(gfg.storage.first!.value[elementType: Type<LinearizedPPCATrackingFactor>()])
   }
+
+  /// Tests that factor graphs with a `PPCATrackingFactor`s linearize them using the custom
+  /// linearization.
+  func testFactorGraphUsesCustomLinearizedGenerativeFactor() {
+    let ppca_factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+    let ppca = PPCA(W: ppca_factor.W.tiled(multiples: [1, 1, 3, 1]), mu: ppca_factor.mu.tensor.tiled(multiples: [1, 1, 3]))
+    let generic_factor = AppearanceTrackingFactor(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]), appearanceModel: ppca.decodeWithJacobian
+    )
+
+    var x = VariableAssignments()
+    let _ = x.store(Pose2(100, 100, 0))
+    let _ = x.store(Vector5.zero)
+
+    var fg = FactorGraph()
+    fg.store(generic_factor)
+
+    let gfg = fg.linearized(at: x)
+
+    // Assert that the linearized graph has the custom `LinearizedAppearanceTrackingFactor` that uses our
+    // faster custom Jacobian calculate the default `JacobianFactor` that calculates the Jacobian
+    // using autodiff.
+    //
+    // This works by checking that the first (only) element of the graph's storage can be cast to
+    // an array of `LinearizedAppearanceTrackingFactor<Vector5>`.
+    XCTAssertNotNil(
+      gfg.storage.first!.value[elementType: Type<LinearizedAppearanceTrackingFactor<Vector5>>()])
+  }
+
 }

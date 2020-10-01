@@ -36,9 +36,7 @@ public struct FactorGraph {
   }
 
   /// Stores `factor` in the graph.
-  // TODO(https://github.com/borglab/SwiftFusion/issues/152): Remove the `FixedSizeVector`
-  // constraint.
-  public mutating func store<T: VectorFactor>(_ factor: T) where T.ErrorVector: FixedSizeVector {
+  public mutating func store<T: VectorFactor>(_ factor: T) {
     _ = storage[
       ObjectIdentifier(T.self),
       default: AnyFactorArrayBuffer(

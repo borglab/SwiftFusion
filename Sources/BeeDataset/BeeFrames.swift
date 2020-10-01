@@ -15,6 +15,7 @@
 import Foundation
 import ModelSupport
 import SwiftFusion
+import TensorFlow
 
 /// An ordered collection of frames from a video of bees.
 ///
@@ -57,7 +58,7 @@ public struct BeeFrames: RandomAccessCollection {
   public func index(before i: Int) -> Int { i - 1 }
   public func index(after i: Int) -> Int { i + 1 }
 
-  public subscript(index: Int) -> Image {
-    return Image(jpeg: directory.appendingPathComponent("frame\(index + 1).png"))
+  public subscript(index: Int) -> Tensor<Double> {
+    return Tensor<Double>(Image(jpeg: directory.appendingPathComponent("frame\(index + 1).png")).tensor)
   }
 }

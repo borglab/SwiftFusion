@@ -12,19 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// Benchmarks Pose2SLAM solutions.
+
 import Benchmark
 import SwiftFusion
 import TensorFlow
 
 let patchBenchmark = BenchmarkSuite(name: "Patch") { suite in
-  /// Measures speed of taking a 100x100x1 patch from a 500x500x1 image.
   suite.benchmark(
-    "100x100x1 patch from 500x500x1 image",
+    "PatchForward",
     settings: Iterations(1), TimeUnit(.ms)
   ) {
     let rows = 100
     let cols = 100
     let image = Tensor<Double>(randomNormal: [500, 500, 1])
     _ = image.patch(at: OrientedBoundingBox(center: Pose2(100, 100, 0.5), rows: rows, cols: cols))
+  }
+
+  suite.benchmark(
+    "PatchJacobian",
+    settings: Iterations(1), TimeUnit(.ms)
+  ) {
+    let rows = 28
+    let cols = 62
+    let latentDimension = 5
+
+    let image = Tensor<Double>(randomNormal: [500, 500])
+
+    let W = Tensor<Double>(randomNormal: [rows * cols, latentDimension])
+    let mu = Tensor<Double>(randomNormal: [rows, cols])
+    func errorVector(_ center: Pose2, _ latent: Vector5) -> Tensor<Double> {
+      let bbox = OrientedBoundingBox(center: center, rows: rows, cols: cols)
+      let generated = mu + matmul(W, latent.flatTensor.expandingShape(at: 1)).reshaped(to: [rows, cols])
+      return generated - image.patch(at: bbox)
+    }
+
+    let (value, pb) = valueWithPullback(at: Pose2(100, 100, 0.5), Vector5.zero, in: errorVector)
+
+    for i in 0..<rows {
+      for j in 0..<cols {
+        var basisVector = Tensor<Double>(zeros: [rows, cols])
+        basisVector[i, j] = Tensor(1)
+        _ = pb(basisVector)
+      }
+    }
   }
 }

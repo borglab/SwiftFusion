@@ -22,7 +22,7 @@ final class LMTests: XCTestCase {
     graph.store(PriorFactor(pose1ID, Pose2(0, 0, 0)))
 
     var optimizer = LM(precision: 1e-3, max_iteration: 10)
-    optimizer.verbosity = .TRYLAMBDA
+    optimizer.verbosity = .SILENT
     
     try? optimizer.optimize(graph: graph, initial: &x)
 
