@@ -108,6 +108,9 @@ public struct FlattenedIndex<OuterIndex: Comparable, InnerIndex: Comparable> : C
 }
 
 extension AnyArrayBuffer {
+  /// `true` iff `self` contains no elements.
+  var isEmpty: Bool { count == 0 }
+  
   // TODO: retire in favor of subscript downcast + append?
   /// Appends `x`, returning the index of the appended element.
   ///

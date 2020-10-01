@@ -33,3 +33,14 @@ extension ArrayBuffer: Differentiable where Element: Differentiable {
     { .zero }
   }
 }
+
+extension ArrayBuffer where Element: Differentiable {
+  // DWA TODO: replace this with the use of zeroTangentVectorInitializer
+  /// Returns the zero `TangentVector`s of the contained elements.
+  var tangentVectorZeros: ArrayBuffer<Element.TangentVector> {
+    withUnsafeBufferPointer { vs in
+      .init(vs.lazy.map { $0.zeroTangentVector })
+    }
+  }
+}
+

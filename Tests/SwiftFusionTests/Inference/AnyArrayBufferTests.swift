@@ -20,9 +20,8 @@ import PenguinStructures
 import SwiftFusion
 
 class AnyArrayBufferTests: XCTestCase {
-  // TODO(#184): Make this test pass.
-  // func testVectorSemantics() {
-  //   let v = AnyVectorArrayBuffer(ArrayBuffer([Vector2(1, 2), Vector2(3, 4)]))
-  //   v.checkVectorSemantics(expectingScalars: [1, 2, 3, 4], writingScalars: [5, 6, 7, 8])
-  // }
+  func testVectorSemantics() {
+    let v = AnyVectorArrayBuffer(ArrayBuffer([Vector2(1, 2), Vector2(3, 4)]))
+    v.checkVectorSemantics(expectingScalars: [1, 2, 3, 4], writingScalars: [5, 6, 7, 8])
+  }
 }
