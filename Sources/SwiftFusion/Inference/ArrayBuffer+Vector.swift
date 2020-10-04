@@ -53,8 +53,8 @@ extension ArrayBuffer: Vector where Element: Vector {
     _modify {
       var io = Scalars(base: self)
       self = ArrayBuffer() // Avoid CoWs
+      defer { swap(&self, &io.base) }
       yield &io
-      swap(&self, &io.base)
     }
   }
   

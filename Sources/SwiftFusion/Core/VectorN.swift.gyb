@@ -91,8 +91,8 @@ extension Vector${dim}: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
