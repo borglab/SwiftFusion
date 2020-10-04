@@ -73,8 +73,8 @@ extension Vector1: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -170,8 +170,8 @@ extension Vector2: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -275,8 +275,8 @@ extension Vector3: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -388,8 +388,8 @@ extension Vector4: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -509,8 +509,8 @@ extension Vector5: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -638,8 +638,8 @@ extension Vector6: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -775,8 +775,8 @@ extension Vector7: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -920,8 +920,8 @@ extension Vector8: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -1073,8 +1073,8 @@ extension Vector9: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -1234,8 +1234,8 @@ extension Vector10: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -1403,8 +1403,8 @@ extension Vector11: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
@@ -1580,8 +1580,8 @@ extension Vector12: AdditiveArithmetic, Vector {
         precondition(i >= 0 && i < endIndex)
         let p = withUnsafeMutablePointer(to: &self) { $0 }
         let q = UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self)
+        defer { _fixLifetime(self) }
         yield &q[i]
-        _fixLifetime(self)
       }
     }
   }
