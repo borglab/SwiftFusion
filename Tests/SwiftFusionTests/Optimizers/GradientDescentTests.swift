@@ -33,7 +33,7 @@ final class GradientDescentTests: XCTestCase {
     graph.store(PriorFactor(pose1ID, Pose2(0, 0, 0)))
 
     var optimizer = GradientDescent(learningRate: 1e-2)
-    for _ in 0..<5000 {
+    for _ in 0..<10000 {
       optimizer.update(&x, objective: graph)
     }
 
