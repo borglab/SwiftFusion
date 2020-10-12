@@ -56,6 +56,28 @@ extension ArrayStorage where Element: VectorFactor {
         })
     }
   }
+
+  /// Increments `result` by the gradients of `self`'s errors at `x`.
+  func accumulateErrorGradient(
+    at x: VariableAssignments,
+    into result: inout AllVectors
+  ) {
+    typealias Variables = Element.Variables
+    typealias LVariables = Element.LinearizableComponent.Variables
+    typealias GradVariables = LVariables.TangentVector
+    Variables.withBufferBaseAddresses(x) { varsBufs in
+      GradVariables.withMutableBufferBaseAddresses(&result) { gradBufs in
+        for factor in self {
+          let vars = Variables(at: factor.edges, in: varsBufs)
+          let (lFactor, lVars) = factor.linearizableComponent(at: vars)
+          let gradIndices = LVariables.linearized(lFactor.edges)
+          let grads = GradVariables(at: gradIndices, in: GradVariables.withoutMutation(gradBufs))
+          let newGrads = grads + gradient(at: lVars) { lFactor.errorVector(at: $0).squaredNorm }
+          newGrads.assign(into: gradIndices, in: gradBufs)
+        }
+      }
+    }
+  }
 }
 
 extension ArrayStorage where Element == PPCATrackingFactor {
@@ -204,6 +226,13 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
   final let linearized:
     (_ self_: Self_, _ x: VariableAssignments) -> AnyGaussianFactorArrayBuffer
 
+  /// A function incrementing `result` by the gradients of `storage`'s factors' errors at `x`.
+  ///
+  /// - Requires: `storage` is the address of an `ArrayStorage` whose `Element` has a
+  ///   subclass-specific `VectorFactor` type.
+  final let accumulateErrorGradient:
+    (_ self_: Self_, _ x: VariableAssignments, _ result: inout AllVectors) -> ()
+
   /// Creates an instance for elements of type `Element` using the given `Linearization`.
   init<Element: VectorFactor, Linearization: LinearApproximationFactor>(
     _ e: Type<Element>, linearization: Type<Linearization>
@@ -214,12 +243,14 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
     errorVectors = { self_, x in
       .init(self_[unsafelyAssumingElementType: e].storage.errorVectors(at: x))
     }
-    
     linearized = { self_, x in
       .init(
         self_[unsafelyAssumingElementType: e].storage.linearized(at: x)
           as ArrayBuffer<Linearization>
       )
+    }
+    accumulateErrorGradient = { self_, x, result in
+      self_[unsafelyAssumingElementType: e].storage.accumulateErrorGradient(at: x, into: &result)
     }
     super.init(e)
   }
@@ -236,6 +267,9 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
         self_[unsafelyAssumingElementType: e].storage.customLinearized(at: x)
       )
     }
+    accumulateErrorGradient = { self_, x, result in
+      self_[unsafelyAssumingElementType: e].storage.accumulateErrorGradient(at: x, into: &result)
+    }
     super.init(e)
   }
 
@@ -250,6 +284,9 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
       .init(
         self_[unsafelyAssumingElementType: e].storage.customLinearized(at: x)
       )
+    }
+    accumulateErrorGradient = { self_, x, result in
+      self_[unsafelyAssumingElementType: e].storage.accumulateErrorGradient(at: x, into: &result)
     }
     super.init(e)
   }
@@ -312,6 +349,14 @@ extension AnyArrayBuffer where Dispatch: VectorFactorArrayDispatch {
   /// Returns the linearizations, at `x`, of the factors.
   func linearized(at x: VariableAssignments) -> AnyGaussianFactorArrayBuffer {
     dispatch.linearized(self.upcast, x)
+  }
+
+  /// Increments `result` by the gradients of `self`'s errors at `x`.
+  func accumulateErrorGradient(
+    at x: VariableAssignments,
+    into result: inout AllVectors
+  ) {
+    dispatch.accumulateErrorGradient(self.upcast, x, &result)
   }
 }
 

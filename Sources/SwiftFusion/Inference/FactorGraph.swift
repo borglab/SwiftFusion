@@ -68,6 +68,21 @@ public struct FactorGraph {
     return storage.values.lazy.map { $0.errors(at: x).reduce(0, +) }.reduce(0, +)
   }
 
+  /// Returns the gradient of `error` at `x`.
+  // TODO: If we make `VariableAssignments` `Differentiabe`, then we can make `error`
+  // `@differentiable` and use `gradient(of: error)` instead of defining this custom gradient
+  // method.
+  public func errorGradient(at x: VariableAssignments) -> AllVectors {
+    var grad = x.tangentVectorZeros
+    for factors in storage.values {
+      guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
+        continue
+      }
+      linearizableFactors.accumulateErrorGradient(at: x, into: &grad)
+    }
+    return grad
+  }
+
   /// Returns the total error, at `x`, of all the linearizable factors.
   public func linearizableError(at x: VariableAssignments) -> Double {
     return storage.values.reduce(0) { (result, factors) in
