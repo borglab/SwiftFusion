@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Foundation
-import TensorFlow
-import XCTest
+/// Optimizes the variables in a factor graph to minimize the error, using gradient descent.
+public struct GradientDescent {
+  /// The fraction of the gradient to move per step.
+  public var learningRate: Double
 
-import PenguinStructures
-import SwiftFusion
+  /// Creates an instance with the given `learningRate`.
+  public init(learningRate: Double) {
+    self.learningRate = learningRate
+  }
 
-class AnyArrayBufferTests: XCTestCase {
-  func testVectorSemantics() {
-    let v = AnyVectorArrayBuffer(ArrayBuffer([Vector2(1, 2), Vector2(3, 4)]))
-    v.checkVectorSemantics(expectingScalars: [1, 2, 3, 4], writingScalars: [5, 6, 7, 8])
+  /// Moves `values` along the gradient of `objective`'s error function for a single gradient
+  /// descent step.
+  public func update(_ values: inout VariableAssignments, objective: FactorGraph) {
+    values.move(along: -learningRate * objective.errorGradient(at: values))
   }
 }
