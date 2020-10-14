@@ -22,6 +22,9 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   /// The image containing the target.
   public let measurement: Tensor<Double>
 
+  /// Weighting of the error
+  public var weight: Double
+
   /// A generative model that produces an appearance from a latent code.
   ///
   /// - Parameters:
@@ -49,11 +52,13 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     _ poseId: TypedID<Pose2>,
     _ latentId: TypedID<LatentCode>,
     measurement: Tensor<Double>,
-    appearanceModel: @escaping GenerativeModel
+    appearanceModel: @escaping GenerativeModel,
+    weight: Double = 1.0
   ) {
     self.edges = Tuple2(poseId, latentId)
     self.measurement = measurement
     self.appearanceModel = appearanceModel
+    self.weight = weight
   }
 
   /// Returns the difference between the PPCA generated `Patch` and the `Patch` cropped from
@@ -63,7 +68,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let (appearance, _) = appearanceModel(latent.flatTensor)
     let region = OrientedBoundingBox(
       center: pose, rows: appearance.shape[0], cols: appearance.shape[1])
-    return Patch(appearance - measurement.patch(at: region))
+    return Patch(weight * (appearance - measurement.patch(at: region)))
   }
 
   @derivative(of: errorVector)
@@ -83,9 +88,9 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
       measurement.patchWithJacobian(at: region)
     assert(generatedAppearance_H_latent.shape == generatedAppearance.shape + [LatentCode.dimension])
     return LinearizedAppearanceTrackingFactor<LatentCode>(
-      error: Patch(actualAppearance - generatedAppearance),
-      errorVector_H_pose: -actualAppearance_H_pose,
-      errorVector_H_latent: generatedAppearance_H_latent,
+      error: Patch(weight * (actualAppearance - generatedAppearance)),
+      errorVector_H_pose: -weight * actualAppearance_H_pose,
+      errorVector_H_latent: weight * generatedAppearance_H_latent,
       edges: Variables.linearized(edges))
   }
 }
