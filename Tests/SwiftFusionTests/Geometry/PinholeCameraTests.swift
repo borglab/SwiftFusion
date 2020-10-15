@@ -44,17 +44,17 @@ final class PinholeCameraTests: XCTestCase {
 
     // Manually compute the expected output. Example for wp1:
     // - Point in camera frame cp = (0.1, -0.1, 1.0)
-    // - Project into normalized coordinate pNormalized = (0.1, -0.1)
-    // - Uncalibrate to image coordinate pImage = (330, 230)
-    let pImage1 = Vector2(330.0, 230.0)
-    let pImage2 = Vector2(330.0, 250.0)
-    let pImage3 = Vector2(310.0, 250.0)
-    let pImage4 = Vector2(310.0, 230.0)
+    // - Project into normalized coordinate np = (0.1, -0.1)
+    // - Uncalibrate to image coordinate ip = (330, 230)
+    let ip1 = Vector2(330.0, 230.0)
+    let ip2 = Vector2(330.0, 250.0)
+    let ip3 = Vector2(310.0, 250.0)
+    let ip4 = Vector2(310.0, 230.0)
 
-    XCTAssertEqual(camera.project(wp1), pImage1)
-    XCTAssertEqual(camera.project(wp2), pImage2)
-    XCTAssertEqual(camera.project(wp3), pImage3)
-    XCTAssertEqual(camera.project(wp4), pImage4)
+    XCTAssertEqual(camera.project(wp1), ip1)
+    XCTAssertEqual(camera.project(wp2), ip2)
+    XCTAssertEqual(camera.project(wp3), ip3)
+    XCTAssertEqual(camera.project(wp4), ip4)
   }
 
   /// Tests the custom derivative for project to normalized coordinate.
@@ -76,10 +76,14 @@ final class PinholeCameraTests: XCTestCase {
 
     // Expected values computed by running through AD (disabling the custom derivative)
     let dxExpected = (
-      PinholeCamera<Cal3_S2>.TangentVector(wTc: Vector6(-1.0, -2.0, -1.0, -1.0, 0.0, 1.0), calibration: K.zeroTangentVector),
+      PinholeCamera<Cal3_S2>.TangentVector(
+        wTc: Vector6(-1.0, -2.0, -1.0, -1.0, 0.0, 1.0), 
+        calibration: K.zeroTangentVector),
       Vector3(1.0, 0.0, 1.0))
     let dyExpected = (
-      PinholeCamera<Cal3_S2>.TangentVector(wTc: Vector6(2.0, 1.0, -1.0, 0.0, -1.0, -1.0), calibration: K.zeroTangentVector),
+      PinholeCamera<Cal3_S2>.TangentVector(
+        wTc: Vector6(2.0, 1.0, -1.0, 0.0, -1.0, -1.0), 
+        calibration: K.zeroTangentVector),
       Vector3(0.0, -1.0, -1.0))
 
     assertAllKeyPathEqual(p, Vector2(1.0, -1.0), accuracy: 1e-10)
@@ -113,10 +117,7 @@ final class PinholeCameraTests: XCTestCase {
     let wp3 = Vector3(-0.1, -0.1, 0.0)
     let wp4 = Vector3(-0.1, 0.1, 0.0)
 
-    // Manually compute the expected output. Example for wp1:
-    // - Point in camera frame cp = (0.1, -0.1, 1.0)
-    // - Project into normalized coordinate pNormalized = (0.1, -0.1)
-    // - Uncalibrate to image coordinate pImage = (330, 230)
+    // See test for project
     let ip1 = Vector2(330.0, 230.0)
     let ip2 = Vector2(330.0, 250.0)
     let ip3 = Vector2(310.0, 250.0)

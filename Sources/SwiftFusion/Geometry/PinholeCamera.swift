@@ -20,7 +20,7 @@ public struct PinholeCamera<Calibration: CameraCalibration>: Differentiable {
     self.init(calibration, Pose3())
   }
 
-  /// Initializes to default (identity calibration and pose).
+  /// Initializes to default.
   public init() {
     self.init(Calibration(), Pose3())
   }
@@ -36,7 +36,7 @@ extension PinholeCamera {
     return ip
   }
 
-  /// Backprojects a 2D image point into 3D point in the world frame with the specified depth.
+  /// Backprojects a 2D image point into 3D point in the world frame at given depth.
   @differentiable
   public func backproject(_ ip: Vector2, _ depth: Double) -> Vector3 {
     let np = calibration.calibrate(ip)
@@ -51,7 +51,7 @@ extension PinholeCamera {
     projectToNormalized(wp).ip
   }
 
-  /// Computes the derivative of projection function wrt to self and the point wp.
+  /// Computes the derivative of the projection function wrt to self and the point wp.
   @usableFromInline
   @derivative(of: projectToNormalized)
   func vjpProjectToNormalized(_ wp: Vector3) -> 

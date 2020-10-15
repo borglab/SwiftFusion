@@ -34,15 +34,15 @@ public struct Cal3_S2: CameraCalibration, Equatable {
 /// CameraCalibration protocol conformance.
 extension Cal3_S2 {
   @differentiable
-  public func uncalibrate(_ pNormalized: Vector2) -> Vector2 {
+  public func uncalibrate(_ np: Vector2) -> Vector2 {
     Vector2(
-      fx * pNormalized.x + s * pNormalized.y + u0,
-      fy * pNormalized.y + v0)
+      fx * np.x + s * np.y + u0,
+      fy * np.y + v0)
   }
 
   @differentiable
-  public func calibrate(_ pImage: Vector2) -> Vector2 {
-    let (du, dv) = (pImage.x - u0, pImage.y - v0)
+  public func calibrate(_ ip: Vector2) -> Vector2 {
+    let (du, dv) = (ip.x - u0, ip.y - v0)
     let (fxInv, fyInv) = (1.0 / fx, 1.0 / fy)
     return Vector2(
       fxInv * du - s * fxInv * fyInv * dv,
