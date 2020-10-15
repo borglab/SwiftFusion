@@ -102,6 +102,17 @@ extension ArrayStorage where Element == AppearanceTrackingFactor<Vector5> {
   }
 }
 
+extension ArrayStorage where Element == AppearanceTrackingFactor<Vector7> {
+  /// Returns the linearized factors at `x`, using the custom `AppearanceTrackingFactor` `linearized`
+  /// method instead of using autodiff on its `errorVector` method.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  func customLinearized(at x: VariableAssignments) -> ArrayBuffer<LinearizedAppearanceTrackingFactor<Vector7>> {
+    Element.Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(self.lazy.map { f in f.linearized(at: Element.Variables(at: f.edges, in: varsBufs)) })
+    }
+  }
+}
+
 // MARK: - Algorithms on arrays of `GaussianFactor`s.
 
 extension ArrayStorage where Element: GaussianFactor {
@@ -290,6 +301,24 @@ class VectorFactorArrayDispatch: FactorArrayDispatch {
     }
     super.init(e)
   }
+
+  /// Creates an instance for elements of type `AppearanceTrackingFactor`, using the custom
+  /// `AppearanceTrackingFactor` `linearized` method to do linearization.
+  // TODO: Generalize this so that users can write custom linearizations for anything.
+  init(_ e: Type<AppearanceTrackingFactor<Vector7>>) {
+     errorVectors = { self_, x in
+      .init(self_[unsafelyAssumingElementType: e].storage.errorVectors(at: x))
+    }
+    linearized = { self_, x in
+      .init(
+        self_[unsafelyAssumingElementType: e].storage.customLinearized(at: x)
+      )
+    }
+    accumulateErrorGradient = { self_, x, result in
+      self_[unsafelyAssumingElementType: e].storage.accumulateErrorGradient(at: x, into: &result)
+    }
+    super.init(e)
+  }
 }
 
 extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
@@ -307,6 +336,8 @@ extension AnyArrayBuffer where Dispatch == VectorFactorArrayDispatch {
       dispatch = .init(Type<PPCATrackingFactor>())
     } else if Element.self == AppearanceTrackingFactor<Vector5>.self {
       dispatch = .init(Type<AppearanceTrackingFactor<Vector5>>())
+    } else if Element.self == AppearanceTrackingFactor<Vector7>.self {
+      dispatch = .init(Type<AppearanceTrackingFactor<Vector7>>())
     } else {
       // For small dimensions, we use a fixed size array in the linearization because the allocation
       // and indirection overheads of a dynamically sized array are releatively big.
