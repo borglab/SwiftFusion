@@ -1,6 +1,6 @@
 
 /// The five-parameter camera calibration.
-public struct Cal3_S2: CameraCalibration, Manifold, Equatable {
+public struct Cal3_S2: Manifold, Equatable {
   public typealias Coordinate = Cal3_S2Coordinate
   public typealias TangentVector = Vector5
 
@@ -25,8 +25,8 @@ public struct Cal3_S2: CameraCalibration, Manifold, Equatable {
   }
 }
 
-/// CameraCalibration protocol conformance.
-extension Cal3_S2 {
+/// CameraCalibration conformance.
+extension Cal3_S2: CameraCalibration {
   @differentiable
   public func uncalibrate(_ np: Vector2) -> Vector2 {
     coordinate.uncalibrate(np)
@@ -38,9 +38,9 @@ extension Cal3_S2 {
   }
 }
 
-public struct Cal3_S2Coordinate: ManifoldCoordinate, Equatable {
-  public typealias LocalCoordinate = Vector5
 
+/// Manifold coordinate for Cal3_S2.
+public struct Cal3_S2Coordinate: Equatable {
   /// Focal length in X direction.
   public var fx: Double
 
@@ -85,6 +85,21 @@ public struct Cal3_S2Coordinate: ManifoldCoordinate, Equatable {
   }
 }
 
+/// ManifoldCoordinate conformance.
+extension Cal3_S2Coordinate: ManifoldCoordinate {
+  public typealias LocalCoordinate = Vector5
+
+  @differentiable(wrt: local)
+  public func retract(_ local: Vector5) -> Cal3_S2Coordinate {
+    Cal3_S2Coordinate(asVector() + local)
+  }
+
+  @differentiable(wrt: global)
+  public func localCoordinate(_ global: Cal3_S2Coordinate) -> Vector5 {
+    global.asVector() - asVector()
+  }
+}
+
 /// Operations on a point.
 extension Cal3_S2Coordinate {
   @differentiable
@@ -101,18 +116,5 @@ extension Cal3_S2Coordinate {
     return Vector2(
       fxInv * du - s * fxInv * fyInv * dv,
       fyInv * dv)
-  }
-}
-
-/// ManifoldCoordinate conformance.
-extension Cal3_S2Coordinate {
-  @differentiable(wrt: local)
-  public func retract(_ local: Vector5) -> Cal3_S2Coordinate {
-    Cal3_S2Coordinate(asVector() + local)
-  }
-
-  @differentiable(wrt: global)
-  public func localCoordinate(_ global: Cal3_S2Coordinate) -> Vector5 {
-    global.asVector() - asVector()
   }
 }
