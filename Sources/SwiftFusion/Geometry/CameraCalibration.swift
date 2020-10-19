@@ -1,5 +1,5 @@
 
-/// A type for camera calibration parameters.
+/// A protocol for camera calibration parameters.
 public protocol CameraCalibration: Differentiable {
   /// Initializes to default (usually identity).
   init()
