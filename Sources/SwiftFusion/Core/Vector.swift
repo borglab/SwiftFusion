@@ -1,4 +1,5 @@
 import Foundation
+import PenguinStructures
 import TensorFlow
 
 /// A vector, in a Euclidean vector space with standard orthonormal basis.
