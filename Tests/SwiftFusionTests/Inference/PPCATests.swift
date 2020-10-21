@@ -68,6 +68,33 @@ class PPCATests: XCTestCase {
     }
   }
 
+  /// Test that the VJP of the AppearanceTrackingFactor is the same as the automatically derived VJP of the PPCATrackingFactor.
+  func testVJP() {
+    let factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+
+    let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
+    let generic_factor = AppearanceTrackingFactor(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: factor.measurement, appearanceModel: ppca.decodeWithJacobian
+    )
+
+    for _ in 0..<5 {
+      let linearizationPoint = Tuple2(
+        Pose2(randomWithCovariance: eye(rowCount: 3), seed: (5, 5)),
+        Vector5(flatTensor: Tensor(randomNormal: [5], seed: (6, 6))))
+
+      let pbFactor = pullback(at: linearizationPoint) { factor.errorVector(at: $0) }
+      let pbGeneric_factor = pullback(at: linearizationPoint) { generic_factor.errorVector(at: $0) }
+
+      let tangentVector = TensorVector(Tensor<Double>(randomNormal: factor.mu.tensor.shape))
+
+      assertEqual(
+        pbFactor(tangentVector).flatTensor,
+        pbGeneric_factor(tangentVector).flatTensor,
+        accuracy: 1e-6)
+    }
+  }
+
   /// Tests that factor graphs with a `PPCATrackingFactor`s linearize them using the custom
   /// linearization.
   func testFactorGraphUsesCustomLinearized() {

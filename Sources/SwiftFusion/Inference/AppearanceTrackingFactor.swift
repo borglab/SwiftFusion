@@ -74,7 +74,14 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   @derivative(of: errorVector)
   @usableFromInline
   func vjpErrorVector(_ pose: Pose2, _ latent: LatentCode) -> (value: Patch.TangentVector, pullback: (Patch.TangentVector) -> (Pose2.TangentVector, LatentCode)) {
-    fatalError("not implemented")
+    let lin = self.linearized(at: Tuple2(pose, latent))
+    return (
+      lin.error,
+      { v in
+        let r = lin.errorVector_linearComponent_adjoint(v)
+        return (r.head, r.tail.head)
+      }
+    )
   }
 
   /// Returns a linear approximation to `self` at `x`.
