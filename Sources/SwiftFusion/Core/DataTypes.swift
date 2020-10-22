@@ -86,3 +86,125 @@ extension Vector5: LieGroupCoordinate {
 }
 
 extension Vector5: LieGroup {}
+
+
+extension Vector7: ManifoldCoordinate {
+  public typealias LocalCoordinate = Self
+
+  @differentiable(wrt: local)
+  public func retract(_ local: LocalCoordinate) -> Self {
+    self + local
+  }
+
+  @differentiable(wrt: global)
+  public func localCoordinate(_ global: Self) -> LocalCoordinate {
+    global - self
+  }
+}
+
+extension Vector7: Manifold {
+  /// The manifold's global coordinate system.
+  public typealias Coordinate = Self
+
+  public var coordinateStorage: Coordinate {
+    get {
+      self
+    }
+
+    set {
+      self = newValue
+    }
+  }
+
+  /// Creates a manifold point with coordinate `coordinateStorage`.
+  public init(coordinateStorage: Coordinate) {
+    self = coordinateStorage
+  }
+}
+
+extension Vector7: LieGroupCoordinate {
+  /// Creates the group identity.
+  public init() {
+    self = Self.zero
+  }
+
+  /// Returns the group inverse.
+  @differentiable
+  public func inverse() -> Self {
+    -self
+  }
+
+  /// The group operation.
+  @differentiable
+  public static func * (_ lhs: Self, _ rhs: Self) -> Self {
+    lhs + rhs
+  }
+
+  public func AdjointTranspose(_ v: LocalCoordinate) -> LocalCoordinate {
+    return defaultAdjointTranspose(v)
+  }
+}
+
+extension Vector7: LieGroup {}
+
+// -------------------------------------------------------------
+
+/// MARK: Vector10
+extension Vector10: ManifoldCoordinate {
+  public typealias LocalCoordinate = Self
+
+  @differentiable(wrt: local)
+  public func retract(_ local: LocalCoordinate) -> Self {
+    self + local
+  }
+
+  @differentiable(wrt: global)
+  public func localCoordinate(_ global: Self) -> LocalCoordinate {
+    global - self
+  }
+}
+
+extension Vector10: Manifold {
+  /// The manifold's global coordinate system.
+  public typealias Coordinate = Self
+
+  public var coordinateStorage: Coordinate {
+    get {
+      self
+    }
+
+    set {
+      self = newValue
+    }
+  }
+
+  /// Creates a manifold point with coordinate `coordinateStorage`.
+  public init(coordinateStorage: Coordinate) {
+    self = coordinateStorage
+  }
+}
+
+extension Vector10: LieGroupCoordinate {
+  /// Creates the group identity.
+  public init() {
+    self = Self.zero
+  }
+
+  /// Returns the group inverse.
+  @differentiable
+  public func inverse() -> Self {
+    -self
+  }
+
+  /// The group operation.
+  @differentiable
+  public static func * (_ lhs: Self, _ rhs: Self) -> Self {
+    lhs + rhs
+  }
+
+  public func AdjointTranspose(_ v: LocalCoordinate) -> LocalCoordinate {
+    return defaultAdjointTranspose(v)
+  }
+}
+
+extension Vector10: LieGroup {}
