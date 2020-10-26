@@ -99,8 +99,13 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let (actualAppearance, actualAppearance_H_pose) =
       measurement.patchWithJacobian(at: region)
     assert(generatedAppearance_H_latent.shape == generatedAppearance.shape + [LatentCode.dimension])
+    print("[DEBUG] actualAppearance_H_pose: \(actualAppearance_H_pose.shape)")
+    print("[DEBUG] generatedAppearance_H_latent: \(generatedAppearance_H_latent.shape)")
+
+    let reducedPatch = (actualAppearance - generatedAppearance).flattened().expandingShape(at: 1)
+    print("[DEBUG] (Patch).flattened().expandingShape(at: 1): \((reducedPatch).shape)")
     return LinearizedAppearanceTrackingFactor<LatentCode>(
-      error: Patch(weight * matmul(self.Ut, (actualAppearance - generatedAppearance).flattened().expandingShape(at: 1))),
+      error: Patch(weight * matmul(self.Ut, reducedPatch)),
       errorVector_H_pose: -weight * matmul(self.Ut, actualAppearance_H_pose),
       errorVector_H_latent: weight * matmul(self.Ut, generatedAppearance_H_latent),
       edges: Variables.linearized(edges))
