@@ -104,17 +104,13 @@ extension Cal3_S2Coordinate: ManifoldCoordinate {
 extension Cal3_S2Coordinate {
   @differentiable
   public func uncalibrate(_ np: Vector2) -> Vector2 {
-    Vector2(
-      fx * np.x + s * np.y + u0,
-      fy * np.y + v0)
+    Vector2(fx * np.x + s * np.y + u0, fy * np.y + v0)
   }
 
   @differentiable
   public func calibrate(_ ip: Vector2) -> Vector2 {
     let (du, dv) = (ip.x - u0, ip.y - v0)
     let (fxInv, fyInv) = (1.0 / fx, 1.0 / fy)
-    return Vector2(
-      fxInv * du - s * fxInv * fyInv * dv,
-      fyInv * dv)
+    return Vector2(fxInv * du - s * fxInv * fyInv * dv, fyInv * dv)
   }
 }
