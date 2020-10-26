@@ -213,6 +213,5 @@ class Scratch: XCTestCase {
     )
     _ = states as Array
     XCTAssertEqual(states.count, num_results)
-    print(states)
   }
 }
