@@ -72,10 +72,10 @@ public struct PPCA {
     
     let sigma_2 = J_s[latent_size...].mean()
     
-    self.Ut = J_u![0..<J_u!.shape[0], 0..<latent_size]
+    self.Ut = J_u![0..<J_u!.shape[0], 0..<latent_size].transposed()
 
     self.W = matmul(
-      self.Ut!,
+      self.Ut!.transposed(),
       (J_s[0..<latent_size] - sigma_2).diagonal()
     ).reshaped(to: [H_, W_, C_, latent_size])
   }

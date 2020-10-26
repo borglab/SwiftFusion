@@ -73,7 +73,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let (appearance, _) = appearanceModel(latent.flatTensor)
     let region = OrientedBoundingBox(
       center: pose, rows: appearance.shape[0], cols: appearance.shape[1])
-    return Patch(weight * matmul(self.Ut, (appearance - measurement.patch(at: region))))
+    return Patch(weight * matmul(self.Ut, (appearance - measurement.patch(at: region)).flattened().expandingShape(at: 1)))
   }
 
   @derivative(of: errorVector)
