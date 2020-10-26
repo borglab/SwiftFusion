@@ -24,7 +24,7 @@ public struct TypeKeyedArrayBuffers<ElementAPI: AnyObject, ConstructionAPI> {
   fileprivate typealias UntypedKey = TypeID
 
   /// The type of the backing store
-  private typealias Storage = [UntypedKey: AnyArrayBuffer<ElementAPI>]
+  private typealias Storage = InsertionOrderedDictionary<UntypedKey, AnyArrayBuffer<ElementAPI>>
   
   /// A dispatch table for the common capabilites of each buffer type.
   public typealias ElementAPI = ElementAPI
@@ -50,10 +50,10 @@ extension TypeKeyedArrayBuffers {
   }
 
   /// Creates an empty instance
-  public init() { self.init(_storage: [:]) }
+  public init() { self.init(_storage: .init()) }
 
   /// Representation of the stored `AnyArrayBuffer`s.
-  public typealias AnyBuffers = Dictionary<TypeID, AnyArrayBuffer<ElementAPI>>.Values
+  public typealias AnyBuffers = InsertionOrderedDictionary<TypeID, AnyArrayBuffer<ElementAPI>>.Values
   
   /// Representation of the `TypeID`s that index the stored `AnyArrayBuffer`s.
   private typealias UntypedKeys = Storage.Keys
@@ -83,7 +83,7 @@ extension TypeKeyedArrayBuffers {
   /// number of elements in the corresponding array.
   public func hasSameStructure<D, C>(as other: TypeKeyedArrayBuffers<D, C>) -> Bool {
     if _storage.count != other._storage.count { return false }
-    return _storage.allSatisfy { k, v in  other._storage[k]?.count == v.count }
+    return _storage.allSatisfy { kv in  other._storage[kv.key]?.count == kv.value.count }
   }
 
   /// Returns a mapping from each key `k` of `self` into `bufferTransform(self[k])`.
@@ -140,11 +140,11 @@ extension TypeKeyedArrayBuffers {
 
     return try .init(
       _storage: .init(
-        uniqueKeysWithValues: _storage.lazy.map { (k, v) in
-          guard let p = parameter._storage[k] else {
+        uniqueKeysWithValues: _storage.lazy.map { kv in
+          guard let p = parameter._storage[kv.key] else {
             fatalError("parameter must have same structure as `self`")
           }
-          return (k, try updated(v, p))
+          return .init(key: kv.key, value: try updated(kv.value, p))
         }))
   }
 }
