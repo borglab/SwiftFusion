@@ -37,6 +37,9 @@ public struct PPCA {
   /// Size of latent
   public var latent_size: Int
 
+  /// Basis
+  public var Ut: Tensor<Double>?
+
   /// Constructor
   /// measured: Measured Patch (Template)
   /// W and mu are calculated by PPCA
@@ -45,6 +48,7 @@ public struct PPCA {
     self.W = W
     self.mu = mu
     self.W_inv = nil
+    self.Ut = nil
   }
 
   public init(latentSize: Int) {
@@ -52,6 +56,7 @@ public struct PPCA {
     self.W_inv = nil
     self.mu = Tensor([.nan])
     self.latent_size = latentSize
+    self.Ut = nil
   }
 
   /// Train a PPCA model
@@ -66,7 +71,13 @@ public struct PPCA {
     let (J_s, J_u, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
     
     let sigma_2 = J_s[latent_size...].mean()
-    self.W = matmul(J_u![0..<J_u!.shape[0], 0..<latent_size], (J_s[0..<latent_size] - sigma_2).diagonal()).reshaped(to: [H_, W_, C_, latent_size])
+    
+    self.Ut = J_u![0..<J_u!.shape[0], 0..<latent_size]
+
+    self.W = matmul(
+      self.Ut!,
+      (J_s[0..<latent_size] - sigma_2).diagonal()
+    ).reshaped(to: [H_, W_, C_, latent_size])
   }
 
   /// Generate an image according to a latent
