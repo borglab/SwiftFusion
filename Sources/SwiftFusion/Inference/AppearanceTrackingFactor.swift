@@ -99,15 +99,19 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let (actualAppearance, actualAppearance_H_pose) =
       measurement.patchWithJacobian(at: region)
     assert(generatedAppearance_H_latent.shape == generatedAppearance.shape + [LatentCode.dimension])
+    
+    
+    let reducedPatch = (actualAppearance - generatedAppearance).flattened().expandingShape(at: 1)
+    print("[DEBUG] patch: \(Patch(actualAppearance).shape)")
+    print("[DEBUG] error: \(Patch(weight * matmul(self.Ut, reducedPatch).expandingShape(at: 2)).shape)")
     print("[DEBUG] actualAppearance_H_pose: \(actualAppearance_H_pose.shape)")
     print("[DEBUG] generatedAppearance_H_latent: \(generatedAppearance_H_latent.shape)")
 
-    let reducedPatch = (actualAppearance - generatedAppearance).flattened().expandingShape(at: 1)
     print("[DEBUG] (Patch).flattened().expandingShape(at: 1): \((reducedPatch).shape)")
     return LinearizedAppearanceTrackingFactor<LatentCode>(
-      error: Patch(weight * matmul(self.Ut, reducedPatch)),
-      errorVector_H_pose: -weight * matmul(self.Ut, actualAppearance_H_pose),
-      errorVector_H_latent: weight * matmul(self.Ut, generatedAppearance_H_latent),
+      error: Patch(weight * matmul(self.Ut, reducedPatch).expandingShape(at: 2)),
+      errorVector_H_pose: -weight * matmul(self.Ut, actualAppearance_H_pose.reshaped(to: [self.Ut.shape[1], 3])).expandingShape(at: 1).expandingShape(at: 1),
+      errorVector_H_latent: weight * matmul(self.Ut, generatedAppearance_H_latent.reshaped(to: [self.Ut.shape[1], LatentCode.dimension])).expandingShape(at: 1).expandingShape(at: 1),
       edges: Variables.linearized(edges))
   }
 }
