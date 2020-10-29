@@ -45,6 +45,19 @@ public protocol VectorFactor: Factor {
   /// of `x`.
   func linearizableComponent(at x: Variables)
     -> (LinearizableComponent, LinearizableComponent.Variables)
+
+  /// Returns the linearizations of `factors` at `x`.
+  ///
+  /// The reason this method operates on a collection instead of a single element is so that the
+  /// result can be type-erased without paying a huge performance cost. The type-erasure lets the
+  /// implementation choose the most efficient type for storing the linearization, without
+  /// affecting the callers.
+  ///
+  /// A default implementation using Automatic Differentiation is provided. Conforming types may
+  /// want to override this implementation if they have a faster manual linearization
+  /// implementation.
+  static func linearized<C: Collection>(_ factors: C, at x: VariableAssignments)
+    -> AnyGaussianFactorArrayBuffer where C.Element == Self
 }
 
 /// A factor whose `errorVector` function is linearizable with respect to all the variables.
@@ -244,5 +257,73 @@ where Head: Differentiable, Tail: DifferentiableVariableTuple {
       head: TypedID<Head.TangentVector>(indices.head.perTypeID),
       tail: Tail.linearized(indices.tail)
     )
+  }
+}
+
+// MARK: - Default implementation of `linearized`.
+
+extension VectorFactor {
+  /// Returns the linearizations of `factors` at `x`.
+  ///
+  /// The reason this method operates on a collection instead of a single element is so that the
+  /// result can be type-erased without paying a huge performance cost. The type-erasure lets the
+  /// implementation choose the most efficient type for storing the linearization, without
+  /// affecting the callers.
+  public static func linearized<C: Collection>(_ factors: C, at x: VariableAssignments)
+    -> AnyGaussianFactorArrayBuffer where C.Element == Self
+  {
+    typealias TangentVector = LinearizableComponent.Variables.TangentVector
+    typealias Linearization<A> = Type<JacobianFactor<A, ErrorVector>>
+      where A: SourceInitializableCollection, A.Element: Vector & DifferentiableVariableTuple
+
+    // For small dimensions, we use a fixed size array in the linearization because the allocation
+    // and indirection overheads of a dynamically sized array are relatively big.
+    //
+    // For larger dimensions, dynamically sized array are more convenient (no need to define a
+    // new type and case for each size) and in some cases also happen to be faster than fixed size
+    // arrays.
+    //
+    // We chose 4 as the cutoff based on benchmark results:
+    // - "Pose2SLAM.FactorGraph", which heavily uses 3 dimensional error vectors, is ~30% faster
+    //   with a fixed size array than with a dynamically sized array.
+    // - "Pose3SLAM.FactorGraph", which heavily uses 6 dimensional error vectors, is ~3% faster
+    //   with a dynamically sized array than with a fixed size array.
+    // - "Pose3SLAM.sphere2500", which heavily uses 12 dimensional error vectors, has the same
+    //   performance with fixed size and dynamically sized arrays.
+    switch TypeID(ErrorVector.self) {
+    case TypeID(Vector1.self):
+      return .init(
+        Self.linearized(factors, at: x, linearization: Linearization<Array1<TangentVector>>()))
+    case TypeID(Vector2.self):
+      return .init(
+        Self.linearized(factors, at: x, linearization: Linearization<Array2<TangentVector>>()))
+    case TypeID(Vector3.self):
+      return .init(
+        Self.linearized(factors, at: x, linearization: Linearization<Array3<TangentVector>>()))
+    case TypeID(Vector4.self):
+      return .init(
+        Self.linearized(factors, at: x, linearization: Linearization<Array4<TangentVector>>()))
+    default:
+      return .init(
+        Self.linearized(factors, at: x, linearization: Linearization<Array<TangentVector>>()))
+    }
+  }
+
+  /// Returns the linearizations of `factors` at `x`, as an array of `Linearization`s.
+  private static func linearized<C: Collection, Linearization: LinearApproximationFactor>(
+    _ factors: C, at x: VariableAssignments, linearization: Type<Linearization>
+  ) -> ArrayBuffer<Linearization>
+  where C.Element == Self,
+        Linearization.Variables == LinearizableComponent.Variables.TangentVector,
+        Linearization.ErrorVector == ErrorVector
+  {
+    Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(
+        factors.lazy.map { f in
+          let (fLinearizable, xLinearizable) =
+            f.linearizableComponent(at: Variables(at: f.edges, in: varsBufs))
+          return Linearization(linearizing: fLinearizable, at: xLinearizable)
+        })
+    }
   }
 }
