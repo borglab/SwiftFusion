@@ -1,3 +1,4 @@
+import PenguinParallel
 import PenguinStructures
 import TensorFlow
 
@@ -33,13 +34,24 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   /// - Returns:
   ///   - appearance: the output of the generative model, which is a tensor with shape
   ///     `Patch.shape`.
-  ///   - jacobian: the Jacobian of the generative model at the given `latentCode`, which is a
-  ///     tensor with shape `Patch.shape + [LatentCode.dimension]`.
   public typealias GenerativeModel =
-    (_ latentCode: Tensor<Double>) -> (appearance: Tensor<Double>, jacobian: Tensor<Double>)
+    (_ latentCode: Tensor<Double>) -> Tensor<Double>
 
   /// The generative model that produces an appearance from a latent code.
   public var appearanceModel: GenerativeModel
+
+  /// The Jacobian of a `GenerativeModel`.
+  ///
+  /// - Parameters:
+  ///   - latentCode: the input to the generative model, which is a tensor with shape
+  ///     `[LatentCode.dimension]`.
+  /// - Returns:
+  ///   - jacobian: the Jacobian of the generative model at the given `latentCode`, which is a
+  ///     tensor with shape `Patch.shape + [LatentCode.dimension]`.
+  public typealias GenerativeModelJacobian = (_ latentCode: Tensor<Double>) -> Tensor<Double>
+
+  /// The Jacobian of `appearanceModel`.
+  public var appearanceModelJacobian: GenerativeModelJacobian
 
   /// Creates an instance.
   ///
@@ -53,11 +65,13 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     _ latentId: TypedID<LatentCode>,
     measurement: Tensor<Double>,
     appearanceModel: @escaping GenerativeModel,
+    appearanceModelJacobian: @escaping GenerativeModelJacobian,
     weight: Double = 1.0
   ) {
     self.edges = Tuple2(poseId, latentId)
     self.measurement = measurement
     self.appearanceModel = appearanceModel
+    self.appearanceModelJacobian = appearanceModelJacobian
     self.weight = weight
   }
 
@@ -65,7 +79,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   /// `measurement`.
   @differentiable
   public func errorVector(_ pose: Pose2, _ latent: LatentCode) -> Patch.TangentVector {
-    let (appearance, _) = appearanceModel(latent.flatTensor)
+    let appearance = appearanceModel(latent.flatTensor)
     let region = OrientedBoundingBox(
       center: pose, rows: appearance.shape[0], cols: appearance.shape[1])
     return Patch(weight * (appearance - measurement.patch(at: region)))
@@ -88,11 +102,11 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   public func linearized(at x: Variables) -> LinearizedAppearanceTrackingFactor<LatentCode> {
     let pose = x.head
     let latent = x.tail.head
-    let (generatedAppearance, generatedAppearance_H_latent) = appearanceModel(latent.flatTensor)
+    let generatedAppearance = appearanceModel(latent.flatTensor)
+    let generatedAppearance_H_latent = appearanceModelJacobian(latent.flatTensor)
     let region = OrientedBoundingBox(
       center: pose, rows: generatedAppearance.shape[0], cols: generatedAppearance.shape[1])
-    let (actualAppearance, actualAppearance_H_pose) =
-      measurement.patchWithJacobian(at: region)
+    let (actualAppearance, actualAppearance_H_pose) = measurement.patchWithJacobian(at: region)
     assert(generatedAppearance_H_latent.shape == generatedAppearance.shape + [LatentCode.dimension])
     return LinearizedAppearanceTrackingFactor<LatentCode>(
       error: Patch(weight * (actualAppearance - generatedAppearance)),
@@ -108,9 +122,15 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   public static func linearized<C: Collection>(_ factors: C, at x: VariableAssignments)
     -> AnyGaussianFactorArrayBuffer where C.Element == Self
   {
-     .init(Variables.withBufferBaseAddresses(x) { varsBufs in
-       .init(factors.lazy.map { f in f.linearized(at: Variables(at: f.edges, in: varsBufs)) })
-     })
+    Variables.withBufferBaseAddresses(x) { varsBufs in
+      .init(ArrayBuffer<LinearizedAppearanceTrackingFactor<LatentCode>>(
+        count: factors.count, minimumCapacity: factors.count) { b in
+        ComputeThreadPools.local.parallelFor(n: factors.count) { (i, _) in
+          let f = factors[factors.index(factors.startIndex, offsetBy: i)]
+          (b + i).initialize(to: f.linearized(at: Variables(at: f.edges, in: varsBufs)))
+        }
+      })
+    }
   }
 }
 
@@ -164,6 +184,9 @@ public struct LinearizedAppearanceTrackingFactor<LatentCode: FixedSizeVector>: G
   }
 
   public func errorVector_linearComponent(_ x: Variables) -> Patch {
+    startTimer("linearized appearance")
+    defer { stopTimer("linearized appearance") }
+    incrementCounter("linearized appearance")
     let pose = x.head
     let latent = x.tail.head
     return Patch(
@@ -172,6 +195,9 @@ public struct LinearizedAppearanceTrackingFactor<LatentCode: FixedSizeVector>: G
   }
 
   public func errorVector_linearComponent_adjoint(_ y: Patch) -> Variables {
+    startTimer("linearized appearance transpose")
+    defer { stopTimer("linearized appearance transpose") }
+    incrementCounter("linearized appearance transpose")
     let t = y.tensor.reshaped(to: [error.dimension, 1])
     let pose = matmul(
       errorVector_H_pose.reshaped(to: [error.dimension, 3]),

@@ -64,6 +64,7 @@ let package = Package(
       dependencies: [
         "BeeDataset",
         "BeeTracking",
+        "PenguinParallelWithFoundation",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
       path: "Examples/BeeTrackingTool"),

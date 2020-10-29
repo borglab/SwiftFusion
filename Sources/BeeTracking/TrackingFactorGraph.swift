@@ -64,7 +64,6 @@ public struct TrackingFactorGraph {
     let initialLatent = Vector10(flatTensor: model.encode(initialPatch.expandingShape(at: 0)))
 
     for i in 0..<length {
-      print(i)
       poseIds.append(v.store(video.tracks[trackId][indexStart].location.center))
       latentIds.append(v.store(initialLatent))
 
@@ -73,10 +72,11 @@ public struct TrackingFactorGraph {
           poseIds[i], latentIds[i],
           measurement: statistics.normalized(video.loadFrame(indexStart + i)!),
           appearanceModel: { x in
-            (
-              model.decode(x.expandingShape(at: 0)).squeezingShape(at: 0),
-              model.decodeJacobian(x.expandingShape(at: 0))
-                .reshaped(to: [model.imageHeight, model.imageWidth, model.imageChannels, model.latentDimension]))
+            model.decode(x.expandingShape(at: 0)).squeezingShape(at: 0)
+          },
+          appearanceModelJacobian: { x in
+            model.decodeJacobian(x.expandingShape(at: 0))
+              .reshaped(to: [model.imageHeight, model.imageWidth, model.imageChannels, model.latentDimension])
           }))
 
       if i == 0 {

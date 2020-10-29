@@ -43,7 +43,10 @@ final class BeePPCATests: XCTestCase {
     let latentId = v.store(initialLatent)
 
     // Tracking factor on the next frame
-    fg.store(AppearanceTrackingFactor(poseId, latentId, measurement: frames[1].mean(alongAxes: [2]), appearanceModel: ppca.decodeWithJacobian))
+    fg.store(AppearanceTrackingFactor(
+      poseId, latentId,
+      measurement: frames[1].mean(alongAxes: [2]),
+      appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }))
 
     // Prior on latent initialized by PPCA decode on the previous frame
     fg.store(PriorFactor(latentId, initialLatent))

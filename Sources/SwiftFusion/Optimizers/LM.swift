@@ -28,6 +28,9 @@ public struct LM {
   
   /// Desired precision, TODO(fan): make this actually work
   public var precision: Double = 1e-10
+
+  /// The precision of the CGLS solver.
+  public var cgls_precision: Double = 1e-10
   
   /// Maximum number of L-M iterations
   public var max_iteration: Int = 50
@@ -105,7 +108,7 @@ public struct LM {
         let old_linear_error = damped.error(at: dx)
         
         var dx_t = dx
-        var optimizer = GenericCGLS(precision: 1e-10, max_iteration: max_inner_iteration)
+        var optimizer = GenericCGLS(precision: cgls_precision, max_iteration: max_inner_iteration)
         optimizer.optimize(gfg: damped, initial: &dx_t)
         if verbosity >= .TRYLAMBDA {
           print("[LM INNER] damped error = \(damped.error(at: dx_t)), lambda = \(lambda)")
