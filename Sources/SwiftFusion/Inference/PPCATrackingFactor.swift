@@ -76,6 +76,18 @@ public struct PPCATrackingFactor: LinearizableFactor2 {
   private func region(_ center: Pose2) -> OrientedBoundingBox {
     OrientedBoundingBox(center: center, rows: mu.shape[0], cols: mu.shape[1])
   }
+
+  /// Returns the linearizations of `factors` at `x`.
+  ///
+  /// Note: This causes factor graph linearization to use our custom linearization,
+  /// `LinearizedPPCATrackingFactor` instead of the default AD-generated linearization.
+  public static func linearized<C: Collection>(_ factors: C, at x: VariableAssignments)
+    -> AnyGaussianFactorArrayBuffer where C.Element == Self
+  {
+     .init(Variables.withBufferBaseAddresses(x) { varsBufs in
+       .init(factors.lazy.map { f in f.linearized(at: Variables(at: f.edges, in: varsBufs)) })
+     })
+  }
 }
 
 /// A linear approximation to `PPCATrackingFactor`, at a certain linearization point.
