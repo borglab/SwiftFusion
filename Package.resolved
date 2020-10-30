@@ -6,7 +6,7 @@
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
           "branch": "master",
-          "revision": "b3a3bea7f1b3237183e446f37b7d28c7b19169b5",
+          "revision": "bb3118efc29779b123caa7a83f1694d9b92e9fa7",
           "version": null
         }
       },
@@ -24,7 +24,7 @@
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
           "branch": "master",
-          "revision": "9a47e0326086f7e0b2a8c69e56217485fd9aa80d",
+          "revision": "34c2f072feb6aa74dcc5f2d8e066fe4f2a0af73c",
           "version": null
         }
       },
