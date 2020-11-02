@@ -96,10 +96,4 @@ public struct PPCA {
 
     return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
   }
-
-  /// Generate an image and corresponding Jacobian according to a latent
-  /// Input: [latent_size] or [latent_size, 1]
-  public func decodeWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch.TangentVector) {
-    return (decode(latent), W)
-  }
 }
