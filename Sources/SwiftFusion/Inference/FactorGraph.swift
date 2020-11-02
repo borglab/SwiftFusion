@@ -85,6 +85,8 @@ public struct FactorGraph {
 
   /// Returns the total error, at `x`, of all the linearizable factors.
   public func linearizableError(at x: VariableAssignments) -> Double {
+    startTimer("linearizableError")
+    defer { stopTimer("linearizableError") }
     return storage.values.reduce(0) { (result, factors) in
       guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
         return result
@@ -95,6 +97,8 @@ public struct FactorGraph {
 
   /// Returns the error vectors, at `x`, of all the linearizable factors.
   public func errorVectors(at x: VariableAssignments) -> AllVectors {
+    startTimer("errorVectors")
+    defer { stopTimer("errorVectors") }
     return AllVectors(storage: storage.compactMapValues { factors in
       guard let linearizableFactors = AnyVectorFactorArrayBuffer(factors) else {
         return nil
@@ -116,6 +120,8 @@ public struct FactorGraph {
   ///   `self.linearized(at: x).errorVectors(dx)` ≈ `self.errorVectors(at: x.moved(along: dx))`
   /// where the equality is exact when `dx == x.linearizedZero`.
   public func linearized(at x: VariableAssignments) -> GaussianFactorGraph {
+    startTimer("linearize")
+    defer { stopTimer("linearize") }
     return GaussianFactorGraph(
       storage: storage.compactMapValues { factors in
         AnyVectorFactorArrayBuffer(factors)?.linearized(at: x)

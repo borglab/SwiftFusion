@@ -14,6 +14,7 @@
 
 /// Contiguous storage for factors of statically unknown type.
 
+import PenguinParallel
 import PenguinStructures
 
 // MARK: - Algorithms on arrays of `Factor`s.
@@ -22,8 +23,12 @@ extension ArrayStorage where Element: Factor {
   /// Returns the errors, at `x`, of the factors.
   func errors(at x: VariableAssignments) -> [Double] {
     Element.Variables.withBufferBaseAddresses(x) { varsBufs in
-      self.map { f in
-        f.error(at: Element.Variables(at: f.edges, in: varsBufs))
+      Array<Double>(unsafeUninitializedCapacity: self.count) { (b, resultCount) in
+        ComputeThreadPools.local.parallelFor(n: self.count) { (i, _) in
+          let f = self[i]
+          b[i] = f.error(at: Element.Variables(at: f.edges, in: varsBufs))
+        }
+        resultCount = self.count
       }
     }
   }

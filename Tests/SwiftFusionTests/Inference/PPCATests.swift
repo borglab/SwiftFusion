@@ -27,7 +27,8 @@ class PPCATests: XCTestCase {
     let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
     let generic_factor = AppearanceTrackingFactor(
       TypedID<Pose2>(0), TypedID<Vector5>(0),
-      measurement: factor.measurement, appearanceModel: ppca.decodeWithJacobian
+      measurement: factor.measurement,
+      appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }
     )
 
     for _ in 0..<2 {
@@ -75,7 +76,8 @@ class PPCATests: XCTestCase {
     let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
     let generic_factor = AppearanceTrackingFactor(
       TypedID<Pose2>(0), TypedID<Vector5>(0),
-      measurement: factor.measurement, appearanceModel: ppca.decodeWithJacobian
+      measurement: factor.measurement,
+      appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }
     )
 
     for _ in 0..<5 {
@@ -123,7 +125,8 @@ class PPCATests: XCTestCase {
     let ppca = PPCA(W: ppca_factor.W.tiled(multiples: [1, 1, 3, 1]), mu: ppca_factor.mu.tensor.tiled(multiples: [1, 1, 3]))
     let generic_factor = AppearanceTrackingFactor(
       TypedID<Pose2>(0), TypedID<Vector5>(0),
-      measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]), appearanceModel: ppca.decodeWithJacobian
+      measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]),
+      appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }
     )
 
     var x = VariableAssignments()

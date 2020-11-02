@@ -1,6 +1,7 @@
 import ArgumentParser
 import BeeDataset
 import BeeTracking
+import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
 import TensorFlow
@@ -84,6 +85,8 @@ struct InferTrack: ParsableCommand {
   var loadWeights: String
 
   func run() {
+    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
+
     let np = Python.import("numpy")
 
     let video = BeeVideo(videoName: "bee_video_1")!
@@ -100,9 +103,15 @@ struct InferTrack: ParsableCommand {
       model, video, frameStatistics, trackId: 0, indexStart: 0, length: 10)
     var v = tracker.v
 
+    startTimer("optimize")
     var optimizer = LM(precision: 1e1, max_iteration: 400)
     optimizer.verbosity = .SUMMARY
+    optimizer.cgls_precision = 1e-6
     try? optimizer.optimize(graph: tracker.fg, initial: &v)
+    stopTimer("optimize")
+
+    printTimers()
+    printCounters()
   }
 }
 
