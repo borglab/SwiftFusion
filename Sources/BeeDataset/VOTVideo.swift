@@ -19,12 +19,21 @@ import TensorFlow
 
 /// A video from VOT, with tracking labels.
 public struct VOTVideo {
+  /// The frames of the video, as tensors of shape `[height, width, channels]`.
   public var frames: [Tensor<Double>]
 
+  /// The ground truth track of the object in this video.
   public var track: [OrientedBoundingBox]
 }
 
 extension VOTVideo {
+  /// Creates an instance from `videoName` in `votBaseDirectory`.
+  ///
+  /// Prints an error and fails if files are missing or corrupted.
+  ///
+  /// To download the dataset, run
+  /// "https://github.com/jvlmdr/trackdat/blob/master/scripts/download_vot.sh", e.g.:
+  ///   VOT_YEAR=2018 bash download_vot.sh dl/vot2018
   public init?(votBaseDirectory: String, videoName: String) {
     // We'll append frames and track points to these.
     frames = []

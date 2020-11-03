@@ -8,7 +8,7 @@ import TensorFlow
 
 struct BeeTrackingTool: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [TrainRAE.self, InferTrack.self, TestVOT.self])
+    subcommands: [TrainRAE.self, InferTrack.self])
 }
 
 /// The dimension of the hidden layer in the appearance model.
@@ -112,12 +112,6 @@ struct InferTrack: ParsableCommand {
 
     printTimers()
     printCounters()
-  }
-}
-
-struct TestVOT: ParsableCommand {
-  func run() {
-    let _ = VOTVideo(votBaseDirectory: "/usr/local/google/home/marcrasi/vot/dl/vot2018", videoName: "ball1")
   }
 }
 
