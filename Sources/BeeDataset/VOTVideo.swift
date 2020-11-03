@@ -108,7 +108,7 @@ extension VOTVideo {
       let center = 0.25 * vertices.reduce(.zero, +)
       let width = Int(sides[0].norm)
       let height = Int(sides[1].norm)
-      let rot = Rot2(direction: 0.5 * (vertices[0] + vertices[1]) - center)
+      let rot = Rot2(direction: 0.5 * (vertices[1] + vertices[2]) - center)
       track.append(OrientedBoundingBox(center: Pose2(rot, center), rows: height, cols: width))
     }
   }
