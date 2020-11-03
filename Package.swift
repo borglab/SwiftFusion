@@ -14,6 +14,9 @@ let package = Package(
     .library(
       name: "BeeDataset",
       targets: ["BeeDataset"]),
+    .library(
+      name: "BeeTracking",
+      targets: ["BeeTracking"]),
     .executable(
       name: "Pose3SLAMG2O",
       targets: ["Pose3SLAMG2O"])
