@@ -27,20 +27,23 @@ final class PatchTests: XCTestCase {
     XCTAssertEqual(patch, expectedPatch)
   }
 
-  /// Scaling a constant-color image gives you a constant-color image of the requested size.
+  /// Scaling a constant-color region gives you a constant-color image of the requested size.
   func testScaleConstantColor() {
+    // Make an image with a black backround and a `color` region between (20, 20) and (80, 80).
     let color = Tensor<Double>([0.1, 0.2, 0.3]).reshaped(to: [1, 1, 3])
-    let image = color.tiled(multiples: [100, 100, 1])
+    let backgroundColor = Tensor<Double>([0, 0, 0]).reshaped(to: [1, 1, 3])
+    var image = backgroundColor.tiled(multiples: [100, 100, 1])
+    image[20..<80, 20..<80, 0..<3] = color.tiled(multiples: [60, 60, 1])
 
     let scaledUp = image.patch(
-      at: OrientedBoundingBox(center: Pose2(60, 30, 1), rows: 10, cols: 10),
-      outputSize: (20, 30))
-    XCTAssertEqual(scaledUp, color.tiled(multiples: [20, 30, 1]))
+      at: OrientedBoundingBox(center: Pose2(50, 50, 1), rows: 30, cols: 30),
+      outputSize: (60, 200))
+    XCTAssertEqual(scaledUp, color.tiled(multiples: [60, 200, 1]))
 
     let scaledDown = image.patch(
-      at: OrientedBoundingBox(center: Pose2(60, 30, 1), rows: 10, cols: 10),
-      outputSize: (2, 5))
-    XCTAssertEqual(scaledDown, color.tiled(multiples: [2, 5, 1]))
+      at: OrientedBoundingBox(center: Pose2(50, 50, 1), rows: 30, cols: 30),
+      outputSize: (2, 20))
+    XCTAssertEqual(scaledDown, color.tiled(multiples: [2, 20, 1]))
   }
 
   // /// The derivative of a patch with respect to the input image is the identity restricted to the

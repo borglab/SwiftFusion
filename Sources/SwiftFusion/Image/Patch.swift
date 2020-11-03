@@ -28,7 +28,7 @@ extension ArrayImage {
     for i in 0..<outputRows {
       for j in 0..<outputCols {
         // The position of the destination pixel in the source region, in `(u, v)` coordinates.
-        let uvSrcRegion = Vector2(rowScale * (Double(j) + 0.5), colScale * (Double(i) + 0.5))
+        let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
@@ -58,7 +58,7 @@ extension ArrayImage {
       for i in 0..<outputRows {
         for j in 0..<outputCols {
           // The position of the destination pixel in the source region, in `(u, v)` coordinates.
-          let uvSrcRegion = Vector2(rowScale * (Double(j) + 0.5), colScale * (Double(i) + 0.5))
+          let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
           // The position of the destination pixel in the destination image, in coordinates where the
           // center of the destination image is `(0, 0)`.
@@ -102,7 +102,7 @@ extension ArrayImage {
     for i in 0..<outputRows {
       for j in 0..<outputCols {
         // The position of the destination pixel in the source region, in `(u, v)` coordinates.
-        let uvSrcRegion = Vector2(rowScale * (Double(j) + 0.5), colScale * (Double(i) + 0.5))
+        let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
