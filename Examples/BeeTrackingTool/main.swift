@@ -30,6 +30,11 @@ func makeBeeBatch() -> (normalized: Tensor<Double>, statistics: FrameStatistics)
   return (statistics.normalized(stacked), statistics)
 }
 
+// How this is going to work.
+// So I need the thing to support differentiable scaling first.
+// Then we can choose a size, scale all the points to that size, train the RAE on that.
+// Now there is a variable for the size that is used in the factor. The graph magically works!!
+
 struct TrainRAE: ParsableCommand {
   @Option(help: "Load weights from this file before training")
   var loadWeights: String?

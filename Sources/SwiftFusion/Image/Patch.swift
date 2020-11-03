@@ -20,19 +20,22 @@ extension ArrayImage {
   /// - Parameters:
   ///   - region: the center, orientation, and size of the patch to extract.
   @differentiable(wrt: region)
-  public func patch(at region: OrientedBoundingBox) -> Self {
-    var result = ArrayImage(rows: region.rows, cols: region.cols, channels: self.channels)
-    for i in 0..<region.rows {
-      for j in 0..<region.cols {
-        // The position of the destination pixel in the destination image, in `(u, v)` coordinates.
-        let uvDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
+  public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil) -> Self {
+    let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
+    let rowScale = Double(region.rows) / Double(outputRows)
+    let colScale = Double(region.cols) / Double(outputCols)
+    var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
+    for i in 0..<outputRows {
+      for j in 0..<outputCols {
+        // The position of the destination pixel in the source region, in `(u, v)` coordinates.
+        let uvSrcRegion = Vector2(rowScale * (Double(j) + 0.5), colScale * (Double(i) + 0.5))
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
-        let xyDest = uvDest - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
         for c in 0..<self.channels {
-          result.update(i, j, c, to: bilinear(self, region.center * xyDest, c))
+          result.update(i, j, c, to: bilinear(self, region.center * xySrcRegion, c))
         }
       }
     }
@@ -41,24 +44,29 @@ extension ArrayImage {
 
   @derivative(of: patch, wrt: region)
   @usableFromInline
-  func vjpPatch(at region: OrientedBoundingBox) -> (value: Self, pullback: (TangentVector) -> OrientedBoundingBox.TangentVector) {
+  func vjpPatch(
+    at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil
+  ) -> (value: Self, pullback: (TangentVector) -> OrientedBoundingBox.TangentVector) {
     let r = self.patch(at: region)
     let channels = self.channels
+    let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
+    let rowScale = Double(region.rows) / Double(outputRows)
+    let colScale = Double(region.cols) / Double(outputCols)
     func outerPb(_ dOut: TangentVector) -> OrientedBoundingBox.TangentVector {
       var idx = 0
       var dBox = region.zeroTangentVector
-      for i in 0..<region.rows {
-        for j in 0..<region.cols {
-          // The position of the destination pixel in the destination image, in `(u, v)` coordinates.
-          let uvDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
+      for i in 0..<outputRows {
+        for j in 0..<outputCols {
+          // The position of the destination pixel in the source region, in `(u, v)` coordinates.
+          let uvSrcRegion = Vector2(rowScale * (Double(j) + 0.5), colScale * (Double(i) + 0.5))
 
           // The position of the destination pixel in the destination image, in coordinates where the
           // center of the destination image is `(0, 0)`.
-          let xyDest = uvDest - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
           for c in 0..<channels {
             if dOut.pixels.base[idx] != 0 {
-              let pb = pullback(at: region) { bilinear(self, $0.center * xyDest, c) }
+              let pb = pullback(at: region) { bilinear(self, $0.center * xySrcRegion, c) }
               dBox += pb(dOut.pixels.base[idx])
             }
             idx += 1
@@ -81,25 +89,28 @@ extension ArrayImage {
   ///   - jacobian: The directional derivatives `dtheta`, `du`, and `dv` along the rotation and
   ///               translation directions respectively. These can be thought of as the columns of
   ///               the Jacobian.
-  public func patchWithJacobian(at region: OrientedBoundingBox)
+  public func patchWithJacobian(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil)
     -> (patch: Self, jacobian: (dtheta: Self, du: Self, dv: Self))
   {
-    var result = ArrayImage(rows: region.rows, cols: region.cols, channels: self.channels)
+    let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
+    let rowScale = Double(region.rows) / Double(outputRows)
+    let colScale = Double(region.cols) / Double(outputCols)
+    var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
     var dtheta = ArrayImage(zerosLike: result)
     var du = ArrayImage(zerosLike: result)
     var dv = ArrayImage(zerosLike: result)
-    for i in 0..<region.rows {
-      for j in 0..<region.cols {
-        // The position of the destination pixel in the destination image, in `(u, v)` coordinates.
-        let uvDest = Vector2(Double(j) + 0.5, Double(i) + 0.5)
+    for i in 0..<outputRows {
+      for j in 0..<outputCols {
+        // The position of the destination pixel in the source region, in `(u, v)` coordinates.
+        let uvSrcRegion = Vector2(rowScale * (Double(j) + 0.5), colScale * (Double(i) + 0.5))
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
-        let xyDest = uvDest - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
         // The position of the destination pixel in the source image. These are the `(u, v)`
         // coordinates of the source image that we sample from.
-        let uvSrc: Vector2 = region.center * xyDest
+        let uvSrc: Vector2 = region.center * xySrcRegion
 
         // The derivatives of `uvSrc` with respect to the rotation and translation components of
         // `region.center`.
@@ -107,7 +118,7 @@ extension ArrayImage {
         // This follows from equation (11.2) in section "11 2D Rigid Transformations" of [1]:
         //   Substitute
         //     (R, t) = (region.center.rot, region.center.t)
-        //     p = xyDest
+        //     p = xySrcRegion
         //     q = uvSrc
         //   Then (11.2) says that the Jacobian of the action of `region.center` on `xyDest` is
         //     [ R  R*R_pi/2*p
@@ -117,7 +128,7 @@ extension ArrayImage {
         //   with respect to the rotation component of `region.center`.
         //
         // [1] https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
-        let duvSrc_dtheta = region.center.rot * Vector2(-xyDest.y, xyDest.x)
+        let duvSrc_dtheta = region.center.rot * Vector2(-xySrcRegion.y, xySrcRegion.x)
         let duvSrc_du = region.center.rot * Vector2(1, 0)
         let duvSrc_dv = region.center.rot * Vector2(0, 1)
 
@@ -142,12 +153,14 @@ extension Tensor where Scalar == Double {
   ///           `docs/ImageOperations.md`.
   ///   - region: the center, orientation, and size of the patch to extract.
   @differentiable(wrt: region)
-  public func patch(at region: OrientedBoundingBox) -> Tensor<Scalar> {
+  public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil)
+    -> Tensor<Scalar>
+  {
     precondition(
       self.shape.count == 2 || self.shape.count == 3,
       "image must have shape [height, width] or [height, width, channelCount]"
     )
-    let result = ArrayImage(self).patch(at: region).tensor
+    let result = ArrayImage(self).patch(at: region, outputSize: outputSize).tensor
     return self.shape.count == 2 ? result.reshaped(to: [region.rows, region.cols]) : result
   }
 
@@ -165,11 +178,11 @@ extension Tensor where Scalar == Double {
   ///               `[height, width, channelCount, 3]`. The slices along the last dimension are
   ///                the directional derivatives along the rotation and the `u`, `v` translation
   ///                components (in that order).
-  public func patchWithJacobian(at region: OrientedBoundingBox)
+  public func patchWithJacobian(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil)
     -> (patch: Tensor<Scalar>, jacobian: Tensor<Scalar>)
   {
     precondition(self.shape.count == 3, "image must have shape [height, width, channelCount]")
-    let (patch, jacobian) = ArrayImage(self).patchWithJacobian(at: region)
+    let (patch, jacobian) = ArrayImage(self).patchWithJacobian(at: region, outputSize: outputSize)
     return (
       patch: patch.tensor,
       jacobian: Tensor<Double>(stacking: [

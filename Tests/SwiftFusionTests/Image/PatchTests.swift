@@ -27,6 +27,22 @@ final class PatchTests: XCTestCase {
     XCTAssertEqual(patch, expectedPatch)
   }
 
+  /// Scaling a constant-color image gives you a constant-color image of the requested size.
+  func testScaleConstantColor() {
+    let color = Tensor<Double>([0.1, 0.2, 0.3]).reshaped(to: [1, 1, 3])
+    let image = color.tiled(multiples: [100, 100, 1])
+
+    let scaledUp = image.patch(
+      at: OrientedBoundingBox(center: Pose2(60, 30, 1), rows: 10, cols: 10),
+      outputSize: (20, 30))
+    XCTAssertEqual(scaledUp, color.tiled(multiples: [20, 30, 1]))
+
+    let scaledDown = image.patch(
+      at: OrientedBoundingBox(center: Pose2(60, 30, 1), rows: 10, cols: 10),
+      outputSize: (2, 5))
+    XCTAssertEqual(scaledDown, color.tiled(multiples: [2, 5, 1]))
+  }
+
   // /// The derivative of a patch with respect to the input image is the identity restricted to the
   // /// patch region.
   // func testSliceDerivativeWithRespectToImage() {
