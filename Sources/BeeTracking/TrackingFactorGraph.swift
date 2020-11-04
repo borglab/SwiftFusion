@@ -20,6 +20,25 @@ public struct WeightedPriorFactor<Pose: LieGroup>: LinearizableFactor1 {
   }
 }
 
+/// A factor that specifies a difference between two poses.
+public struct WeightedBetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
+  public let edges: Variables.Indices
+  public let difference: Pose
+  public let weight: Double
+
+  public init(_ startId: TypedID<Pose>, _ endId: TypedID<Pose>, _ difference: Pose, weight: Double) {
+    self.edges = Tuple2(startId, endId)
+    self.difference = difference
+    self.weight = weight
+  }
+
+  @differentiable
+  public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
+    let actualMotion = between(start, end)
+    return weight * difference.localCoordinate(actualMotion)
+  }
+}
+
 /// A factor graph that tracks a target using an appearance model.
 public struct TrackingFactorGraph {
   /// The factors.
@@ -34,6 +53,12 @@ public struct TrackingFactorGraph {
   /// The ids of the latent codes in the factor graph.
   public var latentIds: [TypedID<Vector10>] = []
 
+  public struct WeightConfiguration {
+    public let latent: Double = 1e3
+    public let pose: Double = 1e3
+    public init() {}
+  }
+
   /// Create an instance that tracks `trackId` in `video`, starting at `indexStart`, for `length`
   /// steps.
   ///
@@ -45,7 +70,8 @@ public struct TrackingFactorGraph {
     _ statistics: FrameStatistics,
     trackId: Int,
     indexStart: Int,
-    length: Int
+    length: Int,
+    weights: WeightConfiguration = WeightConfiguration()
   ) {
     let expectedLatentDimension = 10
     precondition(
@@ -80,13 +106,13 @@ public struct TrackingFactorGraph {
           }))
 
       if i == 0 {
-        fg.store(WeightedPriorFactor(latentIds[i], initialLatent, weight: 1e0))
+        fg.store(WeightedPriorFactor(latentIds[i], initialLatent, weight: weights.latent))
       }
     }
 
     for i in 0..<(length-1) {
-      fg.store(BetweenFactor<Vector10>(latentIds[i], latentIds[i+1], Vector10.zero))
-      fg.store(BetweenFactor<Pose2>(poseIds[i], poseIds[i+1], Pose2(0,0,0)))
+      fg.store(WeightedBetweenFactor<Vector10>(latentIds[i], latentIds[i+1], Vector10.zero, weight: weights.latent))
+      fg.store(WeightedBetweenFactor<Pose2>(poseIds[i], poseIds[i+1], Pose2(0,0,0), weight: weights.pose))
     }
   }
 
@@ -100,7 +126,8 @@ public struct TrackingFactorGraph {
     _ statistics: FrameStatistics,
     indexStart: Int,
     length: Int,
-    patchSize: (Int, Int)
+    patchSize: (Int, Int),
+    weights: WeightConfiguration = WeightConfiguration()
   ) {
     let expectedLatentDimension = 10
     precondition(
@@ -132,13 +159,13 @@ public struct TrackingFactorGraph {
           }))
 
       if i == 0 {
-        fg.store(WeightedPriorFactor(latentIds[i], initialLatent, weight: 1e0))
+        fg.store(WeightedPriorFactor(latentIds[i], initialLatent, weight: weights.latent))
       }
     }
 
     for i in 0..<(length-1) {
-      fg.store(BetweenFactor<Vector10>(latentIds[i], latentIds[i+1], Vector10.zero))
-      fg.store(BetweenFactor<Pose2>(poseIds[i], poseIds[i+1], Pose2(0,0,0)))
+      fg.store(WeightedBetweenFactor<Vector10>(latentIds[i], latentIds[i+1], Vector10.zero, weight: weights.latent))
+      fg.store(WeightedBetweenFactor<Pose2>(poseIds[i], poseIds[i+1], Pose2(0,0,0), weight: weights.pose))
     }
   }
 }

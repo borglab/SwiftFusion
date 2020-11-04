@@ -22,8 +22,8 @@ extension ArrayImage {
   @differentiable(wrt: region)
   public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil) -> Self {
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
-    let rowScale = Double(region.rows) / Double(outputRows)
-    let colScale = Double(region.cols) / Double(outputCols)
+    let rowScale = region.size.x / Double(outputRows)
+    let colScale = region.size.y / Double(outputCols)
     var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
     for i in 0..<outputRows {
       for j in 0..<outputCols {
@@ -32,7 +32,7 @@ extension ArrayImage {
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
-        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(region.size.y, region.size.x)
 
         for c in 0..<self.channels {
           result.update(i, j, c, to: bilinear(self, region.center * xySrcRegion, c))
@@ -47,26 +47,31 @@ extension ArrayImage {
   func vjpPatch(
     at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil
   ) -> (value: Self, pullback: (TangentVector) -> OrientedBoundingBox.TangentVector) {
-    let r = self.patch(at: region)
+    let r = self.patch(at: region, outputSize: outputSize)
     let channels = self.channels
-    let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
-    let rowScale = Double(region.rows) / Double(outputRows)
-    let colScale = Double(region.cols) / Double(outputCols)
+    let (outputRows, outputCols) = outputSize ?? (Int(region.rows), Int(region.cols))
     func outerPb(_ dOut: TangentVector) -> OrientedBoundingBox.TangentVector {
       var idx = 0
       var dBox = region.zeroTangentVector
       for i in 0..<outputRows {
         for j in 0..<outputCols {
-          // The position of the destination pixel in the source region, in `(u, v)` coordinates.
-          let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
-
-          // The position of the destination pixel in the destination image, in coordinates where the
-          // center of the destination image is `(0, 0)`.
-          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
-
           for c in 0..<channels {
             if dOut.pixels.base[idx] != 0 {
-              let pb = pullback(at: region) { bilinear(self, $0.center * xySrcRegion, c) }
+              let pb = pullback(at: region) { region -> Double in
+                let rowScale = region.size.x / Double(outputRows)
+                let colScale = region.size.y / Double(outputCols)
+
+                // The position of the destination pixel in the source region, in `(u, v)`
+                // coordinates.
+                let uvSrcRegion =
+                  Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
+
+                // The position of the destination pixel in the destination image, in coordinates
+                // where the center of the destination image is `(0, 0)`.
+                let xySrcRegion = uvSrcRegion - 0.5 * Vector2(region.size.y, region.size.x)
+
+                return bilinear(self, region.center * xySrcRegion, c)
+              }
               dBox += pb(dOut.pixels.base[idx])
             }
             idx += 1
@@ -93,8 +98,8 @@ extension ArrayImage {
     -> (patch: Self, jacobian: (dtheta: Self, du: Self, dv: Self))
   {
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
-    let rowScale = Double(region.rows) / Double(outputRows)
-    let colScale = Double(region.cols) / Double(outputCols)
+    let rowScale = region.size.x / Double(outputRows)
+    let colScale = region.size.y / Double(outputCols)
     var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
     var dtheta = ArrayImage(zerosLike: result)
     var du = ArrayImage(zerosLike: result)
@@ -106,7 +111,7 @@ extension ArrayImage {
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
-        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(region.size.y, region.size.x)
 
         // The position of the destination pixel in the source image. These are the `(u, v)`
         // coordinates of the source image that we sample from.
@@ -161,7 +166,7 @@ extension Tensor where Scalar == Double {
       "image must have shape [height, width] or [height, width, channelCount]"
     )
     let result = ArrayImage(self).patch(at: region, outputSize: outputSize).tensor
-    return self.shape.count == 2 ? result.reshaped(to: [region.rows, region.cols]) : result
+    return self.shape.count == 2 ? result.reshaped(to: [result.shape[0], result.shape[1]]) : result
   }
 
   /// Returns the patch of `self` at `region`, and its Jacobian with respect to the pose of the
