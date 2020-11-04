@@ -54,9 +54,16 @@ public struct TrackingFactorGraph {
   public var latentIds: [TypedID<Vector10>] = []
 
   public struct WeightConfiguration {
-    public let latent: Double = 1e3
-    public let pose: Double = 1e3
-    public init() {}
+    public let latent: Double
+    public let pose: Double
+    public init() {
+      self.latent = 1e3
+      self.pose = 1e0
+    }
+    public init(latent: Double, pose: Double) {
+      self.latent = latent
+      self.pose = pose
+    }
   }
 
   /// Create an instance that tracks `trackId` in `video`, starting at `indexStart`, for `length`
