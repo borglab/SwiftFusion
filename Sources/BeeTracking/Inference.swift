@@ -63,27 +63,34 @@ extension InferenceConfiguration {
 
   /// Returns a prediction.
   ///
-  /// Initializes a guess that the target is at the starting point in frame 1. Uses LM to optimize
-  /// this guess. Takes the solution as a guess for the position in frame 2. Repeats for all
-  /// frames.
-  public mutating func inferOneFrameAtATime() -> [OrientedBoundingBox] {
+  /// Slides a window over the frames. For each window, initializes a guess using the predictions
+  /// from the previous window and then jointly optimizes all the variables in the window.
+  public mutating func inferSlidingWindow(windowSize: Int) -> [OrientedBoundingBox] {
     var predictions = [video.track[0]]
-    var frameVariables = [makeFrameVariables(video.frames[0], video.track[0])]
 
-    for i in 1..<video.frames.count {
-      let videoSlice = video[i..<(i+1)]
-      let tracker = makeTrackingFactorGraph(
-        videoSlice.frames,
-        frameVariables[i - 1],
-        Array(repeating: frameVariables[i - 1], count: 1))
+    for windowEnd in 1..<video.frames.count {
+      let windowStart = max(0, windowEnd - windowSize)
+      let videoSlice = video[windowStart..<windowEnd]
+
+      // Use the last prediction from the previous window as the initial guess for the position
+      // of the target in the new frame that appeared in this window.
+      if predictions.count < windowEnd { predictions.append(predictions.last!) }
+
+      // Use the current predictions for the window to initialize the variables in the factor
+      // graph.
+      let guess = predictions[windowStart..<windowEnd].enumerated().map {
+        makeFrameVariables(videoSlice.frames[$0.0], $0.1)
+      }
+
+      // Optimize the factor graph.
+      let tracker = makeTrackingFactorGraph(videoSlice.frames, guess[0], guess)
       var v = tracker.v
       try? optimizer.optimize(graph: tracker.fg, initial: &v)
-      let prediction = OrientedBoundingBox(
-        center: v[tracker.poseIds[0]],
-        rows: predictions[0].rows,
-        cols: predictions[0].cols)
-      predictions.append(prediction)
-      frameVariables.append(makeFrameVariables(videoSlice.frames[0], prediction))
+
+      // Replace the predictions with the new solution.
+      predictions.replaceSubrange(windowStart..<windowEnd, with: tracker.poseIds.map {
+        OrientedBoundingBox(center: v[$0], rows: predictions[0].rows, cols: predictions[0].cols)
+      })
     }
 
     return predictions
