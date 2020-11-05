@@ -7,9 +7,26 @@ public struct InferenceConfiguration<G: TrackingFactorGraph> {
 
   public var optimizer: LM
 
-  public var makeFrameVariables: (_ frame: Tensor<Double>, _ region: OrientedBoundingBox) -> G.FrameVariables
-  public var makeTrackingFactorGraph:
+  public typealias MakeFrameVariables =
+    (_ frame: Tensor<Double>, _ region: OrientedBoundingBox) -> G.FrameVariables
+
+  public typealias MakeTrackingFactorGraph =
     (_ frames: [Tensor<Double>], _ initialization: G.FrameVariables, _ guesses: [G.FrameVariables]) -> G
+
+  public var makeFrameVariables: MakeFrameVariables
+  public var makeTrackingFactorGraph: MakeTrackingFactorGraph
+
+  public init(
+    video: VOTVideo,
+    optimizer: LM,
+    makeFrameVariables: @escaping MakeFrameVariables,
+    makeTrackingFactorGraph: @escaping MakeTrackingFactorGraph
+  ) {
+    self.video = video
+    self.optimizer = optimizer
+    self.makeFrameVariables = makeFrameVariables
+    self.makeTrackingFactorGraph = makeTrackingFactorGraph
+  }
 }
 
 extension InferenceConfiguration {
