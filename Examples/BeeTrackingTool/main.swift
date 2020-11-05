@@ -131,34 +131,34 @@ struct InferTrack: ParsableCommand {
   var patchCols: Int = 100
 
   func run() {
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
+    // ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
 
-    let np = Python.import("numpy")
+    // let np = Python.import("numpy")
 
-    let video = VOTVideo(votBaseDirectory: votBaseDirectory, videoName: videoName)!
-    let (batch, frameStatistics) = makeVOTBatch(
-      votBaseDirectory: votBaseDirectory, videoName: videoName, patchSize: (patchRows, patchCols))
-    let (imageHeight, imageWidth, imageChannels) =
-      (batch.shape[1], batch.shape[2], batch.shape[3])
+    // let video = VOTVideo(votBaseDirectory: votBaseDirectory, videoName: videoName)!
+    // let (batch, frameStatistics) = makeVOTBatch(
+    //   votBaseDirectory: votBaseDirectory, videoName: videoName, patchSize: (patchRows, patchCols))
+    // let (imageHeight, imageWidth, imageChannels) =
+    //   (batch.shape[1], batch.shape[2], batch.shape[3])
 
-    var model = DenseRAE(
-      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
-      hiddenDimension: kHiddenDimension, latentDimension: kLatentDimension)
-    model.load(weights: np.load(loadWeights, allow_pickle: true))
+    // var model = DenseRAE(
+    //   imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
+    //   hiddenDimension: kHiddenDimension, latentDimension: kLatentDimension)
+    // model.load(weights: np.load(loadWeights, allow_pickle: true))
 
-    let tracker = TrackingFactorGraph(
-      model, video, frameStatistics, indexStart: 0, length: 10, patchSize: (patchRows, patchCols))
-    var v = tracker.v
+    // let tracker = TrackingFactorGraph(
+    //   model, video, frameStatistics, indexStart: 0, length: 10, patchSize: (patchRows, patchCols))
+    // var v = tracker.v
 
-    startTimer("optimize")
-    var optimizer = LM(precision: 1e1, max_iteration: 400)
-    optimizer.verbosity = .SUMMARY
-    optimizer.cgls_precision = 1e-6
-    try? optimizer.optimize(graph: tracker.fg, initial: &v)
-    stopTimer("optimize")
+    // startTimer("optimize")
+    // var optimizer = LM(precision: 1e1, max_iteration: 400)
+    // optimizer.verbosity = .SUMMARY
+    // optimizer.cgls_precision = 1e-6
+    // try? optimizer.optimize(graph: tracker.fg, initial: &v)
+    // stopTimer("optimize")
 
-    printTimers()
-    printCounters()
+    // printTimers()
+    // printCounters()
   }
 }
 
@@ -233,7 +233,7 @@ struct InferBeeTrack: ParsableCommand {
       hiddenDimension: kHiddenDimension, latentDimension: kLatentDimension)
     model.load(weights: np.load(loadWeights, allow_pickle: true))
 
-    let tracker = TrackingFactorGraph(
+    let tracker = AppearanceTrackingFactorGraph(
       model, video, frameStatistics, trackId: 0, indexStart: 0, length: 10)
     var v = tracker.v
 

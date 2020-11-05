@@ -1,6 +1,7 @@
 import BeeDataset
 import PenguinStructures
 import SwiftFusion
+import TensorFlow
 
 /// A factor that specifies a prior on a pose.
 public struct WeightedPriorFactor<Pose: LieGroup>: LinearizableFactor1 {
@@ -40,7 +41,7 @@ public struct WeightedBetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
 }
 
 /// A factor graph that tracks a target using an appearance model.
-public struct TrackingFactorGraph {
+public struct AppearanceTrackingFactorGraph {
   /// The factors.
   public var fg = FactorGraph()
 
@@ -129,10 +130,12 @@ public struct TrackingFactorGraph {
   /// Parameter statistics: The statistics used to normalize the frames before encoding.
   public init(
     _ model: DenseRAE,
-    _ video: VOTVideo,
+    _ frames: [Tensor<Double>],
+    _ initialPose: Pose2,
+    _ initialLatent: Vector10,
+    _ poseGuesses: [Pose2],
+    _ latentCodeGuesses: [Vector10],
     _ statistics: FrameStatistics,
-    indexStart: Int,
-    length: Int,
     patchSize: (Int, Int),
     weights: WeightConfiguration = WeightConfiguration()
   ) {
@@ -140,23 +143,17 @@ public struct TrackingFactorGraph {
     precondition(
       model.latentDimension == expectedLatentDimension,
       "expected latent dimension \(expectedLatentDimension) but got \(model.latentDimension)")
-    precondition(
-      indexStart + length <= video.track.count,
-      "final index \(indexStart + length) out of bounds, " +
-        "there are \(video.track.count) frames")
+    precondition(frames.count == poseGuesses.count, "unexpected number of pose guesses")
+    precondition(frames.count == latentCodeGuesses.count, "unexpected number of latent code guesses")
 
-    let initialPatch = statistics.normalized(
-      video.frames[indexStart].patch(at: video.track[indexStart], outputSize: patchSize))
-    let initialLatent = Vector10(flatTensor: model.encode(initialPatch.expandingShape(at: 0)))
-
-    for i in 0..<length {
-      poseIds.append(v.store(video.track[indexStart].center))
-      latentIds.append(v.store(initialLatent))
+    for i in 0..<frames.count {
+      poseIds.append(v.store(poseGuesses[i]))
+      latentIds.append(v.store(latentCodeGuesses[i]))
 
       fg.store(
         AppearanceTrackingFactor<Vector10>(
           poseIds[i], latentIds[i],
-          measurement: statistics.normalized(video.frames[indexStart + i]),
+          measurement: statistics.normalized(frames[i]),
           appearanceModel: { x in
             model.decode(x.expandingShape(at: 0)).squeezingShape(at: 0)
           },
@@ -166,13 +163,57 @@ public struct TrackingFactorGraph {
           }))
 
       if i == 0 {
+        fg.store(WeightedPriorFactor(poseIds[i], initialPose, weight: weights.pose))
         fg.store(WeightedPriorFactor(latentIds[i], initialLatent, weight: weights.latent))
       }
     }
 
-    for i in 0..<(length-1) {
+    for i in 0..<(frames.count-1) {
       fg.store(WeightedBetweenFactor<Vector10>(latentIds[i], latentIds[i+1], Vector10.zero, weight: weights.latent))
       fg.store(WeightedBetweenFactor<Pose2>(poseIds[i], poseIds[i+1], Pose2(0,0,0), weight: weights.pose))
+    }
+  }
+}
+
+/// A factor graph that tracks a target using raw pixels.
+public struct RawPixelTrackingFactorGraph {
+  /// The factors.
+  public var fg = FactorGraph()
+
+  /// An initial guess for the variable values.
+  public var v = VariableAssignments()
+
+  /// The ids of the poses in the factor graph.
+  public var poseIds: [TypedID<Pose2>] = []
+
+  public struct WeightConfiguration {
+    public let pose: Double
+    public init() {
+      self.pose = 1e0
+    }
+    public init(pose: Double) {
+      self.pose = pose
+    }
+  }
+
+  public init(
+    _ frames: [Tensor<Double>],
+    _ initialPose: Pose2,
+    _ initialPatch: Tensor<Double>,
+    _ poseGuesses: [Pose2],
+    weights: WeightConfiguration = WeightConfiguration()
+  ) {
+    for i in 0..<frames.count {
+      poseIds.append(v.store(poseGuesses[i]))
+      fg.store(RawPixelTrackingFactor(
+        poseIds[i], measurement: frames[i], target: initialPatch
+      ))
+    }
+
+    fg.store(WeightedPriorFactor(poseIds[0], initialPose, weight: weights.pose))
+
+    for i in 0..<(frames.count-1) {
+      fg.store(WeightedBetweenFactor(poseIds[i], poseIds[i+1], Pose2(), weight: weights.pose))
     }
   }
 }
