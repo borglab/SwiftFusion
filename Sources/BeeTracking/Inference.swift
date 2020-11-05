@@ -30,7 +30,7 @@ public struct InferenceConfiguration<G: TrackingFactorGraph> {
 }
 
 extension InferenceConfiguration {
-  public mutating func infer() -> [OrientedBoundingBox] {
+  public mutating func inferAllAtOnce() -> [OrientedBoundingBox] {
     let initialBox = video.track[0]
     let initialization = makeFrameVariables(video.frames[0], initialBox)
     let tracker = makeTrackingFactorGraph(
@@ -42,6 +42,29 @@ extension InferenceConfiguration {
     return tracker.poseIds.map {
       OrientedBoundingBox(center: v[$0], rows: initialBox.rows, cols: initialBox.cols)
     }
+  }
+
+  public mutating func inferOneFrameAtATime() -> [OrientedBoundingBox] {
+    var predictions = [video.track[0]]
+    var frameVariables = [makeFrameVariables(video.frames[0], video.track[0])]
+
+    for i in 0..<(video.frames.count - 1) {
+      let videoSlice = video[i..<(i + 2)]
+      let tracker = makeTrackingFactorGraph(
+        videoSlice.frames,
+        frameVariables[i],
+        Array(repeating: frameVariables[i], count: 2))
+      var v = tracker.v
+      try? optimizer.optimize(graph: tracker.fg, initial: &v)
+      let prediction = OrientedBoundingBox(
+        center: v[tracker.poseIds[1]],
+        rows: predictions[0].rows,
+        cols: predictions[0].cols)
+      predictions.append(prediction)
+      frameVariables.append(makeFrameVariables(videoSlice.frames[1], prediction))
+    }
+
+    return predictions
   }
 }
 
