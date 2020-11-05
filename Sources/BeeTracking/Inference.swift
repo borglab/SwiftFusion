@@ -30,7 +30,7 @@ public struct InferenceConfiguration<G: TrackingFactorGraph> {
 }
 
 extension InferenceConfiguration {
-  mutating func infer() -> [OrientedBoundingBox] {
+  public mutating func infer() -> [OrientedBoundingBox] {
     let initialBox = video.track[0]
     let initialization = makeFrameVariables(video.frames[0], initialBox)
     let tracker = makeTrackingFactorGraph(
