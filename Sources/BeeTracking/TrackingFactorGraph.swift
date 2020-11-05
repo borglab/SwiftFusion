@@ -160,7 +160,8 @@ public struct AppearanceTrackingFactorGraph {
           appearanceModelJacobian: { x in
             model.decodeJacobian(x.expandingShape(at: 0))
               .reshaped(to: [model.imageHeight, model.imageWidth, model.imageChannels, model.latentDimension])
-          }))
+          },
+          regionSize: patchSize))
 
       if i == 0 {
         fg.store(WeightedPriorFactor(poseIds[i], initialPose, weight: weights.pose))
