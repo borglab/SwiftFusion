@@ -3,7 +3,7 @@ import SwiftFusion
 import TensorFlow
 
 /// Settings for infering a track on a video.
-public struct InferenceConfiguration<G: TrackingFactorGraph> {
+public struct InferenceConfiguration<G: TrackingFactorGraph, FrameVariables> {
   /// The video to track.
   public var video: VOTVideo
 
@@ -13,14 +13,14 @@ public struct InferenceConfiguration<G: TrackingFactorGraph> {
   /// Given a `frame` and a `region` in the frame, returns the factor graph variables (e.g. pose
   /// and latent code) corresponding to that frame.
   public typealias MakeFrameVariables =
-    (_ frame: Tensor<Double>, _ region: OrientedBoundingBox) -> G.FrameVariables
+    (_ frame: Tensor<Double>, _ region: OrientedBoundingBox) -> FrameVariables
 
   /// Creates a factor graph that tracks the object in `frames` that starts out at `start`
   /// in `frames[0]`.
   ///
   /// Parameter guesses: Initial guesses for the variables in all the frames.
   public typealias MakeTrackingFactorGraph =
-    (_ frames: [Tensor<Double>], _ start: G.FrameVariables, _ guesses: [G.FrameVariables]) -> G
+    (_ frames: [Tensor<Double>], _ start: FrameVariables, _ guesses: [FrameVariables]) -> G
 
   /// See `MakeFrameVariables`.
   public var makeFrameVariables: MakeFrameVariables
@@ -98,17 +98,11 @@ extension InferenceConfiguration {
 }
 
 public protocol TrackingFactorGraph {
-  associatedtype FrameVariables
-
   var fg: FactorGraph { get }
   var v: VariableAssignments { get }
   var poseIds: [TypedID<Pose2>] { get }
 }
 
-extension AppearanceTrackingFactorGraph: TrackingFactorGraph {
-  public typealias FrameVariables = (Pose2, Vector10)
-}
+extension AppearanceTrackingFactorGraph: TrackingFactorGraph {}
 
-extension RawPixelTrackingFactorGraph: TrackingFactorGraph {
-  public typealias FrameVariables = Pose2
-}
+extension RawPixelTrackingFactorGraph: TrackingFactorGraph {}
