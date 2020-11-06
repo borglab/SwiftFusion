@@ -65,7 +65,7 @@ extension InferenceConfiguration {
   ///
   /// Slides a window over the frames. For each window, initializes a guess using the predictions
   /// from the previous window and then jointly optimizes all the variables in the window.
-  public mutating func inferSlidingWindow(windowSize: Int) -> [OrientedBoundingBox] {
+  public mutating func inferSlidingWindow(windowSize: Int, sampleSteps: Int = 0) -> [OrientedBoundingBox] {
     var predictions = [video.track[0]]
 
     for windowEnd in 1..<video.frames.count {
@@ -84,7 +84,9 @@ extension InferenceConfiguration {
 
       // Optimize the factor graph.
       let tracker = makeTrackingFactorGraph(videoSlice.frames, guess[0], guess)
+      let lastPose = tracker.sampleLastPose(steps: sampleSteps)
       var v = tracker.v
+      v[tracker.poseIds.last!] = lastPose
       try? optimizer.optimize(graph: tracker.fg, initial: &v)
 
       // Replace the predictions with the new solution.
@@ -101,6 +103,25 @@ public protocol TrackingFactorGraph {
   var fg: FactorGraph { get }
   var v: VariableAssignments { get }
   var poseIds: [TypedID<Pose2>] { get }
+}
+
+extension TrackingFactorGraph {
+  public func sampleLastPose(steps: Int) -> Pose2 {
+    var current = v
+    var currentError = fg.error(at: current)
+    for _ in 0..<steps {
+      let offset = Pose2.TangentVector(0, Double.random(in: -50.0..<50.0), Double.random(in: -50.0..<50.0))
+      var next = current
+      next[poseIds.last!].move(along: offset)
+      let nextError = fg.error(at: next)
+      let logAcceptanceRate = currentError - nextError
+      if logAcceptanceRate > 0 || Double.random(in: 0.0..<1.0) < exp(logAcceptanceRate) {
+        current = next
+        currentError = nextError
+      }
+    }
+    return current[poseIds.last!]
+  }
 }
 
 extension AppearanceTrackingFactorGraph: TrackingFactorGraph {}
