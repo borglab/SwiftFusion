@@ -126,6 +126,8 @@ public struct AppearanceTrackingFactorGraph {
 
   /// Create an instance that tracks `video`, starting at `indexStart`, for `length` steps.
   ///
+  /// Uses appearance tracking errors in pixel space.
+  ///
   /// Parameter model: The appearance model.
   /// Parameter statistics: The statistics used to normalize the frames before encoding.
   public init(
@@ -162,6 +164,55 @@ public struct AppearanceTrackingFactorGraph {
               .reshaped(to: [model.imageHeight, model.imageWidth, model.imageChannels, model.latentDimension])
           },
           regionSize: patchSize))
+
+      if i == 0 {
+        fg.store(WeightedPriorFactor(poseIds[i], initialPose, weight: weights.pose))
+        fg.store(WeightedPriorFactor(latentIds[i], initialLatent, weight: weights.latent))
+      }
+    }
+
+    for i in 0..<(frames.count-1) {
+      fg.store(WeightedBetweenFactor<Vector10>(latentIds[i], latentIds[i+1], Vector10.zero, weight: weights.latent))
+      fg.store(WeightedBetweenFactor<Pose2>(poseIds[i], poseIds[i+1], Pose2(0,0,0), weight: weights.pose))
+    }
+  }
+
+  /// Create an instance that tracks `video`, starting at `indexStart`, for `length` steps.
+  ///
+  /// Uses appearance tracking errors in latent space.
+  ///
+  /// Parameter model: The appearance model.
+  /// Parameter statistics: The statistics used to normalize the frames before encoding.
+  public init(
+    encoder model: DenseRAE,
+    _ frames: [Tensor<Double>],
+    _ initialPose: Pose2,
+    _ initialLatent: Vector10,
+    _ poseGuesses: [Pose2],
+    _ latentCodeGuesses: [Vector10],
+    _ statistics: FrameStatistics,
+    patchSize: (Int, Int),
+    appearanceModelSize: (Int, Int),
+    weights: WeightConfiguration = WeightConfiguration()
+  ) {
+    let expectedLatentDimension = 10
+    precondition(
+      model.latentDimension == expectedLatentDimension,
+      "expected latent dimension \(expectedLatentDimension) but got \(model.latentDimension)")
+    precondition(frames.count == poseGuesses.count, "unexpected number of pose guesses")
+    precondition(frames.count == latentCodeGuesses.count, "unexpected number of latent code guesses")
+
+    for i in 0..<frames.count {
+      poseIds.append(v.store(poseGuesses[i]))
+      latentIds.append(v.store(latentCodeGuesses[i]))
+
+      fg.store(
+        LatentAppearanceTrackingFactor<Vector10, DenseRAE>(
+          poseIds[i], latentIds[i],
+          measurement: statistics.normalized(frames[i]),
+          encoder: model,
+          patchSize: patchSize,
+          appearanceModelSize: appearanceModelSize))
 
       if i == 0 {
         fg.store(WeightedPriorFactor(poseIds[i], initialPose, weight: weights.pose))

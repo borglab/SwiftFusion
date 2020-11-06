@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import SwiftFusion
 import TensorFlow
 
 // MARK: - The Regularized Autoencoder model.
@@ -144,6 +145,8 @@ public struct DenseRAEOutput: Differentiable {
     self.reconstruction = reconstruction
   }
 }
+
+extension DenseRAE: AppearanceModelEncoder {}
 
 extension DenseRAE {
   /// Jacobian of the `dense` method.
