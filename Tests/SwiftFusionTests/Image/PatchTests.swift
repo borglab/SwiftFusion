@@ -131,34 +131,6 @@ final class PatchTests: XCTestCase {
     XCTAssertLessThan(expectedCenter.localCoordinate(x.center).norm, 0.1)
   }
 
-  /// Test that we can gradient descent on the size to reach a target region in the image.
-  func testGradientDescentSize() {
-    // Create a white image containing a black rectangle with a white rectangular hole in the middle.
-    var image = Tensor<Double>(1).reshaped(to: [1, 1, 1]).tiled(multiples: [100, 100, 1])
-    image[20..<80, 25..<75] = Tensor(0).reshaped(to: [1, 1, 1]).tiled(multiples: [60, 50, 1])
-    image[45..<55, 40..<60] = Tensor(1).reshaped(to: [1, 1, 1]).tiled(multiples: [10, 20, 1])
-
-    // The target region is the black rectangle with the white hole.
-    var target = Tensor<Double>(0).reshaped(to: [1, 1, 1]).tiled(multiples: [60, 50, 1])
-    target[25..<35, 15..<35] = Tensor(1).reshaped(to: [1, 1, 1]).tiled(multiples: [10, 20, 1])
-
-    // An initial guess in the right position and orientation, but with the wrong size.
-    var x = OrientedBoundingBox(center: Pose2(50, 50, 0), rows: 30, cols: 25)
-
-    // Use gradient descent to change the size of the guess.
-    let stepCount = 50
-    for _ in 0..<stepCount {
-      let g = gradient(at: x) { x in
-        (image.patch(at: x, outputSize: (60, 50)) - target).squared().mean()
-      }
-      x.center.move(along: -1 * g.center)
-      x.size.move(along: -1000 * g.size)
-    }
-
-    let expectedSize = Vector2(60, 50)
-    XCTAssertLessThan((expectedSize - x.size).norm, 1e-2)
-  }
-
   /// Test that the result and jacobian of `patchWithJacobian` are the same as the result and
   /// jacobian that we get from using autodiff on `patch`.
   func testPatchWithJacobian() {

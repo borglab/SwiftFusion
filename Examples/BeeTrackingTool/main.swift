@@ -164,16 +164,6 @@ struct InferTrackRAE: ParsableCommand {
   }
 }
 
-func printMetrics(groundTruth: [OrientedBoundingBox], prediction: [OrientedBoundingBox]) {
-    let metrics = TrackingMetrics(groundTruth: groundTruth, prediction: prediction)
-    if let failureFrame = metrics.trackingFailureFrame {
-      print("Tracking succeeded until frame: \(failureFrame)")
-    } else {
-      print("Tracking succeeded for all frames")
-  }
-
-}
-
 /// Infers a track on a VOT video, using the raw pixel tracker.
 struct InferTrackRawPixels: ParsableCommand {
   @Option(help: "Base directory of the VOT dataset")
@@ -210,6 +200,16 @@ struct InferTrackRawPixels: ParsableCommand {
     }
 
     printMetrics(groundTruth: videoSlice.track, prediction: boxes)
+  }
+}
+
+/// Prints metrics about how goot `prediction` is relative to `groundTruth`.
+func printMetrics(groundTruth: [OrientedBoundingBox], prediction: [OrientedBoundingBox]) {
+    let metrics = TrackingMetrics(groundTruth: groundTruth, prediction: prediction)
+    if let failureFrame = metrics.trackingFailureFrame {
+      print("Tracking succeeded until frame: \(failureFrame)")
+    } else {
+      print("Tracking succeeded for all frames")
   }
 }
 

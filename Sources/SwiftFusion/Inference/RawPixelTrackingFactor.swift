@@ -8,17 +8,36 @@ import PenguinParallel
 import PenguinStructures
 import TensorFlow
 
+/// A factor that measures the difference between a `target` image patch and the actual image
+/// patch at a given pose.
 public struct RawPixelTrackingFactor: LinearizableFactor1 {
+  /// The adjacent variable, the pose of the target in the image.
+  ///
+  /// This explicitly specifies `LinearizableFactor2`'s `associatedtype V0`.
   public typealias V0 = Pose2
+
+  /// The IDs of the variables adjacent to this factor.
   public let edges: Variables.Indices
+
+  /// The image containing the target.
   public let measurement: Tensor<Double>
+
+  /// The pixels of the target.
   public let target: Tensor<Double>
+
+  /// Creates an instance.
+  ///
+  /// - Parameters:
+  ///   - poseId: the id of the adjacent pose variable.
+  ///   - measurement: the image containing the target.
+  ///   - target: the pixels of the target.
   public init(_ poseID: TypedID<Pose2>, measurement: Tensor<Double>, target: Tensor<Double>) {
     self.edges = Tuple1(poseID)
     self.measurement = measurement
     self.target = target
   }
 
+  /// Returns the difference between `target` and the region of `measurement` at `pose`.
   @differentiable
   public func errorVector(_ pose: Pose2) -> TensorVector {
     let patch = measurement.patch(
@@ -27,11 +46,11 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
   }
 
   /// Returns a linear approximation to `self` at `x`.
-  public func linearized(at x: Variables) -> CustomLinearization {
+  public func linearized(at x: Variables) -> LinearizedRawPixelTrackingFactor {
     let pose = x.head
     let region = OrientedBoundingBox(center: pose, rows: target.shape[0], cols: target.shape[1])
     let (actualAppearance, actualAppearance_H_pose) = measurement.patchWithJacobian(at: region)
-    return CustomLinearization(
+    return LinearizedRawPixelTrackingFactor(
       error: TensorVector(-(actualAppearance - target)),
       errorVector_H_pose: actualAppearance_H_pose,
       edges: Variables.linearized(edges))
@@ -45,7 +64,7 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
     -> AnyGaussianFactorArrayBuffer where C.Element == Self
   {
     Variables.withBufferBaseAddresses(x) { varsBufs in
-      .init(ArrayBuffer<CustomLinearization>(
+      .init(ArrayBuffer<LinearizedRawPixelTrackingFactor>(
         count: factors.count, minimumCapacity: factors.count) { b in
         ComputeThreadPools.local.parallelFor(n: factors.count) { (i, _) in
           let f = factors[factors.index(factors.startIndex, offsetBy: i)]
@@ -56,20 +75,23 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
   }
 }
 
-public struct CustomLinearization: GaussianFactor {
+/// A linear approximation to `RawPixelTrackingFactor`, at a certain linearization point.
+public struct LinearizedRawPixelTrackingFactor: GaussianFactor {
+  /// The tangent vector of the `RawPixelTrackingFactor`'s "pose" variable.
   public typealias Variables = Tuple1<Pose2.TangentVector>
 
-  public typealias Patch = TensorVector
+  /// The error vector at the linearization point.
+  public let error: TensorVector
 
-  public let error: Patch
-
+  /// The Jacobian with respect to the `RawPixelTrackingFactor`'s "pose" variable.
   public let errorVector_H_pose: Tensor<Double>
 
+  /// The ID of the variable adjacent to this factor.
   public let edges: Variables.Indices
 
   /// Creates an instance with the given arguments.
   public init(
-    error: Patch,
+    error: TensorVector,
     errorVector_H_pose: Tensor<Double>,
     edges: Variables.Indices
   ) {
@@ -86,17 +108,17 @@ public struct CustomLinearization: GaussianFactor {
   }
 
     @differentiable
-  public func errorVector(at x: Variables) -> Patch {
+  public func errorVector(at x: Variables) -> TensorVector {
     errorVector_linearComponent(x) - error
   }
 
-  public func errorVector_linearComponent(_ x: Variables) -> Patch {
+  public func errorVector_linearComponent(_ x: Variables) -> TensorVector {
     let pose = x.head
-    return Patch(
+    return TensorVector(
       matmul(errorVector_H_pose, pose.flatTensor.expandingShape(at: 1)).squeezingShape(at: 3))
   }
 
-  public func errorVector_linearComponent_adjoint(_ y: Patch) -> Variables {
+  public func errorVector_linearComponent_adjoint(_ y: TensorVector) -> Variables {
     let t = y.tensor.reshaped(to: [error.dimension, 1])
     let pose = matmul(
       errorVector_H_pose.reshaped(to: [error.dimension, 3]),

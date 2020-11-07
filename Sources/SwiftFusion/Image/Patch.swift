@@ -19,11 +19,13 @@ extension ArrayImage {
   ///
   /// - Parameters:
   ///   - region: the center, orientation, and size of the patch to extract.
+  ///   - outputSize: The size, in `(height, width)` pixels, to scale the result to. If this is not
+  ///                 specified, then the result has the same size as `region`.
   @differentiable(wrt: region)
   public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil) -> Self {
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
-    let rowScale = region.size.x / Double(outputRows)
-    let colScale = region.size.y / Double(outputCols)
+    let rowScale = Double(region.rows) / Double(outputRows)
+    let colScale = Double(region.cols) / Double(outputCols)
     var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
     for i in 0..<outputRows {
       for j in 0..<outputCols {
@@ -32,7 +34,7 @@ extension ArrayImage {
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
-        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(region.size.y, region.size.x)
+        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
         for c in 0..<self.channels {
           result.update(i, j, c, to: bilinear(self, region.center * xySrcRegion, c))
@@ -50,27 +52,26 @@ extension ArrayImage {
     let r = self.patch(at: region, outputSize: outputSize)
     let channels = self.channels
     let (outputRows, outputCols) = outputSize ?? (Int(region.rows), Int(region.cols))
+    let rowScale = Double(region.rows) / Double(outputRows)
+    let colScale = Double(region.cols) / Double(outputCols)
     func outerPb(_ dOut: TangentVector) -> OrientedBoundingBox.TangentVector {
       var idx = 0
       var dBox = region.zeroTangentVector
       for i in 0..<outputRows {
         for j in 0..<outputCols {
+          // The position of the destination pixel in the source region, in `(u, v)`
+          // coordinates.
+          let uvSrcRegion =
+            Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
+
+          // The position of the destination pixel in the destination image, in coordinates
+          // where the center of the destination image is `(0, 0)`.
+          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+
           for c in 0..<channels {
             if dOut.pixels.base[idx] != 0 {
-              let pb = pullback(at: region) { region -> Double in
-                let rowScale = region.size.x / Double(outputRows)
-                let colScale = region.size.y / Double(outputCols)
-
-                // The position of the destination pixel in the source region, in `(u, v)`
-                // coordinates.
-                let uvSrcRegion =
-                  Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
-
-                // The position of the destination pixel in the destination image, in coordinates
-                // where the center of the destination image is `(0, 0)`.
-                let xySrcRegion = uvSrcRegion - 0.5 * Vector2(region.size.y, region.size.x)
-
-                return bilinear(self, region.center * xySrcRegion, c)
+              let pb = pullback(at: region) {
+                bilinear(self, $0.center * xySrcRegion, c)
               }
               dBox += pb(dOut.pixels.base[idx])
             }
@@ -88,6 +89,8 @@ extension ArrayImage {
   ///
   /// - Parameters:
   ///   - region: the center, orientation, and size of the patch to extract.
+  ///   - outputSize: The size, in `(height, width)` pixels, to scale the result to. If this is not
+  ///                 specified, then the result has the same size as `region`.
   ///
   /// - Returns:
   ///   - patch: The region at `region`, cropped from `self`.
@@ -98,8 +101,8 @@ extension ArrayImage {
     -> (patch: Self, jacobian: (dtheta: Self, du: Self, dv: Self))
   {
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
-    let rowScale = region.size.x / Double(outputRows)
-    let colScale = region.size.y / Double(outputCols)
+    let rowScale = Double(region.rows) / Double(outputRows)
+    let colScale = Double(region.cols) / Double(outputCols)
     var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
     var dtheta = ArrayImage(zerosLike: result)
     var du = ArrayImage(zerosLike: result)
@@ -111,7 +114,7 @@ extension ArrayImage {
 
         // The position of the destination pixel in the destination image, in coordinates where the
         // center of the destination image is `(0, 0)`.
-        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(region.size.y, region.size.x)
+        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
         // The position of the destination pixel in the source image. These are the `(u, v)`
         // coordinates of the source image that we sample from.
@@ -157,6 +160,8 @@ extension Tensor where Scalar == Double {
   ///           [height, width, channelCount]`. `height` and `width` are as defined in
   ///           `docs/ImageOperations.md`.
   ///   - region: the center, orientation, and size of the patch to extract.
+  ///   - outputSize: The size, in `(height, width)` pixels, to scale the result to. If this is not
+  ///                 specified, then the result has the same size as `region`.
   @differentiable(wrt: region)
   public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil)
     -> Tensor<Scalar>
@@ -176,6 +181,8 @@ extension Tensor where Scalar == Double {
   ///   - self: a tensor of image pixels with shape `[height, width, channelCount]`. `height`
   ///           and `width` are as defined in `docs/ImageOperations.md`.
   ///   - region: the center, orientation, and size of the patch to extract.
+  ///   - outputSize: The size, in `(height, width)` pixels, to scale the result to. If this is not
+  ///                 specified, then the result has the same size as `region`.
   ///
   /// - Returns:
   ///   - patch: The region at `region`, cropped from `self`.

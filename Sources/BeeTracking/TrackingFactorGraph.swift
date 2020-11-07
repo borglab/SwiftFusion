@@ -52,13 +52,20 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   public let frameVariableIDs: [FrameVariables.Indices]
 
   /// Adds to `graph` a prior factor on `variables`
-  public let addPriorFactor: (_ variables: FrameVariables.Indices, _ values: FrameVariables, _ graph: inout FactorGraph) -> ()
+  public let addPriorFactor: (
+    _ variables: FrameVariables.Indices, _ values: FrameVariables, _ graph: inout FactorGraph
+  ) -> ()
 
   /// Adds to `graph` a tracking factor on `variables` for tracking in `frame`.
-  public let addTrackingFactor: (_ variables: FrameVariables.Indices, _ frame: Tensor<Double>, _ graph: inout FactorGraph) -> ()
+  public let addTrackingFactor: (
+    _ variables: FrameVariables.Indices, _ frame: Tensor<Double>, _ graph: inout FactorGraph
+  ) -> ()
 
   /// Adds to `graph` between factor(s) between the variables at `variables1` and the variables at `variables2`.
-  public let addBetweenFactor: (_ variables1: FrameVariables.Indices, _ variables2: FrameVariables.Indices, _ graph: inout FactorGraph) -> ()
+  public let addBetweenFactor: (
+    _ variables1: FrameVariables.Indices, _ variables2: FrameVariables.Indices,
+    _ graph: inout FactorGraph
+  ) -> ()
 
   /// The optimizer to use during inference.
   public var optimizer = LM()
@@ -70,9 +77,16 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     frames: [Tensor<Double>],
     variableTemplate: VariableAssignments,
     frameVariableIDs: [FrameVariables.Indices],
-    addPriorFactor: @escaping (_ variables: FrameVariables.Indices, _ values: FrameVariables, _ graph: inout FactorGraph) -> (),
-    addTrackingFactor: @escaping (_ variables: FrameVariables.Indices, _ frame: Tensor<Double>, _ graph: inout FactorGraph) -> (),
-    addBetweenFactor: @escaping (_ variables1: FrameVariables.Indices, _ variables2: FrameVariables.Indices, _ graph: inout FactorGraph) -> ()
+    addPriorFactor: @escaping (
+      _ variables: FrameVariables.Indices, _ values: FrameVariables, _ graph: inout FactorGraph
+    ) -> (),
+    addTrackingFactor: @escaping (
+      _ variables: FrameVariables.Indices, _ frame: Tensor<Double>, _ graph: inout FactorGraph
+    ) -> (),
+    addBetweenFactor: @escaping (
+      _ variables1: FrameVariables.Indices, _ variables2: FrameVariables.Indices,
+      _ graph: inout FactorGraph
+    ) -> ()
   ) {
     self.frames = frames
     self.variableTemplate = variableTemplate
@@ -98,6 +112,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     return result
   }
 
+  /// Returns a prediction.
   public mutating func infer(
     knownStart: FrameVariables
   ) -> VariableAssignments {
