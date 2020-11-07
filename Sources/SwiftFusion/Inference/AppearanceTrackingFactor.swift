@@ -53,7 +53,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   /// The Jacobian of `appearanceModel`.
   public var appearanceModelJacobian: GenerativeModelJacobian
 
-  public var regionSize: (Int, Int)
+  public var targetSize: (Int, Int)
 
   /// Creates an instance.
   ///
@@ -69,7 +69,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     appearanceModel: @escaping GenerativeModel,
     appearanceModelJacobian: @escaping GenerativeModelJacobian,
     weight: Double = 1.0,
-    regionSize: (Int, Int)? = nil
+    targetSize: (Int, Int)? = nil
   ) {
     self.edges = Tuple2(poseId, latentId)
     self.measurement = measurement
@@ -77,11 +77,11 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     self.appearanceModelJacobian = appearanceModelJacobian
     self.weight = weight
 
-    if let regionSize = regionSize {
-      self.regionSize = regionSize
+    if let targetSize = targetSize {
+      self.targetSize = targetSize
     } else {
       let appearance = appearanceModel(LatentCode.zero.flatTensor)
-      self.regionSize = (appearance.shape[0], appearance.shape[1])
+      self.targetSize = (appearance.shape[0], appearance.shape[1])
     }
   }
 
@@ -91,7 +91,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   public func errorVector(_ pose: Pose2, _ latent: LatentCode) -> Patch.TangentVector {
     let appearance = appearanceModel(latent.flatTensor) // -> 100x100 image
     let region = OrientedBoundingBox(
-      center: pose, rows: regionSize.0, cols: regionSize.1) // -> hxw region
+      center: pose, rows: targetSize.0, cols: targetSize.1) // -> hxw region
     return Patch(weight * (appearance - measurement.patch(at: region, outputSize: (appearance.shape[0], appearance.shape[1])))) // -> crop out a hxw region and then scale to 100x100
   }
 
@@ -115,7 +115,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let generatedAppearance = appearanceModel(latent.flatTensor)
     let generatedAppearance_H_latent = appearanceModelJacobian(latent.flatTensor)
     let region = OrientedBoundingBox(
-      center: pose, rows: regionSize.0, cols: regionSize.1)
+      center: pose, rows: targetSize.0, cols: targetSize.1)
     let (actualAppearance, actualAppearance_H_pose) = measurement.patchWithJacobian(at: region, outputSize: (generatedAppearance.shape[0], generatedAppearance.shape[1]))
     assert(generatedAppearance_H_latent.shape == generatedAppearance.shape + [LatentCode.dimension])
     return LinearizedAppearanceTrackingFactor<LatentCode>(

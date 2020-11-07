@@ -8,7 +8,7 @@ public struct TrackingMetrics {
   public init(
     groundTruth: [OrientedBoundingBox],
     prediction: [OrientedBoundingBox],
-    failureThreshold: Double = 50
+    failureThreshold: Double = 10
   ) {
     for (frame, (gt, p)) in zip(groundTruth, prediction).enumerated() {
       let poseError = gt.center.localCoordinate(p.center).norm

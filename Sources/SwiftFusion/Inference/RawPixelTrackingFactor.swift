@@ -21,8 +21,9 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
 
   @differentiable
   public func errorVector(_ pose: Pose2) -> TensorVector {
-    let error: Tensor<Double> = measurement.patch(at: OrientedBoundingBox(center: pose, rows: target.shape[0], cols: target.shape[1])) - target
-    return TensorVector(error)
+    let patch = measurement.patch(
+      at: OrientedBoundingBox(center: pose, rows: target.shape[0], cols: target.shape[1]))
+    return TensorVector(patch - target)
   }
 
   /// Returns a linear approximation to `self` at `x`.
