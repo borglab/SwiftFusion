@@ -6,25 +6,68 @@ Think factor graphs a la [GTSAM](https://gtsam.org/) coupled with deep learning,
 
 Still very early, but feel free to explore! Subject to *massive* change :-)
 
-## Run tests
+## Getting Started
 
-```
-swift test
-```
+### Swift on MacOS
 
-## Run benchmarks
+Using XCode is the easiest way to develop on Mac. 
 
-```
-swift run -c release -Xswiftc -cross-module-optimization SwiftFusionBenchmarks
-```
+Follow the instructions to [install Swift for TensorFlow on MacOS](https://github.com/tensorflow/swift/blob/master/Installation.md#macos). Installing the latest development snapshot is recommended.
 
-## Update dependency versions
+### Installing Swift on Linux
+
+Requirements: Ubuntu 18.04 (if you use GPU). 
+
+Follow the instructions to [install Swift for TensorFlow on Linux](https://github.com/tensorflow/swift/blob/master/Installation.md#linux).  Installing the latest development snapshot is recommended.
+
+### Update dependency versions
 
 ```
 swift package update
 ```
 
-## Overview
+### Run tests
+
+```
+swift test
+```
+
+### Run benchmarks
+
+```
+swift run -c release -Xswiftc -cross-module-optimization SwiftFusionBenchmarks
+```
+
+## Working with VS Code
+
+To enable autocomplete in VSCode, install the plugin vknabel.vscode-swift-development-environment, and set the following plugin settings:
+"sde.languageServerMode": "sourcekit-lsp",
+"sourcekit-lsp.serverPath": "<your toolchain path>/usr/bin/sourcekit-lsp",
+"sourcekit-lsp.toolchainPath": "<your toolchain path>",
+"swift.path.swift_driver_bin": "<your toolchain path>/usr/bin/swift",
+
+Debugging within VS code is easiest via the CodeLLDB plugin so you can debug in vscode. You need to set the following setting:
+"lldb.library": "/swift-tensorflow-toolchain/usr/lib/liblldb.so"
+
+A sample launch.json file:
+
+```json
+{
+"version": "0.2.0",
+"configurations": [
+{
+"type": "lldb",
+"request": "launch",
+"name": "Debug",
+"program": "${workspaceFolder}/.build/x86_64-unknown-linux-gnu/debug/SwiftFusionPackageTests.xctest",
+"args": ["--enable-test-discovery"],
+"cwd": "${workspaceFolder}"
+}
+]
+}
+```
+
+## Code Overview
 
 The main code is in Sources/SwiftFusion, which as a number of sub-directories:
 
