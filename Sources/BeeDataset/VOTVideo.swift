@@ -82,7 +82,7 @@ extension VOTVideo {
         print("frame \(path.path) not found")
         return nil
       }
-      frames.append(Tensor<Double>(Image(jpeg: path).tensor))
+      frames.append(Tensor<Double>(Image(contentsOf: path).tensor))
     }
 
     // Load the track points.

@@ -27,8 +27,9 @@ let package = Package(
 
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
-    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("99f323e550f7f0c3ed32d31a3c5d11a0f3c51e4b")),
+    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("c67c9fc024d811e4134f379205ce49dd530f593a")),
     .package(url: "https://github.com/apple/swift-argument-parser", from: "0.2.0"),
+    .package(url: "https://github.com/vojtamolda/Plotly.swift", from: "0.4.0"),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -46,6 +47,7 @@ let package = Package(
       name: "BeeDataset",
       dependencies: [
         "SwiftFusion",
+        "Plotly",
         .product(name: "Datasets", package: "swift-models"),
         .product(name: "ModelSupport", package: "swift-models"),
       ]),
@@ -68,6 +70,17 @@ let package = Package(
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
       path: "Examples/BeeTrackingTool"),
+    .target(
+      name: "OISTVisualizationTool",
+      dependencies: [
+        "BeeDataset",
+        "BeeTracking",
+        "PenguinParallelWithFoundation",
+        "SwiftFusion",
+        "Plotly",
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+      ],
+    path: "Examples/OISTVisualizationTool"),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: [
