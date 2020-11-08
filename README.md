@@ -10,7 +10,7 @@ Still very early, but feel free to explore! Subject to *massive* change :-)
 
 ### Swift on MacOS
 
-Using XCode is the easiest way to develop on Mac. 
+Using XCode is the easiest way to develop on Mac. Unfortunately, the current version of Xcode 12 has a bug, and you need to work with the XCode beta, available from Apple [here](https://developer.apple.com/download/).
 
 Follow the instructions to [install Swift for TensorFlow on MacOS](https://github.com/tensorflow/swift/blob/master/Installation.md#macos). Installing the latest development snapshot is recommended.
 
