@@ -13,7 +13,7 @@ struct OISTVisualizationTool: ParsableCommand {
 }
 
 struct ViewFrame: ParsableCommand {
-  @Option(help: "Location of dataset folder")
+  @Option(help: "Location of dataset folder which should contain `frames` and `frames_txt`")
   var datasetLocation: String = "./OIST_Data"
 
   @Option(help: "Which frame to show")
@@ -21,10 +21,16 @@ struct ViewFrame: ParsableCommand {
 
   func run() {
     let dataURL = URL(fileURLWithPath: datasetLocation)
-    print("Videwing \(dataURL) at frame \(frameId)")
+    print("Viewing \(dataURL) at frame \(frameId)")
     let dataset = OISTBeeVideo(directory: dataURL, deferLoadingFrames: true)!
 
-    print(dataset.labels)
+    let frameRawId = dataset.frameIds[frameId]
+
+    let image = dataset.loadFrame(frameRawId)!
+
+    plotImagePlotly(image, boxes: dataset.labels[frameId].enumerated().map {
+      (String($0), $1.location)
+    }, margin: 10.0, scale: 0.5).show()
   }
 }
 

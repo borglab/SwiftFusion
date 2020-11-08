@@ -39,7 +39,11 @@ public struct OISTBeeVideo {
 
   var directory: URL?
 
+  /// FPS of the video sequence
   var fps: Int
+
+  /// Scale Factor
+  public var scale: Int = 2
 
   public struct ParseError: Swift.Error {
     public let lineIndex: Int
@@ -56,11 +60,16 @@ public struct OISTBeeLabel {
   /// The global location of the bee.
   public var location: OrientedBoundingBox {
     get {
-      OrientedBoundingBox(
+      let bboxSize: (Int, Int) = [
+        OISTLabelType.Body: (40, 70),
+        OISTLabelType.Butt: (40, 40)
+      ][label]!
+
+      return OrientedBoundingBox(
         center: Pose2(
-          Rot2(rawLocation.2),
-          Vector2(rawLocation.0, rawLocation.1)
-        ), rows: 20, cols: 35
+          Rot2(rawLocation.2 - .pi / 2),
+          (1/scale) * Vector2(Double(offset.0) + rawLocation.0, Double(offset.1) + rawLocation.1)
+        ), rows: bboxSize.0, cols: bboxSize.1
       )
     }
   }
@@ -75,6 +84,9 @@ public struct OISTBeeLabel {
   /// Offset of the location
   /// Since the dataset is labeled in a grid-by-grid fashion
   public var offset: (Int, Int)
+
+  /// Scale Factor
+  public var scale: Double = 2
 }
 
 fileprivate extension String.StringInterpolation {
@@ -129,6 +141,9 @@ extension OISTBeeVideo {
     if !deferLoadingFrames {
       while let frame = loadFrame(self.frameIds[self.frames.count]) {
         self.frames.append(frame)
+        if self.frameIds.count == self.frames.count {
+          break
+        }
       }
     }
 
@@ -140,7 +155,7 @@ extension OISTBeeVideo {
       return try! lines.enumerated().map { (id, line) in
         let split = line.split(separator: "\t")
         var labelType: OISTLabelType = .Body
-        print(split)
+        assert(split.count == 6)
         switch Int(split[2])! {
           case 1: labelType = .Body
           case 2: labelType = .Butt
@@ -151,12 +166,16 @@ extension OISTBeeVideo {
           frameIndex: id,
           label: labelType,
           rawLocation: (Double(split[3])!, Double(split[4])!, Double(split[5])!),
-          offset: (Int(split[0])!, Int(split[1])!)
+          offset: (Int(split[0])!, Int(split[1])!),
+          scale: Double(scale)
         )
       }
     }
-    while let track = loadTrack(self.frameIds[self.labels.count]) {
-      self.labels.append(track)
+    while let label = loadTrack(self.frameIds[self.labels.count]) {
+      self.labels.append(label)
+      if self.frameIds.count == self.labels.count {
+          break
+        }
     }
   }
 
@@ -164,7 +183,8 @@ extension OISTBeeVideo {
   public func loadFrame(_ index: Int) -> Tensor<Double>? {
     let path = self.directory!.appendingPathComponent("frames").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).png")
     guard FileManager.default.fileExists(atPath: path.path) else { return nil }
-    return Tensor<Double>(ModelSupport.Image(contentsOf: path).tensor)
+    let downsampler = AvgPool2D<Double>(poolSize: (scale, scale), strides: (scale, scale), padding: .same)
+    return downsampler(Tensor<Double>(ModelSupport.Image(contentsOf: path).tensor).expandingShape(at: 0)).squeezingShape(at: 0)
   }
   
   private static func downloadDatasetIfNotPresent() -> URL {

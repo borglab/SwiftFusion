@@ -5,7 +5,7 @@ import ModelSupport
 import Foundation
 
 /// A Plotly figure that displays `frame`, with optional `boxes` overlaid.
-func plotImagePlotly(
+public func plotImagePlotly(
   _ frame: Tensor<Double>, boxes: [(name: String, OrientedBoundingBox)] = [],
   margin: Double = 30, scale: Double = 1
 ) -> Plotly.Figure {
