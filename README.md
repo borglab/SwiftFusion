@@ -20,16 +20,15 @@ Requirements: Ubuntu 18.04 (if you use GPU).
 
 Follow the instructions to [install Swift for TensorFlow on Linux](https://github.com/tensorflow/swift/blob/master/Installation.md#linux).  Installing the latest development snapshot is recommended.
 
-### Update dependency versions
+### Installing S4TF on Jetson Devices
 
-```
-swift package update
-```
+Download toolchain [here](https://storage.googleapis.com/swift-tensorflow-artifacts/oneoff-builds/swift-tensorflow-RELEASE-0.11-Jetson4.4.tar.gz), and then follow Linux instructions.
 
 ### Run tests
 
+To check whether everything works you can run all the tests by changing to the SwiftFusion directory and
 ```
-swift test
+swift test --enable-test-discovery
 ```
 
 ### Run benchmarks
@@ -41,10 +40,11 @@ swift run -c release -Xswiftc -cross-module-optimization SwiftFusionBenchmarks
 ## Working with VS Code
 
 To enable autocomplete in VSCode, install the plugin vknabel.vscode-swift-development-environment, and set the following plugin settings:
-"sde.languageServerMode": "sourcekit-lsp",
-"sourcekit-lsp.serverPath": "<your toolchain path>/usr/bin/sourcekit-lsp",
-"sourcekit-lsp.toolchainPath": "<your toolchain path>",
-"swift.path.swift_driver_bin": "<your toolchain path>/usr/bin/swift",
+
+- "sde.languageServerMode": "sourcekit-lsp",
+- "sourcekit-lsp.serverPath": "<your toolchain path>/usr/bin/sourcekit-lsp",
+- "sourcekit-lsp.toolchainPath": "<your toolchain path>",
+- "swift.path.swift_driver_bin": "<your toolchain path>/usr/bin/swift",
 
 Debugging within VS code is easiest via the CodeLLDB plugin so you can debug in vscode. You need to set the following setting:
 "lldb.library": "/swift-tensorflow-toolchain/usr/lib/liblldb.so"
