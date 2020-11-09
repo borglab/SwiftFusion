@@ -18,15 +18,16 @@ import ModelSupport
 import SwiftFusion
 import TensorFlow
 
+/// Label type
 public enum OISTLabelType {
-    case Body
-    case Butt
+  /// Full body
+  case Body
+
+  /// Only the butt
+  case Butt
 }
 
-// BEE_OBJECT_SIZES = {1: (20, 35),  # bee class is labeled 1
-//                     2: (20, 20)}  # butt class is labeled 2
-
-/// A video of bees, with tracking labels.
+/// A video of bees, with only labels.
 public struct OISTBeeVideo {
   /// Frame IDs sorted
   public var frameIds: [Int]
@@ -89,12 +90,14 @@ public struct OISTBeeLabel {
   public var scale: Double = 2
 }
 
+/// For output integers with padding
 fileprivate extension String.StringInterpolation {
     mutating func appendInterpolation(_ val: Int, padding: UInt) {
         appendLiteral(String(format: "%0\(padding)d", arguments: [val]))
     }
 }
 
+/// For matching with multiple ranges
 fileprivate extension String {    
     func ranges(of substring: String, options: CompareOptions = [], locale: Locale? = nil) -> [Range<Index>] {
         var ranges: [Range<Index>] = []
@@ -114,9 +117,7 @@ extension OISTBeeVideo {
 
   /// Creates an instance from the data in the given `directory`.
   ///
-  /// The directory must contain:
-  /// - Frames named "frame0.jpeg", "frame1.jpeg", etc, consecutively.
-  /// - Zero or more tracks named "track0.txt", "track1.txt", etc, consecutively.
+  /// The directory must contain "frames" and "frames_txt"
   ///
   /// The format of a track file is:
   /// - Arbitrarily many lines "offset_x, offset_y, bee_type, x, y, angle".
@@ -138,6 +139,7 @@ extension OISTBeeVideo {
       }
     }.sorted()
 
+    // Lazy loading
     if !deferLoadingFrames {
       while let frame = loadFrame(self.frameIds[self.frames.count]) {
         self.frames.append(frame)
@@ -147,7 +149,8 @@ extension OISTBeeVideo {
       }
     }
 
-    func loadTrack(_ index: Int) -> [OISTBeeLabel]? {
+    /// Loads labels for one frame
+    func loadFrameLabels(_ index: Int) -> [OISTBeeLabel]? {
       let path = directory.appendingPathComponent("frames_txt").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).txt")
       guard let track = try? String(contentsOf: path) else { return nil }
       let lines = track.split(separator: "\n")
@@ -171,7 +174,7 @@ extension OISTBeeVideo {
         )
       }
     }
-    while let label = loadTrack(self.frameIds[self.labels.count]) {
+    while let label = loadFrameLabels(self.frameIds[self.labels.count]) {
       self.labels.append(label)
       if self.frameIds.count == self.labels.count {
           break
@@ -179,6 +182,7 @@ extension OISTBeeVideo {
     }
   }
 
+  /// Loads one image frame and downsample by `scale`
   /// Example: frame_30fps_003525.txt
   public func loadFrame(_ index: Int) -> Tensor<Double>? {
     let path = self.directory!.appendingPathComponent("frames").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).png")
