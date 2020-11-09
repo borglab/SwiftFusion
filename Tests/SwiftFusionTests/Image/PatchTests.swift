@@ -63,7 +63,7 @@ final class PatchTests: XCTestCase {
   /// Test cropping an example image.
   func testExampleImage() {
     let dataDir = URL.sourceFileDirectory().appendingPathComponent("data")
-    let image = Tensor<Double>(Image(jpeg: dataDir.appendingPathComponent("test.png")).tensor)
+    let image = Tensor<Double>(Image(contentsOf: dataDir.appendingPathComponent("test.png")).tensor)
     let obb = OrientedBoundingBox(
       center: Pose2(Rot2(-20 * .pi / 180), Vector2(35, 65)), rows: 20, cols: 40)
     let patch = image.patch(at: obb)
@@ -71,7 +71,7 @@ final class PatchTests: XCTestCase {
     // Created using ImageMagick:
     //   convert -distort SRT 35,65,20 -crop 40x20+15+55 test.png cropped.png
     let expectedPatch =
-      Tensor<Double>(Image(jpeg: dataDir.appendingPathComponent("cropped.png")).tensor)
+      Tensor<Double>(Image(contentsOf: dataDir.appendingPathComponent("cropped.png")).tensor)
 
     // The actual and expected are pretty close, but not precisely the same.
     // TODO: Investigate the difference.

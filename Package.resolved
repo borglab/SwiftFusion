@@ -6,8 +6,17 @@
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
           "branch": "master",
-          "revision": "bb3118efc29779b123caa7a83f1694d9b92e9fa7",
+          "revision": "0e1d0310b1aa3a758d8d611eda8d2fd8c71f4b65",
           "version": null
+        }
+      },
+      {
+        "package": "Plotly",
+        "repositoryURL": "https://github.com/vojtamolda/Plotly.swift",
+        "state": {
+          "branch": null,
+          "revision": "6e80119ba37b913e5460459556e2bf58f02eba67",
+          "version": "0.4.0"
         }
       },
       {
@@ -15,16 +24,16 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser",
         "state": {
           "branch": null,
-          "revision": "3e7d2fe99da091dcc1e4a7dd22fc3cfc2dca7937",
-          "version": "0.2.2"
+          "revision": "92646c0cdbaca076c8d3d0207891785b3379cbff",
+          "version": "0.3.1"
         }
       },
       {
         "package": "Benchmark",
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
-          "branch": "master",
-          "revision": "34c2f072feb6aa74dcc5f2d8e066fe4f2a0af73c",
+          "branch": null,
+          "revision": "f70bf472b00aeaa05e2374373568c2fe459c11c7",
           "version": null
         }
       },
@@ -33,17 +42,8 @@
         "repositoryURL": "https://github.com/tensorflow/swift-models.git",
         "state": {
           "branch": null,
-          "revision": "99f323e550f7f0c3ed32d31a3c5d11a0f3c51e4b",
+          "revision": "c67c9fc024d811e4134f379205ce49dd530f593a",
           "version": null
-        }
-      },
-      {
-        "package": "SwiftProtobuf",
-        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
-        "state": {
-          "branch": null,
-          "revision": "0279688c9fc5a40028e1b5bb0cb56534a45a6020",
-          "version": "1.12.0"
         }
       },
       {
