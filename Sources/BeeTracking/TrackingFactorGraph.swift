@@ -196,6 +196,58 @@ public func makeRAETracker(
     })
 }
 
+/// Returns a tracking configuration for a tracker using an PPCA.
+///
+/// Parameter model: The PPCA model to use.
+/// Parameter statistics: Normalization statistics for the frames.
+/// Parameter frames: The frames of the video where we want to run tracking.
+/// Parameter targetSize: The size of the target in the frames.
+public func makePPCATracker(
+  model: PPCA,
+  statistics: FrameStatistics,
+  frames: [Tensor<Double>],
+  targetSize: (Int, Int)
+) -> TrackingConfiguration<Tuple2<Pose2, Vector10>> {
+  var variableTemplate = VariableAssignments()
+  var frameVariableIDs = [Tuple2<TypedID<Pose2>, TypedID<Vector10>>]()
+  for _ in 0..<frames.count {
+    frameVariableIDs.append(
+      Tuple2(
+        variableTemplate.store(Pose2()),
+        variableTemplate.store(Vector10())))
+  }
+  return TrackingConfiguration(
+    frames: frames,
+    variableTemplate: variableTemplate,
+    frameVariableIDs: frameVariableIDs,
+    addPriorFactor: { (variables, values, graph) -> () in
+      let (poseID, latentID) = unpack(variables)
+      let (pose, latent) = unpack(values)
+      graph.store(WeightedPriorFactor(poseID, pose, weight: 1e-2))
+      graph.store(WeightedPriorFactor(latentID, latent, weight: 1e2))
+    },
+    addTrackingFactor: { (variables, frame, graph) -> () in
+      let (poseID, latentID) = unpack(variables)
+      graph.store(
+        AppearanceTrackingFactor<Vector10>(
+          poseID, latentID,
+          measurement: statistics.normalized(frame),
+          appearanceModel: { x in
+            model.decode(x)
+          },
+          appearanceModelJacobian: { x in
+            model.W // .reshaped(to: [targetSize.0, targetSize.1, frames[0].shape[3], model.latent_size])
+          },
+          targetSize: targetSize))
+    },
+    addBetweenFactor: { (variables1, variables2, graph) -> () in
+      let (poseID1, latentID1) = unpack(variables1)
+      let (poseID2, latentID2) = unpack(variables2)
+      graph.store(WeightedBetweenFactor(poseID1, poseID2, Pose2(), weight: 1e-2))
+      graph.store(WeightedBetweenFactor(latentID1, latentID2, Vector10(), weight: 1e2))
+    })
+}
+
 /// Returns a tracking configuration for a raw pixel tracker.
 ///
 /// Parameter frames: The frames of the video where we want to run tracking.
