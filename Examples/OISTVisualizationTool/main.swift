@@ -76,22 +76,33 @@ struct PpcaTrack: ParsableCommand {
   var boxId: Int = 0
 
   @Option(help: "Track for how many frames")
-  var trackFrames: Int = 0
+  var trackFrames: Int = 10
 
   @Flag(help: "Print progress information")
-  var verbose: Bool = false
+  var verbose: Bool = true
 
 
   /// Returns predictions for `videoName` using the raw pixel tracker.
   func rawPixelTrack(dataset: OISTBeeVideo, length: Int) -> [OrientedBoundingBox] {
     // Load the video and take a slice of it.
-    let videos = (0..<length).map {
-      dataset.loadFrame(dataset.frameIds[$0])!
+    let videos = (0..<length).map { (i) -> Tensor<Double> in
+      if verbose {
+        print(".", terminator: "")
+      }
+      return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[i])! }
     }
-    
+
+    if verbose {
+      print("")
+    }
+
     let startPatch = videos[0].patch(at: dataset.labels[0][boxId].location)
     let startPose = dataset.labels[0][boxId].location.center
 
+    if verbose {
+      print("Creating tracker, startPose = \(startPose)")
+    }
+    
     var tracker = makeRawPixelTracker(frames: videos, target: startPatch)
 
     if verbose { tracker.optimizer.verbosity = .SUMMARY }
@@ -118,6 +129,10 @@ struct PpcaTrack: ParsableCommand {
 
     let frameRawId = dataset.frameIds[trackFrames]
     let image = dataset.loadFrame(frameRawId)!
+
+    if verbose {
+      print("Creating output plot")
+    }
     plot(image, boxes: bboxes.indices.map {
       ("\($0)", bboxes[$0])
     }, margin: 10.0, scale: 0.5).show()
