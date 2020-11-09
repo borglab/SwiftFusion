@@ -61,7 +61,8 @@ func makeOISTBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int), batch
   var currentFrame: Tensor<Double> = [0]
   var currentId: Int = -1
 
-  for label in dataset.labels.randomSelectionWithoutReplacement(k: 10).lazy.joined().randomSelectionWithoutReplacement(k: batchSize).sorted(by: { $0.frameIndex < $1.frameIndex }) {
+  var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
+  for label in dataset.labels.randomSelectionWithoutReplacement(k: 10, using: &deterministicEntropy).lazy.joined().randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy).sorted(by: { $0.frameIndex < $1.frameIndex }) {
     if currentId != label.frameIndex {
       currentFrame = dataset.loadFrame(label.frameIndex)!
       currentId = label.frameIndex
@@ -190,7 +191,7 @@ struct PpcaTrack: ParsableCommand {
       return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[i])! }
     }
 
-    let startPatch = videos[0].patch(at: dataset.labels[0][boxId].location)
+    let startPatch = statistics.normalized(videos[0].patch(at: dataset.labels[0][boxId].location))
     let startPose = dataset.labels[0][boxId].location.center
     let startLatent = ppca.encode(startPatch)
 
@@ -203,7 +204,7 @@ struct PpcaTrack: ParsableCommand {
     if verbose { tracker.optimizer.verbosity = .SUMMARY }
 
     tracker.optimizer.cgls_precision = 1e-6
-    tracker.optimizer.precision = 1e-1
+    tracker.optimizer.precision = 1e-2
 
     let prediction = tracker.infer(knownStart: Tuple2(startPose, Vector10(flatTensor: startLatent)))
 
