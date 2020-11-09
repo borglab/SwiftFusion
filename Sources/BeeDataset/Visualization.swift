@@ -18,7 +18,8 @@ import Plotly
 import ModelSupport
 import Foundation
 
-/// A Plotly figure that displays `frame`, with optional `boxes` overlaid.
+/// Creates a Plotly figure that displays `frame`, with optional `boxes` overlaid on
+/// them.
 public func plot(
   _ frame: Tensor<Double>, boxes: [(name: String, OrientedBoundingBox)] = [],
   margin: Double = 30, scale: Double = 1
