@@ -90,7 +90,7 @@ extension BeeVideo {
   public func loadFrame(_ index: Int) -> Tensor<Double>? {
     let path = self.directory!.appendingPathComponent("frame\(index).jpeg")
     guard FileManager.default.fileExists(atPath: path.path) else { return nil }
-    return Tensor<Double>(Image(jpeg: path).tensor)
+    return Tensor<Double>(Image(contentsOf: path).tensor)
   }
   
   private static func downloadDatasetIfNotPresent() -> URL {
