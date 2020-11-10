@@ -15,5 +15,5 @@
 import TensorFlow
 
 public protocol GaussianModel {
-    @differentiable func negativeLogLikelihood(_ data: Tensor<Double>) -> Tensor<Double>
+    @differentiable func negativeLogLikelihood(_ data: Tensor<Double>) -> Double
 }

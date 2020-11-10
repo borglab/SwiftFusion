@@ -33,8 +33,8 @@ public struct GaussianNB: GaussianModel {
 
     }
 
-    @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Tensor<Double> {
+    @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Double {
 
-        return Tensor<Double>([0])
+        return 0
     }
 }

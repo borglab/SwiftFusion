@@ -11,18 +11,13 @@ extension AppearanceModelEncoder {
 
 /// A factor over a target's pose and appearance in an image.
 public struct ProbablisticTrackingFactor<
-    LatentCode: FixedSizeVector, Encoder: AppearanceModelEncoder,
+    Encoder: AppearanceModelEncoder,
     ForegroundModel: GaussianModel, BackgroundModel: GaussianModel
-  >: LinearizableFactor2 {
+  >: LinearizableFactor1 {
   /// The first adjacent variable, the pose of the target in the image.
   ///
   /// This explicitly specifies `LinearizableFactor2`'s `associatedtype V0`.
   public typealias V0 = Pose2
-
-  /// The second adjacent variable, the latent code for the appearance of the target.
-  ///
-  /// This explicitly specifies `LinearizableFactor2`'s `associatedtype V1`.
-  public typealias V1 = LatentCode
 
   /// The IDs of the variables adjacent to this factor.
   public let edges: Variables.Indices
@@ -48,7 +43,6 @@ public struct ProbablisticTrackingFactor<
   ///   - appearanceModel: the generative model that produces an appearance from a latent code.
   public init(
     _ poseId: TypedID<Pose2>,
-    _ latentId: TypedID<LatentCode>,
     measurement: Tensor<Double>,
     encoder: Encoder,
     patchSize: (Int, Int),
@@ -56,7 +50,7 @@ public struct ProbablisticTrackingFactor<
     foregroundModel: ForegroundModel,
     backgroundModel: BackgroundModel
   ) {
-    self.edges = Tuple2(poseId, latentId)
+    self.edges = Tuple1(poseId)
     self.measurement = measurement
     self.encoder = encoder
     self.patchSize = patchSize
@@ -66,9 +60,11 @@ public struct ProbablisticTrackingFactor<
   }
 
   @differentiable
-  public func errorVector(_ pose: Pose2, _ latent: LatentCode) -> LatentCode {
+  public func errorVector(_ pose: Pose2) -> Vector1 {
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
     let patch = measurement.patch(at: region, outputSize: appearanceModelSize)
-    return encoder.encode(patch) - latent
+    let code = encoder.encode(patch)
+
+    return Vector1(foregroundModel.negativeLogLikelihood(code) - backgroundModel.negativeLogLikelihood(code))
   }
 }
