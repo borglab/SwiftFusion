@@ -14,27 +14,6 @@
 
 import TensorFlow
 
-
-public struct GaussianNB: GaussianModel {
-
-    public let dims: TensorShape
-
-    public var sigmas: Optional<Tensor<Double>> = nil
-
-    public var mus: Optional<Tensor<Double>> = nil
-
-    /// Initialize a Gaussian Naive Bayes error model
-    public init(dims: TensorShape) {
-        self.dims = dims
-    }
-
-    public mutating func fit(_ data: Tensor<Double>) {
-       assert(data.shape.dropFirst() == dims)
-
-    }
-
-    @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Tensor<Double> {
-
-        return Tensor<Double>([0])
-    }
+public protocol GaussianModel {
+    @differentiable func negativeLogLikelihood(_ data: Tensor<Double>) -> Tensor<Double>
 }
