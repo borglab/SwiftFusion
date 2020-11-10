@@ -78,6 +78,13 @@ public struct PPCA {
       self.Ut!.transposed(),
       (J_s[0..<latent_size] - sigma_2).diagonal()
     ).reshaped(to: [H_, W_, C_, latent_size])
+
+    // TODO: Cache A^TA?
+    if self.W_inv == nil {
+      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
+      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
+      self.W_inv = matmul(pinv(matmul(W_m.transposed(), W_m)), W_m.transposed())
+    }
   }
 
   /// Generate an image according to a latent
@@ -94,16 +101,10 @@ public struct PPCA {
   /// Generate an image according to a latent
   /// Input: [H, W, C]
   /// Output: [latent_size]
-  public mutating func encode(_ image: Patch) -> Tensor<Double> {
+  @differentiable
+  public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3, "wrong latent dimension \(image.shape)")
     let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
-    
-    // TODO: Cache A^TA?
-    if self.W_inv == nil {
-      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
-      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
-      self.W_inv = matmul(pinv(matmul(W_m.transposed(), W_m)), W_m.transposed())
-    }
 
     return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
   }
@@ -114,3 +115,5 @@ public struct PPCA {
     return (decode(latent), W)
   }
 }
+
+extension PPCA: AppearanceModelEncoder {}

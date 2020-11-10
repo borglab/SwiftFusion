@@ -201,14 +201,18 @@ struct PpcaTrack: ParsableCommand {
       print("Creating tracker, startPose = \(startPose)")
     }
     
+    startTimer("MAKE_GRAPH")
     var tracker = makePPCATracker(model: ppca, statistics: statistics, frames: videos, targetSize: (40, 70))
+    stopTimer("MAKE_GRAPH")
 
     if verbose { tracker.optimizer.verbosity = .SUMMARY }
 
     tracker.optimizer.cgls_precision = 1e-6
     tracker.optimizer.precision = 1e-2
 
+    startTimer("GRAPH_INFER")
     let prediction = tracker.infer(knownStart: Tuple2(startPose, Vector10(flatTensor: startLatent)))
+    stopTimer("GRAPH_INFER")
 
     let boxes = tracker.frameVariableIDs.map { frameVariableIDs -> OrientedBoundingBox in
       let poseID = frameVariableIDs.head
