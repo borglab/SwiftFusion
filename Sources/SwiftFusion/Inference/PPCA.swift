@@ -1,3 +1,4 @@
+
 // Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,7 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import TensorFlow
 import PenguinStructures
 
@@ -37,6 +37,9 @@ public struct PPCA {
   /// Size of latent
   public var latent_size: Int
 
+  /// Basis
+  public var Ut: Tensor<Double>?
+
   /// Constructor
   /// measured: Measured Patch (Template)
   /// W and mu are calculated by PPCA
@@ -45,6 +48,7 @@ public struct PPCA {
     self.W = W
     self.mu = mu
     self.W_inv = nil
+    self.Ut = nil
   }
 
   public init(latentSize: Int) {
@@ -52,6 +56,7 @@ public struct PPCA {
     self.W_inv = nil
     self.mu = Tensor([.nan])
     self.latent_size = latentSize
+    self.Ut = nil
   }
 
   /// Train a PPCA model
@@ -66,7 +71,20 @@ public struct PPCA {
     let (J_s, J_u, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
     
     let sigma_2 = J_s[latent_size...].mean()
-    self.W = matmul(J_u![0..<J_u!.shape[0], 0..<latent_size], (J_s[0..<latent_size] - sigma_2).diagonal()).reshaped(to: [H_, W_, C_, latent_size])
+    
+    self.Ut = J_u![0..<J_u!.shape[0], 0..<latent_size].transposed()
+
+    self.W = matmul(
+      self.Ut!.transposed(),
+      (J_s[0..<latent_size] - sigma_2).diagonal()
+    ).reshaped(to: [H_, W_, C_, latent_size])
+
+    // TODO: Cache A^TA?
+    if self.W_inv == nil {
+      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
+      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
+      self.W_inv = matmul(pinv(matmul(W_m.transposed(), W_m)), W_m.transposed())
+    }
   }
 
   /// Generate an image according to a latent
@@ -83,17 +101,19 @@ public struct PPCA {
   /// Generate an image according to a latent
   /// Input: [H, W, C]
   /// Output: [latent_size]
-  public mutating func encode(_ image: Patch) -> Tensor<Double> {
+  @differentiable
+  public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3, "wrong latent dimension \(image.shape)")
     let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
-    
-    // TODO: Cache A^TA?
-    if self.W_inv == nil {
-      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
-      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
-      self.W_inv = matmul(pinv(matmul(W_m.transposed(), W_m)), W_m.transposed())
-    }
 
     return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
   }
+
+  /// Generate an image and corresponding Jacobian according to a latent
+  /// Input: [latent_size] or [latent_size, 1]
+  public func decodeWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch.TangentVector) {
+    return (decode(latent), W)
+  }
 }
+
+extension PPCA: AppearanceModelEncoder {}

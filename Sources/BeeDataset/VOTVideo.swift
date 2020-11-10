@@ -27,6 +27,12 @@ public struct VOTVideo {
 }
 
 extension VOTVideo {
+  public subscript(range: Range<Int>) -> VOTVideo {
+    .init(frames: Array(frames[range]), track: Array(track[range]))
+  }
+}
+
+extension VOTVideo {
   /// Creates an instance from `videoName` in `votBaseDirectory`.
   ///
   /// Prints an error and fails if files are missing or corrupted.

@@ -289,7 +289,7 @@ public class GaussianFactorArrayDispatch: VectorFactorArrayDispatch {
 
 extension AnyArrayBuffer where Dispatch == GaussianFactorArrayDispatch {
   /// Creates an instance from a typed buffer of `Element`
-  init<Element: GaussianFactor>(_ src: ArrayBuffer<Element>) {
+  public init<Element: GaussianFactor>(_ src: ArrayBuffer<Element>) {
     self.init(
       storage: src.storage,
       dispatch: GaussianFactorArrayDispatch(Type<Element>()))

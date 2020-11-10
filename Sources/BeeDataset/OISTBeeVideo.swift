@@ -155,7 +155,7 @@ extension OISTBeeVideo {
       guard let track = try? String(contentsOf: path) else { return nil }
       let lines = track.split(separator: "\n")
       
-      return try! lines.enumerated().map { (id, line) in
+      return try! lines.lazy.enumerated().map { (id, line) in
         let split = line.split(separator: "\t")
         var labelType: OISTLabelType = .Body
         assert(split.count == 6)
@@ -166,7 +166,7 @@ extension OISTBeeVideo {
         }
       
         return OISTBeeLabel(
-          frameIndex: id,
+          frameIndex: index,
           label: labelType,
           rawLocation: (Double(split[3])!, Double(split[4])!, Double(split[5])!),
           offset: (Int(split[0])!, Int(split[1])!),

@@ -23,12 +23,12 @@ public struct OrientedBoundingBox: Differentiable {
   /// The number of pixels along the height axis.
   ///
   /// This is the `rows` image dimension defined in `docs/ImageOperations.md`.
-  @noDerivative public let rows: Int
+  @noDerivative public var rows: Int
 
   /// The number of pixels along the width axis.
   ///
   /// This is the `cols` image dimension defines in `docs/ImageOperations.md`.
-  @noDerivative public let cols: Int
+  @noDerivative public var cols: Int
 
   /// Creates a instance with the given `center`, `rows`, and `cols`.
   @differentiable
