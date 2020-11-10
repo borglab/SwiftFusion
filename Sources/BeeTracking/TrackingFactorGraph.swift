@@ -238,7 +238,9 @@ public func makePPCATracker(
           appearanceModelJacobian: { x in
             model.W // .reshaped(to: [targetSize.0, targetSize.1, frames[0].shape[3], model.latent_size])
           },
-          targetSize: targetSize))
+          targetSize: targetSize
+        )
+      )
     },
     addBetweenFactor: { (variables1, variables2, graph) -> () in
       let (poseID1, latentID1) = unpack(variables1)

@@ -186,10 +186,12 @@ struct PpcaTrack: ParsableCommand {
     ppca.train(images: batch)
 
     if verbose { print("Loading video frames...") }
+    startTimer("VIDEO_LOAD")
     // Load the video and take a slice of it.
     let videos = (0..<length).map { (i) -> Tensor<Double> in
       return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[i])! }
     }
+    stopTimer("VIDEO_LOAD")
 
     let startPatch = statistics.normalized(videos[0].patch(at: dataset.labels[0][boxId].location))
     let startPose = dataset.labels[0][boxId].location.center
@@ -236,10 +238,10 @@ struct PpcaTrack: ParsableCommand {
 
     ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
 
-    startTimer("RAW_TRACKING")
+    startTimer("PPCA_TRACKING")
     var bboxes: [OrientedBoundingBox]
     bboxes = ppcaTrack(dataset: dataset, length: trackFrames)
-    stopTimer("RAW_TRACKING")
+    stopTimer("PPCA_TRACKING")
 
     let frameRawId = dataset.frameIds[trackFrames]
     let image = dataset.loadFrame(frameRawId)!
@@ -258,6 +260,5 @@ struct PpcaTrack: ParsableCommand {
     }
   }
 }
-
 
 OISTVisualizationTool.main()
