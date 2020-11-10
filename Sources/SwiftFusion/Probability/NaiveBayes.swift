@@ -14,8 +14,10 @@
 
 import TensorFlow
 
-
-public struct GaussianNB: GaussianModel {
+/// A Gaussian Naive Bayes density
+///
+/// This is a density where each dimension has its own 1-d Gaussian density.
+public struct GaussianNB: GenerativeDensity {
 
     public let dims: TensorShape
 

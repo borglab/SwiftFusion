@@ -1,18 +1,25 @@
+// Copyright 2019 The SwiftFusion Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import PenguinParallel
 import PenguinStructures
 import TensorFlow
 
-extension AppearanceModelEncoder {
-  @differentiable
-  fileprivate func encode<V: FixedSizeVector>(_ image: Tensor<Double>) -> V {
-    V(flatTensor: encode(image.expandingShape(at: 0)).squeezingShape(at: 0))
-  }
-}
-
 /// A factor over a target's pose and appearance in an image.
 public struct ProbablisticTrackingFactor<
     Encoder: AppearanceModelEncoder,
-    ForegroundModel: GaussianModel, BackgroundModel: GaussianModel
+    ForegroundModel: GenerativeDensity, BackgroundModel: GenerativeDensity
   >: LinearizableFactor1 {
   /// The first adjacent variable, the pose of the target in the image.
   ///
@@ -38,9 +45,10 @@ public struct ProbablisticTrackingFactor<
   ///
   /// - Parameters:
   ///   - poseId: the id of the adjacent pose variable.
-  ///   - latentId: the id of the adjacent latent code variable.
   ///   - measurement: the image containing the target.
   ///   - appearanceModel: the generative model that produces an appearance from a latent code.
+  ///   - foregroundModel: A generative density on the foreground
+  ///   - backgroundModel: A generative density on the background
   public init(
     _ poseId: TypedID<Pose2>,
     measurement: Tensor<Double>,
@@ -63,8 +71,8 @@ public struct ProbablisticTrackingFactor<
   public func errorVector(_ pose: Pose2) -> Vector1 {
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
     let patch = measurement.patch(at: region, outputSize: appearanceModelSize)
-    let code = encoder.encode(patch)
+    let features = encoder.encode(patch)
 
-    return Vector1(foregroundModel.negativeLogLikelihood(code) - backgroundModel.negativeLogLikelihood(code))
+    return Vector1(foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features))
   }
 }
