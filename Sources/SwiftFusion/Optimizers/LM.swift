@@ -89,7 +89,7 @@ public struct LM {
       }
       
       if verbosity >= .SUMMARY {
-        print("[LM OUTER] outer loop start, error = \(graph.linearizableError(at: val))")
+        print("[LM OUTER] outer loop start, error = \(old_error)")
       }
       
       let gfg = graph.linearized(at: val)
