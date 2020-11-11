@@ -43,11 +43,11 @@ final class NaiveBayesTests: XCTestCase {
     let sigma = data.standardDeviation().scalar!
     let mu = data.mean().scalar!
     let p: Double = 0.4
-    let g: Double = (1.0 / (sigma * sqrt(2.0 * Double.pi))) * exp(-0.5 * pow(p - mu, 2)/(sigma * sigma))
+    let gaussianOfP: Double = exp(-0.5 * pow(p - mu, 2)/(sigma * sigma))
 
-    assertEqual(
-      Tensor<Double>([gnb.negativeLogLikelihood(Tensor<Double>([p]))]),
-      Tensor<Double>([-log(g)]), accuracy: 1e-6
+    XCTAssertEqual(
+      gnb.negativeLogLikelihood(Tensor<Double>([p])),
+      -log(gaussianOfP), accuracy: 1e-6
     )
   }
 }

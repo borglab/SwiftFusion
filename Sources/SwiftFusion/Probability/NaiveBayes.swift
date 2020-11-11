@@ -38,6 +38,8 @@ public struct GaussianNB: GenerativeDensity {
     self.regularizer = regularizer
   }
 
+  /// Fit the model to the data
+  ///  - data: Tensor of shape [N, <dims>]
   public mutating func fit(_ data: Tensor<Double>) {
     assert(data.shape.dropFirst() == dims)
 
@@ -46,13 +48,13 @@ public struct GaussianNB: GenerativeDensity {
     sigma2s = sigmas!.squared()
   }
 
-  @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Double {
-    precondition(data.shape == self.dims)
+  /// Calculated the negative log likelihood of *one* data point
+  /// Note this is NOT normalized probability
+  @differentiable public func negativeLogLikelihood(_ sample: Tensor<Double>) -> Double {
+    precondition(sample.shape == self.dims)
 
-    let t = (data - mus!).squared() / (2.0 * sigma2s!)
-    let a = (log(sigma2s!) + log(2.0 * .pi)) / 2.0
+    let t = (sample - mus!).squared() / (2.0 * sigma2s!)
 
-    // TODO: Should we use sum() or mean()???
-    return (a + t).mean().scalarized()
+    return t.sum().scalarized()
   }
 }

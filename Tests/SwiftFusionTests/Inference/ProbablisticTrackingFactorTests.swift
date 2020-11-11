@@ -47,29 +47,27 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     var encoder = PPCA(latentSize: featureDim)
 
     /// Encoder with only center activation of 1
-    encoder.W = Tensor<Double>(zeros: [3, 3, 3, 10])
     var W_inv = Tensor<Double>(zeros: [10, 3, 3, 3])
     encoder.mu = Tensor<Double>(zeros: [3, 3, 3])
 
-    encoder.W[1, 1, 0, 0] = Tensor(1.0)
     W_inv[0, 1, 1, 0] = Tensor(1.0)
     encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
     /// Training foreground and background models
-    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
-    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
+    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
+    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
     
-    var sample_fg = Tensor<Double>(zeros: [2, 10])
-    var sample_bg = Tensor<Double>(zeros: [2, 10])
+    var data_fg = Tensor<Double>(zeros: [2, 10])
+    var data_bg = Tensor<Double>(zeros: [2, 10])
 
-    sample_fg[0, 0] = Tensor(1.1)
-    sample_fg[1, 0] = Tensor(0.9)
+    data_fg[0, 0] = Tensor(1.1)
+    data_fg[1, 0] = Tensor(0.9)
 
-    sample_bg[0, 2] = Tensor(1.1)
-    sample_bg[1, 2] = Tensor(0.9)
+    data_bg[0, 2] = Tensor(1.1)
+    data_bg[1, 2] = Tensor(0.9)
 
-    fg_model.fit(sample_fg)
-    bg_model.fit(sample_bg)
+    fg_model.fit(data_fg)
+    bg_model.fit(data_bg)
 
     let factor = ProbablisticTrackingFactor(poseId,
       measurement: image,
@@ -81,7 +79,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     )
     
     /// Check if we have the desired error at minima
-    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(300000000000000.06), accuracy: 1e-1)
+    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(9999499950.985197), accuracy: 1e-1)
   }
 
   /// Test sanity of the error by a simple case
@@ -105,25 +103,24 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     var W_inv = Tensor<Double>(zeros: [10, 3, 3, 3])
     encoder.mu = Tensor<Double>(zeros: [3, 3, 3])
 
-    encoder.W[1, 1, 0, 0] = Tensor(1.0)
     W_inv[0, 1, 1, 0] = Tensor(1.0)
     encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
     /// Training foreground and background models
-    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
-    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
+    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
+    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
     
-    var sample_fg = Tensor<Double>(zeros: [2, 10])
-    var sample_bg = Tensor<Double>(zeros: [2, 10])
+    var data_fg = Tensor<Double>(zeros: [2, 10])
+    var data_bg = Tensor<Double>(zeros: [2, 10])
 
-    sample_fg[0, 0] = Tensor(1.1)
-    sample_fg[1, 0] = Tensor(0.9)
+    data_fg[0, 0] = Tensor(1.1)
+    data_fg[1, 0] = Tensor(0.9)
 
-    sample_bg[0, 2] = Tensor(1.1)
-    sample_bg[1, 2] = Tensor(0.9)
+    data_bg[0, 2] = Tensor(1.1)
+    data_bg[1, 2] = Tensor(0.9)
 
-    fg_model.fit(sample_fg)
-    bg_model.fit(sample_bg)
+    fg_model.fit(data_fg)
+    bg_model.fit(data_bg)
 
     let factor = ProbablisticTrackingFactor(poseId,
       measurement: image,

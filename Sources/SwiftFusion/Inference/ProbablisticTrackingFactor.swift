@@ -41,6 +41,9 @@ public struct ProbablisticTrackingFactor<
   public var foregroundModel: ForegroundModel
 
   public var backgroundModel: BackgroundModel
+
+  public var maxPossibleNegativity: Double = 1e10
+
   /// Creates an instance.
   ///
   /// - Parameters:
@@ -73,7 +76,13 @@ public struct ProbablisticTrackingFactor<
     let patch = measurement.patch(at: region, outputSize: appearanceModelSize)
     let features = encoder.encode(patch)
 
+    let result = maxPossibleNegativity + foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features)
+
+    if result < 0 {
+      print("Warning: Negative value encountered in errorVector!")
+    }
+
     /// TODO: What is the idiomatic way of avoiding negative probability here?
-    return Vector1(800000000000004.7 + foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features))
+    return Vector1(result)
   }
 }
