@@ -15,6 +15,7 @@
 import Datasets
 import Foundation
 import ModelSupport
+import PythonKit
 import SwiftFusion
 import TensorFlow
 
@@ -37,6 +38,9 @@ public struct OISTBeeVideo {
 
   /// Labels for this video.
   public var labels: [[OISTBeeLabel]]
+
+  /// Tracks for this video.
+  public var tracks: [OISTBeeTrack]
 
   var directory: URL?
 
@@ -90,6 +94,15 @@ public struct OISTBeeLabel {
   public var scale: Double = 2
 }
 
+/// A sequence of bounding boxes tracking a single bee in a video.
+public struct OISTBeeTrack {
+  /// The frame within the video where this track starts.
+  public var startFrameIndex: Int
+
+  /// The positions of the bee at each frame.
+  public var boxes: [OrientedBoundingBox]
+}
+
 /// For output integers with padding
 fileprivate extension String.StringInterpolation {
     mutating func appendInterpolation(_ val: Int, padding: UInt) {
@@ -117,7 +130,8 @@ extension OISTBeeVideo {
 
   /// Creates an instance from the data in the given `directory`.
   ///
-  /// The directory must contain "frames" and "frames_txt"
+  /// The directory must contain "frames" and "frames_txt". If the directory contains "tracks",
+  /// then tracks will be loaded from that directory.
   ///
   /// The format of a track file is:
   /// - Arbitrarily many lines "offset_x, offset_y, bee_type, x, y, angle".
@@ -125,6 +139,7 @@ extension OISTBeeVideo {
     self.frames = []
     self.labels = []
     self.frameIds = []
+    self.tracks = []
     self.directory = directory
     self.fps = fps
 
@@ -180,6 +195,32 @@ extension OISTBeeVideo {
           break
         }
     }
+
+    func loadTrack(_ path: URL) -> OISTBeeTrack {
+      let track = try! String(contentsOf: path)
+      let lines = track.split(separator: "\n")
+      let startFrame = Int(lines.first!)!
+      let boxes = lines.dropFirst().map { line -> OrientedBoundingBox in
+        let split = line.split(separator: " ")
+        return OrientedBoundingBox(
+          center: Pose2(
+            Rot2(Double(split[2])!),
+            Vector2(Double(split[0])!, Double(split[1])!)),
+          rows: Int(split[3])!,
+          cols: Int(split[4])!)
+      }
+      return OISTBeeTrack(startFrameIndex: startFrame, boxes: boxes)
+    }
+    if let trackDirContents = try? FileManager.default.contentsOfDirectory(
+      at: directory.appendingPathComponent("tracks"),
+      includingPropertiesForKeys: nil
+    ) {
+      self.tracks = trackDirContents
+        .sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
+        .map(loadTrack)
+    } else {
+      print("WARNING: No ground truth tracks found.")
+    }
   }
 
   /// Loads one image frame and downsample by `scale`
@@ -201,13 +242,65 @@ extension OISTBeeVideo {
     guard !directoryExists || directoryEmpty else { return downloadDir }
 
     let remoteRoot = URL(
-      string: "https://storage.googleapis.com/swift-tensorflow-misc-files/beetracking")!
+      string: "https://storage.googleapis.com/swift-tensorflow-misc-files/beetracking/oist-dataset")!
 
     let _ = DatasetUtilities.downloadResource(
-      filename: "oist_bee_videos", fileExtension: "tar.gz",
+      filename: "frame_imgs_30fps", fileExtension: "tgz",
+      remoteRoot: remoteRoot, localStorageDirectory: downloadDir
+    )
+    let _ = DatasetUtilities.downloadResource(
+      filename: "frames_txt", fileExtension: "zip",
+      remoteRoot: remoteRoot, localStorageDirectory: downloadDir
+    )
+    let _ = DatasetUtilities.downloadResource(
+      filename: "tracks", fileExtension: "tar.gz",
       remoteRoot: remoteRoot, localStorageDirectory: downloadDir
     )
 
     return downloadDir
+  }
+}
+
+extension OISTBeeTrack {
+  /// Writes an animation of the track to files "track000.png", "track001.png", ... in `directory`.
+  ///
+  /// Parameter video: The video containing the track.
+  /// Parameter cameraSize: The size of the output animation. The rendered video is a subregion of
+  /// the source video, so that it is easier to see the details relevant to the track.
+  public func render(to directory: String, video: OISTBeeVideo, cameraSize: Int = 200) {
+    let plt = Python.import("matplotlib.pyplot")
+
+    try! FileManager.default.createDirectory(
+      atPath: directory,
+      withIntermediateDirectories: true)
+
+    // Exponential average of the bounding box center, so that the "camera" can smoothly follow
+    // the track, which makes it much easier to tell when mistakes happen.
+    var currentCenter = self.boxes[0].center.t
+
+    for frameIndex in self.startFrameIndex..<(self.startFrameIndex + self.boxes.count) {
+      let box = self.boxes[frameIndex - self.startFrameIndex]
+
+      // Update the exponential average.
+      currentCenter = 0.9 * currentCenter + 0.1 * box.center.t
+
+      // Calculate the bounding box corners relative to the current camera position.
+      let surroundingBox = OrientedBoundingBox(
+        center: Pose2(Rot2(), currentCenter), rows: cameraSize, cols: cameraSize)
+      let corners = box.corners.map {
+        surroundingBox.center.inverse() * $0
+          + Vector2(Double(cameraSize) / 2, Double(cameraSize) / 2)
+      }
+
+      // Plot the frame.
+      let frame = video.loadFrame(video.frameIds[frameIndex])!.patch(at: surroundingBox)
+      let figure = plt.figure(figsize: [20, 20])
+      let subplot = figure.add_subplot(1, 1, 1)
+      subplot.imshow(frame.makeNumpyArray() / 255.0)
+      subplot.plot(corners.map(\.x), corners.map(\.y))
+      subplot.text(10, 10, "frame \(frameIndex)", color: "yellow")
+      figure.savefig(directory + "/" + String(format: "frame%03d.png", frameIndex))
+      plt.close(figure)
+    }
   }
 }

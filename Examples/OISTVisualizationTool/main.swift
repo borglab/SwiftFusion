@@ -24,7 +24,7 @@ import Foundation
 
 struct OISTVisualizationTool: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [ViewFrame.self, RawTrack.self, PpcaTrack.self])
+    subcommands: [VisualizeTrack.self, ViewFrame.self, RawTrack.self, PpcaTrack.self])
 }
 
 /// View a frame with bounding boxes
@@ -262,6 +262,19 @@ struct PpcaTrack: ParsableCommand {
     if verbose {
       printTimers()
     }
+  }
+}
+
+struct VisualizeTrack: ParsableCommand {
+  @Option(help: "Index of the track to visualize")
+  var trackIndex: Int
+
+  @Option(help: "Directory for the output frames")
+  var output: String
+
+  func run() {
+    let dataset = OISTBeeVideo(deferLoadingFrames: true)!
+    dataset.tracks[trackIndex].render(to: output, video: dataset)
   }
 }
 
