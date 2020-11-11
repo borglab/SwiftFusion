@@ -81,7 +81,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     )
     
     /// Check if we have the desired error at minima
-    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(-500000000000004.7), accuracy: 1e-1)
+    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(300000000000000.06), accuracy: 1e-1)
   }
 
   /// Test sanity of the error by a simple case
@@ -139,11 +139,9 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     fg.store(factor)
 
     var optimizer = LM()
-    optimizer.verbosity = .TRYLAMBDA
     try? optimizer.optimize(graph: fg, initial: &v)
 
-    print(v[poseId])
     /// Check if we have the desired error at minima
-    assertAllKeyPathEqual(factor.errorVector(v[poseId]), Vector1(300000000000000.06), accuracy: 1e-1)
+    assertAllKeyPathEqual(v[poseId], Pose2(4.5, 4.5, 0), accuracy: 1e-1)
   }
 }
