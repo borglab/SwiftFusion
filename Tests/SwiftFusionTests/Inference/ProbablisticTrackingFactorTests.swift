@@ -41,23 +41,24 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
 
     image[3, 3, 1] = Tensor(1.0)
 
-    var encoder = PPCA(latentSize: 1)
+    let featureDim = 10
+    var encoder = PPCA(latentSize: featureDim)
 
-    encoder.W = Tensor<Double>(zeros: [3, 3, 3, 1])
-    var W_inv = Tensor<Double>(zeros: [1, 3, 3, 3])
+    encoder.W = Tensor<Double>(zeros: [3, 3, 3, 10])
+    var W_inv = Tensor<Double>(zeros: [10, 3, 3, 3])
     encoder.mu = Tensor<Double>(zeros: [3, 3, 3])
 
     encoder.W[1, 1, 0, 0] = Tensor(1.0)
     W_inv[0, 1, 1, 0] = Tensor(1.0)
-    encoder.W_inv = W_inv.reshaped(to: [1, 3 * 3 * 3])
+    encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
     let factor = ProbablisticTrackingFactor(poseId,
       measurement: image,
       encoder: encoder,
       patchSize: (3, 3),
       appearanceModelSize: (3, 3),
-      foregroundModel: GaussianNB(dims: [10]),
-      backgroundModel: GaussianNB(dims: [10])
+      foregroundModel: GaussianNB(dims: [featureDim]),
+      backgroundModel: GaussianNB(dims: [featureDim])
     )
 
     assertAllKeyPathEqual(factor.errorVector(pose), Vector1(0.0), accuracy: 1e-8)
