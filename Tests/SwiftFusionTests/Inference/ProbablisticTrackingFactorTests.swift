@@ -32,11 +32,13 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     )
   }
 
+  /// Test sanity of the error by a simple case
   func testErrorSanity() {
     var v = VariableAssignments()
     let pose = Pose2(4.5, 4.5, 0)
     let poseId = v.store(pose)
 
+    /// Make a center one image
     var image: Tensor<Double> = .init(zeros: [8, 8, 3])
 
     image[4, 4, 0] = Tensor(1.0)
@@ -44,6 +46,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     let featureDim = 10
     var encoder = PPCA(latentSize: featureDim)
 
+    /// Encoder with only center activation of 1
     encoder.W = Tensor<Double>(zeros: [3, 3, 3, 10])
     var W_inv = Tensor<Double>(zeros: [10, 3, 3, 3])
     encoder.mu = Tensor<Double>(zeros: [3, 3, 3])
@@ -52,6 +55,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     W_inv[0, 1, 1, 0] = Tensor(1.0)
     encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
+    /// Training foreground and background models
     var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
     var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
     
@@ -76,6 +80,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
       backgroundModel: bg_model
     )
     
+    /// Check if we have the desired error at minima
     assertAllKeyPathEqual(factor.errorVector(pose), Vector1(-5000000000000047.0), accuracy: 1e-1)
   }
 }
