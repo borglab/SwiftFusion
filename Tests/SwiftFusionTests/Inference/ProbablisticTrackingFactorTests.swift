@@ -47,9 +47,11 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     var encoder = PPCA(latentSize: featureDim)
 
     /// Encoder with only center activation of 1
+    encoder.W = Tensor<Double>(zeros: [3, 3, 3, 10])
     var W_inv = Tensor<Double>(zeros: [10, 3, 3, 3])
     encoder.mu = Tensor<Double>(zeros: [3, 3, 3])
 
+    encoder.W[1, 1, 0, 0] = Tensor(1.0)
     W_inv[0, 1, 1, 0] = Tensor(1.0)
     encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
