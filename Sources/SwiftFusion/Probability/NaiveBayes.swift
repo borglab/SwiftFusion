@@ -20,22 +20,29 @@ import TensorFlow
 public struct GaussianNB: GenerativeDensity {
   public let dims: TensorShape
 
+  /// Sample standard deviation
   public var sigmas: Optional<Tensor<Double>> = nil
 
+  /// Sample Mean
   public var mus: Optional<Tensor<Double>> = nil
 
+  /// Cached variance
   public var sigma2s: Optional<Tensor<Double>> = nil
 
+  /// This avoids division by zero when the data is zero variance
+  public var regularizer: Double
+
   /// Initialize a Gaussian Naive Bayes error model
-  public init(dims: TensorShape) {
+  public init(dims: TensorShape, regularizer: Double = 1e-10) {
     self.dims = dims
+    self.regularizer = regularizer
   }
 
   public mutating func fit(_ data: Tensor<Double>) {
     assert(data.shape.dropFirst() == dims)
 
     mus = data.mean(squeezingAxes: 0)
-    sigmas = data.standardDeviation(squeezingAxes: 0)
+    sigmas = data.standardDeviation(squeezingAxes: 0) + regularizer
     sigma2s = sigmas!.squared()
   }
 

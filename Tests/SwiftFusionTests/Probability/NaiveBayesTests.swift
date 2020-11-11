@@ -47,6 +47,6 @@ final class NaiveBayesTests: XCTestCase {
 
     assertEqual(
       Tensor<Double>([gnb.negativeLogLikelihood(Tensor<Double>([p]))]),
-      Tensor<Double>([-log(g)]), accuracy: 1e-8)
+      Tensor<Double>([-log(g)]), accuracy: 1e-6)
   }
 }

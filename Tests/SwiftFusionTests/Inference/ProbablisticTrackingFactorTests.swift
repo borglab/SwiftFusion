@@ -34,12 +34,12 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
 
   func testErrorSanity() {
     var v = VariableAssignments()
-    let pose = Pose2(3, 3, 0)
+    let pose = Pose2(4.5, 4.5, 0)
     let poseId = v.store(pose)
 
-    var image: Tensor<Double> = .init(zeros: [6, 6, 3])
+    var image: Tensor<Double> = .init(zeros: [8, 8, 3])
 
-    image[3, 3, 1] = Tensor(1.0)
+    image[4, 4, 0] = Tensor(1.0)
 
     let featureDim = 10
     var encoder = PPCA(latentSize: featureDim)
@@ -52,15 +52,30 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     W_inv[0, 1, 1, 0] = Tensor(1.0)
     encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
+    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
+    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
+    
+    var sample_fg = Tensor<Double>(zeros: [2, 10])
+    var sample_bg = Tensor<Double>(zeros: [2, 10])
+
+    sample_fg[0, 0] = Tensor(1.1)
+    sample_fg[1, 0] = Tensor(0.9)
+
+    sample_bg[0, 2] = Tensor(1.1)
+    sample_bg[1, 2] = Tensor(0.9)
+
+    fg_model.fit(sample_fg)
+    bg_model.fit(sample_bg)
+
     let factor = ProbablisticTrackingFactor(poseId,
       measurement: image,
       encoder: encoder,
       patchSize: (3, 3),
       appearanceModelSize: (3, 3),
-      foregroundModel: GaussianNB(dims: [featureDim]),
-      backgroundModel: GaussianNB(dims: [featureDim])
+      foregroundModel: fg_model,
+      backgroundModel: bg_model
     )
-
-    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(0.0), accuracy: 1e-8)
+    
+    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(-5000000000000047.0), accuracy: 1e-1)
   }
 }
