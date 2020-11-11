@@ -18,26 +18,32 @@ import TensorFlow
 ///
 /// This is a density where each dimension has its own 1-d Gaussian density.
 public struct GaussianNB: GenerativeDensity {
+  public let dims: TensorShape
 
-    public let dims: TensorShape
+  public var sigmas: Optional<Tensor<Double>> = nil
 
-    public var sigmas: Optional<Tensor<Double>> = nil
+  public var mus: Optional<Tensor<Double>> = nil
 
-    public var mus: Optional<Tensor<Double>> = nil
+  public var sigma2s: Optional<Tensor<Double>> = nil
 
-    /// Initialize a Gaussian Naive Bayes error model
-    public init(dims: TensorShape) {
-        self.dims = dims
-    }
+  /// Initialize a Gaussian Naive Bayes error model
+  public init(dims: TensorShape) {
+    self.dims = dims
+  }
 
-    public mutating func fit(_ data: Tensor<Double>) {
-       assert(data.shape.dropFirst() == dims)
+  public mutating func fit(_ data: Tensor<Double>) {
+    assert(data.shape.dropFirst() == dims)
 
-    }
+    mus = data.mean(squeezingAxes: 0)
+    sigmas = data.standardDeviation(squeezingAxes: 0)
+    sigma2s = sigmas!.squared()
+  }
 
-    @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Double {
-        precondition(data.shape == self.dims)
+  @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Double {
+    precondition(data.shape == self.dims)
 
-        return 0
-    }
+    let t = (data - mus!).squared() / (2.0 * sigma2s!)
+    let a = (log(sigma2s!) + log(2.0 * .pi)) / 2.0
+    return (a + t).sum().scalarized()
+  }
 }

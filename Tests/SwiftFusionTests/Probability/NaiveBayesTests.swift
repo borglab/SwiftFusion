@@ -21,10 +21,32 @@ import TensorFlow
 import XCTest
 
 final class NaiveBayesTests: XCTestCase {
-  func testGaussianNB() {
-    let data = Tensor<Double>(randomNormal: [10, 100, 100], mean: Tensor(4.888), standardDeviation: Tensor(2.999))
+  func testGaussianNBFittingParams() {
+    let data = Tensor<Double>(randomNormal: [5000, 10, 10], mean: Tensor(4.888), standardDeviation: Tensor(2.999))
     var gnb = GaussianNB(dims: data.shape.dropFirst())
 
     gnb.fit(data)
+
+    let sigma = Tensor<Double>.init(ones: [10, 10]) * 2.999
+    let mu = Tensor<Double>.init(ones: [10, 10]) * 4.888
+    
+    assertEqual(gnb.sigmas!, sigma, accuracy: 3e-1)
+    assertEqual(gnb.mus!, mu, accuracy: 3e-1)
+  }
+
+  func testGaussianNB() {
+    let data = Tensor<Double>([[0.9], [1.1]])
+    var gnb = GaussianNB(dims: data.shape.dropFirst())
+
+    gnb.fit(data)
+
+    let sigma = data.standardDeviation().scalar!
+    let mu = data.mean().scalar!
+    let p: Double = 0.4
+    let g: Double = (1.0 / (sigma * sqrt(2.0 * Double.pi))) * exp(-0.5 * pow(p - mu, 2)/(sigma * sigma))
+
+    assertEqual(
+      Tensor<Double>([gnb.negativeLogLikelihood(Tensor<Double>([p]))]),
+      Tensor<Double>([-log(g)]), accuracy: 1e-8)
   }
 }
