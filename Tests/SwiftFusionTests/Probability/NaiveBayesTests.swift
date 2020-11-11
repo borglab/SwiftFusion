@@ -35,19 +35,19 @@ final class NaiveBayesTests: XCTestCase {
   }
 
   func testGaussianNB() {
-    let data = Tensor<Double>([[0.9], [1.1]])
+    let data = Tensor<Double>([[0.9, 1.1], [1.1, 0.9]])
     var gnb = GaussianNB(dims: data.shape.dropFirst())
 
     gnb.fit(data)
 
     let sigma = data.standardDeviation().scalar!
     let mu = data.mean().scalar!
-    let p: Double = 0.4
-    let gaussianOfP: Double = exp(-0.5 * pow(p - mu, 2)/(sigma * sigma))
+    let p: Tensor<Double> = [0.4, 1.0]
+    let gaussianOfP: Tensor<Double> = exp(-0.5 * pow(p - mu, 2)/(sigma * sigma))
 
     XCTAssertEqual(
-      gnb.negativeLogLikelihood(Tensor<Double>([p])),
-      -log(gaussianOfP), accuracy: 1e-6
+      gnb.negativeLogLikelihood(p),
+      -log(gaussianOfP).sum().scalarized(), accuracy: 1e-6
     )
   }
 }
