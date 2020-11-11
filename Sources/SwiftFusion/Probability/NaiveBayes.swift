@@ -51,6 +51,8 @@ public struct GaussianNB: GenerativeDensity {
 
     let t = (data - mus!).squared() / (2.0 * sigma2s!)
     let a = (log(sigma2s!) + log(2.0 * .pi)) / 2.0
-    return (a + t).sum().scalarized()
+
+    // TODO: Should we use sum() or mean()???
+    return (a + t).mean().scalarized()
   }
 }

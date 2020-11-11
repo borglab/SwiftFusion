@@ -81,6 +81,69 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     )
     
     /// Check if we have the desired error at minima
-    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(-5000000000000047.0), accuracy: 1e-1)
+    assertAllKeyPathEqual(factor.errorVector(pose), Vector1(-500000000000004.7), accuracy: 1e-1)
+  }
+
+  /// Test sanity of the error by a simple case
+  func testTrackingSanity() {
+    var v = VariableAssignments()
+
+    /// Initialize to wrong pose
+    let pose = Pose2(4.0, 4.0, 0)
+    let poseId = v.store(pose)
+
+    /// Make a center one image
+    var image: Tensor<Double> = .init(zeros: [8, 8, 3])
+
+    image[4, 4, 0] = Tensor(1.0)
+
+    let featureDim = 10
+    var encoder = PPCA(latentSize: featureDim)
+
+    /// Encoder with only center activation of 1
+    encoder.W = Tensor<Double>(zeros: [3, 3, 3, 10])
+    var W_inv = Tensor<Double>(zeros: [10, 3, 3, 3])
+    encoder.mu = Tensor<Double>(zeros: [3, 3, 3])
+
+    encoder.W[1, 1, 0, 0] = Tensor(1.0)
+    W_inv[0, 1, 1, 0] = Tensor(1.0)
+    encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
+
+    /// Training foreground and background models
+    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
+    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-8)
+    
+    var sample_fg = Tensor<Double>(zeros: [2, 10])
+    var sample_bg = Tensor<Double>(zeros: [2, 10])
+
+    sample_fg[0, 0] = Tensor(1.1)
+    sample_fg[1, 0] = Tensor(0.9)
+
+    sample_bg[0, 2] = Tensor(1.1)
+    sample_bg[1, 2] = Tensor(0.9)
+
+    fg_model.fit(sample_fg)
+    bg_model.fit(sample_bg)
+
+    let factor = ProbablisticTrackingFactor(poseId,
+      measurement: image,
+      encoder: encoder,
+      patchSize: (3, 3),
+      appearanceModelSize: (3, 3),
+      foregroundModel: fg_model,
+      backgroundModel: bg_model
+    )
+    
+    var fg = FactorGraph()
+
+    fg.store(factor)
+
+    var optimizer = LM()
+    optimizer.verbosity = .TRYLAMBDA
+    try? optimizer.optimize(graph: fg, initial: &v)
+
+    print(v[poseId])
+    /// Check if we have the desired error at minima
+    assertAllKeyPathEqual(factor.errorVector(v[poseId]), Vector1(300000000000000.06), accuracy: 1e-1)
   }
 }

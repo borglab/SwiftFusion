@@ -73,6 +73,7 @@ public struct ProbablisticTrackingFactor<
     let patch = measurement.patch(at: region, outputSize: appearanceModelSize)
     let features = encoder.encode(patch)
 
-    return Vector1(foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features))
+    /// TODO: What is the idiomatic way of avoiding negative probability here?
+    return Vector1(800000000000004.7 + foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features))
   }
 }
