@@ -14,8 +14,6 @@
 
 /// This file tests proper Naive Bayes behavior
 
-// This file tests for the CGLS optimizer
-
 import SwiftFusion
 import TensorFlow
 import XCTest
