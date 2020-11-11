@@ -18,26 +18,43 @@ import TensorFlow
 ///
 /// This is a density where each dimension has its own 1-d Gaussian density.
 public struct GaussianNB: GenerativeDensity {
+  public let dims: TensorShape
 
-    public let dims: TensorShape
+  /// Sample standard deviation
+  public var sigmas: Optional<Tensor<Double>> = nil
 
-    public var sigmas: Optional<Tensor<Double>> = nil
+  /// Sample Mean
+  public var mus: Optional<Tensor<Double>> = nil
 
-    public var mus: Optional<Tensor<Double>> = nil
+  /// Cached variance
+  public var sigma2s: Optional<Tensor<Double>> = nil
 
-    /// Initialize a Gaussian Naive Bayes error model
-    public init(dims: TensorShape) {
-        self.dims = dims
-    }
+  /// This avoids division by zero when the data is zero variance
+  public var regularizer: Double
 
-    public mutating func fit(_ data: Tensor<Double>) {
-       assert(data.shape.dropFirst() == dims)
+  /// Initialize a Gaussian Naive Bayes error model
+  public init(dims: TensorShape, regularizer: Double = 1e-10) {
+    self.dims = dims
+    self.regularizer = regularizer
+  }
 
-    }
+  /// Fit the model to the data
+  ///  - data: Tensor of shape [N, <dims>]
+  public mutating func fit(_ data: Tensor<Double>) {
+    assert(data.shape.dropFirst() == dims)
 
-    @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Double {
-        precondition(data.shape == self.dims)
+    mus = data.mean(squeezingAxes: 0)
+    sigmas = data.standardDeviation(squeezingAxes: 0) + regularizer
+    sigma2s = sigmas!.squared()
+  }
 
-        return 0
-    }
+  /// Calculated the negative log likelihood of *one* data point
+  /// Note this is NOT normalized probability
+  @differentiable public func negativeLogLikelihood(_ sample: Tensor<Double>) -> Double {
+    precondition(sample.shape == self.dims)
+
+    let t = (sample - mus!).squared() / (2.0 * sigma2s!)
+
+    return t.sum().scalarized()
+  }
 }
