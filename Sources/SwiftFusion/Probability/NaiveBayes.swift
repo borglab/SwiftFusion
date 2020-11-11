@@ -36,6 +36,7 @@ public struct GaussianNB: GenerativeDensity {
     }
 
     @differentiable public func negativeLogLikelihood(_ data: Tensor<Double>) -> Double {
+        precondition(data.shape == self.dims)
 
         return 0
     }
