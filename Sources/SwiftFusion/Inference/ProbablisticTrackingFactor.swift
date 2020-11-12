@@ -74,12 +74,12 @@ public struct ProbablisticTrackingFactor<
   public func errorVector(_ pose: Pose2) -> Vector1 {
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
     let patch = measurement.patch(at: region, outputSize: appearanceModelSize)
-    let features = encoder.encode(patch)
+    let features = encoder.encode(patch.expandingShape(at: 0)).squeezingShape(at: 0)
 
     let result = maxPossibleNegativity + foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features)
 
     if result < 0 {
-      print("Warning: Negative value encountered in errorVector!")
+      print("Warning: Negative value encountered in errorVector! (\(result))")
     }
 
     /// TODO: What is the idiomatic way of avoiding negative probability here?
