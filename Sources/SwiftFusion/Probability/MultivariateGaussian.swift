@@ -64,7 +64,7 @@ public struct MultivariateGaussian: GenerativeDensity {
     precondition(sample.shape == self.dims)
 
     let normalized = (sample - mean!).expandingShape(at: 1)
-    let t = matmul(normalized.transposed(), matmul(covariance_inv!, normalized))
+    let t = matmul(normalized, transposed: true, matmul(covariance_inv!, normalized))
 
     return t.scalarized()
   }
