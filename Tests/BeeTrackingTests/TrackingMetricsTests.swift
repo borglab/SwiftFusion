@@ -41,7 +41,11 @@ class TrackingMetricsTestsests: XCTestCase {
   }
 
   /// Test tracking metrics for a subsequence.
-  func testSubsequence() {
+  func testSubsequence() throws {
+    guard let _ = try? Python.attemptImport("shapely") else {
+      throw XCTSkip("overlap requires shapely python library")
+    }
+
     let groundTruth = Array(repeating: box(Pose2()), count: 7)
     let prediction = [
       box(Pose2()), box(Pose2(1, 0, 0)), box(Pose2(2, 0, 0)), box(Pose2(3, 0, 0)),
