@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import PythonKit
+
 /// A rectangular region of an image, not necessarily axis-aligned.
 public struct OrientedBoundingBox: Differentiable {
   /// The pose of the region's center within the image.
@@ -50,6 +52,23 @@ public struct OrientedBoundingBox: Differentiable {
       return center.t + center.rot * (0.5 * Vector2(uFlip * Double(cols), vFlip * Double(rows)))
     }
     return [corner(1, 1), corner(-1, 1), corner(-1, -1), corner(1, -1)]
+  }
+
+  /// Returns the ratio `|self ∩ other| / |self ∪ other|`.
+  ///
+  /// Precondition: The "Shapely" python library is installed on the system.
+  public func overlap(_ other: Self) -> Double {
+    let selfPoly = self.shapelyPolygon
+    let otherPoly = other.shapelyPolygon
+    return Double(selfPoly.intersection(otherPoly).area / selfPoly.union(otherPoly).area)!
+  }
+
+  /// `self`, as a Shapely polygon.
+  ///
+  /// Precondition: The "Shapely" python library is installed on the system.
+  private var shapelyPolygon: PythonObject {
+    let geometry = Python.import("shapely.geometry")
+    return geometry.Polygon(corners.map { [$0.x, $0.y] })
   }
 }
 

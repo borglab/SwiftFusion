@@ -123,6 +123,10 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // Initialize the variables one frame at a time. Each iteration intializes the `i+1`-th
     // variable.
     for i in 0..<(frames.count - 1) {
+      if i % 10 == 0 {
+        print("Inferring for frame \(i + 1) of \(frames.count - 1)")
+      }
+
       // Set the initial guess of the `i+1`-th variable to the value of the previous variable.
       x[frameVariableIDs[i + 1]] = x[frameVariableIDs[i], as: FrameVariables.self]
 

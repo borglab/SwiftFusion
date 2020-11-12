@@ -15,6 +15,7 @@
 import Datasets
 import Foundation
 import ModelSupport
+import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
 import TensorFlow
@@ -123,9 +124,11 @@ fileprivate extension String {
 
 extension OISTBeeVideo {
   /// Creates an instance with auto download.
-  public init?(deferLoadingFrames: Bool = false) {
+  ///
+  /// Parameter frameCount: If specified, truncates the full dataset to this number of frames.
+  public init?(deferLoadingFrames: Bool = false, truncate frameCount: Int? = nil) {
     let dataset = Self.downloadDatasetIfNotPresent()
-    self.init(directory: dataset, deferLoadingFrames: deferLoadingFrames)
+    self.init(directory: dataset, deferLoadingFrames: deferLoadingFrames, truncate: frameCount)
   }
 
   /// Creates an instance from the data in the given `directory`.
@@ -135,7 +138,11 @@ extension OISTBeeVideo {
   ///
   /// The format of a track file is:
   /// - Arbitrarily many lines "offset_x, offset_y, bee_type, x, y, angle".
-  public init?(directory: URL, deferLoadingFrames: Bool = true, fps: Int = 30) {
+  ///
+  /// Parameter frameCount: If specified, truncates the full dataset to this number of frames.
+  public init?(
+    directory: URL, deferLoadingFrames: Bool = true, fps: Int = 30, truncate frameCount: Int? = nil
+  ) {
     self.frames = []
     self.labels = []
     self.frameIds = []
@@ -154,13 +161,18 @@ extension OISTBeeVideo {
       }
     }.sorted()
 
+    if let frameCount = frameCount {
+      self.frameIds = Array(self.frameIds.prefix(frameCount))
+    }
+
     // Lazy loading
     if !deferLoadingFrames {
-      while let frame = loadFrame(self.frameIds[self.frames.count]) {
-        self.frames.append(frame)
-        if self.frameIds.count == self.frames.count {
-          break
+      self.frames = Array(unsafeUninitializedCapacity: self.frameIds.count) {
+        (b, actualCount) -> Void in
+        ComputeThreadPools.local.parallelFor(n: self.frameIds.count) { (i, _) in
+          (b.baseAddress! + i).initialize(to: loadFrame(self.frameIds[i])!)
         }
+        actualCount = self.frameIds.count
       }
     }
 
@@ -189,7 +201,9 @@ extension OISTBeeVideo {
         )
       }
     }
-    while let label = loadFrameLabels(self.frameIds[self.labels.count]) {
+    while self.labels.count < self.frameIds.count,
+      let label = loadFrameLabels(self.frameIds[self.labels.count])
+    {
       self.labels.append(label)
       if self.frameIds.count == self.labels.count {
           break
@@ -200,15 +214,18 @@ extension OISTBeeVideo {
       let track = try! String(contentsOf: path)
       let lines = track.split(separator: "\n")
       let startFrame = Int(lines.first!)!
-      let boxes = lines.dropFirst().map { line -> OrientedBoundingBox in
-        let split = line.split(separator: " ")
-        return OrientedBoundingBox(
-          center: Pose2(
-            Rot2(Double(split[2])!),
-            Vector2(Double(split[0])!, Double(split[1])!)),
-          rows: Int(split[3])!,
-          cols: Int(split[4])!)
-      }
+      let boxes = lines
+        .dropFirst()
+        .prefix(max(0, self.frameIds.count - startFrame))
+        .map { line -> OrientedBoundingBox in
+          let split = line.split(separator: " ")
+          return OrientedBoundingBox(
+            center: Pose2(
+              Rot2(Double(split[2])!),
+              Vector2(Double(split[0])!, Double(split[1])!)),
+            rows: Int(split[3])!,
+            cols: Int(split[4])!)
+        }
       return OISTBeeTrack(startFrameIndex: startFrame, boxes: boxes)
     }
     if let trackDirContents = try? FileManager.default.contentsOfDirectory(
@@ -218,6 +235,7 @@ extension OISTBeeVideo {
       self.tracks = trackDirContents
         .sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
         .map(loadTrack)
+        .filter { $0.boxes.count >= 10 }
     } else {
       print("WARNING: No ground truth tracks found.")
     }
