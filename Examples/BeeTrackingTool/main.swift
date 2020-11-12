@@ -159,8 +159,6 @@ struct InferTrackRAE: ParsableCommand {
       return OrientedBoundingBox(
         center: prediction[poseID], rows: video.track[0].rows, cols: video.track[0].cols)
     }
-
-    printMetrics(groundTruth: videoSlice.track, prediction: boxes)
   }
 }
 
@@ -198,18 +196,6 @@ struct InferTrackRawPixels: ParsableCommand {
       return OrientedBoundingBox(
         center: prediction[poseID], rows: video.track[0].rows, cols: video.track[0].cols)
     }
-
-    printMetrics(groundTruth: videoSlice.track, prediction: boxes)
-  }
-}
-
-/// Prints metrics about how goot `prediction` is relative to `groundTruth`.
-func printMetrics(groundTruth: [OrientedBoundingBox], prediction: [OrientedBoundingBox]) {
-    let metrics = TrackingMetrics(groundTruth: groundTruth, prediction: prediction)
-    if let failureFrame = metrics.trackingFailureFrame {
-      print("Tracking succeeded until frame: \(failureFrame)")
-    } else {
-      print("Tracking succeeded for all frames")
   }
 }
 
