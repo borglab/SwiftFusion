@@ -170,8 +170,6 @@ struct RawTrack: ParsableCommand {
     let dataset = OISTBeeVideo(directory: dataURL, deferLoadingFrames: true)!
     stopTimer("DATASET_LOAD")
 
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
-
     startTimer("RAW_TRACKING")
     var bboxes: [OrientedBoundingBox]
     bboxes = rawPixelTrack(dataset: dataset, length: trackFrames)
@@ -276,8 +274,6 @@ struct PpcaTrack: ParsableCommand {
     if verbose {
       print("Tracking...")
     }
-
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
 
     startTimer("PPCA_TRACKING")
     var bboxes: [OrientedBoundingBox]
@@ -472,6 +468,7 @@ struct NaiveRae: ParsableCommand {
   }
 
   func run() {
+
     if verbose {
       print("Loading dataset...")
     }
@@ -485,8 +482,6 @@ struct NaiveRae: ParsableCommand {
     if verbose {
       print("Tracking...")
     }
-
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
 
     startTimer("PPCA_TRACKING")
     var bboxes: [OrientedBoundingBox]
@@ -605,7 +600,6 @@ struct VisualizeTrack: ParsableCommand {
   }
 }
 
-OISTVisualizationTool.main()
 
 /// Returns `t` as a Swift tuple.
 fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
@@ -615,3 +609,10 @@ fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
 fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
   return (t.head)
 }
+
+// It is important to set the global threadpool before doing anything else, so that nothing
+// accidentally uses the default threadpool.
+ComputeThreadPools.global =
+  NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
+
+OISTVisualizationTool.main()

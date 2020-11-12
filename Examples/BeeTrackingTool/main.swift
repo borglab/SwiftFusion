@@ -120,8 +120,6 @@ struct InferTrackRAE: ParsableCommand {
   var verbose: Bool = false
 
   func run() {
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
-
     let np = Python.import("numpy")
 
     let appearanceModelSize = (appearanceModelRows, appearanceModelCols)
@@ -177,8 +175,6 @@ struct InferTrackRawPixels: ParsableCommand {
   var verbose: Bool = false
 
   func run() {
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
-
     let video = VOTVideo(votBaseDirectory: votBaseDirectory, videoName: videoName)!
     let videoSlice = video[0..<min(video.frames.count, frameCount)]
 
@@ -198,5 +194,10 @@ struct InferTrackRawPixels: ParsableCommand {
     }
   }
 }
+
+// It is important to set the global threadpool before doing anything else, so that nothing
+// accidentally uses the default threadpool.
+ComputeThreadPools.global =
+  NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
 
 BeeTrackingTool.main()
