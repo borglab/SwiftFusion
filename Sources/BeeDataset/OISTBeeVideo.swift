@@ -15,6 +15,7 @@
 import Datasets
 import Foundation
 import ModelSupport
+import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
 import TensorFlow
@@ -156,11 +157,12 @@ extension OISTBeeVideo {
 
     // Lazy loading
     if !deferLoadingFrames {
-      while let frame = loadFrame(self.frameIds[self.frames.count]) {
-        self.frames.append(frame)
-        if self.frameIds.count == self.frames.count {
-          break
+      self.frames = Array(unsafeUninitializedCapacity: self.frameIds.count) {
+        (b, actualCount) -> Void in
+        ComputeThreadPools.local.parallelFor(n: self.frameIds.count) { (i, _) in
+          (b.baseAddress! + i).initialize(to: loadFrame(self.frameIds[self.frames.count])!)
         }
+        actualCount = self.frameIds.count
       }
     }
 
