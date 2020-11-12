@@ -377,7 +377,7 @@ struct NaiveRae: ParsableCommand {
       $0.filter({ $0.label == .Body })
     }
     // Make batch and do RAE
-    let (batch, _) = makeOISTBatch(dataset: dataset, appearanceModelSize: (40, 70), batchSize: 200)
+    let (batch, _) = dataset.makeBatch(appearanceModelSize: (40, 70), batchSize: 200)
     var statistics = FrameStatistics(batch)
     statistics.mean = Tensor(62.26806976644069)
     statistics.standardDeviation = Tensor(37.44683834503672)
