@@ -2,8 +2,8 @@ import TensorFlow
 
 /// The mean and standard deviation of a collection of frames.
 public struct FrameStatistics {
-  var mean: Tensor<Double>
-  var standardDeviation: Tensor<Double>
+  public var mean: Tensor<Double>
+  public var standardDeviation: Tensor<Double>
 
   /// Creates an instance containing the statistics for `frames`.
   public init(_ frames: Tensor<Double>) {
