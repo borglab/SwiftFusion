@@ -1,0 +1,115 @@
+// Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import BeeDataset
+import PenguinParallelWithFoundation
+import PenguinStructures
+import SwiftFusion
+import TensorFlow
+
+extension OISTBeeVideo {
+  /// Returns a `[N, h, w, c]` batch of normalized patches from bee bounding boxes, and returns the
+  /// statistics used to normalize them.
+  public func makeBatch(appearanceModelSize: (Int, Int), batchSize: Int = 200)
+    -> (normalized: Tensor<Double>, statistics: FrameStatistics)
+  {
+    var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
+    let frames =
+      Dictionary(uniqueKeysWithValues: self.randomFrames(10, using: &deterministicEntropy))
+    let labels = frames.values.flatMap { $0.labels }
+    let images = labels
+      .randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy)
+      .map { label in
+        frames[label.frameIndex]!.frame.patch(at: label.location, outputSize: appearanceModelSize)
+      }
+
+    let stacked = Tensor(stacking: images)
+    let statistics = FrameStatistics(stacked)
+    return (statistics.normalized(stacked), statistics)
+  }
+
+  /// Returns a `[N, h, w, c]` batch of normalized patches that do not overlap with any bee
+  /// bee bounding boxes, and returns the statistics used to normalize them.
+  public func makeBackgroundBatch(patchSize: (Int, Int), appearanceModelSize: (Int, Int), batchSize: Int = 200)
+    -> (normalized: Tensor<Double>, statistics: FrameStatistics)
+  {
+    let maxSide = max(patchSize.0, patchSize.1)
+
+    var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
+    let frames = self.randomFrames(10, using: &deterministicEntropy)
+
+    // We need `batchSize / frames.count` patches from each frame, plus the remainder of the
+    // integer division.
+    var patchesPerFrame = Array(repeating: batchSize / frames.count, count: frames.count)
+    patchesPerFrame[0] += batchSize % frames.count
+
+    let images = zip(patchesPerFrame, frames).flatMap { args -> [Tensor<Double>] in
+      let (patchCount, (_, (frame, labels))) = args
+      let locations = (0..<patchCount).map { _ -> Vector2 in
+        let attemptCount = 1000
+        for _ in 0..<attemptCount {
+          // Sample a point uniformly at random in the frame, away from the edges.
+          let location = Vector2(
+            Double.random(in: Double(maxSide)..<Double(frame.shape[1] - maxSide)),
+            Double.random(in: Double(maxSide)..<Double(frame.shape[0] - maxSide)))
+
+          // Conservatively reject any point that could possibly overlap with any of the labels.
+          for label in labels {
+            if (label.location.center.t - location).norm < Double(maxSide) {
+              continue
+            }
+          }
+
+          // The point was not rejected, so return it.
+          return location
+        }
+        fatalError("could not find backround location after \(attemptCount) attempts")
+      }
+      return locations.map { location -> Tensor<Double> in
+        let theta = Double.random(in: 0..<(2 * .pi))
+        return frame.patch(
+          at: OrientedBoundingBox(
+            center: Pose2(Rot2(theta), location),
+            rows: patchSize.0, cols: patchSize.1),
+          outputSize: appearanceModelSize)
+      }
+    }
+
+    let stacked = Tensor(stacking: images)
+    let statistics = FrameStatistics(stacked)
+    return (statistics.normalized(stacked), statistics)
+  }
+
+  /// Returns `count` random frames.
+  private func randomFrames<R: RandomNumberGenerator>(_ count: Int, using randomness: inout R)
+    -> [(frameId: Int, (frame: Tensor<Double>, labels: [OISTBeeLabel]))]
+  {
+    let selectedFrameIndices =
+      self.frameIds.indices.randomSelectionWithoutReplacement(k: count, using: &randomness)
+    return [(frameId: Int, (frame: Tensor<Double>, labels: [OISTBeeLabel]))](
+      unsafeUninitializedCapacity: count
+    ) {
+      (b, actualCount) -> Void in
+      ComputeThreadPools.local.parallelFor(n: count) { (i, _) -> Void in
+        let frameIndex = selectedFrameIndices[i]
+        let frameId = self.frameIds[frameIndex]
+        let frame = self.loadFrame(frameId)!
+        let labels = self.labels[frameIndex]
+        assert(labels.allSatisfy { $0.frameIndex == frameId })
+        (b.baseAddress! + i).initialize(to: (frameId, (frame, labels)))
+      }
+      actualCount = count
+    }
+  }
+}
