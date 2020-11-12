@@ -20,17 +20,32 @@ import XCTest
 
 final class MultivariateGaussianTests: XCTestCase {
 
-    /// Compare with the NumPy implementation
-    func testSimpleCovMatrix() {
-        let data = Tensor<Double>([[1.5, 0.9], [0.5, 1.9]])
+  /// Compare with the NumPy implementation
+  func testSimpleCovMatrix() {
+    let data = Tensor<Double>([[1.5, 0.9], [0.5, 1.9]])
 
-        assertEqual(cov(data), Tensor<Double>([[0.5, -0.5], [-0.5, 0.5]]), accuracy: 1e-8)
+    assertEqual(cov(data), Tensor<Double>([[0.5, -0.5], [-0.5, 0.5]]), accuracy: 1e-8)
 
-        let data_zerovar = Tensor<Double>([[1.0, 2.0, 3.0], [1.0, 2.0, 3.1], [0.9, 2.0, 2.9]])
-        assertEqual(cov(data_zerovar), Tensor<Double>(
-            [[0.00333333, 0       , 0.005     ],
-            [0       , 0        , 0        ],
-            [0.005     , 0        , 0.01      ]]), accuracy: 1e-8)
+    let data_zerovar = Tensor<Double>([[1.0, 2.0, 3.0], [1.0, 2.0, 3.1], [0.9, 2.0, 2.9]])
+    assertEqual(cov(data_zerovar), Tensor<Double>(
+      [[0.00333333, 0       , 0.005     ],
+      [0       , 0        , 0        ],
+      [0.005     , 0        , 0.01      ]]), accuracy: 1e-8
+    )
+  }
 
-    }
+  /// Test the sanity of the negative log likelihood
+  func testMultivariateNegativeLogLikelihood() {
+    let data = Tensor<Double>([[1.5, 0.9], [0.5, 1.9], [1.0, 1.5]])
+
+    var model = MultivariateGaussian(dims: data.shape.dropFirst())
+
+    model.fit(data)
+
+    XCTAssertEqual(
+      model.negativeLogLikelihood(Tensor<Double>([1.0, 1.5])),
+      1.33333333,
+      accuracy: 1e-5
+    )
+  }
 }

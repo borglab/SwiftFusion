@@ -31,19 +31,18 @@ public struct MultivariateGaussian: GenerativeDensity {
   public let dims: TensorShape
 
   /// Sample standard deviation
-  public var covariance: Optional<Tensor<Double>> = nil
+  public var covariance_inv: Optional<Tensor<Double>> = nil
 
   /// Sample Mean
-  public var mus: Optional<Tensor<Double>> = nil
-
-  /// Cached variance
-  public var covarianceSquared: Optional<Tensor<Double>> = nil
+  public var mean: Optional<Tensor<Double>> = nil
 
   /// This avoids division by zero when the data is zero variance
   public var regularizer: Double
 
-  /// Initialize a Gaussian Naive Bayes error model
+  /// Initialize a Multivariate Gaussian Model
+  /// Note: only supports 1-d data points
   public init(dims: TensorShape, regularizer: Double = 1e-10) {
+    precondition(dims.count == 1, "Multivariate Gaussian only support 1-d tensor input")
     self.dims = dims
     self.regularizer = regularizer
   }
@@ -53,7 +52,12 @@ public struct MultivariateGaussian: GenerativeDensity {
   public mutating func fit(_ data: Tensor<Double>) {
     assert(data.shape.dropFirst() == dims)
 
-    
+    self.mean = data.mean(squeezingAxes: 0)
+    let cov_data = cov(data)
+    print("Cov: \(cov_data)")
+    let regularized_cov = cov_data.withDiagonal(cov_data.diagonalPart() + regularizer)
+    print("CovR: \(regularized_cov)")
+    self.covariance_inv = pinv(regularized_cov)
   }
 
   /// Calculated the negative log likelihood of *one* data point
@@ -61,8 +65,9 @@ public struct MultivariateGaussian: GenerativeDensity {
   @differentiable public func negativeLogLikelihood(_ sample: Tensor<Double>) -> Double {
     precondition(sample.shape == self.dims)
 
-    let t = (sample - mus!).squared() / (2.0 * covarianceSquared!)
+    let normalized = (sample - mean!).expandingShape(at: 1)
+    let t = matmul(normalized.transposed(), matmul(covariance_inv!, normalized))
 
-    return t.sum().scalarized()
+    return t.scalarized()
   }
 }
