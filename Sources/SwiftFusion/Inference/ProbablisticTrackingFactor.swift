@@ -59,7 +59,8 @@ public struct ProbablisticTrackingFactor<
     patchSize: (Int, Int),
     appearanceModelSize: (Int, Int),
     foregroundModel: ForegroundModel,
-    backgroundModel: BackgroundModel
+    backgroundModel: BackgroundModel,
+    maxPossibleNegativity: Double = 1e10
   ) {
     self.edges = Tuple1(poseId)
     self.measurement = measurement

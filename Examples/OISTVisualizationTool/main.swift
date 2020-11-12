@@ -52,7 +52,12 @@ struct ViewFrame: ParsableCommand {
 
 /// Returns a `[N, h, w, c]` batch of normalized patches from a VOT video, and returns the
 /// statistics used to normalize them.
-func makeOISTBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int), batchSize: Int = 200, seed: Int = 42)
+/// - dataset: Bee video dataset object
+/// - appearanceModelSize: [H, W]
+/// - batchSize: number of batch samples
+/// - seed: Allow controlling the random sequence
+/// - trainSplit: Controls where in the frames to split between train and test
+func makeOISTBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int), batchSize: Int = 300, seed: Int = 42, trainSplit: Int = 250)
   -> (normalized: Tensor<Double>, statistics: FrameStatistics)
 {
   var images: [Tensor<Double>] = []
@@ -62,7 +67,7 @@ func makeOISTBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int), batch
   var currentId: Int = -1
 
   var deterministicEntropy = ARC4RandomNumberGenerator(seed: seed)
-  for label in dataset.labels.randomSelectionWithoutReplacement(k: 10, using: &deterministicEntropy).lazy.joined().randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy).sorted(by: { $0.frameIndex < $1.frameIndex }) {
+  for label in dataset.labels[0..<trainSplit].randomSelectionWithoutReplacement(k: 10, using: &deterministicEntropy).lazy.joined().randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy).sorted(by: { $0.frameIndex < $1.frameIndex }) {
     if currentId != label.frameIndex {
       currentFrame = dataset.loadFrame(label.frameIndex)!
       currentId = label.frameIndex
@@ -73,6 +78,38 @@ func makeOISTBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int), batch
   let stacked = Tensor(stacking: images)
   let statistics = FrameStatistics(stacked)
   return (statistics.normalized(stacked), statistics)
+}
+
+/// Returns a `[[h, w, c]]` batch of normalized patches from a VOT video, and returns the
+/// statistics used to normalize them.
+/// - dataset: Bee video dataset object
+/// - appearanceModelSize: [H, W]
+/// - batchSize: number of batch samples
+/// - seed: Allow controlling the random sequence
+/// - trainSplit: Controls where in the frames to split between train and test
+func makeOISTTrainingBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int), batchSize: Int = 300, seed: Int = 42, trainSplit: Int = 250)
+  -> (normalized: [Tensor<Double>], statistics: FrameStatistics)
+{
+  var images: [Tensor<Double>] = []
+  images.reserveCapacity(batchSize)
+
+  var currentFrame: Tensor<Double> = [0]
+  var currentId: Int = -1
+
+  var statistics = FrameStatistics(Tensor<Double>([0.0]))
+  statistics.mean = Tensor(62.26806976644069)
+  statistics.standardDeviation = Tensor(37.44683834503672)
+
+  var deterministicEntropy = ARC4RandomNumberGenerator(seed: seed)
+  for label in dataset.labels[0..<trainSplit].randomSelectionWithoutReplacement(k: 10, using: &deterministicEntropy).lazy.joined().randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy).sorted(by: { $0.frameIndex < $1.frameIndex }) {
+    if currentId != label.frameIndex {
+      currentFrame = dataset.loadFrame(label.frameIndex)!
+      currentId = label.frameIndex
+    }
+    images.append(statistics.normalized(currentFrame.patch(at: label.location, outputSize: appearanceModelSize)))
+  }
+
+  return (images, statistics)
 }
 
 /// Tracking with a raw l2 error
@@ -276,7 +313,7 @@ public func makeNaiveBayesRAETracker(
   statistics: FrameStatistics,
   frames: [Tensor<Double>],
   targetSize: (Int, Int),
-  foregroundModel: GaussianNB,
+  foregroundModel: MultivariateGaussian,
   backgroundModel: GaussianNB
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   var variableTemplate = VariableAssignments()
@@ -305,7 +342,8 @@ public func makeNaiveBayesRAETracker(
           patchSize: targetSize,
           appearanceModelSize: targetSize,
           foregroundModel: foregroundModel,
-          backgroundModel: backgroundModel
+          backgroundModel: backgroundModel,
+          maxPossibleNegativity: 1e7
         )
       )
     },
@@ -367,7 +405,7 @@ struct NaiveRae: ParsableCommand {
     if verbose { print("Fitting Naive Bayes model") }
 
     var (foregroundModel, backgroundModel) = (
-      GaussianNB(
+      MultivariateGaussian(
         dims: TensorShape([kLatentDimension]),
         regularizer: 1e-3
       ), GaussianNB(
@@ -379,7 +417,7 @@ struct NaiveRae: ParsableCommand {
     let batchPositive = rae.encode(batch)
     foregroundModel.fit(batchPositive)
 
-    let batchNegative = Tensor<Double>(zeros: [2, 10])
+    let batchNegative = Tensor<Double>(randomNormal: [500, 10], mean: Tensor(0), standardDeviation: Tensor(1))
     backgroundModel.fit(batchNegative)
 
     if verbose {
@@ -481,8 +519,11 @@ struct TrainRAE: ParsableCommand {
   @Option(help: "Save weights to this file after training")
   var saveWeights: String = "./oist_rae_weight"
 
-  @Option(help: "Number of epochs to train")
-  var epochCount: Int = 20
+  @Option(help: "Number of iterations for each epoch")
+  var iterationCount: Int = 300
+
+  @Option(help: "Number of epochs")
+  var epochCount: Int = 200
 
   @Option(help: "Number of rows in the appearance model output")
   var appearanceModelRows: Int = 40
@@ -500,11 +541,11 @@ struct TrainRAE: ParsableCommand {
 
     stopTimer("DATASET_LOAD")
     
-    let (batch, statistics) = makeOISTBatch(dataset: dataset, appearanceModelSize: (40, 70), seed: Int.random(in: 0..<9999999))
-    print("Batch shape: \(batch.shape)")
+    let (bundle, statistics) = makeOISTTrainingBatch(dataset: dataset, appearanceModelSize: (40, 70), batchSize: 20000, seed: Int.random(in: 0..<9999999))
+    print("Dataset size: \(bundle.count)")
     print("Statistics: \(statistics)")
     let (imageHeight, imageWidth, imageChannels) =
-      (batch.shape[1], batch.shape[2], batch.shape[3])
+      (bundle[0].shape[0], bundle[0].shape[1], bundle[0].shape[2])
 
     var model = DenseRAE(
       imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
@@ -515,7 +556,7 @@ struct TrainRAE: ParsableCommand {
     }
 
     let loss = DenseRAELoss()
-    _ = loss(model, batch, printLoss: true)
+    // _ = loss(model, batch, printLoss: true)
 
     // Use ADAM as optimizer
     let optimizer = Adam(for: model)
@@ -524,14 +565,27 @@ struct TrainRAE: ParsableCommand {
     // Thread-local variable that model layers read to know their mode
     Context.local.learningPhase = .training
 
-    for i in 0..<epochCount {
-      print("Step \(i), loss: \(loss(model, batch))")
-
-      let grad = gradient(at: model) { loss($0, batch) }
-      optimizer.update(&model, along: grad)
+    let epochs = TrainingEpochs(samples: bundle, batchSize: 200)
+    var trainLossResults: [Double] = []
+    for (epochIndex, epoch) in epochs.prefix(epochCount).enumerated() {
+      var epochLoss: Double = 0
+      var batchCount: Int = 0
+      // epoch is a Slices object, see below
+      for batchSamples in epoch {
+        let batch = batchSamples.collated
+        let (loss, grad) = valueWithGradient(at: model) { loss($0, batch) }
+        optimizer.update(&model, along: grad)
+        epochLoss += loss.scalarized()
+        batchCount += 1
+      }
+      epochLoss /= Double(batchCount)
+      trainLossResults.append(epochLoss)
+      if epochIndex % 50 == 0 {
+          print("Epoch \(epochIndex): Loss: \(epochLoss)")
+      }
     }
 
-    _ = loss(model, batch, printLoss: true)
+    _ = loss(model, Tensor<Double>(stacking: bundle), printLoss: true)
 
     np.save(saveWeights, np.array(model.numpyWeights, dtype: Python.object))
   }
