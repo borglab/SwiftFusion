@@ -54,9 +54,7 @@ public struct MultivariateGaussian: GenerativeDensity {
 
     self.mean = data.mean(squeezingAxes: 0)
     let cov_data = cov(data)
-    print("Cov: \(cov_data)")
     let regularized_cov = cov_data.withDiagonal(cov_data.diagonalPart() + regularizer)
-    print("CovR: \(regularized_cov)")
     self.covariance_inv = pinv(regularized_cov)
   }
 
