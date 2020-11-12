@@ -362,9 +362,6 @@ let kLatentDimension = 10
 
 /// Tracking with a Naive Bayes with RAE
 struct NaiveRae: ParsableCommand {
-  @Option(help: "Location of dataset folder which should contain `frames` and `frames_txt`")
-  var datasetLocation: String = "./OIST_Data"
-
   @Option(help: "Where to load the RAE weights")
   var loadWeights: String = "./oist_rae_weight.npy"
 
@@ -469,14 +466,12 @@ struct NaiveRae: ParsableCommand {
   }
 
   func run() {
-    let dataURL = URL(fileURLWithPath: datasetLocation)
-
     if verbose {
       print("Loading dataset...")
     }
     let dataset: OISTBeeVideo = { () -> OISTBeeVideo in
       startTimer("DATASET_LOAD")
-      return OISTBeeVideo(directory: dataURL, deferLoadingFrames: true)!
+      return OISTBeeVideo(deferLoadingFrames: true)!
     }()
 
     stopTimer("DATASET_LOAD")
