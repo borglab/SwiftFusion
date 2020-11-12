@@ -386,6 +386,12 @@ struct NaiveRae: ParsableCommand {
     statistics.mean = Tensor(62.26806976644069)
     statistics.standardDeviation = Tensor(37.44683834503672)
 
+    let backgroundBatch = dataset.makeBackgroundBatch(
+      patchSize: (40, 70), appearanceModelSize: (40, 70),
+      statistics: statistics,
+      batchSize: 300
+    )
+
     let (imageHeight, imageWidth, imageChannels) =
       (batch.shape[1], batch.shape[2], batch.shape[3])
     
@@ -414,7 +420,7 @@ struct NaiveRae: ParsableCommand {
     let batchPositive = rae.encode(batch)
     foregroundModel.fit(batchPositive)
 
-    let batchNegative = Tensor<Double>(randomNormal: [500, 10], mean: Tensor(0), standardDeviation: Tensor(1))
+    let batchNegative = rae.encode(backgroundBatch)
     backgroundModel.fit(batchNegative)
 
     if verbose {
