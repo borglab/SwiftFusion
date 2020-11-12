@@ -1,4 +1,5 @@
 import BeeDataset
+import PythonKit
 import SwiftFusion
 import TensorFlow
 
@@ -163,6 +164,9 @@ public struct TrackerEvaluationDataset {
 }
 
 extension TrackerEvaluationDataset {
+  /// Evaluate the performance of `tracker` on `self`.
+  ///
+  /// Prameter sequenceCount: How many sequences from `self` to use during the evaluation.
   public func evaluate(_ tracker: Tracker, sequenceCount: Int) -> TrackerEvaluationResults {
     let sequenceEvaluations = sequences.prefix(sequenceCount).enumerated().map {
       (i, sequence) -> SequenceEvaluationResults in
@@ -195,6 +199,7 @@ public struct TrackerEvaluationSequence {
 }
 
 extension TrackerEvaluationSequence {
+  /// Returns the performance of `tracker` on the sequence `self`.
   public func evaluate(_ tracker: Tracker) -> SequenceEvaluationResults {
     let subsequences = self.subsequences(deltaAnchor: 50)
     let subsequenceEvaluations = subsequences.enumerated().map {
@@ -207,9 +212,15 @@ extension TrackerEvaluationSequence {
       sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))
   }
 
+  /// Returns the performance of `tracker` on the subsequence `self`.
   public func evaluateSubsequence(_ tracker: Tracker)
     -> (metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox])
   {
+    guard let _ = try? Python.attemptImport("shapely") else {
+      print("python shapely library must be installed")
+      preconditionFailure()
+    }
+
     let prediction = tracker(frames, groundTruth[0])
     return (
       metrics: SubsequenceMetrics(groundTruth: groundTruth, prediction: prediction),
@@ -236,13 +247,22 @@ extension TrackerEvaluationDataset {
 
 /// All the tracker evaluation metrics in one struct.
 public struct TrackerEvaluationResults {
+  /// The sequence results for all the sequences in the dataset.
   public let sequences: [SequenceEvaluationResults]
+
+  /// The overall tracker metrics on this dataset.
   public let trackerMetrics: TrackerMetrics
+
+  /// The overall expected average overlap curve for the tracker on this dataset.
   public let expectedAverageOverlap: ExpectedAverageOverlap
 }
 
+/// All the sequence evaluation metrics in one struct.
 public struct SequenceEvaluationResults {
+  /// The subsequence metrics for all subsequences in this sequence. And the predictions.
   public let subsequences: [(metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox])]
+
+  /// The sequence metrics for this sequence.
   public let sequenceMetrics: SequenceMetrics
 }
 
@@ -250,4 +270,3 @@ public struct SequenceEvaluationResults {
 /// for all `frames` (including the first one).
 public typealias Tracker =
   (_ frames: [Tensor<Double>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox]
-

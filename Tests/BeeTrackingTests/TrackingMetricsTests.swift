@@ -14,6 +14,7 @@
 // limitations under the License.
 
 import TensorFlow
+import PythonKit
 import XCTest
 
 import BeeTracking
@@ -21,7 +22,11 @@ import SwiftFusion
 
 class TrackingMetricsTestsests: XCTestCase {
   /// Test tracking metrics for a subsequence that tracks ground truth perfectly.
-  func testPerfectSubsequence() {
+  func testPerfectSubsequence() throws {
+    guard let _ = try? Python.attemptImport("shapely") else {
+      throw XCTSkip("overlap requires shapely python library")
+    }
+
     let groundTruth = Array(repeating: box(Pose2()), count: 10)
     let metrics = SubsequenceMetrics(groundTruth: groundTruth, prediction: groundTruth)
 
