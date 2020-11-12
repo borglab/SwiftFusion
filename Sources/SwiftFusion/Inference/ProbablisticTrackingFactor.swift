@@ -30,7 +30,7 @@ public struct ProbablisticTrackingFactor<
   public let edges: Variables.Indices
 
   /// The image containing the target.
-  public let measurement: Tensor<Double>
+  public let measurement: ArrayImage
 
   public let encoder: Encoder
 
@@ -63,7 +63,7 @@ public struct ProbablisticTrackingFactor<
     maxPossibleNegativity: Double = 1e10
   ) {
     self.edges = Tuple1(poseId)
-    self.measurement = measurement
+    self.measurement = ArrayImage(measurement)
     self.encoder = encoder
     self.patchSize = patchSize
     self.appearanceModelSize = appearanceModelSize
@@ -74,7 +74,7 @@ public struct ProbablisticTrackingFactor<
   @differentiable
   public func errorVector(_ pose: Pose2) -> Vector1 {
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
-    let patch = measurement.patch(at: region, outputSize: appearanceModelSize)
+    let patch = measurement.patch(at: region, outputSize: appearanceModelSize).tensor
     let features = encoder.encode(patch.expandingShape(at: 0)).squeezingShape(at: 0)
 
     let result = maxPossibleNegativity + foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features)
