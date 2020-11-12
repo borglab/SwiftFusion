@@ -170,7 +170,8 @@ extension Tensor where Scalar == Double {
       self.shape.count == 2 || self.shape.count == 3,
       "image must have shape [height, width] or [height, width, channelCount]"
     )
-    let result = ArrayImage(self).patch(at: region, outputSize: outputSize).tensor
+    let result = Tensor<Double>(
+      ArrayImage(Tensor<Float>(self)).patch(at: region, outputSize: outputSize).tensor)
     return self.shape.count == 2 ? result.reshaped(to: [result.shape[0], result.shape[1]]) : result
   }
 
@@ -194,14 +195,14 @@ extension Tensor where Scalar == Double {
     -> (patch: Tensor<Scalar>, jacobian: Tensor<Scalar>)
   {
     precondition(self.shape.count == 3, "image must have shape [height, width, channelCount]")
-    let (patch, jacobian) = ArrayImage(self).patchWithJacobian(at: region, outputSize: outputSize)
+    let (patch, jacobian) = ArrayImage(Tensor<Float>(self)).patchWithJacobian(at: region, outputSize: outputSize)
     return (
-      patch: patch.tensor,
-      jacobian: Tensor<Double>(stacking: [
+      patch: Tensor<Double>(patch.tensor),
+      jacobian: Tensor<Double>(Tensor<Float>(stacking: [
         jacobian.dtheta.tensor,
         jacobian.du.tensor,
         jacobian.dv.tensor
-      ], alongAxis: -1))
+      ], alongAxis: -1)))
   }
 }
 
@@ -214,16 +215,16 @@ extension Tensor where Scalar == Double {
 ///   - point: a point in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
 ///   - channel: The channel to return.
 @differentiable(wrt: point)
-public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> Double {
+public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> Float {
   // The `(i, j)` integer coordinates of the top left pixel to sample from.
   let sourceI = withoutDerivative(at: Int(floor(point.y - 0.5)))
   let sourceJ = withoutDerivative(at: Int(floor(point.x - 0.5)))
 
   // Weight of the `(sourceI, _)` pixels in the interpolation.
-  let weightI = Double(sourceI) + 1.5 - point.y
+  let weightI = Float(sourceI) + 1.5 - Float(differentiableConversion: point.y)
 
   // Weight of the `(_, sourceJ)` pixels in the interpolation.
-  let weightJ = Double(sourceJ) + 1.5 - point.x
+  let weightJ = Float(sourceJ) + 1.5 - Float(differentiableConversion: point.x)
 
   let s1 = source[sourceI, sourceJ, channel] * weightI
   let s2 = source[sourceI + 1, sourceJ, channel] * (1 - weightI)
@@ -237,19 +238,19 @@ public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> 
 /// The parameters other than `dPoint` correspond to the parameters of `bilinear`.
 public func dBilinear(
   _ source: ArrayImage, _ point: Vector2, _ channel: Int, _ dPoint: Vector2
-) -> Double {
+) -> Float {
   // The `(i, j)` integer coordinates of the top left pixel to sample from.
   let sourceI = withoutDerivative(at: Int(floor(point.y - 0.5)))
   let sourceJ = withoutDerivative(at: Int(floor(point.x - 0.5)))
 
   // Weight of the `(sourceI, _)` pixels in the interpolation.
-  let weightI = Double(sourceI) + 1.5 - point.y
+  let weightI = Float(sourceI) + 1.5 - Float(point.y)
 
   // Weight of the `(_, sourceJ)` pixels in the interpolation.
-  let weightJ = Double(sourceJ) + 1.5 - point.x
+  let weightJ = Float(sourceJ) + 1.5 - Float(point.x)
 
-  let dWeightI = -dPoint.y
-  let dWeightJ = -dPoint.x
+  let dWeightI = Float(-dPoint.y)
+  let dWeightJ = Float(-dPoint.x)
 
   let s1 = source[sourceI, sourceJ, channel] * (dWeightI * weightJ + weightI * dWeightJ)
   let s2 = source[sourceI + 1, sourceJ, channel] * (-dWeightI * weightJ + (1 - weightI) * dWeightJ)
@@ -257,4 +258,18 @@ public func dBilinear(
   let s4 = source[sourceI + 1, sourceJ + 1, channel]
     * (-dWeightI * (1 - weightJ) + (1 - weightI) * -dWeightJ)
   return s1 + s2 + s3 + s4
+}
+
+fileprivate extension Float {
+  @differentiable
+  init(differentiableConversion x: Double) {
+    self.init(x)
+  }
+
+  @derivative(of: init(differentiableConversion:))
+  static func vjpInit(differentiableConversion x: Double) -> (
+    value: Float, pullback: (Float) -> Double
+  ) {
+    (Float(x), { Double($0) })
+  }
 }

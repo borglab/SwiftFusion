@@ -33,7 +33,7 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
   ///   - target: the pixels of the target.
   public init(_ poseID: TypedID<Pose2>, measurement: Tensor<Double>, target: Tensor<Double>) {
     self.edges = Tuple1(poseID)
-    self.measurement = ArrayImage(measurement)
+    self.measurement = ArrayImage(Tensor<Float>(measurement))
     self.target = target
   }
 
@@ -42,7 +42,7 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
   public func errorVector(_ pose: Pose2) -> TensorVector {
     let patch = measurement.patch(
       at: OrientedBoundingBox(center: pose, rows: target.shape[0], cols: target.shape[1]))
-    return TensorVector(patch.tensor - target)
+    return TensorVector(Tensor<Double>(patch.tensor) - target)
   }
 
   /// Returns a linear approximation to `self` at `x`.
@@ -50,13 +50,13 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
     let pose = x.head
     let region = OrientedBoundingBox(center: pose, rows: target.shape[0], cols: target.shape[1])
     let (actualAppearance, actualAppearance_H_pose) = measurement.patchWithJacobian(at: region)
-    let actualAppearance_H_pose_tensor = Tensor(stacking: [
+    let actualAppearance_H_pose_tensor = Tensor<Double>(Tensor(stacking: [
       actualAppearance_H_pose.dtheta.tensor,
       actualAppearance_H_pose.du.tensor,
       actualAppearance_H_pose.dv.tensor,
-    ], alongAxis: -1)
+    ], alongAxis: -1))
     return LinearizedRawPixelTrackingFactor(
-      error: TensorVector(-(actualAppearance.tensor - target)),
+      error: TensorVector(-(Tensor<Double>(actualAppearance.tensor) - target)),
       errorVector_H_pose: actualAppearance_H_pose_tensor,
       edges: Variables.linearized(edges))
   }

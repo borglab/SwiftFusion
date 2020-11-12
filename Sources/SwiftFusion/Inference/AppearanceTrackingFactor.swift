@@ -76,7 +76,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     targetSize: (Int, Int)? = nil
   ) {
     self.edges = Tuple2(poseId, latentId)
-    self.measurement = ArrayImage(measurement)
+    self.measurement = ArrayImage(Tensor<Float>(measurement))
     self.appearanceModel = appearanceModel
     self.appearanceModelJacobian = appearanceModelJacobian
     self.weight = weight
@@ -97,7 +97,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let region = OrientedBoundingBox(
       center: pose, rows: targetSize.0, cols: targetSize.1)
     let patch = measurement.patch(at: region, outputSize: (appearance.shape[0], appearance.shape[1]))
-    return Patch(weight * (appearance - patch.tensor))
+    return Patch(weight * (appearance - Tensor<Double>(patch.tensor)))
   }
 
   @derivative(of: errorVector)
@@ -124,13 +124,13 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
     let (actualAppearance, actualAppearance_H_pose) = measurement.patchWithJacobian(
       at: region, outputSize: (generatedAppearance.shape[0], generatedAppearance.shape[1]))
     assert(generatedAppearance_H_latent.shape == generatedAppearance.shape + [LatentCode.dimension])
-    let actualAppearance_H_pose_tensor = Tensor(stacking: [
+    let actualAppearance_H_pose_tensor = Tensor<Double>(Tensor(stacking: [
       actualAppearance_H_pose.dtheta.tensor,
       actualAppearance_H_pose.du.tensor,
       actualAppearance_H_pose.dv.tensor,
-    ], alongAxis: -1)
+    ], alongAxis: -1))
     return LinearizedAppearanceTrackingFactor<LatentCode>(
-      error: Patch(weight * (actualAppearance.tensor - generatedAppearance)),
+      error: Patch(weight * (Tensor<Double>(actualAppearance.tensor) - generatedAppearance)),
       errorVector_H_pose: -weight * actualAppearance_H_pose_tensor,
       errorVector_H_latent: weight * generatedAppearance_H_latent,
       edges: Variables.linearized(edges))
