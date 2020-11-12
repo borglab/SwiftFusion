@@ -64,11 +64,10 @@ public struct MultivariateGaussian: GenerativeDensity {
     precondition(sample.shape == self.dims)
 
     let normalized = (sample - mean!).expandingShape(at: 1)
-    print("Normalized: \(normalized.shape), cov: \(covariance_inv!.shape)")
+    /// FIXME: this is a workaround for bug in the derivative of `.scalarized()`
     let t = matmul(normalized, transposed: true, matmul(covariance_inv!, normalized)).withDerivative {
       $0 = $0.reshaped(to: [1, 1])
     }
-    print("Complete")
     
     return t.scalarized()
   }
