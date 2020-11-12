@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Foundation
 import PenguinParallelWithFoundation
 import TensorFlow
 import XCTest
@@ -20,8 +21,11 @@ import BeeDataset
 import BeeTracking
 
 class OISTBeeVideoBatchesTests: XCTestCase {
-  /// Tests getting a batch of bee patches.
-  func testBeeBatch() {
+  /// Tests getting a batch of bee patches and a batch of background patches.
+  func testBeeBatch() throws {
+    if let _ = ProcessInfo.processInfo.environment["CI"] {
+      throw XCTSkip("Test skipped on CI because it downloads a lot of data.")
+    }
    ComputeThreadPools.local =
         NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 5)
     let video = OISTBeeVideo(deferLoadingFrames: true)!
@@ -29,17 +33,11 @@ class OISTBeeVideoBatchesTests: XCTestCase {
     XCTAssertEqual(batch.shape, [200, 100, 100, 3])
     XCTAssertEqual(statistics.mean.shape, [])
     XCTAssertEqual(statistics.standardDeviation.shape, [])
-  }
 
-  /// Tests getting a batch of background patches.
-  func testBackgroundBatch() {
-    ComputeThreadPools.local =
-      NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 5)
-    let video = OISTBeeVideo(deferLoadingFrames: true)!
-    let (batch, statistics) = video.makeBackgroundBatch(
-      patchSize: (40, 70), appearanceModelSize: (100, 100), batchSize: 200)
-    XCTAssertEqual(batch.shape, [200, 100, 100, 3])
-    XCTAssertEqual(statistics.mean.shape, [])
-    XCTAssertEqual(statistics.standardDeviation.shape, [])
+    let bgBatch = video.makeBackgroundBatch(
+      patchSize: (40, 70), appearanceModelSize: (100, 100),
+      statistics: statistics,
+      batchSize: 200)
+    XCTAssertEqual(bgBatch.shape, [200, 100, 100, 3])
   }
 }

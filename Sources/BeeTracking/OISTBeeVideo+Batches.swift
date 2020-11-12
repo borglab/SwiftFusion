@@ -40,10 +40,12 @@ extension OISTBeeVideo {
   }
 
   /// Returns a `[N, h, w, c]` batch of normalized patches that do not overlap with any bee
-  /// bee bounding boxes, and returns the statistics used to normalize them.
-  public func makeBackgroundBatch(patchSize: (Int, Int), appearanceModelSize: (Int, Int), batchSize: Int = 200)
-    -> (normalized: Tensor<Double>, statistics: FrameStatistics)
-  {
+  /// bee bounding boxes.
+  public func makeBackgroundBatch(
+    patchSize: (Int, Int), appearanceModelSize: (Int, Int),
+    statistics: FrameStatistics,
+    batchSize: Int = 200
+  ) -> Tensor<Double> {
     let maxSide = max(patchSize.0, patchSize.1)
 
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
@@ -87,8 +89,7 @@ extension OISTBeeVideo {
     }
 
     let stacked = Tensor(stacking: images)
-    let statistics = FrameStatistics(stacked)
-    return (statistics.normalized(stacked), statistics)
+    return statistics.normalized(stacked)
   }
 
   /// Returns `count` random frames.
