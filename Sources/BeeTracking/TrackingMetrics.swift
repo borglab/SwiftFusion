@@ -203,7 +203,7 @@ extension TrackerEvaluationSequence {
   /// Returns the performance of `tracker` on the sequence `self`.
   public func evaluate(_ tracker: Tracker) -> SequenceEvaluationResults {
     let subsequences = self.subsequences(deltaAnchor: 50)
-    let subsequenceEvaluations = [(metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox])](
+    let subsequencePredictions = [[OrientedBoundingBox]](
       unsafeUninitializedCapacity: subsequences.count
     ) { (buf, actualCount) in
       let blockCount = 4
@@ -216,10 +216,15 @@ extension TrackerEvaluationSequence {
           }
           let subsequence = subsequences[i]
           print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
-          (buf.baseAddress! + i).initialize(to: subsequence.evaluateSubsequence(tracker))
+          (buf.baseAddress! + i).initialize(to: tracker(subsequence.frames, subsequence.groundTruth[0]))
         }
       }
       actualCount = subsequences.count
+    }
+    let subsequenceEvaluations = zip(subsequences, subsequencePredictions).map {
+      (
+        metrics: SubsequenceMetrics(groundTruth: $0.0.groundTruth, prediction: $0.1),
+        prediction: $0.1)
     }
     return SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
