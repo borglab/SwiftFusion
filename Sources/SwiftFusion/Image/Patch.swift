@@ -148,7 +148,7 @@ extension ArrayImage {
     let rowScale = Double(region.rows) / Double(outputRows)
     let colScale = Double(region.cols) / Double(outputCols)
     return create { (bufresult, bufdtheta, bufdu, bufdv) in
-      for i in 0..<outputRows {
+      ComputeThreadPools.local.parallelFor(n: outputRows) { (i, _) in
         for j in 0..<outputCols {
           // The position of the destination pixel in the source region, in `(u, v)` coordinates.
           let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
