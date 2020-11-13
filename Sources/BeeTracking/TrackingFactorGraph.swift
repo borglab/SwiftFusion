@@ -62,6 +62,53 @@ public struct WeightedBetweenFactorPose2: LinearizableFactor2 {
   }
 }
 
+public struct WeightedBetweenFactorPose2SD: LinearizableFactor2 {
+  public typealias Pose = Pose2
+  public let edges: Variables.Indices
+  public let difference: Pose
+
+  public let sdX: Double
+  public let sdY: Double
+  public let sdTheta: Double
+
+  public init(_ startId: TypedID<Pose>, _ endId: TypedID<Pose>, _ difference: Pose, sdX: Double, sdY: Double, sdTheta: Double) {
+    self.edges = Tuple2(startId, endId)
+    self.difference = difference
+    self.sdX = sdX
+    self.sdY = sdY
+    self.sdTheta = sdTheta
+  }
+
+  @differentiable
+  public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
+    let actualMotion = between(start, end)
+    let local = difference.localCoordinate(actualMotion)
+    return Vector3(local.x / sdTheta, local.y / sdX, local.z / sdY)
+  }
+}
+
+public struct WeightedPriorFactorPose2: LinearizableFactor1 {
+  public typealias Pose = Pose2
+  public let edges: Variables.Indices
+  public let prior: Pose
+  public let weight: Double
+  public let rotWeight: Double
+
+  public init(_ startId: TypedID<Pose>, _ prior: Pose, weight: Double, rotWeight: Double = 1.0) {
+    self.edges = Tuple1(startId)
+    self.prior = prior
+    self.weight = weight
+    self.rotWeight = rotWeight
+  }
+
+  @differentiable
+  public func errorVector(_ start: Pose) -> Pose.TangentVector {
+    let weighted = weight * prior.localCoordinate(start)
+    return Vector3(rotWeight * weighted.x, weighted.y, weighted.z)
+  }
+}
+
+
 /// A specification for a factor graph that tracks a target in a sequence of frames.
 public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   /// The frames of the video to track.
@@ -158,6 +205,21 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
       // The `i`-th variable is already initialized well, so add a prior factor that it stays
       // near its current position.
       addPriorFactor(frameVariableIDs[i], x[frameVariableIDs[i]], &g)
+
+      let currentVarID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
+      let initialPose = x[currentVarID]
+      var bestPose = x[currentVarID]
+      var bestError = g.error(at: x)
+      for dtheta in stride(from: -.pi / 2 as Double, to: .pi / 2, by: .pi / 10) {
+        let candidatePose = Pose2(Rot2(dtheta) * initialPose.rot, initialPose.t)
+        x[currentVarID] = candidatePose
+        let candidateError = g.error(at: x)
+        if candidateError < bestError {
+          bestError = candidateError
+          bestPose = candidatePose
+        }
+      }
+      x[currentVarID] = bestPose
 
       // Optimize the factor graph.
       try? optimizer.optimize(graph: g, initial: &x)

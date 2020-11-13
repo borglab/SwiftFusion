@@ -9,7 +9,7 @@ import TensorFlow
 
 struct BeeTrackingTool: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [TrainRAE.self, InferTrackRAE.self, InferTrackRawPixels.self])
+    subcommands: [TrainRAE.self, InferTrackRAE.self, InferTrackRawPixels.self, NaiveRae.self])
 }
 
 /// The dimension of the hidden layer in the appearance model.
@@ -163,7 +163,18 @@ struct InferTrackRAE: ParsableCommand {
 /// Infers a track on a VOT video, using the raw pixel tracker.
 struct InferTrackRawPixels: ParsableCommand {
   func run() {
-    let dataset = OISTBeeVideo()!
+
+    func rawPixelTracker(_ frames: [Tensor<Float>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox] {
+      var tracker = makeRawPixelTracker(frames: frames, target: frames[0].patch(at: start))
+      tracker.optimizer.precision = 1e0
+      let prediction = tracker.infer(knownStart: Tuple1(start.center))
+      return tracker.frameVariableIDs.map { varIds in
+        let poseId = varIds.head
+        return OrientedBoundingBox(center: prediction[poseId], rows: start.rows, cols: start.cols)
+      }
+    }
+
+    var dataset = OISTBeeVideo()!
     // Only do inference on the interesting tracks.
     dataset.tracks = [3, 5, 6, 7].map { dataset.tracks[$0] }
     let trackerEvaluationDataset = TrackerEvaluationDataset(dataset)
@@ -174,9 +185,190 @@ struct InferTrackRawPixels: ParsableCommand {
   }
 }
 
+/// Tracking with a Naive Bayes with RAE
+struct NaiveRae: ParsableCommand {
+  @Option(help: "Where to load the RAE weights")
+  var loadWeights: String
+
+  @Option(help: "The dimension of the latent code in the RAE appearance model")
+  var kLatentDimension: Int
+
+  @Option(help: "The dimension of the hidden code in the RAE appearance model")
+  var kHiddenDimension = 100
+
+  @Flag
+  var verbose: Bool = false
+
+  /// Returns predictions for `videoName` using the raw pixel tracker.
+  func naiveRaeTrack(dataset dataset_: OISTBeeVideo) {
+    var dataset = dataset_
+    dataset.labels = dataset.labels.map {
+      $0.filter({ $0.label == .Body })
+    }
+    // Make batch and do RAE
+    let (batch, _) = dataset.makeBatch(appearanceModelSize: (40, 70), batchSize: 200)
+    var statistics = FrameStatistics(batch)
+    statistics.mean = Tensor(62.26806976644069)
+    statistics.standardDeviation = Tensor(37.44683834503672)
+
+    let backgroundBatch = dataset.makeBackgroundBatch(
+      patchSize: (40, 70), appearanceModelSize: (40, 70),
+      statistics: statistics,
+      batchSize: 300
+    )
+
+    let (imageHeight, imageWidth, imageChannels) =
+      (batch.shape[1], batch.shape[2], batch.shape[3])
+    
+    if verbose { print("Loading RAE model, \(batch.shape)...") }
+    
+    let np = Python.import("numpy")
+
+    var rae = DenseRAE(
+      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
+      hiddenDimension: kHiddenDimension, latentDimension: kLatentDimension
+    )
+    rae.load(weights: np.load(loadWeights, allow_pickle: true))
+
+    if verbose { print("Fitting Naive Bayes model") }
+
+    var (foregroundModel, backgroundModel) = (
+      MultivariateGaussian(
+        dims: TensorShape([kLatentDimension]),
+        regularizer: 1e-3
+      ), GaussianNB(
+        dims: TensorShape([kLatentDimension]),
+        regularizer: 1e-3
+      )
+    )
+
+    let batchPositive = rae.encode(batch)
+    foregroundModel.fit(batchPositive)
+
+    let batchNegative = rae.encode(backgroundBatch)
+    backgroundModel.fit(batchNegative)
+
+    if verbose {
+      print("Foreground: \(foregroundModel)")
+      print("Background: \(backgroundModel)")
+    }
+
+    func tracker(_ frames: [Tensor<Float>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox] {
+      var tracker = makeNaiveBayesRAETracker(
+        model: rae,
+        statistics: statistics,
+        frames: frames,
+        targetSize: (start.rows, start.cols),
+        foregroundModel: foregroundModel, backgroundModel: backgroundModel
+      )
+      tracker.optimizer.cgls_precision = 1e-9
+      tracker.optimizer.precision = 1e-6
+      tracker.optimizer.max_iteration = 200
+      let prediction = tracker.infer(knownStart: Tuple1(start.center))
+      return tracker.frameVariableIDs.map { varIds in
+        let poseId = varIds.head
+        return OrientedBoundingBox(center: prediction[poseId], rows: start.rows, cols: start.cols)
+      }
+    }
+
+    // Only do inference on the interesting tracks.
+    var evalDataset = OISTBeeVideo()!
+    evalDataset.tracks = [3, 5, 6, 7].map { evalDataset.tracks[$0] }
+    let trackerEvaluationDataset = TrackerEvaluationDataset(evalDataset)
+    let eval = trackerEvaluationDataset.evaluate(
+      tracker, sequenceCount: evalDataset.tracks.count, deltaAnchor: 500, outputFile: "rae")
+    print(eval.trackerMetrics.accuracy)
+    print(eval.trackerMetrics.robustness)
+  }
+
+  func run() {
+    if verbose {
+      print("Loading dataset...")
+    }
+
+    startTimer("DATASET_LOAD")
+    let dataset: OISTBeeVideo = OISTBeeVideo(deferLoadingFrames: true)!
+    stopTimer("DATASET_LOAD")
+
+    if verbose {
+      print("Tracking...")
+    }
+
+    startTimer("RAE_TRACKING")
+    naiveRaeTrack(dataset: dataset)
+    stopTimer("RAE_TRACKING")
+
+    if verbose {
+      printTimers()
+    }
+  }
+}
+
 // It is important to set the global threadpool before doing anything else, so that nothing
 // accidentally uses the default threadpool.
 ComputeThreadPools.global =
   NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
 
 BeeTrackingTool.main()
+
+
+/// Returns a tracking configuration for a tracker using an RAE.
+///
+/// Parameter model: The RAE model to use.
+/// Parameter statistics: Normalization statistics for the frames.
+/// Parameter frames: The frames of the video where we want to run tracking.
+/// Parameter targetSize: The size of the target in the frames.
+public func makeNaiveBayesRAETracker(
+  model: DenseRAE,
+  statistics: FrameStatistics,
+  frames: [Tensor<Float>],
+  targetSize: (Int, Int),
+  foregroundModel: MultivariateGaussian,
+  backgroundModel: GaussianNB
+) -> TrackingConfiguration<Tuple1<Pose2>> {
+  var variableTemplate = VariableAssignments()
+  var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()
+  for _ in 0..<frames.count {
+    frameVariableIDs.append(
+      Tuple1(
+        variableTemplate.store(Pose2())
+        ))
+  }
+  return TrackingConfiguration(
+    frames: frames,
+    variableTemplate: variableTemplate,
+    frameVariableIDs: frameVariableIDs,
+    addPriorFactor: { (variables, values, graph) -> () in
+      let (poseID) = unpack(variables)
+      let (pose) = unpack(values)
+      graph.store(WeightedPriorFactorPose2(poseID, pose, weight: 1e0, rotWeight: 1e2))
+    },
+    addTrackingFactor: { (variables, frame, graph) -> () in
+      let (poseID) = unpack(variables)
+      graph.store(
+        ProbablisticTrackingFactor(poseID,
+          measurement: statistics.normalized(frame),
+          encoder: model,
+          patchSize: targetSize,
+          appearanceModelSize: targetSize,
+          foregroundModel: foregroundModel,
+          backgroundModel: backgroundModel,
+          maxPossibleNegativity: 1e1
+        )
+      )
+    },
+    addBetweenFactor: { (variables1, variables2, graph) -> () in
+      let (poseID1) = unpack(variables1)
+      let (poseID2) = unpack(variables2)
+      graph.store(WeightedBetweenFactorPose2SD(poseID1, poseID2, Pose2(), sdX: 8, sdY: 4.6, sdTheta: 0.3))
+    })
+}
+
+/// Returns `t` as a Swift tuple.
+fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
+  return (t.head, t.tail.head)
+}
+/// Returns `t` as a Swift tuple.
+fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
+  return (t.head)
+}

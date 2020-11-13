@@ -24,7 +24,7 @@ import Foundation
 
 struct OISTVisualizationTool: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [VisualizeTrack.self, ViewFrame.self, RawTrack.self, PpcaTrack.self, NaiveRae.self, TrainRAE.self, NaivePca.self])
+    subcommands: [VisualizePrediction.self, VisualizeTrack.self, ViewFrame.self, RawTrack.self, PpcaTrack.self, NaiveRae.self, TrainRAE.self, NaivePca.self])
 }
 
 /// View a frame with bounding boxes
@@ -510,26 +510,14 @@ struct TrainRAE: ParsableCommand {
 ///
 /// Tracking with a Naive Bayes with RAE
 struct NaivePca: ParsableCommand {
-  @Option(help: "Where to load the RAE weights")
-  var loadWeights: String = "./oist_rae_weight.npy"
-
-  @Option(help: "Which bounding box to track")
-  var boxId: Int = 0
-
-  @Option(help: "Track for how many frames")
-  var trackFrames: Int = 10
-
-  @Option(help: "Track the target from frame x")
-  var trackStartFrame: Int = 250
-
   @Option(help: "The dimension of the latent code in the RAE appearance model")
-  var kLatentDimension = 10
+  var kLatentDimension = 20
 
   @Flag(help: "Print progress information")
   var verbose: Bool = false
 
   /// Returns predictions for `videoName` using the raw pixel tracker.
-  func naivePpcaTrack(dataset dataset_: OISTBeeVideo, length: Int, startFrom: Int) -> [OrientedBoundingBox] {
+  func naivePpcaTrack(dataset dataset_: OISTBeeVideo) {
     var dataset = dataset_
     dataset.labels = dataset.labels.map {
       $0.filter({ $0.label == .Body })
@@ -573,48 +561,32 @@ struct NaivePca: ParsableCommand {
       print("Background: \(backgroundModel)")
     }
 
-    if verbose { print("Loading video frames...") }
-    startTimer("VIDEO_LOAD")
-    // Load the video and take a slice of it.
-    let videos = (0..<length).map { (i) -> Tensor<Float> in
-      return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[startFrom + i])! }
-    }
-    stopTimer("VIDEO_LOAD")
-
-    let startPose = dataset.labels[startFrom][boxId].location.center
-
-    if verbose {
-      print("Creating tracker, startPose = \(startPose)")
-    }
-    
-    startTimer("MAKE_GRAPH")
-    var tracker = makeNaiveBayesPCATracker(
-      model: ppca,
-      statistics: statistics,
-      frames: videos,
-      targetSize: (dataset.labels[startFrom][boxId].location.rows, dataset.labels[startFrom][boxId].location.cols),
-      foregroundModel: foregroundModel, backgroundModel: backgroundModel
-    )
-    stopTimer("MAKE_GRAPH")
-
-    if verbose { print("Starting Optimization...") }
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
-
-    tracker.optimizer.cgls_precision = 1e-7
-    tracker.optimizer.precision = 1e-4
-    tracker.optimizer.max_iteration = 200
-
-    startTimer("GRAPH_INFER")
-    let prediction = tracker.infer(knownStart: Tuple1(startPose))
-    stopTimer("GRAPH_INFER")
-
-    let boxes = tracker.frameVariableIDs.map { frameVariableIDs -> OrientedBoundingBox in
-      let poseID = frameVariableIDs.head
-      return OrientedBoundingBox(
-        center: prediction[poseID], rows: dataset.labels[startFrom][boxId].location.rows, cols: dataset.labels[startFrom][boxId].location.cols)
+    func tracker(_ frames: [Tensor<Float>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox] {
+      var tracker = makeNaiveBayesPCATracker(
+        model: ppca,
+        statistics: statistics,
+        frames: frames,
+        targetSize: (start.rows, start.cols),
+        foregroundModel: foregroundModel, backgroundModel: backgroundModel
+      )
+      tracker.optimizer.cgls_precision = 1e-9
+      tracker.optimizer.precision = 1e-6
+      tracker.optimizer.max_iteration = 200
+      let prediction = tracker.infer(knownStart: Tuple1(start.center))
+      return tracker.frameVariableIDs.map { varIds in
+        let poseId = varIds.head
+        return OrientedBoundingBox(center: prediction[poseId], rows: start.rows, cols: start.cols)
+      }
     }
 
-    return boxes
+    // Only do inference on the interesting tracks.
+    var evalDataset = OISTBeeVideo()!
+    evalDataset.tracks = [3, 5, 6, 7].map { evalDataset.tracks[$0] }
+    let trackerEvaluationDataset = TrackerEvaluationDataset(evalDataset)
+    let eval = trackerEvaluationDataset.evaluate(
+      tracker, sequenceCount: evalDataset.tracks.count, deltaAnchor: 500, outputFile: "rae")
+    print(eval.trackerMetrics.accuracy)
+    print(eval.trackerMetrics.robustness)
   }
 
   func run() {
@@ -631,25 +603,8 @@ struct NaivePca: ParsableCommand {
     }
 
     startTimer("PPCA_TRACKING")
-    var bboxes: [OrientedBoundingBox]
-    bboxes = naivePpcaTrack(dataset: dataset, length: trackFrames, startFrom: trackStartFrame)
+    naivePpcaTrack(dataset: dataset)
     stopTimer("PPCA_TRACKING")
-
-    let frameRawId = dataset.frameIds[trackStartFrame + trackFrames]
-    let image = dataset.loadFrame(frameRawId)!
-
-    if verbose {
-      print("Creating output plot")
-    }
-    startTimer("PLOTTING")
-    plot(image, boxes: bboxes.indices.map {
-      ("\($0)", bboxes[$0])
-    }, margin: 10.0, scale: 0.5).show()
-    stopTimer("PLOTTING")
-
-    if verbose {
-      printTimers()
-    }
   }
 }
 
@@ -663,6 +618,32 @@ struct VisualizeTrack: ParsableCommand {
   func run() {
     let dataset = OISTBeeVideo(deferLoadingFrames: true)!
     dataset.tracks[trackIndex].render(to: output, video: dataset)
+  }
+}
+
+struct VisualizePrediction: ParsableCommand {
+  @Option
+  var prediction: String
+
+  @Option
+  var subsequenceIndex: Int = 0
+
+  // TODO: I think I should save this in the prediction so that we do not need to specify it!
+  @Option
+  var startFrame: Int
+
+  @Option
+  var output: String
+
+  func run() {
+    let dataset = OISTBeeVideo(deferLoadingFrames: true)!
+    let decoder = JSONDecoder()
+    let data = try! Data(contentsOf: URL(fileURLWithPath: prediction))
+    let sequence = try! decoder.decode(SequenceEvaluationResults.self, from: data)
+
+    let track = OISTBeeTrack(
+      startFrameIndex: startFrame, boxes: sequence.subsequences[subsequenceIndex].prediction)
+    track.render(to: output, video: dataset)
   }
 }
 

@@ -102,6 +102,11 @@ public struct OISTBeeTrack {
 
   /// The positions of the bee at each frame.
   public var boxes: [OrientedBoundingBox]
+
+  public init(startFrameIndex: Int, boxes: [OrientedBoundingBox]) {
+    self.startFrameIndex = startFrameIndex
+    self.boxes = boxes
+  }
 }
 
 /// For output integers with padding
