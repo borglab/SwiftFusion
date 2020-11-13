@@ -1,4 +1,5 @@
 import BeeDataset
+import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
 import TensorFlow
@@ -170,7 +171,7 @@ extension TrackerEvaluationDataset {
   public func evaluate(_ tracker: Tracker, sequenceCount: Int) -> TrackerEvaluationResults {
     let sequenceEvaluations = sequences.prefix(sequenceCount).enumerated().map {
       (i, sequence) -> SequenceEvaluationResults in
-      print("Evaluating sequence \(i + 1) of \(sequences.count)")
+      print("Evaluating sequence \(i + 1) of \(sequenceCount)")
       return sequence.evaluate(tracker)
     }
     return TrackerEvaluationResults(
@@ -202,10 +203,15 @@ extension TrackerEvaluationSequence {
   /// Returns the performance of `tracker` on the sequence `self`.
   public func evaluate(_ tracker: Tracker) -> SequenceEvaluationResults {
     let subsequences = self.subsequences(deltaAnchor: 50)
-    let subsequenceEvaluations = subsequences.enumerated().map {
-      (i, subsequence) -> (metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox]) in
-      print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
-      return subsequence.evaluateSubsequence(tracker)
+    let subsequenceEvaluations = [(metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox])](
+      unsafeUninitializedCapacity: subsequences.count
+    ) { (buf, actualCount) in
+      ComputeThreadPools.local.parallelFor(n: subsequences.count) { (i, _) in
+        let subsequence = subsequences[i]
+        print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
+        (buf.baseAddress! + i).initialize(to: subsequence.evaluateSubsequence(tracker))
+      }
+      actualCount = subsequences.count
     }
     return SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
