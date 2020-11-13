@@ -30,7 +30,7 @@ public struct ProbablisticTrackingFactor<
   public let edges: Variables.Indices
 
   /// The image containing the target.
-  public let measurement: Tensor<Double>
+  public let measurement: ArrayImage
 
   public let encoder: Encoder
 
@@ -42,7 +42,7 @@ public struct ProbablisticTrackingFactor<
 
   public var backgroundModel: BackgroundModel
 
-  public var maxPossibleNegativity: Double = 1e10
+  public var maxPossibleNegativity: Double
 
   /// Creates an instance.
   ///
@@ -54,32 +54,34 @@ public struct ProbablisticTrackingFactor<
   ///   - backgroundModel: A generative density on the background
   public init(
     _ poseId: TypedID<Pose2>,
-    measurement: Tensor<Double>,
+    measurement: Tensor<Float>,
     encoder: Encoder,
     patchSize: (Int, Int),
     appearanceModelSize: (Int, Int),
     foregroundModel: ForegroundModel,
-    backgroundModel: BackgroundModel
+    backgroundModel: BackgroundModel,
+    maxPossibleNegativity: Double = 1e10
   ) {
     self.edges = Tuple1(poseId)
-    self.measurement = measurement
+    self.measurement = ArrayImage(measurement)
     self.encoder = encoder
     self.patchSize = patchSize
     self.appearanceModelSize = appearanceModelSize
     self.foregroundModel = foregroundModel
     self.backgroundModel = backgroundModel
+    self.maxPossibleNegativity = maxPossibleNegativity
   }
 
   @differentiable
   public func errorVector(_ pose: Pose2) -> Vector1 {
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
-    let patch = measurement.patch(at: region, outputSize: appearanceModelSize)
-    let features = encoder.encode(patch)
+    let patch = Tensor<Double>(measurement.patch(at: region, outputSize: appearanceModelSize).tensor)
+    let features = encoder.encode(patch.expandingShape(at: 0)).squeezingShape(at: 0)
 
     let result = maxPossibleNegativity + foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features)
 
     if result < 0 {
-      print("Warning: Negative value encountered in errorVector!")
+      print("Warning: Negative value encountered in errorVector! (\(result))")
     }
 
     /// TODO: What is the idiomatic way of avoiding negative probability here?

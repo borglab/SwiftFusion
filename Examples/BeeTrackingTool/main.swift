@@ -25,7 +25,7 @@ func makeVOTBatch(votBaseDirectory: String, videoName: String, appearanceModelSi
 {
   let data = VOTVideo(votBaseDirectory: votBaseDirectory, videoName: videoName)!
   let images = (0..<data.frames.count).map { (i: Int) -> Tensor<Double> in
-    return data.frames[i].patch(at: data.track[i], outputSize: appearanceModelSize)
+    return Tensor<Double>(data.frames[i].patch(at: data.track[i], outputSize: appearanceModelSize))
   }
   let stacked = Tensor(stacking: images)
   let statistics = FrameStatistics(stacked)
@@ -120,8 +120,6 @@ struct InferTrackRAE: ParsableCommand {
   var verbose: Bool = false
 
   func run() {
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
-
     let np = Python.import("numpy")
 
     let appearanceModelSize = (appearanceModelRows, appearanceModelCols)
@@ -147,8 +145,8 @@ struct InferTrackRAE: ParsableCommand {
     if verbose { tracker.optimizer.verbosity = .SUMMARY }
 
     let startPose = videoSlice.track[0].center
-    let startPatch = videoSlice.frames[0].patch(
-      at: videoSlice.track[0], outputSize: appearanceModelSize)
+    let startPatch = Tensor<Double>(videoSlice.frames[0].patch(
+      at: videoSlice.track[0], outputSize: appearanceModelSize))
     let startLatent = Vector10(
       flatTensor: model.encode(
         frameStatistics.normalized(startPatch).expandingShape(at: 0)).squeezingShape(at: 0))
@@ -177,8 +175,6 @@ struct InferTrackRawPixels: ParsableCommand {
   var verbose: Bool = false
 
   func run() {
-    ComputeThreadPools.global = NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
-
     let video = VOTVideo(votBaseDirectory: votBaseDirectory, videoName: videoName)!
     let videoSlice = video[0..<min(video.frames.count, frameCount)]
 
@@ -198,5 +194,10 @@ struct InferTrackRawPixels: ParsableCommand {
     }
   }
 }
+
+// It is important to set the global threadpool before doing anything else, so that nothing
+// accidentally uses the default threadpool.
+ComputeThreadPools.global =
+  NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 12)
 
 BeeTrackingTool.main()

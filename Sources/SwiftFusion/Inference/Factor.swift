@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import PenguinParallelWithFoundation
 import PenguinStructures
 
 /// A factor in a factor graph.
@@ -318,12 +319,15 @@ extension VectorFactor {
         Linearization.ErrorVector == ErrorVector
   {
     Variables.withBufferBaseAddresses(x) { varsBufs in
-      .init(
-        factors.lazy.map { f in
+      .init(ArrayBuffer<Linearization>(
+        count: factors.count, minimumCapacity: factors.count) { b in
+        ComputeThreadPools.local.parallelFor(n: factors.count) { (i, _) in
+          let f = factors[factors.index(factors.startIndex, offsetBy: i)]
           let (fLinearizable, xLinearizable) =
             f.linearizableComponent(at: Variables(at: f.edges, in: varsBufs))
-          return Linearization(linearizing: fLinearizable, at: xLinearizable)
-        })
+          (b + i).initialize(to: Linearization(linearizing: fLinearizable, at: xLinearizable))
+        }
+      })
     }
   }
 }

@@ -63,8 +63,8 @@ extension OISTBeeVideo {
         for _ in 0..<attemptCount {
           // Sample a point uniformly at random in the frame, away from the edges.
           let location = Vector2(
-            Double.random(in: Double(maxSide)..<Double(frame.shape[1] - maxSide)),
-            Double.random(in: Double(maxSide)..<Double(frame.shape[0] - maxSide)))
+            Double.random(in: Double(maxSide)..<Double(frame.shape[1] - maxSide), using: &deterministicEntropy),
+            Double.random(in: Double(maxSide)..<Double(frame.shape[0] - maxSide), using: &deterministicEntropy))
 
           // Conservatively reject any point that could possibly overlap with any of the labels.
           for label in labels {
@@ -79,7 +79,7 @@ extension OISTBeeVideo {
         fatalError("could not find backround location after \(attemptCount) attempts")
       }
       return locations.map { location -> Tensor<Double> in
-        let theta = Double.random(in: 0..<(2 * .pi))
+        let theta = Double.random(in: 0..<(2 * .pi), using: &deterministicEntropy)
         return frame.patch(
           at: OrientedBoundingBox(
             center: Pose2(Rot2(theta), location),
@@ -105,7 +105,7 @@ extension OISTBeeVideo {
       ComputeThreadPools.local.parallelFor(n: count) { (i, _) -> Void in
         let frameIndex = selectedFrameIndices[i]
         let frameId = self.frameIds[frameIndex]
-        let frame = self.loadFrame(frameId)!
+        let frame = Tensor<Double>(self.loadFrame(frameId)!)
         let labels = self.labels[frameIndex]
         assert(labels.allSatisfy { $0.frameIndex == frameId })
         (b.baseAddress! + i).initialize(to: (frameId, (frame, labels)))

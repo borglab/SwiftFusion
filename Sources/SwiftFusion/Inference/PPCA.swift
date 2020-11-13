@@ -103,10 +103,13 @@ public struct PPCA {
   /// Output: [latent_size]
   @differentiable
   public func encode(_ image: Patch) -> Tensor<Double> {
-    precondition(image.rank == 3, "wrong latent dimension \(image.shape)")
+    precondition(image.rank == 3 || (image.rank == 4 && image.shape[0] == 1), "wrong latent dimension \(image.shape)")
     let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
-
-    return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
+    if image.rank == 4 {
+      return matmul(W_inv!, (image.squeezingShape(at: 0) - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size]).expandingShape(at: 0)
+    } else {
+      return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
+    }
   }
 
   /// Generate an image and corresponding Jacobian according to a latent

@@ -184,7 +184,7 @@ extension TrackerEvaluationDataset {
 /// A single sequence in a `TrackerEvaluationDataset`.
 public struct TrackerEvaluationSequence {
   /// The frames of the sequence.
-  public let frames: [Tensor<Double>]
+  public let frames: [Tensor<Float>]
 
   /// The ground truth labels for the sequence.
   public let groundTruth: [OrientedBoundingBox]
@@ -269,4 +269,4 @@ public struct SequenceEvaluationResults {
 /// Given `frames` and a `start` region containing an object to track, returns predicted regions
 /// for all `frames` (including the first one).
 public typealias Tracker =
-  (_ frames: [Tensor<Double>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox]
+  (_ frames: [Tensor<Float>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox]

@@ -20,7 +20,7 @@ import XCTest
 final class PatchTests: XCTestCase {
   /// A patch at a non-rotated bounding box is the same as a slice of the image.
   func testSlice() {
-    let image = Tensor<Double>(randomUniform: [100, 100, 3])
+    let image = Tensor<Float>(randomUniform: [100, 100, 3])
     let patch = image.patch(
       at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), rows: 10, cols: 20))
     let expectedPatch = image.slice(lowerBounds: [25, 50, 0], sizes: [10, 20, 3])
@@ -30,32 +30,32 @@ final class PatchTests: XCTestCase {
   /// Scaling a constant-color region gives you a constant-color image of the requested size.
   func testScaleConstantColor() {
     // Make an image with a black backround and a `color` region between (20, 20) and (80, 80).
-    let color = Tensor<Double>([0.1, 0.2, 0.3]).reshaped(to: [1, 1, 3])
-    let backgroundColor = Tensor<Double>([0, 0, 0]).reshaped(to: [1, 1, 3])
+    let color = Tensor<Float>([0.1, 0.2, 0.3]).reshaped(to: [1, 1, 3])
+    let backgroundColor = Tensor<Float>([0, 0, 0]).reshaped(to: [1, 1, 3])
     var image = backgroundColor.tiled(multiples: [100, 100, 1])
     image[20..<80, 20..<80, 0..<3] = color.tiled(multiples: [60, 60, 1])
 
     let scaledUp = image.patch(
       at: OrientedBoundingBox(center: Pose2(50, 50, 1), rows: 30, cols: 30),
       outputSize: (60, 200))
-    XCTAssertEqual(scaledUp, color.tiled(multiples: [60, 200, 1]))
+    assertEqual(scaledUp, color.tiled(multiples: [60, 200, 1]), accuracy: 1e-5)
 
     let scaledDown = image.patch(
       at: OrientedBoundingBox(center: Pose2(50, 50, 1), rows: 30, cols: 30),
       outputSize: (2, 20))
-    XCTAssertEqual(scaledDown, color.tiled(multiples: [2, 20, 1]))
+    assertEqual(scaledDown, color.tiled(multiples: [2, 20, 1]), accuracy: 1e-5)
   }
 
   // /// The derivative of a patch with respect to the input image is the identity restricted to the
   // /// patch region.
   // func testSliceDerivativeWithRespectToImage() {
-  //   let image = Tensor<Double>(randomUniform: [100, 100, 3])
+  //   let image = Tensor<Float>(randomUniform: [100, 100, 3])
   //   let grad = gradient(at: image) { image in
   //     image.patch(
   //       at: OrientedBoundingBox(center: Pose2(Rot2(0), Vector2(60, 30)), rows: 10, cols: 20)
   //     ).sum()
   //   }
-  //   var expectedGrad = Tensor<Double>(zeros: [100, 100, 3])
+  //   var expectedGrad = Tensor<Float>(zeros: [100, 100, 3])
   //   expectedGrad[25..<35, 50..<70] = Tensor(ones: [10, 20, 3])
   //   XCTAssertEqual(grad, expectedGrad)
   // }
@@ -63,7 +63,7 @@ final class PatchTests: XCTestCase {
   /// Test cropping an example image.
   func testExampleImage() {
     let dataDir = URL.sourceFileDirectory().appendingPathComponent("data")
-    let image = Tensor<Double>(Image(contentsOf: dataDir.appendingPathComponent("test.png")).tensor)
+    let image = Tensor<Float>(Image(contentsOf: dataDir.appendingPathComponent("test.png")).tensor)
     let obb = OrientedBoundingBox(
       center: Pose2(Rot2(-20 * .pi / 180), Vector2(35, 65)), rows: 20, cols: 40)
     let patch = image.patch(at: obb)
@@ -71,7 +71,7 @@ final class PatchTests: XCTestCase {
     // Created using ImageMagick:
     //   convert -distort SRT 35,65,20 -crop 40x20+15+55 test.png cropped.png
     let expectedPatch =
-      Tensor<Double>(Image(contentsOf: dataDir.appendingPathComponent("cropped.png")).tensor)
+      Tensor<Float>(Image(contentsOf: dataDir.appendingPathComponent("cropped.png")).tensor)
 
     // The actual and expected are pretty close, but not precisely the same.
     // TODO: Investigate the difference.
@@ -82,7 +82,7 @@ final class PatchTests: XCTestCase {
   /// The derivative of a patch with respect to the region's position is 0 when the image is
   /// constant.
   func testDerivativeWithRespectToPosition_constantImage() {
-    let image = Tensor<Double>(ones: [100, 100, 3])
+    let image = Tensor<Float>(ones: [100, 100, 3])
     let obb = OrientedBoundingBox(center: Pose2(Rot2(1), Vector2(60, 50)), rows: 10, cols: 20)
     let grad = gradient(at: obb) { obb in
       image.patch(at: obb).mean()
@@ -107,12 +107,12 @@ final class PatchTests: XCTestCase {
   /// Test that we can gradient descend on the position to reach a target region in the image.
   func testGradientDescentPosition() {
     // A target patch whose position we want to find.
-    let target = Tensor(linearSpaceFrom: 1, to: 2, count: 10)
+    let target = Tensor<Float>(linearSpaceFrom: 1, to: 2, count: 10)
       .reshaped(to: [1, 10, 1])
       .tiled(multiples: [5, 1, 1])
 
     // An image with zeros everywhere except the target.
-    var image = Tensor<Double>(zeros: [100, 100, 1])
+    var image = Tensor<Float>(zeros: [100, 100, 1])
     image[20..<25, 60..<70] = target
 
     // An initial guess that has some overlap with the target.
@@ -135,25 +135,25 @@ final class PatchTests: XCTestCase {
   /// jacobian that we get from using autodiff on `patch`.
   func testPatchWithJacobian() {
     for _ in 0..<10 {
-      let image = Tensor<Double>(randomNormal: [100, 100, 1])
+      let image = Tensor<Float>(randomNormal: [100, 100, 1])
       let obb = OrientedBoundingBox(
         center: Pose2(randomWithCovariance: eye(rowCount: 3)), rows: 10, cols: 20)
 
       // Calculate the expected value and jacobian using autodiff. We calculate the jacobian by
       // pulling back all the basis vectors.
       let (expectedValue, pb) = valueWithPullback(at: obb) { image.patch(at: $0) }
-      let expectedJacobian = Tensor<Double>(
+      let expectedJacobian = Tensor<Float>(
         stacking: (0..<(obb.rows * obb.cols)).map { i in
-          var basis = Tensor<Double>(zerosLike: expectedValue)
+          var basis = Tensor<Float>(zerosLike: expectedValue)
           basis[i / obb.cols, i % obb.cols, 0] = Tensor(1)
-          return pb(basis).center.flatTensor
+          return Tensor<Float>(pb(basis).center.flatTensor)
         }
       ).reshaped(to: [obb.rows, obb.cols, 1, Pose2.TangentVector.dimension])
 
       // Compare to the result from `patchWithJacobian`.
       let (value, jacobian) = image.patchWithJacobian(at: obb)
-      assertEqual(value, expectedValue, accuracy: 1e-6)
-      assertEqual(jacobian, expectedJacobian, accuracy: 1e-6)
+      assertEqual(value, expectedValue, accuracy: 1e-5)
+      assertEqual(jacobian, expectedJacobian, accuracy: 1e-5)
     }
   }
 }

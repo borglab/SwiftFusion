@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import TensorFlow
+import PenguinParallelWithFoundation
 
 extension ArrayImage {
   /// Returns the patch of `self` at `region`.
@@ -26,22 +27,29 @@ extension ArrayImage {
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
     let rowScale = Double(region.rows) / Double(outputRows)
     let colScale = Double(region.cols) / Double(outputCols)
-    var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
-    for i in 0..<outputRows {
-      for j in 0..<outputCols {
-        // The position of the destination pixel in the source region, in `(u, v)` coordinates.
-        let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
+    let resultPixels = [Float](
+      unsafeUninitializedCapacity: outputRows * outputCols * self.channels
+    ) { (buf, actualCount) -> Void in
+      ComputeThreadPools.local.parallelFor(n: outputRows) { (i, _) -> Void in
+        for j in 0..<outputCols {
+          // The position of the destination pixel in the source region, in `(u, v)` coordinates.
+          let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
-        // The position of the destination pixel in the destination image, in coordinates where the
-        // center of the destination image is `(0, 0)`.
-        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+          // The position of the destination pixel in the destination image, in coordinates where the
+          // center of the destination image is `(0, 0)`.
+          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
-        for c in 0..<self.channels {
-          result.update(i, j, c, to: bilinear(self, region.center * xySrcRegion, c))
+          let offset = i * outputCols * self.channels + j * channels
+          for c in 0..<self.channels {
+            (buf.baseAddress! + (offset + c)).initialize(
+              to: bilinear(self, region.center * xySrcRegion, c))
+          }
         }
       }
+      actualCount = outputRows * outputCols * self.channels
     }
-    return result
+    return ArrayImage(
+      pixels: resultPixels, rows: outputRows, cols: outputCols, channels: self.channels)
   }
 
   @derivative(of: patch, wrt: region)
@@ -55,31 +63,36 @@ extension ArrayImage {
     let rowScale = Double(region.rows) / Double(outputRows)
     let colScale = Double(region.cols) / Double(outputCols)
     func outerPb(_ dOut: TangentVector) -> OrientedBoundingBox.TangentVector {
-      var idx = 0
-      var dBox = region.zeroTangentVector
-      for i in 0..<outputRows {
-        for j in 0..<outputCols {
-          // The position of the destination pixel in the source region, in `(u, v)`
-          // coordinates.
-          let uvSrcRegion =
-            Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
+      let dBoxes = [OrientedBoundingBox.TangentVector](
+        unsafeUninitializedCapacity: outputRows
+      ) { (buf, actualCount) -> Void in
+        ComputeThreadPools.local.parallelFor(n: outputRows) { (i, _) -> Void in
+          var dBox = OrientedBoundingBox.TangentVector.zero
+          for j in 0..<outputCols {
+            // The position of the destination pixel in the source region, in `(u, v)`
+            // coordinates.
+            let uvSrcRegion =
+              Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
-          // The position of the destination pixel in the destination image, in coordinates
-          // where the center of the destination image is `(0, 0)`.
-          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+            // The position of the destination pixel in the destination image, in coordinates
+            // where the center of the destination image is `(0, 0)`.
+            let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
-          for c in 0..<channels {
-            if dOut.pixels.base[idx] != 0 {
-              let pb = pullback(at: region) {
-                bilinear(self, $0.center * xySrcRegion, c)
+            let idx = i * outputCols * channels + j * channels
+            for c in 0..<channels {
+              if dOut.pixels.base[idx + c] != 0 {
+                let pb = pullback(at: region) {
+                  bilinear(self, $0.center * xySrcRegion, c)
+                }
+                dBox += pb(dOut.pixels.base[idx + c])
               }
-              dBox += pb(dOut.pixels.base[idx])
             }
-            idx += 1
           }
+          (buf.baseAddress! + i).initialize(to: dBox)
         }
+        actualCount = outputRows
       }
-      return dBox
+      return dBoxes.reduce(OrientedBoundingBox.TangentVector.zero, +)
     }
     return (r, outerPb)
   }
@@ -152,7 +165,7 @@ extension ArrayImage {
   }
 }
 
-extension Tensor where Scalar == Double {
+extension Tensor where Scalar: TensorFlowFloatingPoint {
   /// Returns the patch of `self` at `region`.
   ///
   /// - Parameters:
@@ -170,7 +183,8 @@ extension Tensor where Scalar == Double {
       self.shape.count == 2 || self.shape.count == 3,
       "image must have shape [height, width] or [height, width, channelCount]"
     )
-    let result = ArrayImage(self).patch(at: region, outputSize: outputSize).tensor
+    let result = Tensor<Scalar>(
+      ArrayImage(Tensor<Float>(self)).patch(at: region, outputSize: outputSize).tensor)
     return self.shape.count == 2 ? result.reshaped(to: [result.shape[0], result.shape[1]]) : result
   }
 
@@ -194,14 +208,14 @@ extension Tensor where Scalar == Double {
     -> (patch: Tensor<Scalar>, jacobian: Tensor<Scalar>)
   {
     precondition(self.shape.count == 3, "image must have shape [height, width, channelCount]")
-    let (patch, jacobian) = ArrayImage(self).patchWithJacobian(at: region, outputSize: outputSize)
+    let (patch, jacobian) = ArrayImage(Tensor<Float>(self)).patchWithJacobian(at: region, outputSize: outputSize)
     return (
-      patch: patch.tensor,
-      jacobian: Tensor<Double>(stacking: [
+      patch: Tensor<Scalar>(patch.tensor),
+      jacobian: Tensor<Scalar>(Tensor<Float>(stacking: [
         jacobian.dtheta.tensor,
         jacobian.du.tensor,
         jacobian.dv.tensor
-      ], alongAxis: -1))
+      ], alongAxis: -1)))
   }
 }
 
@@ -214,16 +228,16 @@ extension Tensor where Scalar == Double {
 ///   - point: a point in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
 ///   - channel: The channel to return.
 @differentiable(wrt: point)
-public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> Double {
+public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> Float {
   // The `(i, j)` integer coordinates of the top left pixel to sample from.
   let sourceI = withoutDerivative(at: Int(floor(point.y - 0.5)))
   let sourceJ = withoutDerivative(at: Int(floor(point.x - 0.5)))
 
   // Weight of the `(sourceI, _)` pixels in the interpolation.
-  let weightI = Double(sourceI) + 1.5 - point.y
+  let weightI = Float(sourceI) + 1.5 - Float(differentiableConversion: point.y)
 
   // Weight of the `(_, sourceJ)` pixels in the interpolation.
-  let weightJ = Double(sourceJ) + 1.5 - point.x
+  let weightJ = Float(sourceJ) + 1.5 - Float(differentiableConversion: point.x)
 
   let s1 = source[sourceI, sourceJ, channel] * weightI
   let s2 = source[sourceI + 1, sourceJ, channel] * (1 - weightI)
@@ -237,19 +251,19 @@ public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> 
 /// The parameters other than `dPoint` correspond to the parameters of `bilinear`.
 public func dBilinear(
   _ source: ArrayImage, _ point: Vector2, _ channel: Int, _ dPoint: Vector2
-) -> Double {
+) -> Float {
   // The `(i, j)` integer coordinates of the top left pixel to sample from.
   let sourceI = withoutDerivative(at: Int(floor(point.y - 0.5)))
   let sourceJ = withoutDerivative(at: Int(floor(point.x - 0.5)))
 
   // Weight of the `(sourceI, _)` pixels in the interpolation.
-  let weightI = Double(sourceI) + 1.5 - point.y
+  let weightI = Float(sourceI) + 1.5 - Float(point.y)
 
   // Weight of the `(_, sourceJ)` pixels in the interpolation.
-  let weightJ = Double(sourceJ) + 1.5 - point.x
+  let weightJ = Float(sourceJ) + 1.5 - Float(point.x)
 
-  let dWeightI = -dPoint.y
-  let dWeightJ = -dPoint.x
+  let dWeightI = Float(-dPoint.y)
+  let dWeightJ = Float(-dPoint.x)
 
   let s1 = source[sourceI, sourceJ, channel] * (dWeightI * weightJ + weightI * dWeightJ)
   let s2 = source[sourceI + 1, sourceJ, channel] * (-dWeightI * weightJ + (1 - weightI) * dWeightJ)
@@ -257,4 +271,18 @@ public func dBilinear(
   let s4 = source[sourceI + 1, sourceJ + 1, channel]
     * (-dWeightI * (1 - weightJ) + (1 - weightI) * -dWeightJ)
   return s1 + s2 + s3 + s4
+}
+
+fileprivate extension Float {
+  @differentiable
+  init(differentiableConversion x: Double) {
+    self.init(x)
+  }
+
+  @derivative(of: init(differentiableConversion:))
+  static func vjpInit(differentiableConversion x: Double) -> (
+    value: Float, pullback: (Float) -> Double
+  ) {
+    (Float(x), { Double($0) })
+  }
 }

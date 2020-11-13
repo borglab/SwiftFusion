@@ -35,7 +35,7 @@ public struct OISTBeeVideo {
   public var frameIds: [Int]
 
   /// The frames of the video, as tensors of shape `[height, width, channels]`.
-  public var frames: [Tensor<Double>]
+  public var frames: [Tensor<Float>]
 
   /// Labels for this video.
   public var labels: [[OISTBeeLabel]]
@@ -243,11 +243,11 @@ extension OISTBeeVideo {
 
   /// Loads one image frame and downsample by `scale`
   /// Example: frame_30fps_003525.txt
-  public func loadFrame(_ index: Int) -> Tensor<Double>? {
+  public func loadFrame(_ index: Int) -> Tensor<Float>? {
     let path = self.directory!.appendingPathComponent("frames").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).png")
     guard FileManager.default.fileExists(atPath: path.path) else { return nil }
-    let downsampler = AvgPool2D<Double>(poolSize: (scale, scale), strides: (scale, scale), padding: .same)
-    return downsampler(Tensor<Double>(ModelSupport.Image(contentsOf: path).tensor).expandingShape(at: 0)).squeezingShape(at: 0)
+    let downsampler = AvgPool2D<Float>(poolSize: (scale, scale), strides: (scale, scale), padding: .same)
+    return downsampler(ModelSupport.Image(contentsOf: path).tensor.expandingShape(at: 0)).squeezingShape(at: 0)
   }
   
   private static func downloadDatasetIfNotPresent() -> URL {
@@ -311,7 +311,7 @@ extension OISTBeeTrack {
       }
 
       // Plot the frame.
-      let frame = video.loadFrame(video.frameIds[frameIndex])!.patch(at: surroundingBox)
+      let frame = ArrayImage(video.loadFrame(video.frameIds[frameIndex])!).patch(at: surroundingBox).tensor
       let figure = plt.figure(figsize: [20, 20])
       let subplot = figure.add_subplot(1, 1, 1)
       subplot.imshow(frame.makeNumpyArray() / 255.0)
