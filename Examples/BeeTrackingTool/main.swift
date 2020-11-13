@@ -162,36 +162,15 @@ struct InferTrackRAE: ParsableCommand {
 
 /// Infers a track on a VOT video, using the raw pixel tracker.
 struct InferTrackRawPixels: ParsableCommand {
-  @Option(help: "Base directory of the VOT dataset")
-  var votBaseDirectory: String
-
-  @Option(help: "Name of the VOT video to use")
-  var videoName: String
-
-  @Option(help: "How many frames to track")
-  var frameCount: Int = 50
-
-  @Flag(help: "Print progress information")
-  var verbose: Bool = false
-
   func run() {
-    let video = VOTVideo(votBaseDirectory: votBaseDirectory, videoName: videoName)!
-    let videoSlice = video[0..<min(video.frames.count, frameCount)]
-
-    let startPose = videoSlice.track[0].center
-    let startPatch = videoSlice.frames[0].patch(at: videoSlice.track[0])
-
-    var tracker = makeRawPixelTracker(frames: videoSlice.frames, target: startPatch)
-
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
-
-    let prediction = tracker.infer(knownStart: Tuple1(startPose))
-
-    let boxes = tracker.frameVariableIDs.map { frameVariableIDs -> OrientedBoundingBox in
-      let poseID = frameVariableIDs.head
-      return OrientedBoundingBox(
-        center: prediction[poseID], rows: video.track[0].rows, cols: video.track[0].cols)
-    }
+    let dataset = OISTBeeVideo()!
+    // Only do inference on the interesting tracks.
+    dataset.tracks = [3, 5, 6, 7].map { dataset.tracks[$0] }
+    let trackerEvaluationDataset = TrackerEvaluationDataset(dataset)
+    let eval = trackerEvaluationDataset.evaluate(
+      rawPixelTracker, sequenceCount: dataset.tracks.count, deltaAnchor: 100, outputFile: "rawpixel.json")
+    print(eval.trackerMetrics.accuracy)
+    print(eval.trackerMetrics.robustness)
   }
 }
 
