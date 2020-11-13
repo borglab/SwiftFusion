@@ -23,7 +23,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     let poseId = v.store(Pose2())
 
     let _ = ProbablisticTrackingFactor(poseId,
-      measurement: Tensor<Double>([[0]]),
+      measurement: Tensor<Float>([[0]]),
       encoder: PPCA(latentSize: 10),
       patchSize: (10, 10),
       appearanceModelSize: (10, 1),
@@ -39,7 +39,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     let poseId = v.store(pose)
 
     /// Make a center one image
-    var image: Tensor<Double> = .init(zeros: [8, 8, 3])
+    var image: Tensor<Float> = .init(zeros: [8, 8, 3])
 
     image[4, 4, 0] = Tensor(1.0)
 
@@ -93,7 +93,7 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     let poseId = v.store(pose)
 
     /// Make a center one image
-    var image: Tensor<Double> = .init(zeros: [8, 8, 3])
+    var image: Tensor<Float> = .init(zeros: [8, 8, 3])
 
     image[4, 4, 0] = Tensor(1.0)
 

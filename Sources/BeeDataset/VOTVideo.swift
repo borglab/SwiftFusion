@@ -20,7 +20,7 @@ import TensorFlow
 /// A video from VOT, with tracking labels.
 public struct VOTVideo {
   /// The frames of the video, as tensors of shape `[height, width, channels]`.
-  public var frames: [Tensor<Double>]
+  public var frames: [Tensor<Float>]
 
   /// The ground truth track of the object in this video.
   public var track: [OrientedBoundingBox]
@@ -88,7 +88,7 @@ extension VOTVideo {
         print("frame \(path.path) not found")
         return nil
       }
-      frames.append(Tensor<Double>(Image(contentsOf: path).tensor))
+      frames.append(Image(contentsOf: path).tensor)
     }
 
     // Load the track points.

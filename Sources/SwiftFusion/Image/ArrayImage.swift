@@ -19,7 +19,7 @@ import TensorFlow
 /// Useful when doing lots of subscripting because `Array` subscripts are faster than `Tensor`
 /// subscripts.
 public struct ArrayImage: Differentiable {
-  var pixels: [Double]
+  var pixels: [Float]
   @noDerivative let rows: Int
   @noDerivative let cols: Int
   @noDerivative let channels: Int
@@ -40,9 +40,17 @@ public struct ArrayImage: Differentiable {
     self.channels = template.channels
   }
 
+  /// Creates an instance with the given `pixels`, `rows`, `cols`, and `channels`.
+  public init(pixels: [Float], rows: Int, cols: Int, channels: Int) {
+    self.pixels = pixels
+    self.rows = rows
+    self.cols = cols
+    self.channels = channels
+  }
+
   /// Creates an instance from the given image `tensor`.
   @differentiable
-  public init(_ tensor: Tensor<Double>) {
+  public init(_ tensor: Tensor<Float>) {
     precondition(
       tensor.shape.count == 2 || tensor.shape.count == 3,
       "image must have shape height x width x channelCount"
@@ -56,7 +64,7 @@ public struct ArrayImage: Differentiable {
 
   /// Returns this image as an image `Tensor`.
   @differentiable
-  public var tensor: Tensor<Double> {
+  public var tensor: Tensor<Float> {
     Tensor(shape: [rows, cols, channels], scalars: pixels)
   }
 
@@ -71,7 +79,7 @@ public struct ArrayImage: Differentiable {
   }
 
   /// Accesses the pixel value at `(i, j, channel)`.
-  public subscript(_ i: Int, _ j: Int, _ channel: Int) -> Double {
+  public subscript(_ i: Int, _ j: Int, _ channel: Int) -> Float {
     get {
       guard let idx = index(i, j, channel) else {
         return 0
@@ -89,23 +97,21 @@ public struct ArrayImage: Differentiable {
   ///
   /// Use this instead of the subscript when you need to differentiably modify the image.
   @differentiable
-  public mutating func update(_ i: Int, _ j: Int, _ channel: Int, to value: Double) {
+  public mutating func update(_ i: Int, _ j: Int, _ channel: Int, to value: Float) {
     self[i, j, channel] = value
   }
 
   @derivative(of: update)
   @usableFromInline
-  mutating func vjpUpdate(_ i: Int, _ j: Int, _ channel: Int, to value: Double) -> (
+  mutating func vjpUpdate(_ i: Int, _ j: Int, _ channel: Int, to value: Float) -> (
     value: (),
-    pullback: (inout TangentVector) -> Double
+    pullback: (inout TangentVector) -> Float
   ) {
     update(i, j, channel, to: value)
     let idx = index(i, j, channel).unsafelyUnwrapped
-    func pullback(_ v: inout TangentVector) -> Double {
+    func pullback(_ v: inout TangentVector) -> Float {
       return v.pixels.base[idx]
     }
     return ((), pullback)
   }
 }
-
-

@@ -20,8 +20,8 @@ import Foundation
 
 /// Creates a Plotly figure that displays `frame`, with optional `boxes` overlaid on
 /// them.
-public func plot(
-  _ frame: Tensor<Double>, boxes: [(name: String, OrientedBoundingBox)] = [],
+public func plot<Scalar: TensorFlowFloatingPoint>(
+  _ frame: Tensor<Scalar>, boxes: [(name: String, OrientedBoundingBox)] = [],
   margin: Double = 30, scale: Double = 1
 ) -> Plotly.Figure {
   let rows = Double(frame.shape[0])

@@ -43,7 +43,7 @@ public struct WeightedBetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
 /// A specification for a factor graph that tracks a target in a sequence of frames.
 public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   /// The frames of the video to track.
-  public let frames: [Tensor<Double>]
+  public let frames: [Tensor<Float>]
 
   /// A collection of arbitrary values for the variables in the factor graph.
   public let variableTemplate: VariableAssignments
@@ -58,7 +58,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
 
   /// Adds to `graph` a tracking factor on `variables` for tracking in `frame`.
   public let addTrackingFactor: (
-    _ variables: FrameVariables.Indices, _ frame: Tensor<Double>, _ graph: inout FactorGraph
+    _ variables: FrameVariables.Indices, _ frame: Tensor<Float>, _ graph: inout FactorGraph
   ) -> ()
 
   /// Adds to `graph` between factor(s) between the variables at `variables1` and the variables at `variables2`.
@@ -74,14 +74,14 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   ///
   /// See the field doc comments for argument docs.
   public init(
-    frames: [Tensor<Double>],
+    frames: [Tensor<Float>],
     variableTemplate: VariableAssignments,
     frameVariableIDs: [FrameVariables.Indices],
     addPriorFactor: @escaping (
       _ variables: FrameVariables.Indices, _ values: FrameVariables, _ graph: inout FactorGraph
     ) -> (),
     addTrackingFactor: @escaping (
-      _ variables: FrameVariables.Indices, _ frame: Tensor<Double>, _ graph: inout FactorGraph
+      _ variables: FrameVariables.Indices, _ frame: Tensor<Float>, _ graph: inout FactorGraph
     ) -> (),
     addBetweenFactor: @escaping (
       _ variables1: FrameVariables.Indices, _ variables2: FrameVariables.Indices,
@@ -156,7 +156,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
 public func makeRAETracker(
   model: DenseRAE,
   statistics: FrameStatistics,
-  frames: [Tensor<Double>],
+  frames: [Tensor<Float>],
   targetSize: (Int, Int)
 ) -> TrackingConfiguration<Tuple2<Pose2, Vector10>> {
   var variableTemplate = VariableAssignments()
@@ -209,7 +209,7 @@ public func makeRAETracker(
 public func makePPCATracker(
   model: PPCA,
   statistics: FrameStatistics,
-  frames: [Tensor<Double>],
+  frames: [Tensor<Float>],
   targetSize: (Int, Int)
 ) -> TrackingConfiguration<Tuple2<Pose2, Vector10>> {
   var variableTemplate = VariableAssignments()
@@ -259,8 +259,8 @@ public func makePPCATracker(
 /// Parameter frames: The frames of the video where we want to run tracking.
 /// Parameter target: The pixels of the target.
 public func makeRawPixelTracker(
-  frames: [Tensor<Double>],
-  target: Tensor<Double>
+  frames: [Tensor<Float>],
+  target: Tensor<Float>
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   var variableTemplate = VariableAssignments()
   var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()
@@ -281,7 +281,7 @@ public func makeRawPixelTracker(
     addTrackingFactor: { (variables, frame, graph) -> () in
       let poseID = variables.head
       graph.store(
-        RawPixelTrackingFactor(poseID, measurement: frame, target: target))
+        RawPixelTrackingFactor(poseID, measurement: frame, target: Tensor<Double>(target)))
     },
     addBetweenFactor: { (variables1, variables2, graph) -> () in
       let poseID1 = variables1.head
