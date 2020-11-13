@@ -5,7 +5,7 @@ import TensorFlow
 
 
 /// An element of R^1, with Euclidean inner product.
-public struct Vector1: KeyPathIterable {
+public struct Vector1: Codable, KeyPathIterable {
   @differentiable public var x: Double
 
   @differentiable
@@ -94,7 +94,7 @@ extension Vector1: ElementaryFunctions {}
 
 
 /// An element of R^2, with Euclidean inner product.
-public struct Vector2: KeyPathIterable {
+public struct Vector2: Codable, KeyPathIterable {
   @differentiable public var x: Double
   @differentiable public var y: Double
 
@@ -191,7 +191,7 @@ extension Vector2: ElementaryFunctions {}
 
 
 /// An element of R^3, with Euclidean inner product.
-public struct Vector3: KeyPathIterable {
+public struct Vector3: Codable, KeyPathIterable {
   @differentiable public var x: Double
   @differentiable public var y: Double
   @differentiable public var z: Double
@@ -296,7 +296,7 @@ extension Vector3: ElementaryFunctions {}
 
 
 /// An element of R^4, with Euclidean inner product.
-public struct Vector4: KeyPathIterable {
+public struct Vector4: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -409,7 +409,7 @@ extension Vector4: ElementaryFunctions {}
 
 
 /// An element of R^5, with Euclidean inner product.
-public struct Vector5: KeyPathIterable {
+public struct Vector5: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -530,7 +530,7 @@ extension Vector5: ElementaryFunctions {}
 
 
 /// An element of R^6, with Euclidean inner product.
-public struct Vector6: KeyPathIterable {
+public struct Vector6: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -659,7 +659,7 @@ extension Vector6: ElementaryFunctions {}
 
 
 /// An element of R^7, with Euclidean inner product.
-public struct Vector7: KeyPathIterable {
+public struct Vector7: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -796,7 +796,7 @@ extension Vector7: ElementaryFunctions {}
 
 
 /// An element of R^8, with Euclidean inner product.
-public struct Vector8: KeyPathIterable {
+public struct Vector8: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -941,7 +941,7 @@ extension Vector8: ElementaryFunctions {}
 
 
 /// An element of R^9, with Euclidean inner product.
-public struct Vector9: KeyPathIterable {
+public struct Vector9: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -1094,7 +1094,7 @@ extension Vector9: ElementaryFunctions {}
 
 
 /// An element of R^10, with Euclidean inner product.
-public struct Vector10: KeyPathIterable {
+public struct Vector10: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -1255,7 +1255,7 @@ extension Vector10: ElementaryFunctions {}
 
 
 /// An element of R^11, with Euclidean inner product.
-public struct Vector11: KeyPathIterable {
+public struct Vector11: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double
@@ -1424,7 +1424,7 @@ extension Vector11: ElementaryFunctions {}
 
 
 /// An element of R^12, with Euclidean inner product.
-public struct Vector12: KeyPathIterable {
+public struct Vector12: Codable, KeyPathIterable {
   @differentiable public var s0: Double
   @differentiable public var s1: Double
   @differentiable public var s2: Double

@@ -186,7 +186,8 @@ struct InferTrackRawPixels: ParsableCommand {
 	return OrientedBoundingBox(center: prediction[poseId], rows: start.rows, cols: start.cols)
       }
     }
-    let eval = trackerEvaluationDataset.evaluate(rawPixelTracker, sequenceCount: 20)
+    let eval = trackerEvaluationDataset.evaluate(
+      rawPixelTracker, sequenceCount: 20, deltaAnchor: 100, outputFile: "rawpixel.json")
     print(eval.trackerMetrics.robustness)
   }
 }
