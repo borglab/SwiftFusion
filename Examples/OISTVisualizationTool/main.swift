@@ -24,7 +24,7 @@ import Foundation
 
 struct OISTVisualizationTool: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [VisualizeTrack.self, ViewFrame.self, RawTrack.self, PpcaTrack.self, ProbTrack.self, TrainRAE.self])
+    subcommands: [VisualizeTrack.self, ViewFrame.self, RawTrack.self, PpcaTrack.self, NaiveRae.self, TrainRAE.self, NaivePca.self])
 }
 
 /// View a frame with bounding boxes
@@ -269,9 +269,8 @@ struct PpcaTrack: ParsableCommand {
 /// The dimension of the hidden layer in the RAE appearance model.
 let kHiddenDimension = 100
 
-
 /// Tracking with a Naive Bayes with RAE
-struct ProbTrack: ParsableCommand {
+struct NaiveRae: ParsableCommand {
   @Option(help: "Where to load the RAE weights")
   var loadWeights: String = "./oist_rae_weight.npy"
 
@@ -389,25 +388,22 @@ struct ProbTrack: ParsableCommand {
   }
 
   func run() {
-
     if verbose {
       print("Loading dataset...")
     }
-    let dataset: OISTBeeVideo = { () -> OISTBeeVideo in
-      startTimer("DATASET_LOAD")
-      return OISTBeeVideo(deferLoadingFrames: true)!
-    }()
 
+    startTimer("DATASET_LOAD")
+    let dataset: OISTBeeVideo = OISTBeeVideo(deferLoadingFrames: true)!
     stopTimer("DATASET_LOAD")
 
     if verbose {
       print("Tracking...")
     }
 
-    startTimer("PPCA_TRACKING")
+    startTimer("RAE_TRACKING")
     var bboxes: [OrientedBoundingBox]
     bboxes = naiveRaeTrack(dataset: dataset, length: trackFrames, startFrom: trackStartFrame)
-    stopTimer("PPCA_TRACKING")
+    stopTimer("RAE_TRACKING")
 
     let frameRawId = dataset.frameIds[trackStartFrame + trackFrames]
     let image = dataset.loadFrame(frameRawId)!
@@ -507,6 +503,153 @@ struct TrainRAE: ParsableCommand {
     _ = loss(model, Tensor<Double>(stacking: bundle), printLoss: true)
 
     np.save(saveWeights, np.array(model.numpyWeights, dtype: Python.object))
+  }
+}
+
+/// PPCA with probabilistic model
+///
+/// Tracking with a Naive Bayes with RAE
+struct NaivePca: ParsableCommand {
+  @Option(help: "Where to load the RAE weights")
+  var loadWeights: String = "./oist_rae_weight.npy"
+
+  @Option(help: "Which bounding box to track")
+  var boxId: Int = 0
+
+  @Option(help: "Track for how many frames")
+  var trackFrames: Int = 10
+
+  @Option(help: "Track the target from frame x")
+  var trackStartFrame: Int = 250
+
+  @Option(help: "The dimension of the latent code in the RAE appearance model")
+  var kLatentDimension = 10
+
+  @Flag(help: "Print progress information")
+  var verbose: Bool = false
+
+  /// Returns predictions for `videoName` using the raw pixel tracker.
+  func naivePpcaTrack(dataset dataset_: OISTBeeVideo, length: Int, startFrom: Int) -> [OrientedBoundingBox] {
+    var dataset = dataset_
+    dataset.labels = dataset.labels.map {
+      $0.filter({ $0.label == .Body })
+    }
+    // Make batch and do RAE
+    let (batch, _) = dataset.makeBatch(appearanceModelSize: (40, 70), batchSize: 300)
+    var statistics = FrameStatistics(batch)
+    statistics.mean = Tensor(62.26806976644069)
+    statistics.standardDeviation = Tensor(37.44683834503672)
+
+    let backgroundBatch = dataset.makeBackgroundBatch(
+      patchSize: (40, 70), appearanceModelSize: (40, 70),
+      statistics: statistics,
+      batchSize: 300
+    )
+
+    var ppca = PPCA(latentSize: kLatentDimension)
+
+    ppca.train(images: batch)
+    
+    if verbose { print("Fitting Naive Bayes model") }
+
+    var (foregroundModel, backgroundModel) = (
+      MultivariateGaussian(
+        dims: TensorShape([kLatentDimension]),
+        regularizer: 1e-3
+      ), GaussianNB(
+        dims: TensorShape([kLatentDimension]),
+        regularizer: 1e-3
+      )
+    )
+
+    let batchPositive = ppca.encode(batch)
+    foregroundModel.fit(batchPositive)
+
+    let batchNegative = ppca.encode(backgroundBatch)
+    backgroundModel.fit(batchNegative)
+
+    if verbose {
+      print("Foreground: \(foregroundModel)")
+      print("Background: \(backgroundModel)")
+    }
+
+    if verbose { print("Loading video frames...") }
+    startTimer("VIDEO_LOAD")
+    // Load the video and take a slice of it.
+    let videos = (0..<length).map { (i) -> Tensor<Float> in
+      return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[startFrom + i])! }
+    }
+    stopTimer("VIDEO_LOAD")
+
+    let startPose = dataset.labels[startFrom][boxId].location.center
+
+    if verbose {
+      print("Creating tracker, startPose = \(startPose)")
+    }
+    
+    startTimer("MAKE_GRAPH")
+    var tracker = makeNaiveBayesPCATracker(
+      model: ppca,
+      statistics: statistics,
+      frames: videos,
+      targetSize: (dataset.labels[startFrom][boxId].location.rows, dataset.labels[startFrom][boxId].location.cols),
+      foregroundModel: foregroundModel, backgroundModel: backgroundModel
+    )
+    stopTimer("MAKE_GRAPH")
+
+    if verbose { print("Starting Optimization...") }
+    if verbose { tracker.optimizer.verbosity = .SUMMARY }
+
+    tracker.optimizer.cgls_precision = 1e-7
+    tracker.optimizer.precision = 1e-4
+    tracker.optimizer.max_iteration = 200
+
+    startTimer("GRAPH_INFER")
+    let prediction = tracker.infer(knownStart: Tuple1(startPose))
+    stopTimer("GRAPH_INFER")
+
+    let boxes = tracker.frameVariableIDs.map { frameVariableIDs -> OrientedBoundingBox in
+      let poseID = frameVariableIDs.head
+      return OrientedBoundingBox(
+        center: prediction[poseID], rows: dataset.labels[startFrom][boxId].location.rows, cols: dataset.labels[startFrom][boxId].location.cols)
+    }
+
+    return boxes
+  }
+
+  func run() {
+    if verbose {
+      print("Loading dataset...")
+    }
+
+    startTimer("DATASET_LOAD")
+    let dataset: OISTBeeVideo = OISTBeeVideo(deferLoadingFrames: true)!
+    stopTimer("DATASET_LOAD")
+
+    if verbose {
+      print("Tracking...")
+    }
+
+    startTimer("PPCA_TRACKING")
+    var bboxes: [OrientedBoundingBox]
+    bboxes = naivePpcaTrack(dataset: dataset, length: trackFrames, startFrom: trackStartFrame)
+    stopTimer("PPCA_TRACKING")
+
+    let frameRawId = dataset.frameIds[trackStartFrame + trackFrames]
+    let image = dataset.loadFrame(frameRawId)!
+
+    if verbose {
+      print("Creating output plot")
+    }
+    startTimer("PLOTTING")
+    plot(image, boxes: bboxes.indices.map {
+      ("\($0)", bboxes[$0])
+    }, margin: 10.0, scale: 0.5).show()
+    stopTimer("PLOTTING")
+
+    if verbose {
+      printTimers()
+    }
   }
 }
 
