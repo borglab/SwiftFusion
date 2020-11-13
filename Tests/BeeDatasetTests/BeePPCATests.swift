@@ -45,7 +45,7 @@ final class BeePPCATests: XCTestCase {
     // Tracking factor on the next frame
     fg.store(AppearanceTrackingFactor(
       poseId, latentId,
-      measurement: frames[1].mean(alongAxes: [2]),
+      measurement: Tensor<Float>(frames[1].mean(alongAxes: [2])),
       appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }))
 
     // Prior on latent initialized by PPCA decode on the previous frame
@@ -58,6 +58,6 @@ final class BeePPCATests: XCTestCase {
 
     let expected = Pose2(Rot2(-1.3365823146263909), Vector2(364.59389156740497, 176.17400761774488))
 
-    XCTAssertEqual(expected.localCoordinate(v[poseId]).norm, 0, accuracy: 1e-4)
+    XCTAssertEqual(expected.localCoordinate(v[poseId]).norm, 0, accuracy: 1e-2)
   }
 }
