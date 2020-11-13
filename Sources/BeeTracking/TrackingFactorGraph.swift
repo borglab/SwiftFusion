@@ -40,6 +40,28 @@ public struct WeightedBetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
   }
 }
 
+public struct WeightedBetweenFactorPose2: LinearizableFactor2 {
+  public typealias Pose = Pose2
+  public let edges: Variables.Indices
+  public let difference: Pose
+  public let weight: Double
+  public let rotWeight: Double
+
+  public init(_ startId: TypedID<Pose>, _ endId: TypedID<Pose>, _ difference: Pose, weight: Double, rotWeight: Double = 1.0) {
+    self.edges = Tuple2(startId, endId)
+    self.difference = difference
+    self.weight = weight
+    self.rotWeight = rotWeight
+  }
+
+  @differentiable
+  public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
+    let actualMotion = between(start, end)
+    let weighted = weight * difference.localCoordinate(actualMotion)
+    return Vector3(rotWeight * weighted.x, weighted.y, weighted.z)
+  }
+}
+
 /// A specification for a factor graph that tracks a target in a sequence of frames.
 public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   /// The frames of the video to track.

@@ -327,7 +327,7 @@ public func makeNaiveBayesRAETracker(
     addPriorFactor: { (variables, values, graph) -> () in
       let (poseID) = unpack(variables)
       let (pose) = unpack(values)
-      graph.store(WeightedPriorFactor(poseID, pose, weight: 1e-2))
+      graph.store(WeightedPriorFactor(poseID, pose, weight: 1e-1))
     },
     addTrackingFactor: { (variables, frame, graph) -> () in
       let (poseID) = unpack(variables)
@@ -339,22 +339,20 @@ public func makeNaiveBayesRAETracker(
           appearanceModelSize: targetSize,
           foregroundModel: foregroundModel,
           backgroundModel: backgroundModel,
-          maxPossibleNegativity: 1e7
+          maxPossibleNegativity: 1e1
         )
       )
     },
     addBetweenFactor: { (variables1, variables2, graph) -> () in
       let (poseID1) = unpack(variables1)
       let (poseID2) = unpack(variables2)
-      graph.store(WeightedBetweenFactor(poseID1, poseID2, Pose2(), weight: 1e-2))
+      graph.store(WeightedBetweenFactorPose2(poseID1, poseID2, Pose2(), weight: 1e-1, rotWeight: 1e2))
     })
 }
 
 /// The dimension of the hidden layer in the RAE appearance model.
 let kHiddenDimension = 100
 
-/// The dimension of the latent code in the RAE appearance model.
-let kLatentDimension = 10
 
 /// Tracking with a Naive Bayes with RAE
 struct NaiveRae: ParsableCommand {
@@ -367,11 +365,17 @@ struct NaiveRae: ParsableCommand {
   @Option(help: "Track for how many frames")
   var trackFrames: Int = 10
 
+  @Option(help: "Track the target from frame x")
+  var trackStartFrame: Int = 250
+
+  @Option(help: "The dimension of the latent code in the RAE appearance model")
+  var kLatentDimension = 10
+
   @Flag(help: "Print progress information")
   var verbose: Bool = false
 
   /// Returns predictions for `videoName` using the raw pixel tracker.
-  func naiveRaeTrack(dataset dataset_: OISTBeeVideo, length: Int, ppcaSize: Int = 10, ppcaSamples: Int = 100) -> [OrientedBoundingBox] {
+  func naiveRaeTrack(dataset dataset_: OISTBeeVideo, length: Int, startFrom: Int) -> [OrientedBoundingBox] {
     var dataset = dataset_
     dataset.labels = dataset.labels.map {
       $0.filter({ $0.label == .Body })
@@ -428,11 +432,11 @@ struct NaiveRae: ParsableCommand {
     startTimer("VIDEO_LOAD")
     // Load the video and take a slice of it.
     let videos = (0..<length).map { (i) -> Tensor<Float> in
-      return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[i])! }
+      return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[startFrom + i])! }
     }
     stopTimer("VIDEO_LOAD")
 
-    let startPose = dataset.labels[0][boxId].location.center
+    let startPose = dataset.labels[startFrom][boxId].location.center
 
     if verbose {
       print("Creating tracker, startPose = \(startPose)")
@@ -443,7 +447,7 @@ struct NaiveRae: ParsableCommand {
       model: rae,
       statistics: statistics,
       frames: videos,
-      targetSize: (dataset.labels[0][boxId].location.rows, dataset.labels[0][boxId].location.cols),
+      targetSize: (dataset.labels[startFrom][boxId].location.rows, dataset.labels[startFrom][boxId].location.cols),
       foregroundModel: foregroundModel, backgroundModel: backgroundModel
     )
     stopTimer("MAKE_GRAPH")
@@ -451,8 +455,9 @@ struct NaiveRae: ParsableCommand {
     if verbose { print("Starting Optimization...") }
     if verbose { tracker.optimizer.verbosity = .SUMMARY }
 
-    tracker.optimizer.cgls_precision = 1e-1
-    tracker.optimizer.precision = 1e-0
+    tracker.optimizer.cgls_precision = 1e-7
+    tracker.optimizer.precision = 1e-4
+    tracker.optimizer.max_iteration = 200
 
     startTimer("GRAPH_INFER")
     let prediction = tracker.infer(knownStart: Tuple1(startPose))
@@ -461,7 +466,7 @@ struct NaiveRae: ParsableCommand {
     let boxes = tracker.frameVariableIDs.map { frameVariableIDs -> OrientedBoundingBox in
       let poseID = frameVariableIDs.head
       return OrientedBoundingBox(
-        center: prediction[poseID], rows: dataset.labels[0][boxId].location.rows, cols: dataset.labels[0][boxId].location.cols)
+        center: prediction[poseID], rows: dataset.labels[startFrom][boxId].location.rows, cols: dataset.labels[startFrom][boxId].location.cols)
     }
 
     return boxes
@@ -485,10 +490,10 @@ struct NaiveRae: ParsableCommand {
 
     startTimer("PPCA_TRACKING")
     var bboxes: [OrientedBoundingBox]
-    bboxes = naiveRaeTrack(dataset: dataset, length: trackFrames)
+    bboxes = naiveRaeTrack(dataset: dataset, length: trackFrames, startFrom: trackStartFrame)
     stopTimer("PPCA_TRACKING")
 
-    let frameRawId = dataset.frameIds[trackFrames]
+    let frameRawId = dataset.frameIds[trackStartFrame + trackFrames]
     let image = dataset.loadFrame(frameRawId)!
 
     if verbose {
@@ -526,6 +531,9 @@ struct TrainRAE: ParsableCommand {
 
   @Option(help: "Number of columns in the appearance model output")
   var appearanceModelCols: Int = 70
+
+  @Option(help: "The dimension of the latent code in the RAE appearance model")
+  var kLatentDimension = 10
 
   func run() {
     let np = Python.import("numpy")

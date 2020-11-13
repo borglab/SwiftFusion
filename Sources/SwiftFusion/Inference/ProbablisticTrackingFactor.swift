@@ -42,7 +42,7 @@ public struct ProbablisticTrackingFactor<
 
   public var backgroundModel: BackgroundModel
 
-  public var maxPossibleNegativity: Double = 1e10
+  public var maxPossibleNegativity: Double
 
   /// Creates an instance.
   ///
@@ -69,6 +69,7 @@ public struct ProbablisticTrackingFactor<
     self.appearanceModelSize = appearanceModelSize
     self.foregroundModel = foregroundModel
     self.backgroundModel = backgroundModel
+    self.maxPossibleNegativity = maxPossibleNegativity
   }
 
   @differentiable
