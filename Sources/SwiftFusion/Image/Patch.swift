@@ -113,55 +113,85 @@ extension ArrayImage {
   public func patchWithJacobian(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil)
     -> (patch: Self, jacobian: (dtheta: Self, du: Self, dv: Self))
   {
+    func create(_ f: (
+      UnsafeMutablePointer<Float>,
+      UnsafeMutablePointer<Float>,
+      UnsafeMutablePointer<Float>,
+      UnsafeMutablePointer<Float>
+    ) -> Void) -> (patch: Self, jacobian: (dtheta: Self, du: Self, dv: Self)) {
+      let count = outputRows * outputCols * self.channels
+      var patchPixels: [Float]?
+      var dthetaPixels: [Float]?
+      var duPixels: [Float]?
+      var dvPixels: [Float]?
+      patchPixels = .init(unsafeUninitializedCapacity: count) { (a, aCount) in
+        aCount = count
+        dthetaPixels = .init(unsafeUninitializedCapacity: count) { (b, bCount) in
+          bCount = count
+          duPixels = .init(unsafeUninitializedCapacity: count) { (c, cCount) in
+            cCount = count
+            dvPixels = .init(unsafeUninitializedCapacity: count) { (d, dCount) in
+              dCount = count
+              f(a.baseAddress!, b.baseAddress!, c.baseAddress!, d.baseAddress!)
+            }
+          }
+        }
+      }
+      return (
+        patch: ArrayImage(pixels: patchPixels!, rows: outputRows, cols: outputCols, channels: self.channels),
+        jacobian: (
+          dtheta: ArrayImage(pixels: dthetaPixels!, rows: outputRows, cols: outputCols, channels: self.channels),
+          du: ArrayImage(pixels: duPixels!, rows: outputRows, cols: outputCols, channels: self.channels),
+          dv: ArrayImage(pixels: dvPixels!, rows: outputRows, cols: outputCols, channels: self.channels)))
+    }
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
     let rowScale = Double(region.rows) / Double(outputRows)
     let colScale = Double(region.cols) / Double(outputCols)
-    var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
-    var dtheta = ArrayImage(zerosLike: result)
-    var du = ArrayImage(zerosLike: result)
-    var dv = ArrayImage(zerosLike: result)
-    for i in 0..<outputRows {
-      for j in 0..<outputCols {
-        // The position of the destination pixel in the source region, in `(u, v)` coordinates.
-        let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
+    return create { (bufresult, bufdtheta, bufdu, bufdv) in
+      for i in 0..<outputRows {
+        for j in 0..<outputCols {
+          // The position of the destination pixel in the source region, in `(u, v)` coordinates.
+          let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
-        // The position of the destination pixel in the destination image, in coordinates where the
-        // center of the destination image is `(0, 0)`.
-        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+          // The position of the destination pixel in the destination image, in coordinates where the
+          // center of the destination image is `(0, 0)`.
+          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
-        // The position of the destination pixel in the source image. These are the `(u, v)`
-        // coordinates of the source image that we sample from.
-        let uvSrc: Vector2 = region.center * xySrcRegion
+          // The position of the destination pixel in the source image. These are the `(u, v)`
+          // coordinates of the source image that we sample from.
+          let uvSrc: Vector2 = region.center * xySrcRegion
 
-        // The derivatives of `uvSrc` with respect to the rotation and translation components of
-        // `region.center`.
-        //
-        // This follows from equation (11.2) in section "11 2D Rigid Transformations" of [1]:
-        //   Substitute
-        //     (R, t) = (region.center.rot, region.center.t)
-        //     p = xySrcRegion
-        //     q = uvSrc
-        //   Then (11.2) says that the Jacobian of the action of `region.center` on `xyDest` is
-        //     [ R  R*R_pi/2*p
-        //       0           0 ]
-        //   The first two columns of the Jacobian give us the derivatives with respect to the
-        //   translation components of `region.center` and the last column gives us the derivative
-        //   with respect to the rotation component of `region.center`.
-        //
-        // [1] https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
-        let duvSrc_dtheta = region.center.rot * Vector2(-xySrcRegion.y, xySrcRegion.x)
-        let duvSrc_du = region.center.rot * Vector2(1, 0)
-        let duvSrc_dv = region.center.rot * Vector2(0, 1)
+          // The derivatives of `uvSrc` with respect to the rotation and translation components of
+          // `region.center`.
+          //
+          // This follows from equation (11.2) in section "11 2D Rigid Transformations" of [1]:
+          //   Substitute
+          //     (R, t) = (region.center.rot, region.center.t)
+          //     p = xySrcRegion
+          //     q = uvSrc
+          //   Then (11.2) says that the Jacobian of the action of `region.center` on `xyDest` is
+          //     [ R  R*R_pi/2*p
+          //       0           0 ]
+          //   The first two columns of the Jacobian give us the derivatives with respect to the
+          //   translation components of `region.center` and the last column gives us the derivative
+          //   with respect to the rotation component of `region.center`.
+          //
+          // [1] https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
+          let duvSrc_dtheta = region.center.rot * Vector2(-xySrcRegion.y, xySrcRegion.x)
+          let duvSrc_du = region.center.rot * Vector2(1, 0)
+          let duvSrc_dv = region.center.rot * Vector2(0, 1)
 
-        for c in 0..<self.channels {
-          result[i, j, c] = bilinear(self, uvSrc, c)
-          dtheta[i, j, c] = dBilinear(self, uvSrc, c, duvSrc_dtheta)
-          du[i, j, c] = dBilinear(self, uvSrc, c, duvSrc_du)
-          dv[i, j, c] = dBilinear(self, uvSrc, c, duvSrc_dv)
+          let idx = i * outputCols * channels + j * channels
+          for c in 0..<self.channels {
+            let idxc = idx + c
+            (bufresult + idxc).initialize(to: bilinear(self, uvSrc, c))
+            (bufdtheta + idxc).initialize(to: dBilinear(self, uvSrc, c, duvSrc_dtheta))
+            (bufdu + idxc).initialize(to: dBilinear(self, uvSrc, c, duvSrc_du))
+            (bufdv + idxc).initialize(to: dBilinear(self, uvSrc, c, duvSrc_dv))
+          }
         }
       }
     }
-    return (result, (dtheta, du, dv))
   }
 }
 
