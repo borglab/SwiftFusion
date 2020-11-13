@@ -69,7 +69,7 @@ func makeOISTBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int), batch
   var deterministicEntropy = ARC4RandomNumberGenerator(seed: seed)
   for label in dataset.labels[0..<trainSplit].randomSelectionWithoutReplacement(k: 10, using: &deterministicEntropy).lazy.joined().randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy).sorted(by: { $0.frameIndex < $1.frameIndex }) {
     if currentId != label.frameIndex {
-      currentFrame = dataset.loadFrame(label.frameIndex)!
+      currentFrame = Tensor<Double>(dataset.loadFrame(label.frameIndex)!)
       currentId = label.frameIndex
     }
     images.append(currentFrame.patch(at: label.location, outputSize: appearanceModelSize))
@@ -103,7 +103,7 @@ func makeOISTTrainingBatch(dataset: OISTBeeVideo, appearanceModelSize: (Int, Int
   var deterministicEntropy = ARC4RandomNumberGenerator(seed: seed)
   for label in dataset.labels[0..<trainSplit].randomSelectionWithoutReplacement(k: 10, using: &deterministicEntropy).lazy.joined().randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy).sorted(by: { $0.frameIndex < $1.frameIndex }) {
     if currentId != label.frameIndex {
-      currentFrame = dataset.loadFrame(label.frameIndex)!
+      currentFrame = Tensor<Double>(dataset.loadFrame(label.frameIndex)!)
       currentId = label.frameIndex
     }
     images.append(statistics.normalized(currentFrame.patch(at: label.location, outputSize: appearanceModelSize)))
@@ -130,7 +130,7 @@ struct RawTrack: ParsableCommand {
   /// Returns predictions for `videoName` using the raw pixel tracker.
   func rawPixelTrack(dataset: OISTBeeVideo, length: Int) -> [OrientedBoundingBox] {
     // Load the video and take a slice of it.
-    let videos = (0..<length).map { (i) -> Tensor<Double> in
+    let videos = (0..<length).map { (i) -> Tensor<Float> in
       if verbose {
         print(".", terminator: "")
       }
@@ -223,14 +223,14 @@ struct PpcaTrack: ParsableCommand {
     if verbose { print("Loading video frames...") }
     startTimer("VIDEO_LOAD")
     // Load the video and take a slice of it.
-    let videos = (0..<length).map { (i) -> Tensor<Double> in
+    let videos = (0..<length).map { (i) -> Tensor<Float> in
       return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[i])! }
     }
     stopTimer("VIDEO_LOAD")
 
     let startPatch = statistics.normalized(videos[0].patch(at: dataset.labels[0][boxId].location))
     let startPose = dataset.labels[0][boxId].location.center
-    let startLatent = ppca.encode(startPatch)
+    let startLatent = ppca.encode(Tensor<Double>(startPatch))
 
     if verbose {
       print("Creating tracker, startPose = \(startPose)")
@@ -307,7 +307,7 @@ struct PpcaTrack: ParsableCommand {
 public func makeNaiveBayesRAETracker(
   model: DenseRAE,
   statistics: FrameStatistics,
-  frames: [Tensor<Double>],
+  frames: [Tensor<Float>],
   targetSize: (Int, Int),
   foregroundModel: MultivariateGaussian,
   backgroundModel: GaussianNB
@@ -427,7 +427,7 @@ struct NaiveRae: ParsableCommand {
     if verbose { print("Loading video frames...") }
     startTimer("VIDEO_LOAD")
     // Load the video and take a slice of it.
-    let videos = (0..<length).map { (i) -> Tensor<Double> in
+    let videos = (0..<length).map { (i) -> Tensor<Float> in
       return withDevice(.cpu) { dataset.loadFrame(dataset.frameIds[i])! }
     }
     stopTimer("VIDEO_LOAD")

@@ -69,14 +69,14 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
   public init(
     _ poseId: TypedID<Pose2>,
     _ latentId: TypedID<LatentCode>,
-    measurement: Tensor<Double>,
+    measurement: Tensor<Float>,
     appearanceModel: @escaping GenerativeModel,
     appearanceModelJacobian: @escaping GenerativeModelJacobian,
     weight: Double = 1.0,
     targetSize: (Int, Int)? = nil
   ) {
     self.edges = Tuple2(poseId, latentId)
-    self.measurement = ArrayImage(Tensor<Float>(measurement))
+    self.measurement = ArrayImage(measurement)
     self.appearanceModel = appearanceModel
     self.appearanceModelJacobian = appearanceModelJacobian
     self.weight = weight

@@ -152,7 +152,7 @@ extension ArrayImage {
   }
 }
 
-extension Tensor where Scalar == Double {
+extension Tensor where Scalar: TensorFlowFloatingPoint {
   /// Returns the patch of `self` at `region`.
   ///
   /// - Parameters:
@@ -170,7 +170,7 @@ extension Tensor where Scalar == Double {
       self.shape.count == 2 || self.shape.count == 3,
       "image must have shape [height, width] or [height, width, channelCount]"
     )
-    let result = Tensor<Double>(
+    let result = Tensor<Scalar>(
       ArrayImage(Tensor<Float>(self)).patch(at: region, outputSize: outputSize).tensor)
     return self.shape.count == 2 ? result.reshaped(to: [result.shape[0], result.shape[1]]) : result
   }
@@ -197,8 +197,8 @@ extension Tensor where Scalar == Double {
     precondition(self.shape.count == 3, "image must have shape [height, width, channelCount]")
     let (patch, jacobian) = ArrayImage(Tensor<Float>(self)).patchWithJacobian(at: region, outputSize: outputSize)
     return (
-      patch: Tensor<Double>(patch.tensor),
-      jacobian: Tensor<Double>(Tensor<Float>(stacking: [
+      patch: Tensor<Scalar>(patch.tensor),
+      jacobian: Tensor<Scalar>(Tensor<Float>(stacking: [
         jacobian.dtheta.tensor,
         jacobian.du.tensor,
         jacobian.dv.tensor

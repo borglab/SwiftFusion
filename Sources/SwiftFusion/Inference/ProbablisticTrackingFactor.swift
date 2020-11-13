@@ -54,7 +54,7 @@ public struct ProbablisticTrackingFactor<
   ///   - backgroundModel: A generative density on the background
   public init(
     _ poseId: TypedID<Pose2>,
-    measurement: Tensor<Double>,
+    measurement: Tensor<Float>,
     encoder: Encoder,
     patchSize: (Int, Int),
     appearanceModelSize: (Int, Int),
@@ -63,7 +63,7 @@ public struct ProbablisticTrackingFactor<
     maxPossibleNegativity: Double = 1e10
   ) {
     self.edges = Tuple1(poseId)
-    self.measurement = ArrayImage(Tensor<Float>(measurement))
+    self.measurement = ArrayImage(measurement)
     self.encoder = encoder
     self.patchSize = patchSize
     self.appearanceModelSize = appearanceModelSize

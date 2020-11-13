@@ -31,9 +31,9 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
   ///   - poseId: the id of the adjacent pose variable.
   ///   - measurement: the image containing the target.
   ///   - target: the pixels of the target.
-  public init(_ poseID: TypedID<Pose2>, measurement: Tensor<Double>, target: Tensor<Double>) {
+  public init(_ poseID: TypedID<Pose2>, measurement: Tensor<Float>, target: Tensor<Double>) {
     self.edges = Tuple1(poseID)
-    self.measurement = ArrayImage(Tensor<Float>(measurement))
+    self.measurement = ArrayImage(measurement)
     self.target = target
   }
 
