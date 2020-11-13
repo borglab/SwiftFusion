@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import TensorFlow
+import PenguinParallelWithFoundation
 
 extension ArrayImage {
   /// Returns the patch of `self` at `region`.
@@ -26,22 +27,29 @@ extension ArrayImage {
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
     let rowScale = Double(region.rows) / Double(outputRows)
     let colScale = Double(region.cols) / Double(outputCols)
-    var result = ArrayImage(rows: outputRows, cols: outputCols, channels: self.channels)
-    for i in 0..<outputRows {
-      for j in 0..<outputCols {
-        // The position of the destination pixel in the source region, in `(u, v)` coordinates.
-        let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
+    let resultPixels = [Float](
+      unsafeUninitializedCapacity: outputRows * outputCols * self.channels
+    ) { (buf, actualCount) -> Void in
+      ComputeThreadPools.local.parallelFor(n: outputRows) { (i, _) -> Void in
+        for j in 0..<outputCols {
+          // The position of the destination pixel in the source region, in `(u, v)` coordinates.
+          let uvSrcRegion = Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
-        // The position of the destination pixel in the destination image, in coordinates where the
-        // center of the destination image is `(0, 0)`.
-        let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+          // The position of the destination pixel in the destination image, in coordinates where the
+          // center of the destination image is `(0, 0)`.
+          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
-        for c in 0..<self.channels {
-          result.update(i, j, c, to: bilinear(self, region.center * xySrcRegion, c))
+          let offset = i * outputCols * self.channels + j * channels
+          for c in 0..<self.channels {
+            (buf.baseAddress! + (offset + c)).initialize(
+              to: bilinear(self, region.center * xySrcRegion, c))
+          }
         }
       }
+      actualCount = outputRows * outputCols * self.channels
     }
-    return result
+    return ArrayImage(
+      pixels: resultPixels, rows: outputRows, cols: outputCols, channels: self.channels)
   }
 
   @derivative(of: patch, wrt: region)
@@ -55,31 +63,36 @@ extension ArrayImage {
     let rowScale = Double(region.rows) / Double(outputRows)
     let colScale = Double(region.cols) / Double(outputCols)
     func outerPb(_ dOut: TangentVector) -> OrientedBoundingBox.TangentVector {
-      var idx = 0
-      var dBox = region.zeroTangentVector
-      for i in 0..<outputRows {
-        for j in 0..<outputCols {
-          // The position of the destination pixel in the source region, in `(u, v)`
-          // coordinates.
-          let uvSrcRegion =
-            Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
+      let dBoxes = [OrientedBoundingBox.TangentVector](
+        unsafeUninitializedCapacity: outputRows
+      ) { (buf, actualCount) -> Void in
+        ComputeThreadPools.local.parallelFor(n: outputRows) { (i, _) -> Void in
+          var dBox = OrientedBoundingBox.TangentVector.zero
+          for j in 0..<outputCols {
+            // The position of the destination pixel in the source region, in `(u, v)`
+            // coordinates.
+            let uvSrcRegion =
+              Vector2(colScale * (Double(j) + 0.5), rowScale * (Double(i) + 0.5))
 
-          // The position of the destination pixel in the destination image, in coordinates
-          // where the center of the destination image is `(0, 0)`.
-          let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
+            // The position of the destination pixel in the destination image, in coordinates
+            // where the center of the destination image is `(0, 0)`.
+            let xySrcRegion = uvSrcRegion - 0.5 * Vector2(Double(region.cols), Double(region.rows))
 
-          for c in 0..<channels {
-            if dOut.pixels.base[idx] != 0 {
-              let pb = pullback(at: region) {
-                bilinear(self, $0.center * xySrcRegion, c)
+            let idx = i * outputCols * channels + j * channels
+            for c in 0..<channels {
+              if dOut.pixels.base[idx + c] != 0 {
+                let pb = pullback(at: region) {
+                  bilinear(self, $0.center * xySrcRegion, c)
+                }
+                dBox += pb(dOut.pixels.base[idx + c])
               }
-              dBox += pb(dOut.pixels.base[idx])
             }
-            idx += 1
           }
+          (buf.baseAddress! + i).initialize(to: dBox)
         }
+        actualCount = outputRows
       }
-      return dBox
+      return dBoxes.reduce(OrientedBoundingBox.TangentVector.zero, +)
     }
     return (r, outerPb)
   }

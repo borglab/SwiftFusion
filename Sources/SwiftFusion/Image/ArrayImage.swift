@@ -40,6 +40,14 @@ public struct ArrayImage: Differentiable {
     self.channels = template.channels
   }
 
+  /// Creates an instance with the given `pixels`, `rows`, `cols`, and `channels`.
+  public init(pixels: [Float], rows: Int, cols: Int, channels: Int) {
+    self.pixels = pixels
+    self.rows = rows
+    self.cols = cols
+    self.channels = channels
+  }
+
   /// Creates an instance from the given image `tensor`.
   @differentiable
   public init(_ tensor: Tensor<Float>) {
