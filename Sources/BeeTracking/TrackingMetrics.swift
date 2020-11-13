@@ -206,10 +206,18 @@ extension TrackerEvaluationSequence {
     let subsequenceEvaluations = [(metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox])](
       unsafeUninitializedCapacity: subsequences.count
     ) { (buf, actualCount) in
-      ComputeThreadPools.local.parallelFor(n: subsequences.count) { (i, _) in
-        let subsequence = subsequences[i]
-        print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
-        (buf.baseAddress! + i).initialize(to: subsequence.evaluateSubsequence(tracker))
+      let blockCount = 4
+      ComputeThreadPools.local.parallelFor(n: blockCount) { (blockIndex, _) in
+        for i in 0..<subsequences.count {
+          guard i % (2 * blockCount) == blockIndex
+            || i % (2 * blockCount) == 2 * blockCount - 1 - blockIndex
+          else {
+            continue
+          }
+          let subsequence = subsequences[i]
+          print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
+          (buf.baseAddress! + i).initialize(to: subsequence.evaluateSubsequence(tracker))
+        }
       }
       actualCount = subsequences.count
     }
