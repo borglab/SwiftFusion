@@ -516,6 +516,15 @@ struct NaivePca: ParsableCommand {
   @Flag(help: "Print progress information")
   var verbose: Bool = false
 
+  @Flag(help: "Use random projections instead of learned PPCA vectors")
+  var randomProjections: Bool = false
+
+  @Option
+  var outputFile: String
+
+  @Option
+  var truncate: Int = 50
+
   /// Returns predictions for `videoName` using the raw pixel tracker.
   func naivePpcaTrack(dataset dataset_: OISTBeeVideo) {
     var dataset = dataset_
@@ -537,7 +546,11 @@ struct NaivePca: ParsableCommand {
     var ppca = PPCA(latentSize: kLatentDimension)
 
     ppca.train(images: batch)
-    
+
+    if randomProjections {
+      ppca.W_inv = Tensor(randomNormal: ppca.W_inv!.shape)
+    }
+
     if verbose { print("Fitting Naive Bayes model") }
 
     var (foregroundModel, backgroundModel) = (
@@ -580,11 +593,11 @@ struct NaivePca: ParsableCommand {
     }
 
     // Only do inference on the interesting tracks.
-    var evalDataset = OISTBeeVideo()!
+    var evalDataset = OISTBeeVideo(truncate: truncate)!
     evalDataset.tracks = [3, 5, 6, 7].map { evalDataset.tracks[$0] }
     let trackerEvaluationDataset = TrackerEvaluationDataset(evalDataset)
     let eval = trackerEvaluationDataset.evaluate(
-      tracker, sequenceCount: evalDataset.tracks.count, deltaAnchor: 500, outputFile: "rae")
+      tracker, sequenceCount: evalDataset.tracks.count, deltaAnchor: 500, outputFile: outputFile)
     print(eval.trackerMetrics.accuracy)
     print(eval.trackerMetrics.robustness)
   }
