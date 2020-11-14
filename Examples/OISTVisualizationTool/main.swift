@@ -523,7 +523,7 @@ struct NaivePca: ParsableCommand {
   var outputFile: String
 
   @Option
-  var truncate: Int = 50
+  var truncate: Int
 
   /// Returns predictions for `videoName` using the raw pixel tracker.
   func naivePpcaTrack(dataset dataset_: OISTBeeVideo) {

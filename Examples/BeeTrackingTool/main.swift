@@ -202,6 +202,9 @@ struct NaiveRae: ParsableCommand {
   @Option
   var outputFile: String
 
+  @Option
+  var truncate: Int
+
   /// Returns predictions for `videoName` using the raw pixel tracker.
   func naiveRaeTrack(dataset dataset_: OISTBeeVideo) {
     var dataset = dataset_
@@ -275,7 +278,7 @@ struct NaiveRae: ParsableCommand {
     }
 
     // Only do inference on the interesting tracks.
-    var evalDataset = OISTBeeVideo()!
+    var evalDataset = OISTBeeVideo(truncate: truncate)!
     evalDataset.tracks = [3, 5, 6, 7].map { evalDataset.tracks[$0] }
     let trackerEvaluationDataset = TrackerEvaluationDataset(evalDataset)
     let eval = trackerEvaluationDataset.evaluate(
