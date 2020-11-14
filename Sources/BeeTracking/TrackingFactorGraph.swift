@@ -192,9 +192,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // Initialize the variables one frame at a time. Each iteration intializes the `i+1`-th
     // variable.
     for i in 0..<(frames.count - 1) {
-      if i % 10 == 0 {
-        print("Inferring for frame \(i + 1) of \(frames.count - 1)")
-      }
+      print("Inferring for frame \(i + 1) of \(frames.count - 1)")
 
       // Set the initial guess of the `i+1`-th variable to the value of the previous variable.
       x[frameVariableIDs[i + 1]] = x[frameVariableIDs[i], as: FrameVariables.self]
@@ -210,8 +208,12 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
       let initialPose = x[currentVarID]
       var bestPose = x[currentVarID]
       var bestError = g.error(at: x)
-      for dtheta in stride(from: -.pi / 2 as Double, to: .pi / 2, by: .pi / 10) {
-        let candidatePose = Pose2(Rot2(dtheta) * initialPose.rot, initialPose.t)
+      for _ in 0..<1000 {
+        let noise = Tensor<Double>(randomNormal: [3]).scalars
+        let candidatePose = initialPose.retract(Vector3(
+          0.3 * noise[0],
+          8 * noise[1],
+          4.6 * noise[2]))
         x[currentVarID] = candidatePose
         let candidateError = g.error(at: x)
         if candidateError < bestError {

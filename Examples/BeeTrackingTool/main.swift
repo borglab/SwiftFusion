@@ -199,6 +199,9 @@ struct NaiveRae: ParsableCommand {
   @Flag
   var verbose: Bool = false
 
+  @Option
+  var outputFile: String
+
   /// Returns predictions for `videoName` using the raw pixel tracker.
   func naiveRaeTrack(dataset dataset_: OISTBeeVideo) {
     var dataset = dataset_
@@ -276,7 +279,7 @@ struct NaiveRae: ParsableCommand {
     evalDataset.tracks = [3, 5, 6, 7].map { evalDataset.tracks[$0] }
     let trackerEvaluationDataset = TrackerEvaluationDataset(evalDataset)
     let eval = trackerEvaluationDataset.evaluate(
-      tracker, sequenceCount: evalDataset.tracks.count, deltaAnchor: 500, outputFile: "rae")
+      tracker, sequenceCount: evalDataset.tracks.count, deltaAnchor: 500, outputFile: outputFile)
     print(eval.trackerMetrics.accuracy)
     print(eval.trackerMetrics.robustness)
   }
