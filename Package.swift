@@ -84,6 +84,17 @@ let package = Package(
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
     path: "Examples/OISTVisualizationTool"),
+    .target(
+      name: "Scripts",
+      dependencies: [
+        "BeeDataset",
+        "BeeTracking",
+        "PenguinParallelWithFoundation",
+        "SwiftFusion",
+        "Plotly",
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+      ],
+    path: "Scripts"),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: [
