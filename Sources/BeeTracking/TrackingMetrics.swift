@@ -54,8 +54,8 @@ public struct SubsequenceMetrics: Codable {
     self.averageOverlap = averageOverlap
     self.NFsa = NFsa
     self.Nsa = overlaps.count
-    self.accuracy = overlaps[0..<NFsa].reduce(0, +) / Double(NFsa)
-    self.robustness = Double(NFsa) / Double(Nsa)
+    self.accuracy = overlaps[0..<NFsa].reduce(0, +) / max(1, Double(NFsa))
+    self.robustness = Double(NFsa) / max(1, Double(Nsa))
   }
 
   public init(
@@ -100,9 +100,9 @@ public struct SequenceMetrics: Codable {
   public init(_ subsequences: [SubsequenceMetrics]) {
     self.NFs = subsequences.map { $0.NFsa }.reduce(0, +)
     self.Ns = subsequences.map { $0.Nsa }.max()!
-    self.accuracy = subsequences.map { $0.accuracy * Double($0.NFsa) }.reduce(0, +) / Double(self.NFs)
+    self.accuracy = subsequences.map { $0.accuracy * Double($0.NFsa) }.reduce(0, +) / max(1, Double(self.NFs))
     self.robustness = subsequences.map { $0.robustness * Double($0.Nsa) }.reduce(0, +)
-      / Double(subsequences.map { $0.Nsa }.reduce(0, +))
+      / max(1, Double(subsequences.map { $0.Nsa }.reduce(0, +)))
   }
 
   public init(
@@ -129,9 +129,9 @@ public struct TrackerMetrics: Codable {
 
   public init(_ sequences: [SequenceMetrics]) {
     self.accuracy = sequences.map { $0.accuracy * Double($0.NFs) }.reduce(0, +)
-      / Double(sequences.map { $0.NFs }.reduce(0, +))
+      / max(1, Double(sequences.map { $0.NFs }.reduce(0, +)))
     self.robustness = sequences.map { $0.robustness * Double($0.Ns) }.reduce(0, +)
-      / Double(sequences.map { $0.Ns }.reduce(0, +))
+      / max(1, Double(sequences.map { $0.Ns }.reduce(0, +)))
   }
 }
 
@@ -153,7 +153,7 @@ public struct ExpectedAverageOverlap: Codable {
           totalAverageOverlap += averageOverlap
         }
       }
-      curve.append(totalAverageOverlap / Double(availableSubsequenceCount))
+      curve.append(totalAverageOverlap / max(1, Double(availableSubsequenceCount)))
     }
     self.curve = curve
   }
