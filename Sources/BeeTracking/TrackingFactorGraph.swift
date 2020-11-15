@@ -401,38 +401,6 @@ public func makeRandomProjectionTracker(
     })
 }
 
-/// Plots a trajectory comparison plot
-public func plotTrajectory(track: [Pose2], withGroundTruth expected: [Pose2], on ax: PythonObject,
-  withTrackColors predColormap: PythonObject, withGtColors gtColormap: PythonObject) {
-  let mpcollections = Python.import("matplotlib.collections")
-
-  let traj_x_gt = expected.map { $0.t.x }
-  let traj_y_gt = expected.map { $0.t.y }
-  let traj_tensor_gt = Tensor<Double>(stacking: [Tensor(traj_x_gt), Tensor(traj_y_gt)]).transposed()
-
-  let traj_x_pred = track.map { $0.t.x }
-  let traj_y_pred = track.map { $0.t.y }
-  let traj_tensor_pred = Tensor<Double>(stacking: [Tensor(traj_x_pred), Tensor(traj_y_pred)]).transposed()
-
-  let segments_gt = Tensor(concatenating: [traj_tensor_gt[...(traj_tensor_gt.shape[0]-2)], traj_tensor_gt[1...]], alongAxis: 1)
-
-  let coll_gt = mpcollections.LineCollection(segments_gt.reshaped(to: [segments_gt.shape[0], 2, 2]).makeNumpyArray(), cmap: gtColormap)
-  coll_gt.set_array(Tensor<Double>(Array<Double>(traj_x_gt.indices.map { Double($0) })).makeNumpyArray())
-
-  ax.add_collection(coll_gt)
-  ax.scatter(traj_x_gt, traj_y_gt)
-
-
-  let segments_pred = Tensor(concatenating: [traj_tensor_pred[...(traj_tensor_pred.shape[0]-2)], traj_tensor_pred[1...]], alongAxis: 1)
-
-  let coll_pred = mpcollections.LineCollection(segments_pred.reshaped(to: [segments_pred.shape[0], 2, 2]).makeNumpyArray(), cmap: predColormap)
-  coll_pred.set_array(Tensor<Double>(Array<Double>(traj_x_pred.indices.map { Double($0) })).makeNumpyArray())
-  ax.add_collection(coll_pred)
-  ax.scatter(traj_x_pred, traj_y_pred, marker: "x")
-
-  ax.autoscale_view()
-}
-
 /// Get the foreground and background batches
 public func getTrainingBatches(
   dataset: OISTBeeVideo, boundingBoxSize: (Int, Int),
@@ -518,10 +486,10 @@ public func createSingleTrack(
 /// Given a training set, it will train an RP tracker
 /// and run it on one track in the test set:
 ///  - output: image with track and overlap metrics
-public func runRPTracker(directory: URL, onTrack trackIndex: Int) -> PythonObject {
+public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int = 80) -> PythonObject {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
-  let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: 80)!
+  let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
   var tracker = trainRPTracker(
     trainingData: trainingData,
     frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
@@ -535,11 +503,15 @@ public func runRPTracker(directory: URL, onTrack trackIndex: Int) -> PythonObjec
   
   // Now create trajectory and metrics plot
   let plt = Python.import("matplotlib.pyplot")
-  let (fig, axes) = plt.subplots(1, 2).tuple2
+  let (fig, axes) = plt.subplots(2, 1, figsize: Python.tuple([6, 12])).tuple2
   plotTrajectory(
     track: track, withGroundTruth: groundTruth, on: axes[0],
     withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
   )
   
+  plotMetrics(
+    track: track, withGroundTruth: groundTruth, on: axes[1]
+  )
+
   return fig
 }
