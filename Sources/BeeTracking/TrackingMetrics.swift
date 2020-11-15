@@ -1,9 +1,6 @@
 import BeeDataset
-<<<<<<< HEAD
-=======
 import Foundation
 import PenguinParallelWithFoundation
->>>>>>> bb5b886 (make the evaluation data codable)
 import PythonKit
 import SwiftFusion
 import TensorFlow
@@ -180,13 +177,8 @@ extension TrackerEvaluationDataset {
   ) -> TrackerEvaluationResults {
     let sequenceEvaluations = sequences.prefix(sequenceCount).enumerated().map {
       (i, sequence) -> SequenceEvaluationResults in
-<<<<<<< HEAD
-      print("Evaluating sequence \(i + 1) of \(sequences.count)")
-      return sequence.evaluate(tracker)
-=======
       print("Evaluating sequence \(i + 1) of \(sequenceCount)")
       return sequence.evaluate(tracker, deltaAnchor: deltaAnchor, outputFile: "\(outputFile)-sequence\(i)")
->>>>>>> bb5b886 (make the evaluation data codable)
     }
     let result = TrackerEvaluationResults(
       sequences: sequenceEvaluations,
@@ -221,14 +213,6 @@ public struct TrackerEvaluationSequence {
 
 extension TrackerEvaluationSequence {
   /// Returns the performance of `tracker` on the sequence `self`.
-<<<<<<< HEAD
-  public func evaluate(_ tracker: Tracker) -> SequenceEvaluationResults {
-    let subsequences = self.subsequences(deltaAnchor: 50)
-    let subsequenceEvaluations = subsequences.enumerated().map {
-      (i, subsequence) -> (metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox]) in
-      print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
-      return subsequence.evaluateSubsequence(tracker)
-=======
   public func evaluate(_ tracker: Tracker, deltaAnchor: Int, outputFile: String) -> SequenceEvaluationResults {
     guard let _ = try? Python.attemptImport("shapely") else {
       print("python shapely library must be installed")
@@ -258,7 +242,6 @@ extension TrackerEvaluationSequence {
       SubsequenceEvaluationResults(
         metrics: SubsequenceMetrics(groundTruth: $0.0.groundTruth, prediction: $0.1),
         prediction: $0.1)
->>>>>>> bb5b886 (make the evaluation data codable)
     }
     let result = SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
