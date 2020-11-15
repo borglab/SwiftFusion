@@ -14,6 +14,16 @@ Using XCode is the easiest way to develop on Mac. Unfortunately, the current ver
 
 Follow the instructions to [install Swift for TensorFlow on MacOS](https://github.com/tensorflow/swift/blob/master/Installation.md#macos). Installing the latest development snapshot is recommended.
 
+To use experimental toolchain:
+```
+export PATH="/Library/Developer/Toolchains/swift-tensorflow-RELEASE-0.11.xctoolchain/usr/bin/:$PATH"
+```
+
+To re-generate XCode project:
+```
+swift package generate-xcodeproj
+```
+
 ### Installing Swift on Linux
 
 Requirements: Ubuntu 18.04 (if you use GPU). 
