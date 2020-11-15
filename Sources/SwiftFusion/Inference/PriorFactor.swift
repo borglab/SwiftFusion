@@ -14,18 +14,37 @@
 
 import PenguinStructures
 
-/// A factor that specifies a prior on a pose.
-public struct PriorFactor<Pose: LieGroup>: LinearizableFactor1 {
+/// A factor that specifies a prior on a Group.
+public struct PriorFactor<Group: LieGroup>: LinearizableFactor1 {
   public let edges: Variables.Indices
-  public let prior: Pose
-
-  public init(_ id: TypedID<Pose>, _ prior: Pose) {
+  public let prior: Group
+  
+  public init(_ id: TypedID<Group>, _ prior: Group) {
     self.edges = Tuple1(id)
     self.prior = prior
   }
-
+  
   @differentiable
-  public func errorVector(_ x: Pose) -> Pose.TangentVector {
+  public func errorVector(_ x: Group) -> Group.TangentVector {
     return prior.localCoordinate(x)
   }
 }
+
+/// A factor that specifies a prior on a Group.
+public struct WeightedPriorFactor<Group: LieGroup>: LinearizableFactor1 {
+  public let edges: Variables.Indices
+  public let prior: Group
+  public let weight: Double
+  
+  public init(_ id: TypedID<Group>, _ prior: Group, weight: Double) {
+    self.edges = Tuple1(id)
+    self.prior = prior
+    self.weight = weight
+  }
+  
+  @differentiable
+  public func errorVector(_ x: Group) -> Group.TangentVector {
+    return weight * prior.localCoordinate(x)
+  }
+}
+
