@@ -168,7 +168,13 @@ public struct TrackerEvaluationDataset {
 extension TrackerEvaluationDataset {
   /// Evaluate the performance of `tracker` on `self`.
   ///
-  /// Prameter sequenceCount: How many sequences from `self` to use during the evaluation.
+  /// Initializes the tracker at multiple points in each sequence, `0`, `deltaAnchor`, `2 * deltaAnchor`, etc,
+  /// and computes metrics at each subsequence.
+  ///
+  /// Writes metrics for each sequence `i` to `"\(outputFile)-sequence\(i).json"` and writes combined metrics
+  /// for all sequences to `"\(outputFile).json"`.
+  ///
+  /// Parameter sequenceCount: How many sequences from `self` to use during the evaluation.
   public func evaluate(
     _ tracker: Tracker,
     sequenceCount: Int,
@@ -213,6 +219,11 @@ public struct TrackerEvaluationSequence {
 
 extension TrackerEvaluationSequence {
   /// Returns the performance of `tracker` on the sequence `self`.
+  ///
+  /// Initializes the tracker at multiple points in the sequence, `0`, `deltaAnchor`, `2 * deltaAnchor`, etc,
+  /// and returns metrics at each subsequence.
+  ///
+  /// Writes metrics to `"\(outputFile).json"`.
   public func evaluate(_ tracker: Tracker, deltaAnchor: Int, outputFile: String) -> SequenceEvaluationResults {
     guard let _ = try? Python.attemptImport("shapely") else {
       print("python shapely library must be installed")
@@ -223,6 +234,9 @@ extension TrackerEvaluationSequence {
     let subsequencePredictions = [[OrientedBoundingBox]](
       unsafeUninitializedCapacity: subsequences.count
     ) { (buf, actualCount) in
+      // Evaluate up to 4 sequences in parallel.
+      // TODO(marcrasi): We should call a high-level "parallel map with limited concurrency method" instead of
+      // implementing it ourselves here.
       let blockCount = 4
       ComputeThreadPools.local.parallelFor(n: blockCount) { (blockIndex, _) in
         for i in 0..<subsequences.count {
