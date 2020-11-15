@@ -54,4 +54,12 @@ final class OISTDatasetTests: XCTestCase {
     let expected = "114514\t1919810\t1\t1.2\t38.0\t1.13559"
     XCTAssertEqual(string, expected)
   }
+
+  func testTrackLoading() {
+    /// 628.0 1211.0 -1.1518463267948966 40 70
+    let dataset = OISTBeeVideo(directory: datasetDirectory, afterIndex: 1, length: 1)!
+
+    XCTAssertEqual(dataset.tracks[0].boxes[0].center.rot.theta, -1.279746, accuracy: 1e-3)
+    XCTAssertEqual(dataset.tracks.count, 1)
+  }
 }
