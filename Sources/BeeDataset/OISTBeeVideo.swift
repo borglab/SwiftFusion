@@ -253,17 +253,15 @@ extension OISTBeeVideo {
 
     self.labels = getAllLabels(directory: directory, forFrames: self.frameIds, fps: fps)
 
-    /// FIXME: double counting of startFrame
-    /// startFrame is from 0
-    /// When we start from non zero frameId, we need to do:
-    /// startFrame = startFrame - i0
-    /// If this is negative, we need to cut abs(startFrame) from list of locations
     func loadTrack(_ path: URL) -> OISTBeeTrack {
       let track = try! String(contentsOf: path)
       let lines = track.split(separator: "\n")
+      /// startFrame is from 0
       var startFrame = Int(lines.first!)!
+      /// When we start from non zero frameId, we need to do:
       let diffStartFrame = startFrame - i0
       var boxesToDrop = 0
+      /// If this is negative, we need to cut abs(startFrame) from list of locations
       if diffStartFrame < 0 {
         boxesToDrop = -diffStartFrame
         startFrame = 0
