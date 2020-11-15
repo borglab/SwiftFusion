@@ -36,7 +36,7 @@ struct Frank04: ParsableCommand {
       let frameId = dataset.frameIds[index]
       let filename = formOISTFilename(dataset.fps, frameId)
       print("Write \(filename)")
-      writeOneFile(filename: URL(fileURLWithPath: "./converted/" + filename), labels: labels)
+      writeOneFile(filename: URL(fileURLWithPath: "./OIST_Data"), labels: labels)
     }
     
   }

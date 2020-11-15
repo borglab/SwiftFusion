@@ -3,6 +3,7 @@ import PenguinStructures
 import SwiftFusion
 import TensorFlow
 import PythonKit
+import Foundation
 
 /// A factor that specifies a prior on a pose.
 public struct WeightedPriorFactor<Pose: LieGroup>: LinearizableFactor1 {
@@ -517,10 +518,10 @@ public func createSingleTrack(
 /// Given a training set, it will train an RP tracker
 /// and run it on one track in the test set:
 ///  - output: image with track and overlap metrics
-public func runRPTracker(onTrack trackIndex: Int) -> PythonObject {
+public func runRPTracker(directory: URL, onTrack trackIndex: Int) -> PythonObject {
   // train foreground and background model and create tracker
-  let trainingData = OISTBeeVideo(truncate: 100)!
-  let testData = OISTBeeVideo(afterIndex: 100, length: 80)!
+  let trainingData = OISTBeeVideo(directory: directory, length: 100)!
+  let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: 80)!
   var tracker = trainRPTracker(
     trainingData: trainingData,
     frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
