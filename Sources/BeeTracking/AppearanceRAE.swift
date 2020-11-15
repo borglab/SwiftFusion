@@ -70,7 +70,7 @@ public struct DenseRAE: Layer {
     self.hiddenDimension = hiddenDimension
     self.latentDimension = latentDimension
 
-    encoder_conv1 = Conv2D<Double>(filterShape: (3, 3, 3, 3), padding: .same, activation: relu)
+    encoder_conv1 = Conv2D<Double>(filterShape: (3, 3, imageChannels, imageChannels), padding: .same, activation: relu)
 
     encoder_pool1 = MaxPool2D<Double>(poolSize: (2, 2), strides: (2, 2), padding: .same)
 
@@ -94,7 +94,7 @@ public struct DenseRAE: Layer {
 
     decoder_upsample1 = UpSampling2D<Double>(size: 2)
 
-    decoder_conv1 = Conv2D<Double>(filterShape: (3, 3, 3, 3), padding: .same, activation: identity)
+    decoder_conv1 = Conv2D<Double>(filterShape: (3, 3, imageChannels, imageChannels), padding: .same, activation: identity)
   }
 
   /// Differentiable encoder
