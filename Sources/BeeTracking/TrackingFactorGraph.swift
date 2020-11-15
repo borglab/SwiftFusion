@@ -518,19 +518,23 @@ public func createSingleTrack(
 /// and run it on one track in the test set:
 ///  - output: image with track and overlap metrics
 public func runRPTracker(onTrack trackIndex: Int) -> PythonObject {
-  let plt = Python.import("matplotlib.pyplot")
-  let (fig, axes) = plt.subplots(1, 2).tuple2
-
+  // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(truncate: 100)!
   let testData = OISTBeeVideo(afterIndex: 100, length: 80)!
   var tracker = trainRPTracker(
     trainingData: trainingData,
     frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
   )
+  
+  // Run the tracker and return track with ground truth
   let (track, groundTruth) = createSingleTrack(
     onTrack: trackIndex, withTracker: &tracker,
     andTestData: testData
   )
+  
+  // Now create trajectory and metrics plot
+  let plt = Python.import("matplotlib.pyplot")
+  let (fig, axes) = plt.subplots(1, 2).tuple2
   plotTrajectory(
     track: track, withGroundTruth: groundTruth, on: axes[0],
     withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
