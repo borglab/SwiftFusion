@@ -237,7 +237,7 @@ extension OISTBeeVideo {
     if let frameCount = frameCount {
       self.frameIds = Array(originalFrameIds[i0..<i0 + frameCount])
     } else {
-      self.frameIds = originalFrameIds
+      self.frameIds = Array(originalFrameIds[i0...])
     }
 
     // Lazy loading
@@ -253,13 +253,28 @@ extension OISTBeeVideo {
 
     self.labels = getAllLabels(directory: directory, forFrames: self.frameIds, fps: fps)
 
+    /// FIXME: double counting of startFrame
+    /// startFrame is from 0
+    /// When we start from non zero frameId, we need to do:
+    /// startFrame = startFrame - i0
+    /// If this is negative, we need to cut abs(startFrame) from list of locations
     func loadTrack(_ path: URL) -> OISTBeeTrack {
       let track = try! String(contentsOf: path)
       let lines = track.split(separator: "\n")
-      let startFrame = Int(lines.first!)!
+      var startFrame = Int(lines.first!)!
+      let diffStartFrame = startFrame - i0
+      var boxesToDrop = 0
+      if diffStartFrame < 0 {
+        boxesToDrop = -diffStartFrame
+        startFrame = 0
+      } else {
+        // We do not drop boxes as start of track is after cutoff
+        startFrame = diffStartFrame
+      }
       let boxes = lines
         .dropFirst()
-        .prefix(max(0, self.frameIds.count - startFrame))
+        .dropFirst(boxesToDrop)
+        .prefix(frameCount ?? self.frameIds.count)
         .map { line -> OrientedBoundingBox in
           let split = line.split(separator: " ")
           return OrientedBoundingBox(

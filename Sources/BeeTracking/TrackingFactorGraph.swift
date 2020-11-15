@@ -490,6 +490,9 @@ public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
   let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
+
+  precondition(testData.tracks.count == forFrames, "track length and required does not match")
+  
   var tracker = trainRPTracker(
     trainingData: trainingData,
     frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
