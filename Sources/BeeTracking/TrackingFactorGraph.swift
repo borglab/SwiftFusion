@@ -225,56 +225,76 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     }
     return result
   }
-
+  
+  // Try to initialize pose of the `i+1`-th variable by sampling
+  mutating func extendBySampling(x: inout VariableAssignments, fromFrame i:Int, withGraph g: FactorGraph)  {
+    // First get pose IDs: pose is assumed to be first variable in the frameVariableID tuple
+    let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
+    let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
+    
+    // Now get actual poses
+    let previousPose = x[previousPoseID]
+    var bestPose = x[currentPoseID]
+    
+    // Sample from motion model and take best pose
+    var bestError = g.error(at: x)
+    for _ in 0..<5 {
+      let noise = Tensor<Double>(randomNormal: [3]).scalars
+      x[currentPoseID] = previousPose.retract(Vector3(0.3 * noise[0], 8 * noise[1],  4.6 * noise[2]))
+      let candidateError = g.error(at: x)
+      if candidateError < bestError {
+        bestError = candidateError
+        bestPose = x[currentPoseID]
+      }
+    }
+    x[currentPoseID] = bestPose
+  }
+  
+  /// Extend the track
+  mutating func extendTrack(x: inout VariableAssignments, fromFrame i:Int,
+                            withSampling samplingFlag: Bool = false
+  ) {
+    let currentVarID = frameVariableIDs[i + 1]
+    let previousVarID = frameVariableIDs[i]
+    
+    // Create a tracking factor graph on just the `i+1`-th variable.
+    var g = graph(on: (i + 1)..<(i + 2))
+    
+    // The `i`-th variable is already initialized well, so add a prior factor that it stays
+    // near its current position.
+    addFixedBetweenFactor(x[previousVarID], currentVarID, &g)
+    
+    // Initialize
+    if (samplingFlag) {
+      // Try to initialize pose of the `i+1`-th variable by sampling
+      extendBySampling(x: &x, fromFrame:i, withGraph:g)
+    } else {
+      // Initialize `i+1`-th variable with the value of the previous variable.
+      x[currentVarID] = x[previousVarID, as: FrameVariables.self]
+    }
+    
+    // Optimize the factor graph.
+    try? optimizer.optimize(graph: g, initial: &x)
+  }
+  
   /// Returns a prediction.
   public mutating func infer(
-    knownStart: FrameVariables
+    knownStart: FrameVariables,
+    withSampling samplingFlag: Bool = false
   ) -> VariableAssignments {
     // Set the first variable to the known starting position.
     var x = variableTemplate
     x[frameVariableIDs[0]] = knownStart
-
+    
     // Initialize the variables one frame at a time. Each iteration intializes the `i+1`-th
     // variable.
     for i in 0..<(frames.count - 1) {
       print("Inferring for frame \(i + 1) of \(frames.count - 1)")
-
-      // Set the initial guess of the `i+1`-th variable to the value of the previous variable.
-      x[frameVariableIDs[i + 1]] = x[frameVariableIDs[i], as: FrameVariables.self]
-
-      // Create a tracking factor graph on just the `i+1`-th variable.
-      var g = graph(on: (i + 1)..<(i + 2))
-
-      // The `i`-th variable is already initialized well, so add a prior factor that it stays
-      // near its current position.
-      addFixedBetweenFactor(x[frameVariableIDs[i]], frameVariableIDs[i + 1], &g)
-
-//      let previousVarID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
-//      let currentVarID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
-//      let previousPose = x[previousVarID]
-//      var bestPose = x[currentVarID]
-//      var bestError = g.error(at: x)
-//      for _ in 0..<5 {
-//        let noise = Tensor<Double>(randomNormal: [3]).scalars
-//        x[currentVarID] = previousPose.retract(Vector3(
-//          0.3 * noise[0],
-//          8 * noise[1],
-//          4.6 * noise[2]))
-//        try? optimizer.optimize(graph: g, initial: &x)
-//        let candidateError = g.error(at: x)
-//        if candidateError < bestError {
-//          bestError = candidateError
-//          bestPose = x[currentVarID]
-//        }
-//      }
-//      x[currentVarID] = bestPose
-
-    // Optimize the factor graph.
-    try? optimizer.optimize(graph: g, initial: &x)
+      extendTrack(x: &x, fromFrame:i, withSampling:samplingFlag)
     }
-
-    // We could also do a final optimization on all the variables jointly here.
-
+    
+    // TODO: We could also do a final optimization on all the variables jointly here.
+    
     return x
   }
 }
@@ -564,12 +584,13 @@ public func trainRPTracker(
 public func createSingleTrack(
   onTrack trackId: Int,
   withTracker tracker: inout TrackingConfiguration<Tuple1<Pose2>>,
-  andTestData testData: OISTBeeVideo
+  andTestData testData: OISTBeeVideo,
+  withSampling samplingFlag: Bool = false
 ) -> ([Pose2], [Pose2]) {
   precondition(trackId < testData.tracks.count, "specified track does not exist!!!")
 
   let startPose = testData.tracks[trackId].boxes[0].center
-  let prediction = tracker.infer(knownStart: Tuple1(startPose))
+  let prediction = tracker.infer(knownStart: Tuple1(startPose), withSampling: samplingFlag)
   let track = tracker.frameVariableIDs.map { prediction[unpack($0)] }
   let groundTruth = testData.tracks[trackId].boxes.map { $0.center }
   return (track, groundTruth)
@@ -579,22 +600,27 @@ public func createSingleTrack(
 /// Given a training set, it will train an RP tracker
 /// and run it on one track in the test set:
 ///  - output: image with track and overlap metrics
-public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int = 80) -> PythonObject {
+public func runRPTracker(
+  directory: URL, onTrack trackIndex: Int, forFrames: Int = 80,
+  withSampling samplingFlag: Bool = false,
+  withFeatureSize d: Int = 100,
+  savePatchesIn resultDirectory: String? = nil
+) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
   let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
 
-  precondition(testData.tracks.count == forFrames, "track length and required does not match")
+  precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
   
   var tracker = trainRPTracker(
     trainingData: trainingData,
-    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
+    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d
   )
   
   // Run the tracker and return track with ground truth
   let (track, groundTruth) = createSingleTrack(
     onTrack: trackIndex, withTracker: &tracker,
-    andTestData: testData
+    andTestData: testData, withSampling: samplingFlag
   )
   
   // Now create trajectory and metrics plot
@@ -609,5 +635,13 @@ public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int
     track: track, withGroundTruth: groundTruth, on: axes[1]
   )
 
-  return fig
+  if let dir = resultDirectory {
+    /// Plot all the frames so we can visually inspect the situation
+    for i in track.indices {
+      let (fig_initial, _) = plotPatchWithGT(frame: testData.frames[i], actual: track[i], expected: groundTruth[i])
+      fig_initial.savefig("\(dir)/frank02_1st_img_track\(trackIndex)_\(d)_\(i).png", bbox_inches: "tight")
+    }
+  }
+
+  return (fig, track, groundTruth)
 }

@@ -17,7 +17,7 @@ import PenguinParallelWithFoundation
 
 struct Scripts: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [Frank01.self, Frank04.self])
+    subcommands: [Frank01.self, Frank02.self, Frank04.self])
 }
 
 // It is important to set the global threadpool before doing anything else, so that nothing
