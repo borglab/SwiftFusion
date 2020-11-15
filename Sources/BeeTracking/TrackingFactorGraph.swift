@@ -254,8 +254,6 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   mutating func extendTrack(x: inout VariableAssignments, fromFrame i:Int,
                             withSampling samplingFlag: Bool = false
   ) {
-    print("Inferring for frame \(i + 1) of \(frames.count - 1)")
-    
     let currentVarID = frameVariableIDs[i + 1]
     let previousVarID = frameVariableIDs[i]
     
