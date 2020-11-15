@@ -173,6 +173,7 @@ extension Matrix3Coordinate {
   }
 }
 
+@differentiable
 func sqrtWrap(_ v: Double) -> Double {
   sqrt(v)
 }
