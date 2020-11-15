@@ -24,10 +24,10 @@ final class OISTDatasetTests: XCTestCase {
       throw XCTSkip("Test skipped on CI because it downloads a lot of data.")
     }
     let video = OISTBeeVideo(deferLoadingFrames: true)!
-    XCTAssertEqual(video.frameIds.count, 361)
+    XCTAssertEqual(video.frameIds.count, 360)
     XCTAssertEqual(video.tracks.count, 20)
     XCTAssertEqual(video.tracks[0].startFrameIndex, 0)
-    XCTAssertEqual(video.tracks[0].boxes.count, 361)
+    XCTAssertEqual(video.tracks[0].boxes.count, 360)
     XCTAssertEqual(video.tracks[11].startFrameIndex, 28)
     XCTAssertEqual(video.tracks[11].boxes.count, 179)
   }
@@ -51,5 +51,19 @@ final class OISTDatasetTests: XCTestCase {
 
     // The tracks are shorter because we truncated the frames.
     XCTAssertEqual(video.tracks[0].boxes.count, 15)
+  }
+
+  func testToString() {
+    let label = OISTBeeLabel(
+      frameIndex: 1515,
+      label: .Body,
+      rawLocation: (1.2, 38, 1.13559),
+      offset: (114514, 1919810),
+      scale: 2.0
+    )
+    
+    let string = label.toString()
+    let expected = "114514\t1919810\t1\t1.2\t38.0\t1.13559"
+    XCTAssertEqual(string, expected)
   }
 }

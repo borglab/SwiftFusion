@@ -46,7 +46,7 @@ public struct OISTBeeVideo {
   var directory: URL?
 
   /// FPS of the video sequence
-  var fps: Int
+  public let fps: Int
 
   /// Scale Factor
   public var scale: Int = 2
@@ -93,6 +93,25 @@ public struct OISTBeeLabel {
 
   /// Scale Factor
   public var scale: Double = 2
+
+  public init(frameIndex: Int,
+    label: OISTLabelType,
+    rawLocation: (Double, Double, Double),
+    offset: (Int, Int),
+    scale: Double
+  ) {
+    self.frameIndex = frameIndex
+    self.label = label
+    self.rawLocation = rawLocation
+    self.offset = offset
+    self.scale = scale
+  }
+}
+
+extension OISTBeeLabel {
+  public func toString() -> String {
+    "\(offset.0)\t\(offset.1)\t\((label == .Body) ? 1 : 2)\t\(rawLocation.0)\t\(rawLocation.1)\t\(rawLocation.2)"
+  }
 }
 
 /// A sequence of bounding boxes tracking a single bee in a video.
@@ -122,13 +141,70 @@ fileprivate extension String {
     }
 }
 
+/// Make a filename according to the naming convention
+public func formOISTFilename(_ fps: Int, _ index: Int) -> String {
+  "frame_\(fps)fps_\(index, padding: 6).txt"
+}
+
+/// Loads labels for one frame
+func loadFrameLabels(directory: URL, _ index: Int, fps: Int) -> [OISTBeeLabel]? {
+  let path = directory.appendingPathComponent("frames_txt").appendingPathComponent(formOISTFilename(fps, index))
+  guard let track = try? String(contentsOf: path) else { return nil }
+  let lines = track.split(separator: "\n")
+  
+  return try! lines.lazy.enumerated().map { (id, line) in
+    let split = line.split(separator: "\t")
+    var labelType: OISTLabelType = .Body
+    assert(split.count == 6)
+    switch Int(split[2])! {
+      case 1: labelType = .Body
+      case 2: labelType = .Butt
+      default: throw OISTBeeVideo.ParseError(lineIndex: id, line: String(line), message: "Bad label ID!")
+    }
+  
+    return OISTBeeLabel(
+      frameIndex: index,
+      label: labelType,
+      rawLocation: (Double(split[3])!, Double(split[4])!, Double(split[5])!),
+      offset: (Int(split[0])!, Int(split[1])!),
+      scale: Double(2.0)
+    )
+  }
+}
+
+/// Loads labels for all frames specified by `frameIds` as a collection
+func getAllLabels(directory: URL, forFrames frameIds: [Int], fps: Int) -> [[OISTBeeLabel]] {
+  var labels: [[OISTBeeLabel]] = []
+  while labels.count < frameIds.count,
+    let label = loadFrameLabels(directory: directory, frameIds[labels.count], fps: fps)
+  {
+    labels.append(label)
+    if frameIds.count == labels.count {
+      break
+    }
+  }
+
+  return labels
+}
+
 extension OISTBeeVideo {
   /// Creates an instance with auto download.
   ///
   /// Parameter frameCount: If specified, truncates the full dataset to this number of frames.
   public init?(deferLoadingFrames: Bool = false, truncate frameCount: Int? = nil) {
     let dataset = Self.downloadDatasetIfNotPresent()
-    self.init(directory: dataset, deferLoadingFrames: deferLoadingFrames, truncate: frameCount)
+    self.init(directory: dataset, deferLoadingFrames: deferLoadingFrames, length: frameCount)
+  }
+
+  /// Creates an instance with auto download.
+  ///
+  /// Parameter length: If specified, truncates the full dataset to this number of frames.
+  public init?(deferLoadingFrames: Bool = false, afterIndex i: Int = 0, length n: Int? = nil) {
+    let dataset = Self.downloadDatasetIfNotPresent()
+    self.init(
+      directory: dataset, deferLoadingFrames: deferLoadingFrames, afterIndex: i,
+      length: n
+    )
   }
 
   /// Creates an instance from the data in the given `directory`.
@@ -141,17 +217,22 @@ extension OISTBeeVideo {
   ///
   /// Parameter frameCount: If specified, truncates the full dataset to this number of frames.
   public init?(
-    directory: URL, deferLoadingFrames: Bool = true, fps: Int = 30, truncate frameCount: Int? = nil
+    directory: URL, deferLoadingFrames: Bool = true, fps: Int = 30, afterIndex i0: Int = 0, length frameCount: Int? = nil
   ) {
     self.frames = []
-    self.labels = []
-    self.frameIds = []
     self.tracks = []
+    self.labels = []
     self.directory = directory
     self.fps = fps
 
-    let directoryContents = try! FileManager.default.contentsOfDirectory(at: directory.appendingPathComponent("frames"), includingPropertiesForKeys: nil)
-    self.frameIds = directoryContents.map { f in
+    let directoryContents = try! FileManager.default.contentsOfDirectory(
+      at: directory.appendingPathComponent("frames"), includingPropertiesForKeys: nil,
+      options: [.skipsHiddenFiles, .skipsPackageDescendants]
+    )
+
+    /// This extracts the image sequence number from the file names
+    /// Format: `frame_<fps>fps_<id>.png`
+    let originalFrameIds: [Int] = directoryContents.map { (f: URL) -> Int in
       let name = f.deletingPathExtension().lastPathComponent
       let ranges = name.ranges(of: #"([0-9]+)"#, options: .regularExpression)
       if ranges.count == 2 {
@@ -162,7 +243,9 @@ extension OISTBeeVideo {
     }.sorted()
 
     if let frameCount = frameCount {
-      self.frameIds = Array(self.frameIds.prefix(frameCount))
+      self.frameIds = Array(originalFrameIds[i0..<i0 + frameCount])
+    } else {
+      self.frameIds = originalFrameIds
     }
 
     // Lazy loading
@@ -176,39 +259,7 @@ extension OISTBeeVideo {
       }
     }
 
-    /// Loads labels for one frame
-    func loadFrameLabels(_ index: Int) -> [OISTBeeLabel]? {
-      let path = directory.appendingPathComponent("frames_txt").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).txt")
-      guard let track = try? String(contentsOf: path) else { return nil }
-      let lines = track.split(separator: "\n")
-      
-      return try! lines.lazy.enumerated().map { (id, line) in
-        let split = line.split(separator: "\t")
-        var labelType: OISTLabelType = .Body
-        assert(split.count == 6)
-        switch Int(split[2])! {
-          case 1: labelType = .Body
-          case 2: labelType = .Butt
-          default: throw Self.ParseError(lineIndex: id, line: String(line), message: "Bad label ID!")
-        }
-      
-        return OISTBeeLabel(
-          frameIndex: index,
-          label: labelType,
-          rawLocation: (Double(split[3])!, Double(split[4])!, Double(split[5])!),
-          offset: (Int(split[0])!, Int(split[1])!),
-          scale: Double(scale)
-        )
-      }
-    }
-    while self.labels.count < self.frameIds.count,
-      let label = loadFrameLabels(self.frameIds[self.labels.count])
-    {
-      self.labels.append(label)
-      if self.frameIds.count == self.labels.count {
-          break
-        }
-    }
+    self.labels = getAllLabels(directory: directory, forFrames: self.frameIds, fps: fps)
 
     func loadTrack(_ path: URL) -> OISTBeeTrack {
       let track = try! String(contentsOf: path)
@@ -228,6 +279,7 @@ extension OISTBeeVideo {
         }
       return OISTBeeTrack(startFrameIndex: startFrame, boxes: boxes)
     }
+
     if let trackDirContents = try? FileManager.default.contentsOfDirectory(
       at: directory.appendingPathComponent("tracks"),
       includingPropertiesForKeys: nil
@@ -235,7 +287,7 @@ extension OISTBeeVideo {
       self.tracks = trackDirContents
         .sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
         .map(loadTrack)
-        .filter { $0.boxes.count >= 10 }
+        .filter { $0.boxes.count >= min(10, self.frameIds.count) }
     } else {
       print("WARNING: No ground truth tracks found.")
     }
@@ -247,7 +299,11 @@ extension OISTBeeVideo {
     let path = self.directory!.appendingPathComponent("frames").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).png")
     guard FileManager.default.fileExists(atPath: path.path) else { return nil }
     let downsampler = AvgPool2D<Float>(poolSize: (scale, scale), strides: (scale, scale), padding: .same)
-    return downsampler(ModelSupport.Image(contentsOf: path).tensor.expandingShape(at: 0)).squeezingShape(at: 0)
+    
+    let dots = TensorRange.ellipsis
+    let grayscale = ModelSupport.Image(contentsOf: path).tensor.expandingShape(at: 0)[dots, 0].expandingShape(at: 3)
+
+    return downsampler(grayscale).squeezingShape(at: 0)
   }
   
   private static func downloadDatasetIfNotPresent() -> URL {

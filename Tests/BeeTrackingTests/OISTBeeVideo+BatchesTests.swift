@@ -30,7 +30,7 @@ class OISTBeeVideoBatchesTests: XCTestCase {
         NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 5)
     let video = OISTBeeVideo(deferLoadingFrames: true)!
     let (batch, statistics) = video.makeBatch(appearanceModelSize: (100, 100), batchSize: 200)
-    XCTAssertEqual(batch.shape, [200, 100, 100, 3])
+    XCTAssertEqual(batch.shape, [200, 100, 100, 1])
     XCTAssertEqual(statistics.mean.shape, [])
     XCTAssertEqual(statistics.standardDeviation.shape, [])
 
@@ -38,6 +38,6 @@ class OISTBeeVideoBatchesTests: XCTestCase {
       patchSize: (40, 70), appearanceModelSize: (100, 100),
       statistics: statistics,
       batchSize: 200)
-    XCTAssertEqual(bgBatch.shape, [200, 100, 100, 3])
+    XCTAssertEqual(bgBatch.shape, [200, 100, 100, 1])
   }
 }

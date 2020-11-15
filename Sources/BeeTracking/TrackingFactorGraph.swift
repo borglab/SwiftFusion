@@ -2,6 +2,7 @@ import BeeDataset
 import PenguinStructures
 import SwiftFusion
 import TensorFlow
+import PythonKit
 
 /// A factor that specifies a prior on a pose.
 public struct WeightedPriorFactor<Pose: LieGroup>: LinearizableFactor1 {
@@ -18,6 +19,26 @@ public struct WeightedPriorFactor<Pose: LieGroup>: LinearizableFactor1 {
   @differentiable
   public func errorVector(_ x: Pose) -> Pose.TangentVector {
     return weight * prior.localCoordinate(x)
+  }
+}
+
+/// A factor that specifies a prior on a pose.
+public struct WeightedPriorFactorPose2: LinearizableFactor1 {
+  public let edges: Variables.Indices
+  public let prior: Pose2
+  public let weight: Double
+  public let rotWeight: Double
+  public init(_ id: TypedID<Pose2>, _ prior: Pose2, weight: Double, rotWeight: Double) {
+    self.edges = Tuple1(id)
+    self.prior = prior
+    self.weight = weight
+    self.rotWeight = rotWeight
+  }
+
+  @differentiable
+  public func errorVector(_ x: Pose2) -> Pose2.TangentVector {
+    let weighted = weight * prior.localCoordinate(x)
+    return Vector3(rotWeight * weighted.x, weighted.y, weighted.z)
   }
 }
 
@@ -65,7 +86,7 @@ public struct WeightedBetweenFactorPose2: LinearizableFactor2 {
 /// A specification for a factor graph that tracks a target in a sequence of frames.
 public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   /// The frames of the video to track.
-  public let frames: [Tensor<Float>]
+  public var frames: [Tensor<Float>]
 
   /// A collection of arbitrary values for the variables in the factor graph.
   public let variableTemplate: VariableAssignments
@@ -315,4 +336,205 @@ public func makeRawPixelTracker(
 /// Returns `t` as a Swift tuple.
 fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
   return (t.head, t.tail.head)
+}
+
+/// Returns `t` as a Swift tuple.
+fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
+  return (t.head)
+}
+
+/// Returns a tracking configuration for a tracker using an random projection.
+///
+/// Parameter model: The random projection model to use.
+/// Parameter statistics: Normalization statistics for the frames.
+/// Parameter frames: The frames of the video where we want to run tracking.
+/// Parameter targetSize: The size of the target in the frames.
+public func makeRandomProjectionTracker(
+  model: RandomProjection,
+  statistics: FrameStatistics,
+  frames: [Tensor<Float>],
+  targetSize: (Int, Int),
+  foregroundModel: MultivariateGaussian,
+  backgroundModel: GaussianNB
+) -> TrackingConfiguration<Tuple1<Pose2>> {
+  var variableTemplate = VariableAssignments()
+  var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()
+  for _ in 0..<frames.count {
+    frameVariableIDs.append(
+      Tuple1(
+        variableTemplate.store(Pose2())
+        ))
+  }
+
+  let addPrior = { (variables: Tuple1<TypedID<Pose2>>, values: Tuple1<Pose2>, graph: inout FactorGraph) -> () in
+    let (poseID) = unpack(variables)
+    let (pose) = unpack(values)
+    graph.store(WeightedPriorFactorPose2(poseID, pose, weight: 1e-2, rotWeight: 2e2))
+  }
+
+  let addTrackingFactor = { (variables: Tuple1<TypedID<Pose2>>, frame: Tensor<Float>, graph: inout FactorGraph) -> () in
+    let (poseID) = unpack(variables)
+    graph.store(
+      ProbablisticTrackingFactor(poseID,
+        measurement: statistics.normalized(frame),
+        encoder: model,
+        patchSize: targetSize,
+        appearanceModelSize: targetSize,
+        foregroundModel: foregroundModel,
+        backgroundModel: backgroundModel,
+        maxPossibleNegativity: 1e2
+      )
+    )
+  }
+
+  return TrackingConfiguration(
+    frames: frames,
+    variableTemplate: variableTemplate,
+    frameVariableIDs: frameVariableIDs,
+    addPriorFactor: addPrior,
+    addTrackingFactor: addTrackingFactor,
+    addBetweenFactor: { (variables1, variables2, graph) -> () in
+      let (poseID1) = unpack(variables1)
+      let (poseID2) = unpack(variables2)
+      graph.store(WeightedBetweenFactorPose2(poseID1, poseID2, Pose2(), weight: 1e-2, rotWeight: 2e2))
+    })
+}
+
+/// Plots a trajectory comparison plot
+public func plotTrajectory(track: [Pose2], withGroundTruth expected: [Pose2], on ax: PythonObject,
+  withTrackColors predColormap: PythonObject, withGtColors gtColormap: PythonObject) {
+  let mpcollections = Python.import("matplotlib.collections")
+
+  let traj_x_gt = expected.map { $0.t.x }
+  let traj_y_gt = expected.map { $0.t.y }
+  let traj_tensor_gt = Tensor<Double>(stacking: [Tensor(traj_x_gt), Tensor(traj_y_gt)]).transposed()
+
+  let traj_x_pred = track.map { $0.t.x }
+  let traj_y_pred = track.map { $0.t.y }
+  let traj_tensor_pred = Tensor<Double>(stacking: [Tensor(traj_x_pred), Tensor(traj_y_pred)]).transposed()
+
+  let segments_gt = Tensor(concatenating: [traj_tensor_gt[...(traj_tensor_gt.shape[0]-2)], traj_tensor_gt[1...]], alongAxis: 1)
+
+  let coll_gt = mpcollections.LineCollection(segments_gt.reshaped(to: [segments_gt.shape[0], 2, 2]).makeNumpyArray(), cmap: gtColormap)
+  coll_gt.set_array(Tensor<Double>(Array<Double>(traj_x_gt.indices.map { Double($0) })).makeNumpyArray())
+
+  ax.add_collection(coll_gt)
+  ax.scatter(traj_x_gt, traj_y_gt)
+
+
+  let segments_pred = Tensor(concatenating: [traj_tensor_pred[...(traj_tensor_pred.shape[0]-2)], traj_tensor_pred[1...]], alongAxis: 1)
+
+  let coll_pred = mpcollections.LineCollection(segments_pred.reshaped(to: [segments_pred.shape[0], 2, 2]).makeNumpyArray(), cmap: predColormap)
+  coll_pred.set_array(Tensor<Double>(Array<Double>(traj_x_pred.indices.map { Double($0) })).makeNumpyArray())
+  ax.add_collection(coll_pred)
+  ax.scatter(traj_x_pred, traj_y_pred, marker: "x")
+
+  ax.autoscale_view()
+}
+
+/// Get the foreground and background batches
+public func getTrainingBatches(
+  dataset: OISTBeeVideo, boundingBoxSize: (Int, Int),
+  fgBatchSize: Int = 300, bgBatchSize: Int = 300, bgRandomFrameCount: Int = 10
+) -> (fg: Tensor<Double>, bg: Tensor<Double>, statistics: FrameStatistics) {
+  precondition(dataset.frames.count >= bgRandomFrameCount)
+  var statistics = FrameStatistics(Tensor<Double>(0.0))
+  statistics.mean = Tensor(62.26806976644069)
+  statistics.standardDeviation = Tensor(37.44683834503672)
+
+  let foregroundBatch = dataset.makeBatch(
+    statistics: statistics, appearanceModelSize: boundingBoxSize,
+    randomFrameCount: bgRandomFrameCount, batchSize: fgBatchSize
+  )
+  let backgroundBatch = dataset.makeBackgroundBatch(
+    patchSize: boundingBoxSize, appearanceModelSize: boundingBoxSize,
+    statistics: statistics,
+    randomFrameCount: bgRandomFrameCount,
+    batchSize: bgBatchSize
+  )
+
+  return (fg: foregroundBatch, bg: backgroundBatch, statistics: statistics)
+}
+
+/// Train a random projection tracker with a full Gaussian foreground model
+/// and a Naive Bayes background model.
+public func trainRPTracker(
+  trainingData: OISTBeeVideo,
+  frames: [Tensor<Float>],
+  boundingBoxSize: (Int, Int), withFeatureSize d: Int,
+  bgRandomFrameCount: Int = 10
+) -> TrackingConfiguration<Tuple1<Pose2>> {
+  let (fg, bg, statistics) = getTrainingBatches(
+    dataset: trainingData, boundingBoxSize: boundingBoxSize,
+    bgRandomFrameCount: bgRandomFrameCount
+  )
+
+  let randomProjector = RandomProjection(
+    fromShape: [boundingBoxSize.0, boundingBoxSize.1, 1], toFeatureSize: d
+  )
+
+  var (foregroundModel, backgroundModel) = (
+    MultivariateGaussian(
+      dims: TensorShape([d]),
+      regularizer: 1e-3
+    ), GaussianNB(
+      dims: TensorShape([d]),
+      regularizer: 1e-3
+    )
+  )
+
+  let batchPositive = randomProjector.encode(fg)
+  foregroundModel.fit(batchPositive)
+
+  let batchNegative = randomProjector.encode(bg)
+  backgroundModel.fit(batchNegative)
+
+  let tracker = makeRandomProjectionTracker(
+    model: randomProjector, statistics: statistics,
+    frames: frames, targetSize: boundingBoxSize,
+    foregroundModel: foregroundModel, backgroundModel: backgroundModel
+  )
+
+  return tracker
+}
+
+/// Given a trained tracker, run the tracker on a given number of frames on the test set
+public func createSingleTrack(
+  onTrack trackId: Int,
+  withTracker tracker: inout TrackingConfiguration<Tuple1<Pose2>>,
+  andTestData testData: OISTBeeVideo
+) -> ([Pose2], [Pose2]) {
+  precondition(trackId < testData.tracks.count, "specified track does not exist!!!")
+
+  let startPose = testData.tracks[trackId].boxes[0].center
+  let prediction = tracker.infer(knownStart: Tuple1(startPose))
+  let track = tracker.frameVariableIDs.map { prediction[unpack($0)] }
+  let groundTruth = testData.tracks[trackId].boxes.map { $0.center }
+  return (track, groundTruth)
+}
+
+/// Runs the random projections tracker
+/// Given a training set, it will train an RP tracker
+/// and run it on one track in the test set:
+///  - output: image with track and overlap metrics
+public func runRPTracker(onTrack trackIndex: Int) -> PythonObject {
+  let plt = Python.import("matplotlib.pyplot")
+  let (fig, axes) = plt.subplots(1, 2).tuple2
+
+  let trainingData = OISTBeeVideo(truncate: 100)!
+  let testData = OISTBeeVideo(afterIndex: 100, length: 80)!
+  var tracker = trainRPTracker(
+    trainingData: trainingData,
+    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
+  )
+  let (track, groundTruth) = createSingleTrack(
+    onTrack: trackIndex, withTracker: &tracker,
+    andTestData: testData
+  )
+  plotTrajectory(
+    track: track, withGroundTruth: groundTruth, on: axes[0],
+    withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
+  )
+  
+  return fig
 }
