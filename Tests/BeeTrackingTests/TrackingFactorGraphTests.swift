@@ -8,9 +8,10 @@ import SwiftFusion
 import TensorFlow
 
 class TrackingFactorGraphTests: XCTestCase {
+  let datasetDirectory = URL.sourceFileDirectory().appendingPathComponent("../BeeDatasetTests/fakeDataset")
 
   func testGetTrainingBatches() {
-    let dataset = OISTBeeVideo(afterIndex:10, length: 10)!
+    let dataset = OISTBeeVideo(directory: datasetDirectory, length: 2)!
 
     let (fg, bg, _) = getTrainingBatches(
       dataset: dataset, boundingBoxSize: (40, 70),
@@ -22,8 +23,8 @@ class TrackingFactorGraphTests: XCTestCase {
   }
 
   func testTrainRPTracker() {
-    let trainingData = OISTBeeVideo(truncate: 1)!
-    let testData = OISTBeeVideo(afterIndex: 100, length: 2)!
+    let trainingData = OISTBeeVideo(directory: datasetDirectory, length: 1)!
+    let testData = OISTBeeVideo(directory: datasetDirectory, length: 2)!
 
     let tracker : TrackingConfiguration<Tuple1<Pose2>> = trainRPTracker(
       trainingData: trainingData,
@@ -35,8 +36,8 @@ class TrackingFactorGraphTests: XCTestCase {
   }
 
   func testCreateSingleRPTrack() {
-    let trainingData = OISTBeeVideo(truncate: 2)!
-    let testData = OISTBeeVideo(afterIndex: 100, length: 2)!
+    let trainingData = OISTBeeVideo(directory: datasetDirectory, length: 2)!
+    let testData = OISTBeeVideo(directory: datasetDirectory, length: 2)!
     var tracker = trainRPTracker(
       trainingData: trainingData,
       frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100,
@@ -44,7 +45,7 @@ class TrackingFactorGraphTests: XCTestCase {
     )
 
     let (track, groundTruth) = createSingleTrack(
-      onTrack: 12,
+      onTrack: 0,
       withTracker: &tracker,
       andTestData: testData
     )
@@ -56,4 +57,11 @@ class TrackingFactorGraphTests: XCTestCase {
   //   let fig: PythonObject = runRPTracker(onTrack: 15)
   //   XCTAssertEqual(fig.axes.count, 2)
   // }
+}
+
+extension URL {
+  /// Creates a URL for the directory containing the caller's source file.
+  fileprivate static func sourceFileDirectory(file: String = #filePath) -> URL {
+    return URL(fileURLWithPath: file).deletingLastPathComponent()
+  }
 }
