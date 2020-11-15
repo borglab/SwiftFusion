@@ -249,25 +249,28 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
       // near its current position.
       addFixedBetweenFactor(x[frameVariableIDs[i]], frameVariableIDs[i + 1], &g)
 
-      let previousVarID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
-      let currentVarID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
-      let previousPose = x[previousVarID]
-      var bestPose = x[currentVarID]
-      var bestError = g.error(at: x)
-      for _ in 0..<5 {
-        let noise = Tensor<Double>(randomNormal: [3]).scalars
-        x[currentVarID] = previousPose.retract(Vector3(
-          0.3 * noise[0],
-          8 * noise[1],
-          4.6 * noise[2]))
-        try? optimizer.optimize(graph: g, initial: &x)
-        let candidateError = g.error(at: x)
-        if candidateError < bestError {
-          bestError = candidateError
-          bestPose = x[currentVarID]
-        }
-      }
-      x[currentVarID] = bestPose
+//      let previousVarID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
+//      let currentVarID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
+//      let previousPose = x[previousVarID]
+//      var bestPose = x[currentVarID]
+//      var bestError = g.error(at: x)
+//      for _ in 0..<5 {
+//        let noise = Tensor<Double>(randomNormal: [3]).scalars
+//        x[currentVarID] = previousPose.retract(Vector3(
+//          0.3 * noise[0],
+//          8 * noise[1],
+//          4.6 * noise[2]))
+//        try? optimizer.optimize(graph: g, initial: &x)
+//        let candidateError = g.error(at: x)
+//        if candidateError < bestError {
+//          bestError = candidateError
+//          bestPose = x[currentVarID]
+//        }
+//      }
+//      x[currentVarID] = bestPose
+
+    // Optimize the factor graph.
+    try? optimizer.optimize(graph: g, initial: &x)
     }
 
     // We could also do a final optimization on all the variables jointly here.
