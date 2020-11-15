@@ -85,6 +85,6 @@ public struct ProbablisticTrackingFactor<
     }
 
     /// TODO: What is the idiomatic way of avoiding negative probability here?
-    return Vector1(result)
+    return Vector1(sqrtWrap(result))
   }
 }
