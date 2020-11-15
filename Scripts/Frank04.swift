@@ -6,7 +6,7 @@ import BeeDataset
 import PythonKit
 import Foundation
 
-/// Frank01: Random Projections Baseline Tracker
+/// Frank04: Saving labels divided by 2
 struct Frank04: ParsableCommand {
 
   func writeOneFile(filename: URL, labels: [OISTBeeLabel]) {
@@ -41,11 +41,4 @@ struct Frank04: ParsableCommand {
     }
     
   }
-}
-
-/// For output integers with padding
-fileprivate extension String.StringInterpolation {
-    mutating func appendInterpolation(_ val: Int, padding: UInt) {
-        appendLiteral(String(format: "%0\(padding)d", arguments: [val]))
-    }
 }
