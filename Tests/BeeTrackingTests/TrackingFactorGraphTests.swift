@@ -8,6 +8,7 @@ import SwiftFusion
 import TensorFlow
 
 class TrackingFactorGraphTests: XCTestCase {
+  let datasetDirectory = URL.sourceFileDirectory().appendingPathComponent("fakeDataset")
 
   func testGetTrainingBatches() {
     let dataset = OISTBeeVideo(afterIndex:10, length: 10)!
@@ -56,4 +57,11 @@ class TrackingFactorGraphTests: XCTestCase {
   //   let fig: PythonObject = runRPTracker(onTrack: 15)
   //   XCTAssertEqual(fig.axes.count, 2)
   // }
+}
+
+extension URL {
+  /// Creates a URL for the directory containing the caller's source file.
+  fileprivate static func sourceFileDirectory(file: String = #filePath) -> URL {
+    return URL(fileURLWithPath: file).deletingLastPathComponent()
+  }
 }

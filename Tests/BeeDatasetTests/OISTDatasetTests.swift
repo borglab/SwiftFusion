@@ -18,19 +18,8 @@ import PenguinParallelWithFoundation
 import XCTest
 
 final class OISTDatasetTests: XCTestCase {
-  /// Test that we can download the dataset from the internet and load the dataset into memory.
-  func testDownloadDataset() throws {
-    if let _ = ProcessInfo.processInfo.environment["CI"] {
-      throw XCTSkip("Test skipped on CI because it downloads a lot of data.")
-    }
-    let video = OISTBeeVideo(deferLoadingFrames: true)!
-    XCTAssertEqual(video.frameIds.count, 360)
-    XCTAssertEqual(video.tracks.count, 20)
-    XCTAssertEqual(video.tracks[0].startFrameIndex, 0)
-    XCTAssertEqual(video.tracks[0].boxes.count, 360)
-    XCTAssertEqual(video.tracks[11].startFrameIndex, 28)
-    XCTAssertEqual(video.tracks[11].boxes.count, 179)
-  }
+  /// Directory of a fake dataset for tests.
+  let datasetDirectory = URL.sourceFileDirectory().appendingPathComponent("fakeDataset")
 
   /// Test that eager dataset loading works properly.
   func testEagerDatasetLoad() throws {
@@ -41,16 +30,16 @@ final class OISTDatasetTests: XCTestCase {
       NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 5)
 
     // Truncate the frames so that this test does not take a huge amount of time.
-    let video = OISTBeeVideo(truncate: 15)!
+    let video = OISTBeeVideo(directory: datasetDirectory, length: 2)!
 
-    XCTAssertEqual(video.frames.count, 15)
-    XCTAssertNotEqual(video.frames[1], video.frames[2])
+    XCTAssertEqual(video.frames.count, 2)
+    XCTAssertNotEqual(video.frames[0], video.frames[1])
 
     // There are fewer tracks because we truncated the frames.
-    XCTAssertEqual(video.tracks.count, 13)
+    XCTAssertEqual(video.tracks.count, 1)
 
     // The tracks are shorter because we truncated the frames.
-    XCTAssertEqual(video.tracks[0].boxes.count, 15)
+    XCTAssertEqual(video.tracks[0].boxes.count, 2)
   }
 
   func testToString() {
@@ -58,8 +47,7 @@ final class OISTDatasetTests: XCTestCase {
       frameIndex: 1515,
       label: .Body,
       rawLocation: (1.2, 38, 1.13559),
-      offset: (114514, 1919810),
-      scale: 2.0
+      offset: (114514, 1919810)
     )
     
     let string = label.toString()

@@ -43,13 +43,11 @@ public struct OISTBeeVideo {
   /// Tracks for this video.
   public var tracks: [OISTBeeTrack]
 
+  /// Top level directory of the dataset
   var directory: URL?
 
   /// FPS of the video sequence
   public let fps: Int
-
-  /// Scale Factor
-  public var scale: Int = 2
 
   public struct ParseError: Swift.Error {
     public let lineIndex: Int
@@ -74,7 +72,7 @@ public struct OISTBeeLabel {
       return OrientedBoundingBox(
         center: Pose2(
           Rot2(rawLocation.2 - .pi / 2),
-          (1/scale) * Vector2(Double(offset.0) + rawLocation.0, Double(offset.1) + rawLocation.1)
+          Vector2(Double(offset.0) + rawLocation.0, Double(offset.1) + rawLocation.1)
         ), rows: bboxSize.0, cols: bboxSize.1
       )
     }
@@ -91,20 +89,15 @@ public struct OISTBeeLabel {
   /// Since the dataset is labeled in a grid-by-grid fashion
   public var offset: (Int, Int)
 
-  /// Scale Factor
-  public var scale: Double = 2
-
   public init(frameIndex: Int,
     label: OISTLabelType,
     rawLocation: (Double, Double, Double),
-    offset: (Int, Int),
-    scale: Double
+    offset: (Int, Int)
   ) {
     self.frameIndex = frameIndex
     self.label = label
     self.rawLocation = rawLocation
     self.offset = offset
-    self.scale = scale
   }
 }
 
@@ -148,7 +141,7 @@ public func formOISTFilename(_ fps: Int, _ index: Int) -> String {
 
 /// Loads labels for one frame
 func loadFrameLabels(directory: URL, _ index: Int, fps: Int) -> [OISTBeeLabel]? {
-  let path = directory.appendingPathComponent("frames_txt").appendingPathComponent(formOISTFilename(fps, index))
+  let path = directory.appendingPathComponent("downsampled_txt").appendingPathComponent(formOISTFilename(fps, index))
   guard let track = try? String(contentsOf: path) else { return nil }
   let lines = track.split(separator: "\n")
   
@@ -166,8 +159,7 @@ func loadFrameLabels(directory: URL, _ index: Int, fps: Int) -> [OISTBeeLabel]? 
       frameIndex: index,
       label: labelType,
       rawLocation: (Double(split[3])!, Double(split[4])!, Double(split[5])!),
-      offset: (Int(split[0])!, Int(split[1])!),
-      scale: Double(2.0)
+      offset: (Int(split[0])!, Int(split[1])!)
     )
   }
 }
@@ -209,7 +201,7 @@ extension OISTBeeVideo {
 
   /// Creates an instance from the data in the given `directory`.
   ///
-  /// The directory must contain "frames" and "frames_txt". If the directory contains "tracks",
+  /// The directory must contain "downsampled" and "downsampled_txt". If the directory contains "tracks",
   /// then tracks will be loaded from that directory.
   ///
   /// The format of a track file is:
@@ -217,7 +209,7 @@ extension OISTBeeVideo {
   ///
   /// Parameter frameCount: If specified, truncates the full dataset to this number of frames.
   public init?(
-    directory: URL, deferLoadingFrames: Bool = true, fps: Int = 30, afterIndex i0: Int = 0, length frameCount: Int? = nil
+    directory: URL, deferLoadingFrames: Bool = false, fps: Int = 30, afterIndex i0: Int = 0, length frameCount: Int? = nil
   ) {
     self.frames = []
     self.tracks = []
@@ -226,7 +218,7 @@ extension OISTBeeVideo {
     self.fps = fps
 
     let directoryContents = try! FileManager.default.contentsOfDirectory(
-      at: directory.appendingPathComponent("frames"), includingPropertiesForKeys: nil,
+      at: directory.appendingPathComponent("downsampled"), includingPropertiesForKeys: nil,
       options: [.skipsHiddenFiles, .skipsPackageDescendants]
     )
 
@@ -293,17 +285,15 @@ extension OISTBeeVideo {
     }
   }
 
-  /// Loads one image frame and downsample by `scale`
+  /// Loads one image frame
   /// Example: frame_30fps_003525.txt
   public func loadFrame(_ index: Int) -> Tensor<Float>? {
-    let path = self.directory!.appendingPathComponent("frames").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).png")
+    let path = self.directory!.appendingPathComponent("downsampled").appendingPathComponent("frame_\(fps)fps_\(index, padding: 6).png")
     guard FileManager.default.fileExists(atPath: path.path) else { return nil }
-    let downsampler = AvgPool2D<Float>(poolSize: (scale, scale), strides: (scale, scale), padding: .same)
-    
     let dots = TensorRange.ellipsis
     let grayscale = ModelSupport.Image(contentsOf: path).tensor.expandingShape(at: 0)[dots, 0].expandingShape(at: 3)
 
-    return downsampler(grayscale).squeezingShape(at: 0)
+    return grayscale.squeezingShape(at: 0)
   }
   
   private static func downloadDatasetIfNotPresent() -> URL {
@@ -323,7 +313,7 @@ extension OISTBeeVideo {
       remoteRoot: remoteRoot, localStorageDirectory: downloadDir
     )
     let _ = DatasetUtilities.downloadResource(
-      filename: "frames_txt", fileExtension: "zip",
+      filename: "downsampled_txt", fileExtension: "zip",
       remoteRoot: remoteRoot, localStorageDirectory: downloadDir
     )
     let _ = DatasetUtilities.downloadResource(

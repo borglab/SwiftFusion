@@ -16,8 +16,7 @@ struct Frank04: ParsableCommand {
         frameIndex: label.frameIndex,
         label: label.label,
         rawLocation: (label.rawLocation.0 / 2.0, label.rawLocation.1 / 2.0, label.rawLocation.2),
-        offset: (label.offset.0 / 2, label.offset.1 / 2),
-        scale: 2.0
+        offset: (label.offset.0 / 2, label.offset.1 / 2)
       )
       lines = lines.appending("\(converted_label.toString())\n")
     }

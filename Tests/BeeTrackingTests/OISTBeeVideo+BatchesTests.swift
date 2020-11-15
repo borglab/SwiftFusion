@@ -20,16 +20,22 @@ import XCTest
 import BeeDataset
 import BeeTracking
 
-class OISTBeeVideoBatchesTests: XCTestCase {
+final class OISTBeeVideoBatchesTests: XCTestCase {  /// Directory of a fake dataset for tests.
+  let datasetDirectory = URL.sourceFileDirectory().appendingPathComponent("../BeeDatasetTests/fakeDataset")
+
   /// Tests getting a batch of bee patches and a batch of background patches.
   func testBeeBatch() throws {
     if let _ = ProcessInfo.processInfo.environment["CI"] {
       throw XCTSkip("Test skipped on CI because it downloads a lot of data.")
     }
-   ComputeThreadPools.local =
+    ComputeThreadPools.local =
         NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 5)
-    let video = OISTBeeVideo(deferLoadingFrames: true)!
-    let (batch, statistics) = video.makeBatch(appearanceModelSize: (100, 100), batchSize: 200)
+    let video = OISTBeeVideo(directory: datasetDirectory, deferLoadingFrames: true)!
+    let (batch, statistics) = video.makeBatch(
+      appearanceModelSize: (100, 100),
+      randomFrameCount: 2,
+      batchSize: 200
+    )
     XCTAssertEqual(batch.shape, [200, 100, 100, 1])
     XCTAssertEqual(statistics.mean.shape, [])
     XCTAssertEqual(statistics.standardDeviation.shape, [])
@@ -37,7 +43,16 @@ class OISTBeeVideoBatchesTests: XCTestCase {
     let bgBatch = video.makeBackgroundBatch(
       patchSize: (40, 70), appearanceModelSize: (100, 100),
       statistics: statistics,
-      batchSize: 200)
+      randomFrameCount: 2,
+      batchSize: 200
+    )
     XCTAssertEqual(bgBatch.shape, [200, 100, 100, 1])
+  }
+}
+
+extension URL {
+  /// Creates a URL for the directory containing the caller's source file.
+  fileprivate static func sourceFileDirectory(file: String = #filePath) -> URL {
+    return URL(fileURLWithPath: file).deletingLastPathComponent()
   }
 }
