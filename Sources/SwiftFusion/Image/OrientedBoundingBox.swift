@@ -15,7 +15,7 @@
 import PythonKit
 
 /// A rectangular region of an image, not necessarily axis-aligned.
-public struct OrientedBoundingBox: Differentiable {
+public struct OrientedBoundingBox: Codable, Differentiable {
   /// The pose of the region's center within the image.
   ///
   /// The translation component is in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
