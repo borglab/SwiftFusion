@@ -431,6 +431,23 @@ public func plotTrajectory(track: [Pose2], withGroundTruth expected: [Pose2], on
   ax.scatter(traj_x_pred, traj_y_pred, marker: "x")
 
   ax.autoscale_view()
+  ax.axis("equal")
+}
+
+/// Plot the tracking metrics
+public func plotMetrics(
+  track: [Pose2], withGroundTruth expected: [Pose2], on ax: PythonObject,
+  boxSize: (Int, Int) = (40, 70)
+) {
+  precondition(track.count == expected.count)
+  func box(_ p: Pose2) -> OrientedBoundingBox {
+    OrientedBoundingBox(center: p, rows: boxSize.0, cols: boxSize.1)
+  }
+  let metrics = SubsequenceMetrics(groundTruth: expected.map(box), prediction: track.map(box))
+
+  let eao = ExpectedAverageOverlap([metrics])
+  ax.plot(eao.curve)
+  ax.set_title("Expected Average Overlap")
 }
 
 /// Get the foreground and background batches
@@ -518,10 +535,10 @@ public func createSingleTrack(
 /// Given a training set, it will train an RP tracker
 /// and run it on one track in the test set:
 ///  - output: image with track and overlap metrics
-public func runRPTracker(directory: URL, onTrack trackIndex: Int) -> PythonObject {
+public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int = 80) -> PythonObject {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
-  let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: 80)!
+  let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
   var tracker = trainRPTracker(
     trainingData: trainingData,
     frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
@@ -535,11 +552,15 @@ public func runRPTracker(directory: URL, onTrack trackIndex: Int) -> PythonObjec
   
   // Now create trajectory and metrics plot
   let plt = Python.import("matplotlib.pyplot")
-  let (fig, axes) = plt.subplots(1, 2).tuple2
+  let (fig, axes) = plt.subplots(2, 1, figsize: Python.tuple([6, 12])).tuple2
   plotTrajectory(
     track: track, withGroundTruth: groundTruth, on: axes[0],
     withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
   )
   
+  plotMetrics(
+    track: track, withGroundTruth: groundTruth, on: axes[1]
+  )
+
   return fig
 }
