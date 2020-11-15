@@ -227,9 +227,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   }
   
   // Try to initialize pose of the `i+1`-th variable by sampling
-  mutating func extendBySampling(fromFrame i:Int, withGraph g: FactorGraph)  {
-    var x = variableTemplate
-    
+  mutating func extendBySampling(x: inout VariableAssignments, fromFrame i:Int, withGraph g: FactorGraph)  {
     // First get pose IDs: pose is assumed to be first variable in the frameVariableID tuple
     let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
     let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
@@ -253,10 +251,9 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   }
   
   /// Extend the track
-  mutating func extendTrack(fromFrame i:Int,
+  mutating func extendTrack(x: inout VariableAssignments, fromFrame i:Int,
                             withSampling samplingFlag: Bool = false
-  )  {
-    var x = variableTemplate
+  ) {
     print("Inferring for frame \(i + 1) of \(frames.count - 1)")
     
     let currentVarID = frameVariableIDs[i + 1]
@@ -272,7 +269,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // Initialize
     if (samplingFlag) {
       // Try to initialize pose of the `i+1`-th variable by sampling
-      extendBySampling(fromFrame:i, withGraph:g)
+      extendBySampling(x: &x, fromFrame:i, withGraph:g)
     } else {
       // Initialize `i+1`-th variable with the value of the previous variable.
       x[currentVarID] = x[previousVarID, as: FrameVariables.self]
@@ -295,10 +292,10 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // variable.
     for i in 0..<(frames.count - 1) {
       print("Inferring for frame \(i + 1) of \(frames.count - 1)")
-      extendTrack(fromFrame:i, withSampling:samplingFlag)
+      extendTrack(x: &x, fromFrame:i, withSampling:samplingFlag)
     }
     
-    // We could also do a final optimization on all the variables jointly here.
+    // TODO: We could also do a final optimization on all the variables jointly here.
     
     return x
   }
@@ -608,7 +605,8 @@ public func createSingleTrack(
 public func runRPTracker(
   directory: URL, onTrack trackIndex: Int, forFrames: Int = 80,
   withSampling samplingFlag: Bool = false,
-  withFeatureSize d: Int = 100
+  withFeatureSize d: Int = 100,
+  savePatchesIn resultDirectory: String? = nil
 ) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
@@ -638,6 +636,14 @@ public func runRPTracker(
   plotMetrics(
     track: track, withGroundTruth: groundTruth, on: axes[1]
   )
+
+  if let dir = resultDirectory {
+    /// Plot all the frames so we can visually inspect the situation
+    for i in track.indices {
+      let (fig_initial, _) = plotPatchWithGT(frame: testData.frames[i], actual: track[i], expected: groundTruth[i])
+      fig_initial.savefig("\(dir)/frank02_1st_img_track\(trackIndex)_\(d)_\(i).png", bbox_inches: "tight")
+    }
+  }
 
   return (fig, track, groundTruth)
 }
