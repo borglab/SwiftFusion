@@ -358,7 +358,7 @@ struct NaiveRae: ParsableCommand {
     }
     
     startTimer("MAKE_GRAPH")
-    var tracker = makeNaiveBayesRAETracker(
+    var tracker = makeNaiveBayesAETracker(
       model: rae,
       statistics: statistics,
       frames: videos,
