@@ -1,0 +1,1 @@
+swift run -c release Scripts frank01

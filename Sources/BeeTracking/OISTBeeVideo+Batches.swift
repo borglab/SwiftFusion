@@ -19,14 +19,14 @@ import SwiftFusion
 import TensorFlow
 
 extension OISTBeeVideo {
-  /// Returns a `[N, h, w, c]` batch of normalized patches from bee bounding boxes, and returns the
-  /// statistics used to normalize them.
-  public func makeBatch(appearanceModelSize: (Int, Int), batchSize: Int = 200)
-    -> (normalized: Tensor<Double>, statistics: FrameStatistics)
-  {
+  func getUnnormalizedBatch(
+    _ appearanceModelSize: (Int, Int), _ batchSize: Int = 200,
+    randomFrameCount: Int = 10
+  ) -> Tensor<Double> {
+    precondition(self.frameIds.count >= randomFrameCount, "requesting too many random frames")
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
     let frames =
-      Dictionary(uniqueKeysWithValues: self.randomFrames(10, using: &deterministicEntropy))
+      Dictionary(uniqueKeysWithValues: self.randomFrames(randomFrameCount, using: &deterministicEntropy))
     let labels = frames.values.flatMap { $0.labels }
     let images = labels
       .randomSelectionWithoutReplacement(k: batchSize, using: &deterministicEntropy)
@@ -34,9 +34,32 @@ extension OISTBeeVideo {
         frames[label.frameIndex]!.frame.patch(at: label.location, outputSize: appearanceModelSize)
       }
 
-    let stacked = Tensor(stacking: images)
+    return Tensor(stacking: images)
+  }
+
+  /// Returns a `[N, h, w, c]` batch of normalized patches from bee bounding boxes, and returns the
+  /// statistics used to normalize them.
+  public func makeBatch(
+    appearanceModelSize: (Int, Int),
+    randomFrameCount: Int = 10,
+    batchSize: Int = 200
+  )
+    -> (normalized: Tensor<Double>, statistics: FrameStatistics)
+  {
+    let stacked = getUnnormalizedBatch(appearanceModelSize, batchSize, randomFrameCount: randomFrameCount)
     let statistics = FrameStatistics(stacked)
     return (statistics.normalized(stacked), statistics)
+  }
+
+  /// Returns a `[N, h, w, c]` batch of normalized patches from bee bounding boxes, normalized by
+  /// `statistics`
+  public func makeBatch(
+    statistics: FrameStatistics,
+    appearanceModelSize: (Int, Int), randomFrameCount: Int = 10,
+    batchSize: Int = 200
+  ) -> Tensor<Double> {
+    let stacked = getUnnormalizedBatch(appearanceModelSize, batchSize, randomFrameCount: randomFrameCount)
+    return statistics.normalized(stacked)
   }
 
   /// Returns a `[N, h, w, c]` batch of normalized patches that do not overlap with any bee
@@ -44,12 +67,14 @@ extension OISTBeeVideo {
   public func makeBackgroundBatch(
     patchSize: (Int, Int), appearanceModelSize: (Int, Int),
     statistics: FrameStatistics,
+    randomFrameCount: Int = 10,
     batchSize: Int = 200
   ) -> Tensor<Double> {
-    let maxSide = max(patchSize.0, patchSize.1)
+    /// Anything not completely overlapping labels
+    let maxSide = min(patchSize.0, patchSize.1)
 
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
-    let frames = self.randomFrames(10, using: &deterministicEntropy)
+    let frames = self.randomFrames(randomFrameCount, using: &deterministicEntropy)
 
     // We need `batchSize / frames.count` patches from each frame, plus the remainder of the
     // integer division.

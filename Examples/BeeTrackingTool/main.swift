@@ -157,6 +157,8 @@ struct InferTrackRAE: ParsableCommand {
       return OrientedBoundingBox(
         center: prediction[poseID], rows: video.track[0].rows, cols: video.track[0].cols)
     }
+
+    print(boxes.count)
   }
 }
 
@@ -192,6 +194,8 @@ struct InferTrackRawPixels: ParsableCommand {
       return OrientedBoundingBox(
         center: prediction[poseID], rows: video.track[0].rows, cols: video.track[0].cols)
     }
+
+    print(boxes.count)
   }
 }
 
