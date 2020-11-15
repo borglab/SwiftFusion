@@ -419,3 +419,12 @@ fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
 fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
   return (t.head)
 }
+
+/// Returns `t` as a Swift tuple.
+fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
+  return (t.head, t.tail.head)
+}
+/// Returns `t` as a Swift tuple.
+fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
+  return (t.head)
+}
