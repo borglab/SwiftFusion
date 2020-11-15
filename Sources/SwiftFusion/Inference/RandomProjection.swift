@@ -16,12 +16,9 @@ import TensorFlow
 import PenguinStructures
 
 /// A class performing common activities in the RandomProjection framework.
-/// The decomposition used here is in:
-/// M. E. Tipping and C. M. Bishop, Probabilistic Principal Component Analysis,
-/// Journal of the Royal Statistical Society. Series B, Vol. 61, No. 3 (1999), pp. 611-622
 /// Input shape for training: [N, H, W, C]
-/// W matrix: [H, W, C, latent]
-/// Output: [H, W, C]
+/// W matrix: [feature, H*W*C]
+/// Output: [feature]
 public struct RandomProjection {
   public typealias Patch = Tensor<Double>
 
@@ -41,12 +38,12 @@ public struct RandomProjection {
     )
   }
 
-  /// Generate an image according to a latent
+  /// Generate an feature from image
   /// Input: [H, W, C]
   /// Output: [d]
   @differentiable
   public func encode(_ image: Patch) -> Tensor<Double> {
-    precondition(image.rank == 3 || (image.rank == 4), "wrong latent dimension \(image.shape)")
+    precondition(image.rank == 3 || (image.rank == 4), "wrong feature dimension \(image.shape)")
     let HWC = B.shape[1]
     let d = B.shape[0]
     if image.rank == 4 {
