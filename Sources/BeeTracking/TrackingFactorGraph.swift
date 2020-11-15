@@ -130,6 +130,28 @@ public struct WeightedPriorFactorPose2: LinearizableFactor1 {
   }
 }
 
+public struct WeightedPriorFactorPose2SD: LinearizableFactor1 {
+  public typealias Pose = Pose2
+  public let edges: Variables.Indices
+  public let prior: Pose
+  public let sdX: Double
+  public let sdY: Double
+  public let sdTheta: Double
+
+  public init(_ startId: TypedID<Pose>, _ prior: Pose, sdX: Double, sdY: Double, sdTheta: Double) {
+    self.edges = Tuple1(startId)
+    self.prior = prior
+    self.sdX = sdX
+    self.sdY = sdY
+    self.sdTheta = sdTheta
+  }
+
+  @differentiable
+  public func errorVector(_ start: Pose) -> Pose.TangentVector {
+    let local = prior.localCoordinate(start)
+    return Vector3(local.x / sdTheta, local.y / sdX, local.z / sdY)
+  }
+}
 
 /// A specification for a factor graph that tracks a target in a sequence of frames.
 public struct TrackingConfiguration<FrameVariables: VariableTuple> {
@@ -158,6 +180,16 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     _ graph: inout FactorGraph
   ) -> ()
 
+  /// Adds to `graph` "between factor(s)" between `constantVariables` and `variables` that treat
+  /// the `constantVariables` as fixed.
+  ///
+  /// This is used during frame-by-frame initialization to constrain frame `i + 1` by a between
+  /// factor on the value from frame `i` without optimizing the value of frame `i`.
+  public let addFixedBetweenFactor: (
+    _ values: FrameVariables, _ variables: FrameVariables.Indices,
+    _ graph: inout FactorGraph
+  ) -> ()
+
   /// The optimizer to use during inference.
   public var optimizer = LM()
 
@@ -177,14 +209,25 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     addBetweenFactor: @escaping (
       _ variables1: FrameVariables.Indices, _ variables2: FrameVariables.Indices,
       _ graph: inout FactorGraph
-    ) -> ()
+    ) -> (),
+    addFixedBetweenFactor: ((
+      _ values: FrameVariables, _ variables: FrameVariables.Indices,
+      _ graph: inout FactorGraph
+    ) -> ())? = nil
   ) {
+    precondition(
+      addFixedBetweenFactor != nil,
+      "I added a runtime check for this argument so that I would not have to change all " +
+        "callers before compiling. It is actually required."
+    )
+
     self.frames = frames
     self.variableTemplate = variableTemplate
     self.frameVariableIDs = frameVariableIDs
     self.addPriorFactor = addPriorFactor
     self.addTrackingFactor = addTrackingFactor
     self.addBetweenFactor = addBetweenFactor
+    self.addFixedBetweenFactor = addFixedBetweenFactor!
 
     self.optimizer.precision = 1e-1
     self.optimizer.max_iteration = 100
@@ -219,34 +262,32 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
       // Set the initial guess of the `i+1`-th variable to the value of the previous variable.
       x[frameVariableIDs[i + 1]] = x[frameVariableIDs[i], as: FrameVariables.self]
 
-      // Create a tracking factor graph on just the `i`-tha dn `i+1`-th variables
-      var g = graph(on: i..<(i + 2))
+      // Create a tracking factor graph on just the `i+1`-th variable.
+      var g = graph(on: (i + 1)..<(i + 2))
 
       // The `i`-th variable is already initialized well, so add a prior factor that it stays
       // near its current position.
-      addPriorFactor(frameVariableIDs[i], x[frameVariableIDs[i]], &g)
+      addFixedBetweenFactor(x[frameVariableIDs[i]], frameVariableIDs[i + 1], &g)
 
+      let previousVarID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
       let currentVarID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
-      let initialPose = x[currentVarID]
+      let previousPose = x[previousVarID]
       var bestPose = x[currentVarID]
       var bestError = g.error(at: x)
-      for _ in 0..<1000 {
+      for _ in 0..<5 {
         let noise = Tensor<Double>(randomNormal: [3]).scalars
-        let candidatePose = initialPose.retract(Vector3(
+        x[currentVarID] = previousPose.retract(Vector3(
           0.3 * noise[0],
           8 * noise[1],
           4.6 * noise[2]))
-        x[currentVarID] = candidatePose
+        try? optimizer.optimize(graph: g, initial: &x)
         let candidateError = g.error(at: x)
         if candidateError < bestError {
           bestError = candidateError
-          bestPose = candidatePose
+          bestPose = x[currentVarID]
         }
       }
       x[currentVarID] = bestPose
-
-      // Optimize the factor graph.
-      try? optimizer.optimize(graph: g, initial: &x)
     }
 
     // We could also do a final optimization on all the variables jointly here.
