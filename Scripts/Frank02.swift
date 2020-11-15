@@ -22,7 +22,7 @@ struct Frank02: ParsableCommand {
   func run() {
     let (fig, _, _) = runRPTracker(
       directory: URL(fileURLWithPath: "./OIST_Data"),
-      onTrack: trackId, forFrames: trackLength, withSampling: false,
+      onTrack: trackId, forFrames: trackLength, withSampling: true,
       withFeatureSize: featureSize,
       savePatchesIn: "Results/frank02"
     )
