@@ -2,7 +2,7 @@ import TensorFlow
 
 /// Rot2 class is the Swift type for the SO(2) manifold of 2D Rotations around
 /// the origin.
-public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
+public struct Rot2: Codable, Manifold, LieGroup, Equatable, KeyPathIterable {
 
   // MARK: - Manifold conformance
 
@@ -81,7 +81,7 @@ extension Rot2 {
 
 // MARK: - Global coordinate system
 
-public struct Rot2Coordinate: Equatable, KeyPathIterable {
+public struct Rot2Coordinate: Codable, Equatable, KeyPathIterable {
   public var c, s: Double
 }
 

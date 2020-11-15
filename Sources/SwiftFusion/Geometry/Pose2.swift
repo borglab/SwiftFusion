@@ -35,7 +35,7 @@ import TensorFlow
 /// [2]: https://github.com/borglab/gtsam/blob/develop/doc/math.pdf
 /// [3]: Actually, we define the pullbacks because Swift doesn't support differentials very well
 ///      yet.
-public struct Pose2: LieGroup, Equatable, KeyPathIterable {
+public struct Pose2: Codable, LieGroup, Equatable, KeyPathIterable {
   public typealias TangentVector = Vector3
 
   // MARK: - Manifold conformance
@@ -92,7 +92,7 @@ extension Pose2 {
 
 // MARK: - Global Coordinate System
 
-public struct Pose2Coordinate: Equatable, KeyPathIterable {
+public struct Pose2Coordinate: Codable, Equatable, KeyPathIterable {
   var t: Vector2
   var rot: Rot2
 }

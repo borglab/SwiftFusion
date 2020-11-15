@@ -1,4 +1,9 @@
 import BeeDataset
+<<<<<<< HEAD
+=======
+import Foundation
+import PenguinParallelWithFoundation
+>>>>>>> bb5b886 (make the evaluation data codable)
 import PythonKit
 import SwiftFusion
 import TensorFlow
@@ -6,7 +11,7 @@ import TensorFlow
 /// Accuracy and robustness for a subsequence, as defined in the VOT 2020 challenge [1].
 ///
 /// [1] http://prints.vicos.si/publications/384
-public struct SubsequenceMetrics {
+public struct SubsequenceMetrics: Codable {
   /// Accuracy as defined in [1], equation (1).
   public let accuracy: Double
 
@@ -82,7 +87,7 @@ public struct SubsequenceMetrics {
 }
 
 /// Accuracy and robustness for a sequence, as defined in [1].
-public struct SequenceMetrics {
+public struct SequenceMetrics: Codable {
   /// Accuracy as defined in [1], equation (3).
   public let accuracy: Double
 
@@ -118,7 +123,7 @@ public struct SequenceMetrics {
 }
 
 /// Accuracy and robustness for a tracker, as defined in [1].
-public struct TrackerMetrics {
+public struct TrackerMetrics: Codable {
   /// Accuracy as defined in [1], equation (5).
   public let accuracy: Double
 
@@ -134,7 +139,7 @@ public struct TrackerMetrics {
 }
 
 /// Expected Averge Overlap (EAO) for a tracker, as defined in [1].
-public struct ExpectedAverageOverlap {
+public struct ExpectedAverageOverlap: Codable {
   /// The values in the EAO curve.
   public let curve: [Double]
 
@@ -167,17 +172,33 @@ extension TrackerEvaluationDataset {
   /// Evaluate the performance of `tracker` on `self`.
   ///
   /// Prameter sequenceCount: How many sequences from `self` to use during the evaluation.
-  public func evaluate(_ tracker: Tracker, sequenceCount: Int) -> TrackerEvaluationResults {
+  public func evaluate(
+    _ tracker: Tracker,
+    sequenceCount: Int,
+    deltaAnchor: Int,
+    outputFile: String
+  ) -> TrackerEvaluationResults {
     let sequenceEvaluations = sequences.prefix(sequenceCount).enumerated().map {
       (i, sequence) -> SequenceEvaluationResults in
+<<<<<<< HEAD
       print("Evaluating sequence \(i + 1) of \(sequences.count)")
       return sequence.evaluate(tracker)
+=======
+      print("Evaluating sequence \(i + 1) of \(sequenceCount)")
+      return sequence.evaluate(tracker, deltaAnchor: deltaAnchor, outputFile: "\(outputFile)-sequence\(i)")
+>>>>>>> bb5b886 (make the evaluation data codable)
     }
-    return TrackerEvaluationResults(
+    let result = TrackerEvaluationResults(
       sequences: sequenceEvaluations,
       trackerMetrics: TrackerMetrics(sequenceEvaluations.map { $0.sequenceMetrics }),
       expectedAverageOverlap: ExpectedAverageOverlap(
         sequenceEvaluations.flatMap { $0.subsequences }.map { $0.metrics }))
+
+    let encoder = JSONEncoder()
+    let data = try! encoder.encode(result)
+    FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
+
+    return result
   }
 }
 
@@ -200,31 +221,54 @@ public struct TrackerEvaluationSequence {
 
 extension TrackerEvaluationSequence {
   /// Returns the performance of `tracker` on the sequence `self`.
+<<<<<<< HEAD
   public func evaluate(_ tracker: Tracker) -> SequenceEvaluationResults {
     let subsequences = self.subsequences(deltaAnchor: 50)
     let subsequenceEvaluations = subsequences.enumerated().map {
       (i, subsequence) -> (metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox]) in
       print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
       return subsequence.evaluateSubsequence(tracker)
-    }
-    return SequenceEvaluationResults(
-      subsequences: subsequenceEvaluations,
-      sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))
-  }
-
-  /// Returns the performance of `tracker` on the subsequence `self`.
-  public func evaluateSubsequence(_ tracker: Tracker)
-    -> (metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox])
-  {
+=======
+  public func evaluate(_ tracker: Tracker, deltaAnchor: Int, outputFile: String) -> SequenceEvaluationResults {
     guard let _ = try? Python.attemptImport("shapely") else {
       print("python shapely library must be installed")
       preconditionFailure()
     }
 
-    let prediction = tracker(frames, groundTruth[0])
-    return (
-      metrics: SubsequenceMetrics(groundTruth: groundTruth, prediction: prediction),
-      prediction: prediction)
+    let subsequences = self.subsequences(deltaAnchor: deltaAnchor)
+    let subsequencePredictions = [[OrientedBoundingBox]](
+      unsafeUninitializedCapacity: subsequences.count
+    ) { (buf, actualCount) in
+      let blockCount = 4
+      ComputeThreadPools.local.parallelFor(n: blockCount) { (blockIndex, _) in
+        for i in 0..<subsequences.count {
+          guard i % (2 * blockCount) == blockIndex
+            || i % (2 * blockCount) == 2 * blockCount - 1 - blockIndex
+          else {
+            continue
+          }
+          let subsequence = subsequences[i]
+          print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
+          (buf.baseAddress! + i).initialize(to: tracker(subsequence.frames, subsequence.groundTruth[0]))
+        }
+      }
+      actualCount = subsequences.count
+    }
+    let subsequenceEvaluations = zip(subsequences, subsequencePredictions).map {
+      SubsequenceEvaluationResults(
+        metrics: SubsequenceMetrics(groundTruth: $0.0.groundTruth, prediction: $0.1),
+        prediction: $0.1)
+>>>>>>> bb5b886 (make the evaluation data codable)
+    }
+    let result = SequenceEvaluationResults(
+      subsequences: subsequenceEvaluations,
+      sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))
+
+    let encoder = JSONEncoder()
+    let data = try! encoder.encode(result)
+    FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
+
+    return result
   }
 }
 
@@ -246,7 +290,7 @@ extension TrackerEvaluationDataset {
 }
 
 /// All the tracker evaluation metrics in one struct.
-public struct TrackerEvaluationResults {
+public struct TrackerEvaluationResults: Codable {
   /// The sequence results for all the sequences in the dataset.
   public let sequences: [SequenceEvaluationResults]
 
@@ -258,12 +302,17 @@ public struct TrackerEvaluationResults {
 }
 
 /// All the sequence evaluation metrics in one struct.
-public struct SequenceEvaluationResults {
+public struct SequenceEvaluationResults: Codable {
   /// The subsequence metrics for all subsequences in this sequence. And the predictions.
-  public let subsequences: [(metrics: SubsequenceMetrics, prediction: [OrientedBoundingBox])]
+  public let subsequences: [SubsequenceEvaluationResults]
 
   /// The sequence metrics for this sequence.
   public let sequenceMetrics: SequenceMetrics
+}
+
+public struct SubsequenceEvaluationResults: Codable {
+  public let metrics: SubsequenceMetrics
+  public let prediction: [OrientedBoundingBox]
 }
 
 /// Given `frames` and a `start` region containing an object to track, returns predicted regions
