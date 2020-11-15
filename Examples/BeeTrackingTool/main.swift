@@ -267,8 +267,8 @@ struct NaiveRae: ParsableCommand {
         targetSize: (start.rows, start.cols),
         foregroundModel: foregroundModel, backgroundModel: backgroundModel
       )
-      tracker.optimizer.cgls_precision = 1e-9
-      tracker.optimizer.precision = 1e-6
+      tracker.optimizer.cgls_precision = 1e-5
+      tracker.optimizer.precision = 1e-3
       tracker.optimizer.max_iteration = 200
       let prediction = tracker.infer(knownStart: Tuple1(start.center))
       return tracker.frameVariableIDs.map { varIds in
@@ -367,6 +367,11 @@ public func makeNaiveBayesRAETracker(
       let (poseID1) = unpack(variables1)
       let (poseID2) = unpack(variables2)
       graph.store(WeightedBetweenFactorPose2SD(poseID1, poseID2, Pose2(), sdX: 8, sdY: 4.6, sdTheta: 0.3))
+    },
+    addFixedBetweenFactor: { (values, variables, graph) -> () in
+      let (prior) = unpack(values)
+      let (poseID) = unpack(variables)
+      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 4.6, sdTheta: 0.3))
     })
 }
 
