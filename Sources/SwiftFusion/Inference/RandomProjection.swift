@@ -38,9 +38,9 @@ public struct RandomProjection {
     )
   }
 
-  /// Generate an feature from image
-  /// Input: [H, W, C]
-  /// Output: [d]
+  /// Generate an feature from image or image batch
+  /// Input: [H, W, C] or [N,H,W,C]
+  /// Output: [d] or [N, d]
   @differentiable
   public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3 || (image.rank == 4), "wrong feature dimension \(image.shape)")
@@ -48,8 +48,8 @@ public struct RandomProjection {
     let d = B.shape[0]
     if image.rank == 4 {
       let N = image.shape[0]
-      let v_T = (image).reshaped(to: [HWC, image.shape[0]]).transposed()
-      return matmul(v_T, B.transposed()).reshaped(to: [image.shape[0], d])
+      let v_T = (image).reshaped(to: [HWC, N]).transposed()
+      return matmul(v_T, B.transposed()).reshaped(to: [N, d])
     } else {
       return matmul(B, (image).reshaped(to: [HWC, 1])).reshaped(to: [d])
     }
