@@ -23,26 +23,6 @@ public struct WeightedPriorFactor<Pose: LieGroup>: LinearizableFactor1 {
   }
 }
 
-/// A factor that specifies a prior on a pose.
-public struct WeightedPriorFactorPose2: LinearizableFactor1 {
-  public let edges: Variables.Indices
-  public let prior: Pose2
-  public let weight: Double
-  public let rotWeight: Double
-  public init(_ id: TypedID<Pose2>, _ prior: Pose2, weight: Double, rotWeight: Double) {
-    self.edges = Tuple1(id)
-    self.prior = prior
-    self.weight = weight
-    self.rotWeight = rotWeight
-  }
-
-  @differentiable
-  public func errorVector(_ x: Pose2) -> Pose2.TangentVector {
-    let weighted = weight * prior.localCoordinate(x)
-    return Vector3(rotWeight * weighted.x, weighted.y, weighted.z)
-  }
-}
-
 /// A factor that specifies a difference between two poses.
 public struct WeightedBetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
   public let edges: Variables.Indices
@@ -503,6 +483,11 @@ public func makeRandomProjectionTracker(
       let (poseID1) = unpack(variables1)
       let (poseID2) = unpack(variables2)
       graph.store(WeightedBetweenFactorPose2(poseID1, poseID2, Pose2(), weight: 1e-2, rotWeight: 2e2))
+    },
+    addFixedBetweenFactor: { (values, variables, graph) -> () in
+      let (prior) = unpack(values)
+      let (poseID) = unpack(variables)
+      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 4.6, sdTheta: 0.3))
     })
 }
 
