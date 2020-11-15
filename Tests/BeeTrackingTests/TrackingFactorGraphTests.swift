@@ -43,11 +43,16 @@ class TrackingFactorGraphTests: XCTestCase {
       frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100,
       bgRandomFrameCount: 2
     )
-
-    let (track, groundTruth) = createSingleTrack(
-      onTrack: 0,
-      withTracker: &tracker,
-      andTestData: testData
+    
+    var (track, groundTruth) = createSingleTrack(
+      onTrack: 0, withTracker: &tracker, andTestData: testData
+    )
+    XCTAssertEqual(track.count, 2)
+    XCTAssertEqual(groundTruth.count, 2)
+    
+    // Now try with sampling
+    (track, groundTruth) = createSingleTrack(
+      onTrack: 0, withTracker: &tracker, andTestData: testData, withSampling: true
     )
     XCTAssertEqual(track.count, 2)
     XCTAssertEqual(groundTruth.count, 2)
