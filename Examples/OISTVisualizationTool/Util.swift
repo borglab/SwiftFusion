@@ -92,12 +92,12 @@ public func makeNaiveBayesPCATracker(
       let (poseID1) = unpack(variables1)
       let (poseID2) = unpack(variables2)
       graph.store(WeightedBetweenFactorPose2(poseID1, poseID2, Pose2(), weight: 1e-1, rotWeight: 1e2))
-    }),
-  addFixedBetweenFactor: { (values, variables, graph) -> () in
-    let (prior) = unpack(values)
-    let (poseID) = unpack(variables)
-    graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 4.6, sdTheta: 0.3))
-  })
+    },
+    addFixedBetweenFactor: { (values, variables, graph) -> () in
+      let (prior) = unpack(values)
+      let (poseID) = unpack(variables)
+      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 4.6, sdTheta: 0.3))
+    })
 }
 
 /// Returns `t` as a Swift tuple.

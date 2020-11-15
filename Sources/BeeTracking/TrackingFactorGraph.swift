@@ -605,7 +605,11 @@ public func createSingleTrack(
 /// Given a training set, it will train an RP tracker
 /// and run it on one track in the test set:
 ///  - output: image with track and overlap metrics
-public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int = 80, withSampling samplingFlag: Bool = false) -> PythonObject {
+public func runRPTracker(
+  directory: URL, onTrack trackIndex: Int, forFrames: Int = 80,
+  withSampling samplingFlag: Bool = false,
+  withFeatureSize d: Int = 100
+) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
   let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
@@ -614,7 +618,7 @@ public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int
   
   var tracker = trainRPTracker(
     trainingData: trainingData,
-    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
+    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d
   )
   
   // Run the tracker and return track with ground truth
@@ -635,5 +639,5 @@ public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int
     track: track, withGroundTruth: groundTruth, on: axes[1]
   )
 
-  return fig
+  return (fig, track, groundTruth)
 }

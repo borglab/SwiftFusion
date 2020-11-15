@@ -54,3 +54,20 @@ public func plotMetrics(
   ax.plot(eao.curve)
   ax.set_title("Expected Average Overlap")
 }
+
+/// plot Comparison image
+public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2) -> (PythonObject, PythonObject) {
+  let plt = Python.import("matplotlib.pyplot")
+
+  let extraMarginMultiplier = 2
+  let (fig, ax) = plt.subplots(1, 2, figsize: Python.tuple([8, 4])).tuple2
+  ax[0].imshow(frame.patch(
+    at: OrientedBoundingBox(center: actual, rows: 40 + 20 * extraMarginMultiplier, cols: 70 + 20 * extraMarginMultiplier)
+  ).makeNumpyArray() / 255.0)
+  ax[0].title.set_text("Prediction")
+  ax[1].imshow(frame.patch(
+    at: OrientedBoundingBox(center: expected, rows: 40 + 20 * extraMarginMultiplier, cols: 70 + 20 * extraMarginMultiplier)
+  ).makeNumpyArray() / 255.0)
+  ax[1].title.set_text("Labeling")
+  return (fig, ax)
+}
