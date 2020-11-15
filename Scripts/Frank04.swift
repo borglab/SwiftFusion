@@ -6,7 +6,7 @@ import BeeDataset
 import PythonKit
 import Foundation
 
-/// Frank04: Saving labels divided by 2
+/// Saving labels divided by 2
 struct Frank04: ParsableCommand {
 
   func writeOneFile(filename: URL, labels: [OISTBeeLabel]) {

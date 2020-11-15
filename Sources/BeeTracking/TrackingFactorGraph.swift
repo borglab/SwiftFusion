@@ -313,19 +313,21 @@ public func getTrainingBatches(
 
 /// Train a random projection tracker with a full Gaussian foreground model
 /// and a Naive Bayes background model.
-public func trainRPTracker(
-  trainingData: OISTBeeVideo,
-  frames: [Tensor<Float>],
-  boundingBoxSize: (Int, Int), withFeatureSize d: Int,
-  fgRandomFrameCount: Int = 10,
-  bgRandomFrameCount: Int = 10
+/// If EMflag is true we will do several iterations of Monte Carlo EM
+public func trainRPTracker(trainingData: OISTBeeVideo,
+                           frames: [Tensor<Float>],
+                           boundingBoxSize: (Int, Int),
+                           withFeatureSize d: Int,
+						   fgRandomFrameCount: Int = 10,
+                           bgRandomFrameCount: Int = 10,
+                           usingEM EMflag: Bool = true
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   let (fg, bg, statistics) = getTrainingBatches(
     dataset: trainingData, boundingBoxSize: boundingBoxSize,
     fgRandomFrameCount: fgRandomFrameCount,
     bgRandomFrameCount: bgRandomFrameCount
   )
-
+  
   let randomProjector = RandomProjection(
     fromShape: [boundingBoxSize.0, boundingBoxSize.1, 1], toFeatureSize: d
   )
@@ -341,7 +343,7 @@ public func trainRPTracker(
     frames: frames, targetSize: boundingBoxSize,
     foregroundModel: foregroundModel, backgroundModel: backgroundModel
   )
-
+  
   return tracker
 }
 
@@ -368,18 +370,19 @@ public func createSingleTrack(
 public func runRPTracker(
   directory: URL, onTrack trackIndex: Int, forFrames: Int = 80,
   withSampling samplingFlag: Bool = false,
+  usingEM EMflag: Bool = true,
   withFeatureSize d: Int = 100,
   savePatchesIn resultDirectory: String? = nil
 ) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
   let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
-
+  
   precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
   
   var tracker = trainRPTracker(
     trainingData: trainingData,
-    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d
+    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d, usingEM :EMflag
   )
   
   // Run the tracker and return track with ground truth
@@ -409,15 +412,6 @@ public func runRPTracker(
   }
 
   return (fig, track, groundTruth)
-}
-
-/// Returns `t` as a Swift tuple.
-fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
-  return (t.head, t.tail.head)
-}
-/// Returns `t` as a Swift tuple.
-fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
-  return (t.head)
 }
 
 /// Returns `t` as a Swift tuple.
