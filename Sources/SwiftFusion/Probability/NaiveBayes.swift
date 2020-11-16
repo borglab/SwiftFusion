@@ -38,6 +38,14 @@ public struct GaussianNB: GenerativeDensity {
     self.regularizer = regularizer
   }
 
+  /// Initalize by fitting the model to the data
+  ///  - data: Tensor of shape [N, <dims>]
+  public typealias HyperParameters = ()
+  public init(from data: Tensor<Double>, given p:HyperParameters? = nil) {
+    self.init(dims: data.shape.dropFirst())
+    fit(data)
+  }
+
   /// Fit the model to the data
   ///  - data: Tensor of shape [N, <dims>]
   public mutating func fit(_ data: Tensor<Double>) {

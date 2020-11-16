@@ -38,6 +38,12 @@ public struct RandomProjection {
     )
   }
 
+  /// Initialize  given an image batch
+  public typealias HyperParameters = Int
+  public init(from imageBatch: Tensor<Double>, given d: HyperParameters? = nil) {
+    self.init(fromShape: imageBatch.shape.suffix(3), toFeatureSize: d ?? 5)
+  }
+
   /// Generate an feature from image or image batch
   /// Input: [H, W, C] or [N,H,W,C]
   /// Output: [d] or [N, d]

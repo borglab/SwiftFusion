@@ -3,6 +3,9 @@ import PenguinStructures
 import TensorFlow
 
 public protocol AppearanceModelEncoder {
+  associatedtype HyperParameters
+  init(from imageBatch: Tensor<Double>, given: HyperParameters?)
+
   @differentiable
   func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double>
 }

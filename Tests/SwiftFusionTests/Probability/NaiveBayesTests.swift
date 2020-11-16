@@ -21,9 +21,7 @@ import XCTest
 final class NaiveBayesTests: XCTestCase {
   func testGaussianNBFittingParams() {
     let data = Tensor<Double>(randomNormal: [5000, 10, 10], mean: Tensor(4.888), standardDeviation: Tensor(2.999))
-    var gnb = GaussianNB(dims: data.shape.dropFirst())
-
-    gnb.fit(data)
+    let gnb = GaussianNB(from: data)
 
     let sigma = Tensor<Double>.init(ones: [10, 10]) * 2.999
     let mu = Tensor<Double>.init(ones: [10, 10]) * 4.888
@@ -34,9 +32,7 @@ final class NaiveBayesTests: XCTestCase {
 
   func testGaussianNB() {
     let data = Tensor<Double>([[0.9, 1.1], [1.1, 0.9]])
-    var gnb = GaussianNB(dims: data.shape.dropFirst())
-
-    gnb.fit(data)
+    let gnb = GaussianNB(from: data)
 
     let sigma = data.standardDeviation().scalar!
     let mu = data.mean().scalar!
