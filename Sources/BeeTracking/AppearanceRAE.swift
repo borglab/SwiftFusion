@@ -98,13 +98,14 @@ public struct DenseRAE: Layer {
   }
 
   /// Initialize  given an image batch
-  public init(from images: Tensor<Double>) {
-    let shape = images.shape
-    precondition(images.rank == 4, "Wrong image shape \(shape)")
+  public typealias HyperParameters = (hiddenDimension: Int, latentDimension: Int)
+  public init(from imageBatch: Tensor<Double>, given parameters: HyperParameters? = nil) {
+    let shape = imageBatch.shape
+    precondition(imageBatch.rank == 4, "Wrong image shape \(shape)")
     let (_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
-    // - To Do: hiddenDimension and latentDimension
+    let (h,d) = parameters ?? (100,10)
     self.init(imageHeight: H_, imageWidth: W_, imageChannels: C_,
-              hiddenDimension: 5, latentDimension: 5)
+              hiddenDimension: h, latentDimension: d)
     fatalError("DenseRAE::init(from:data) not implemented")
   }
 

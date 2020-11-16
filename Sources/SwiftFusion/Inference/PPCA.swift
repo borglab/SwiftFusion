@@ -60,9 +60,9 @@ public struct PPCA {
   }
 
   /// Initialize  given an image batch
-  public init(from imageBatch: Tensor<Double>) {
-    // - ToDo: latentSize ?
-    self.init(latentSize: 5)
+  public typealias HyperParameters = Int
+  public init(from imageBatch: Tensor<Double>, given d: HyperParameters? = nil) {
+    self.init(latentSize: d ?? 5)
     train(images: imageBatch)
   }
 

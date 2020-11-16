@@ -39,9 +39,9 @@ public struct RandomProjection {
   }
 
   /// Initialize  given an image batch
-  public init(from imageBatch: Tensor<Double>) {
-    // - ToDo: toFeatureSize ?
-    self.init(fromShape: imageBatch.shape.suffix(3), toFeatureSize: 5)
+  public typealias HyperParameters = Int
+  public init(from imageBatch: Tensor<Double>, given d: HyperParameters? = nil) {
+    self.init(fromShape: imageBatch.shape.suffix(3), toFeatureSize: d ?? 5)
   }
 
   /// Generate an feature from image or image batch
