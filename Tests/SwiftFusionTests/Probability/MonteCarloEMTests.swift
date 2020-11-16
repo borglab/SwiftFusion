@@ -27,10 +27,10 @@ struct TwoComponents : McEmModel {
   
   /// Initialize to uninitialized components
   init(_ data:[Datum], using sourceOfEntropy: inout AnyRandomNumberGenerator) {
-    c1 = MultivariateGaussian(dims:[2])
+    c1 = MultivariateGaussian(dims:[2], regularizer:1e-2)
     c1.covariance_inv = eye(rowCount: 2)
     c1.mean = data[0]
-    c2 = MultivariateGaussian(dims:[2])
+    c2 = MultivariateGaussian(dims:[2], regularizer:1e-2)
     c2.covariance_inv = eye(rowCount: 2)
     c2.mean = data[1]
   }
@@ -38,11 +38,11 @@ struct TwoComponents : McEmModel {
   /// Given a datum and a model, sample from the hidden variables
   func sample(count:Int, for datum: Datum,
               using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
-    let q1 = exp(-c1.negativeLogLikelihood(datum))
-    let q2 = exp(-c2.negativeLogLikelihood(datum))
+    let p1 = c1.probability(datum)
+    let p2 = c2.probability(datum)
     let labels : [Hidden] = (0..<count).map { _ in
-      let u = Double.random(in: 0..<q1+q2, using: &sourceOfEntropy)
-      return u<=q1 ? .one : .two
+      let u = Double.random(in: 0..<p1+p2, using: &sourceOfEntropy)
+      return u<=p1 ? .one : .two
     }
     return labels
   }
@@ -64,7 +64,7 @@ final class MonteCarloEMTests: XCTestCase {
   /// Test fitting a simple 2-component mixture
   func testTwoComponents() {
     var em = MonteCarloEM<TwoComponents>(sourceOfEntropy: deterministicEntropy)
-    let model : TwoComponents = em.run(with:data, iterationCount: 3, hook: {       print("iteration \($0)", $1.count, $2.c1.mean!, $2.c2.mean!)})
+    let model : TwoComponents = em.run(with:data, iterationCount: 10, hook: {       print("iteration \($0)", $1.map {(label,_) in label == .one ? 1 : 2}, $2.c1.mean!, $2.c2.mean!)})
     assertEqual(model.c1.mean!, Tensor<Double>([1.0, 2.0]), accuracy: 0.2)
     assertEqual(model.c2.mean!, Tensor<Double>([6.0, 8.0]), accuracy: 0.2)
   }
