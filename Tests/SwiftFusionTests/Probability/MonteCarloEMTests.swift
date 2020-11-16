@@ -22,19 +22,21 @@ import XCTest
 struct TwoComponents : McEmModel {
   typealias Datum = Tensor<Double>
   enum Hidden { case one; case two}
-  typealias HyperParameters = Float
-
+  struct HyperParameters {
+    var regularizer : Double = 1e-2
+  }
 
   var c1, c2 : MultivariateGaussian
   
   /// Initialize to uninitialized components
   init(from data:[Datum],
        using sourceOfEntropy: inout AnyRandomNumberGenerator,
-       given: HyperParameters?) {
-    c1 = MultivariateGaussian(dims:[2], regularizer:1e-2)
+       given p: HyperParameters?) {
+    let r = p?.regularizer
+    c1 = MultivariateGaussian(dims:[2], regularizer:r ?? 1e-2)
     c1.covariance_inv = eye(rowCount: 2)
     c1.mean = data[0]
-    c2 = MultivariateGaussian(dims:[2], regularizer:1e-2)
+    c2 = MultivariateGaussian(dims:[2], regularizer:r ?? 1e-2)
     c2.covariance_inv = eye(rowCount: 2)
     c2.mean = data[1]
   }

@@ -16,7 +16,7 @@ import TensorFlow
 import XCTest
 
 /// Protocol for models that can be fitted with Monte Carle EM
-protocol McEmModel {
+public protocol McEmModel {
   associatedtype Datum /// main data a model is trained with
   associatedtype Hidden /// type for hidden variable associated with a Datum
   typealias LabeledDatum = (Hidden, Datum)
@@ -40,8 +40,8 @@ public extension McEmModel {
 }
 
 /// Monte Carlo EM algorithm
-struct MonteCarloEM<ModelType: McEmModel> {
-  typealias Hook = (Int, [ModelType.LabeledDatum], ModelType) -> ()
+public struct MonteCarloEM<ModelType: McEmModel> {
+  public typealias Hook = (Int, [ModelType.LabeledDatum], ModelType) -> ()
   var sourceOfEntropy: AnyRandomNumberGenerator
   
   /// Initialize, possibly witha random number generator
