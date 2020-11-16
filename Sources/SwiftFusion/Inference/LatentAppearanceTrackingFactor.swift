@@ -5,9 +5,16 @@ import TensorFlow
 public protocol AppearanceModelEncoder {
   associatedtype HyperParameters
   init(from imageBatch: Tensor<Double>, given: HyperParameters?)
-
+  
   @differentiable
   func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double>
+}
+
+public extension AppearanceModelEncoder {
+  /// Extension allows to have a default nil parameter
+  init(from imageBatch: Tensor<Double>, given: HyperParameters? = nil) {
+    self.init(from: imageBatch, given: nil)
+  }
 }
 
 extension AppearanceModelEncoder {

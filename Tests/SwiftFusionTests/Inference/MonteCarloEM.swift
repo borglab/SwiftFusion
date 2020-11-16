@@ -20,11 +20,23 @@ protocol McEmModel {
   associatedtype Datum /// main data a model is trained with
   associatedtype Hidden /// type for hidden variable associated with a Datum
   typealias LabeledDatum = (Hidden, Datum)
-  init(_ data: [Datum], using sourceOfEntropy: inout AnyRandomNumberGenerator)
+  associatedtype HyperParameters
+  init(from data: [Datum],
+       using sourceOfEntropy: inout AnyRandomNumberGenerator,
+       given: HyperParameters?)
   func sample(count:Int,
               for datum: Datum,
               using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden]
   mutating func fit(_ labeledData: [LabeledDatum])
+}
+
+public extension McEmModel {
+  /// Extension allows to have a default nil parameter
+  init(_ data: [Datum],
+       using sourceOfEntropy: inout AnyRandomNumberGenerator,
+       given: HyperParameters? = nil) {
+    self.init(from: data, using: &sourceOfEntropy, given: nil)
+  }
 }
 
 /// Monte Carlo EM algorithm

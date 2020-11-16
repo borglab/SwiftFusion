@@ -19,3 +19,11 @@ public protocol GenerativeDensity {
   init(from data: Tensor<Double>, given: HyperParameters?)
   @differentiable func negativeLogLikelihood(_ data: Tensor<Double>) -> Double
 }
+
+public extension GenerativeDensity {
+  /// Extension allows to have a default nil parameter
+  init(from data: Tensor<Double>, given: HyperParameters? = nil) {
+    self.init(from: data, given: nil)
+  }
+}
+
