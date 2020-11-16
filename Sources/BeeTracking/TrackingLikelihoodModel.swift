@@ -16,13 +16,13 @@ import SwiftFusion
 import TensorFlow
 import XCTest
 
-// A likelihood model has a foreground and background model, as well as a feature encoder
+/// A likelihood model has a a feature encoder, a foreground model and a background model
 public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:GenerativeDensity, BG:GenerativeDensity> {
-  /// A likelihood model is trained on image patches
   public let encoder: Encoder
   public let foregroundModel: FG
   public let backgroundModel: BG
   
+  /// A likelihood model is trained on image patches
   public init(encoder: Encoder, foregroundModel: FG,  backgroundModel: BG) {
     self.encoder = encoder
     self.foregroundModel = foregroundModel
@@ -30,14 +30,18 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   }
   
   /// Train from a collection of image patches
+  /// - To Do: we have to be able to give extra parameters !
   public init(from imageBatch: Tensor<Double>) {
-    self.encoder = Encoder(from: imageBatch)
-    self.foregroundModel = FG(from: encoder.encode(imageBatch))
-    self.backgroundModel = BG(from: encoder.encode(imageBatch))
+    let trainedEncoder = Encoder(from: imageBatch)
+    let fgPatches = trainedEncoder.encode(imageBatch)
+    let bgPatches = trainedEncoder.encode(imageBatch) // - To Do: should be different!
+    self.init(encoder: trainedEncoder,
+              foregroundModel : FG(from: fgPatches),
+              backgroundModel : BG(from: bgPatches))
   }
 }
 
-// Make it trainable with EM
+/// Make it trainable with Monte Carlo EM
 extension TrackingLikelihoodModel : McEmModel {
   /// As datum we have a (giant) image and a noisy manual label for an image patch
   public typealias Datum = (frame: Tensor<Double>, manualLabel:OrientedBoundingBox)
@@ -45,7 +49,7 @@ extension TrackingLikelihoodModel : McEmModel {
   /// As hidden variable we use the "true" pose of the patch
   public typealias Hidden = Pose2
   
-  /// Initialize to uninitialized components
+  /// Initialize with the manually labeled images
   public init(_ data:[Datum], using sourceOfEntropy: inout AnyRandomNumberGenerator) {
     // We do an initial training of the encode with the manually labeled images
     let paches = data.map { $0.frame.patch(at: $0.manualLabel) }
@@ -56,6 +60,8 @@ extension TrackingLikelihoodModel : McEmModel {
   /// Given a datum and a model, sample from the hidden variables
   public func sample(count:Int, for datum: Datum,
                      using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
+    // Two approaches: importance sampling, OR, what we do here:
+    // First optimize pose using LM, then sample from pose covariance around minimum
     let labels = [Hidden]()
     //    let labels : [Hidden] = (0..<count).map { _ in
     //      let u = Double.random(in: 0..<p1+p2, using: &sourceOfEntropy)
