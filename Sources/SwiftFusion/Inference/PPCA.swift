@@ -59,12 +59,20 @@ public struct PPCA {
     self.Ut = nil
   }
 
+  /// Initialize  given an image batch
+  public init(from imageBatch: Tensor<Double>) {
+    // - ToDo: latentSize ?
+    self.init(latentSize: 5)
+    train(images: imageBatch)
+  }
+
   /// Train a PPCA model
   /// images should be a Tensor of shape [N, H, W, C]
   /// Input: [N, H, W, C]
   public mutating func train(images: Tensor<Double>) {
-    precondition(images.rank == 4, "Wrong image shape \(images.shape)")
-    let (N_, H_, W_, C_) = (images.shape[0], images.shape[1], images.shape[2], images.shape[3])
+    let shape = images.shape
+    precondition(images.rank == 4, "Wrong image shape \(shape)")
+    let (N_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
     
     self.mu = images.mean(squeezingAxes: [0])
     let images_flattened = (images - mu).reshaped(to: [N_, H_ * W_ * C_]).transposed()

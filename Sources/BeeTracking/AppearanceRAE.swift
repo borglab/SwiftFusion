@@ -97,6 +97,17 @@ public struct DenseRAE: Layer {
     decoder_conv1 = Conv2D<Double>(filterShape: (3, 3, imageChannels, imageChannels), padding: .same, activation: identity)
   }
 
+  /// Initialize  given an image batch
+  public init(from images: Tensor<Double>) {
+    let shape = images.shape
+    precondition(images.rank == 4, "Wrong image shape \(shape)")
+    let (_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
+    // - To Do: hiddenDimension and latentDimension
+    self.init(imageHeight: H_, imageWidth: W_, imageChannels: C_,
+              hiddenDimension: 5, latentDimension: 5)
+    fatalError("DenseRAE::init(from:data) not implemented")
+  }
+
   /// Differentiable encoder
   @differentiable
   public func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double> {
