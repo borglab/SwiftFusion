@@ -67,22 +67,24 @@ public struct PPCA {
     let (N_, H_, W_, C_) = (images.shape[0], images.shape[1], images.shape[2], images.shape[3])
     
     self.mu = images.mean(squeezingAxes: [0])
-    let images_flattened = (images - mu).reshaped(to: [N_, H_ * W_ * C_]).transposed()
-    let (J_s, J_u, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
+    let d = H_ * W_ * C_
+    let images_flattened = (images - mu).reshaped(to: [N_, d]).transposed()
+    /// U.shape should be [d, rank]
+    let (S, U, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
+
+    let sigma_2 = S[latent_size...].mean()
     
-    let sigma_2 = J_s[latent_size...].mean()
-    
-    self.Ut = J_u![0..<J_u!.shape[0], 0..<latent_size].transposed()
+    self.Ut = U![TensorRange.ellipsis, 0..<latent_size].transposed()
 
     self.W = matmul(
       self.Ut!.transposed(),
-      (J_s[0..<latent_size] - sigma_2).diagonal()
+      (S[0..<latent_size] - sigma_2).diagonal()
     ).reshaped(to: [H_, W_, C_, latent_size])
 
     // TODO: Cache A^TA?
     if self.W_inv == nil {
-      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
-      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
+      // self.W_inv = pinv(W.reshaped(to: [d, latent_size]))
+      let W_m = W.reshaped(to: [d, latent_size])
       self.W_inv = matmul(pinv(matmul(W_m.transposed(), W_m)), W_m.transposed())
     }
   }
