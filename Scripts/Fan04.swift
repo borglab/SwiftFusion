@@ -26,29 +26,25 @@ struct Fan04: ParsableCommand {
   func run() {
     let np = Python.import("numpy")
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
-    let (imageHeight, imageWidth) =
-      (40, 70)
+    let (imageHeight, imageWidth) = (40, 70)
 
-    var ppca = PPCA(latentSize: featureSize)
+    // var ppca = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, 1]), toFeatureSize: featureSize)
+    var pca = PCAEncoder(latentSize: featureSize)
     if training {
-      let ppcaTrainingData = OISTBeeVideo(directory: dataDir, length: 10)!
+      let pcaTrainingData = OISTBeeVideo(directory: dataDir, length: 100)!
       var statistics = FrameStatistics(Tensor<Double>(0.0))
       statistics.mean = Tensor(62.26806976644069)
       statistics.standardDeviation = Tensor(37.44683834503672)
-      let trainingBatch = ppcaTrainingData.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth))
-      ppca.train(images: trainingBatch)
-      np.save("./ppca_W_\(featureSize)", ppca.W.makeNumpyArray())
-      np.save("./ppca_mu_\(featureSize)", ppca.mu.makeNumpyArray())
+      let trainingBatch = pcaTrainingData.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
+      pca.train(images: trainingBatch)
+      np.save("./pca_U_\(featureSize)", pca.U!.makeNumpyArray())
     } else {
-      ppca.W = Tensor<Double>(numpy: np.load("./ppca_W_\(featureSize).npy"))!
-      ppca.mu = Tensor<Double>(numpy: np.load("./ppca_mu_\(featureSize).npy"))!
-      let W_m = ppca.W.reshaped(to: [imageHeight * imageWidth * 1, featureSize])
-      ppca.W_inv = matmul(pinv(matmul(W_m.transposed(), W_m)), W_m.transposed())
+      pca.U = Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!
     }
 
     let (fig, _, _) = runProbabilisticTracker(
       directory: dataDir,
-      encoder: ppca,
+      encoder: pca,
       onTrack: trackId, forFrames: trackLength, withSampling: true,
       withFeatureSize: featureSize,
       savePatchesIn: "Results/fan04"

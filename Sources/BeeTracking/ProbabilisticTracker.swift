@@ -19,16 +19,26 @@ public func runProbabilisticTracker<Encoder: AppearanceModelEncoder>(
   withFeatureSize d: Int = 100,
   savePatchesIn resultDirectory: String? = nil
 ) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
+  let trainingDatasetSize = 100
+  let testSetStart = 100
+  
+  precondition(trainingDatasetSize <= testSetStart)
+
   // train foreground and background model and create tracker
-  let trainingData = OISTBeeVideo(directory: directory, length: 100)!
-  let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
+  let trainingData = OISTBeeVideo(directory: directory, length: trainingDatasetSize)!
+  let testData = OISTBeeVideo(directory: directory, afterIndex: testSetStart, length: forFrames)!
 
   precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
   
   var tracker = trainProbabilisticTracker(
     trainingData: trainingData,
     encoder: encoder,
-    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d
+    frames: testData.frames,
+    boundingBoxSize: (40, 70),
+    withFeatureSize: d,
+    fgRandomFrameCount: trainingDatasetSize,
+    bgRandomFrameCount: trainingDatasetSize,
+    numberOfTrainingSamples: 3000
   )
   
   // Run the tracker and return track with ground truth
@@ -68,11 +78,17 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
   encoder: Encoder,
   frames: [Tensor<Float>],
   boundingBoxSize: (Int, Int), withFeatureSize d: Int,
-  bgRandomFrameCount: Int = 10
+  fgRandomFrameCount: Int = 10,
+  bgRandomFrameCount: Int = 10,
+  numberOfTrainingSamples: Int = 3000
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   let (fg, bg, statistics) = getTrainingBatches(
     dataset: trainingData, boundingBoxSize: boundingBoxSize,
-    bgRandomFrameCount: bgRandomFrameCount
+    fgBatchSize: numberOfTrainingSamples,
+    bgBatchSize: numberOfTrainingSamples,
+    fgRandomFrameCount: fgRandomFrameCount,
+    bgRandomFrameCount: bgRandomFrameCount,
+    useCache: true
   )
 
   var (foregroundModel, backgroundModel) = (

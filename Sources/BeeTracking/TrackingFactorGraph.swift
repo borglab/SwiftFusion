@@ -201,7 +201,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
-    for _ in 0..<1000 {
+    for _ in 0..<2000 {
       let noise = Tensor<Double>(randomNormal: [3]).scalars
       x[currentPoseID] = previousPose.retract(Vector3(0.3 * noise[0], 8 * noise[1],  4.6 * noise[2]))
       let candidateError = g.error(at: x)
@@ -265,23 +265,48 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
 /// Get the foreground and background batches
 public func getTrainingBatches(
   dataset: OISTBeeVideo, boundingBoxSize: (Int, Int),
-  fgBatchSize: Int = 300, bgBatchSize: Int = 300, bgRandomFrameCount: Int = 10
+  fgBatchSize: Int = 3000,
+  bgBatchSize: Int = 3000,
+  fgRandomFrameCount: Int = 10,
+  bgRandomFrameCount: Int = 10,
+  useCache: Bool = false
 ) -> (fg: Tensor<Double>, bg: Tensor<Double>, statistics: FrameStatistics) {
   precondition(dataset.frames.count >= bgRandomFrameCount)
+  let np = Python.import("numpy")
+
   var statistics = FrameStatistics(Tensor<Double>(0.0))
   statistics.mean = Tensor(62.26806976644069)
   statistics.standardDeviation = Tensor(37.44683834503672)
 
+  /// Caching
+  let cachePath = "./training_batch_cache"
+  let cacheURL = URL(fileURLWithPath: "\(cachePath)_fg.npy")
+  if useCache && FileManager.default.fileExists(atPath: cacheURL.path) {
+    let foregroundBatch = Tensor<Double>(numpy: np.load("\(cachePath)_fg.npy"))!
+    let backgroundBatch = Tensor<Double>(numpy: np.load("\(cachePath)_bg.npy"))!
+
+    precondition(foregroundBatch.shape[0] == fgBatchSize, "Wrong foreground dataset cache, please delete and regenerate!")
+    precondition(backgroundBatch.shape[0] == bgBatchSize, "Wrong background dataset cache, please delete and regenerate!")
+    
+    return (fg: foregroundBatch, bg: backgroundBatch, statistics: statistics)
+  }
+
   let foregroundBatch = dataset.makeBatch(
     statistics: statistics, appearanceModelSize: boundingBoxSize,
-    randomFrameCount: bgRandomFrameCount, batchSize: fgBatchSize
+    randomFrameCount: fgRandomFrameCount, batchSize: fgBatchSize
   )
+
   let backgroundBatch = dataset.makeBackgroundBatch(
     patchSize: boundingBoxSize, appearanceModelSize: boundingBoxSize,
     statistics: statistics,
     randomFrameCount: bgRandomFrameCount,
     batchSize: bgBatchSize
   )
+
+  if useCache {
+    np.save("\(cachePath)_fg", foregroundBatch.makeNumpyArray())
+    np.save("\(cachePath)_bg", backgroundBatch.makeNumpyArray())
+  }
 
   return (fg: foregroundBatch, bg: backgroundBatch, statistics: statistics)
 }
@@ -292,10 +317,12 @@ public func trainRPTracker(
   trainingData: OISTBeeVideo,
   frames: [Tensor<Float>],
   boundingBoxSize: (Int, Int), withFeatureSize d: Int,
+  fgRandomFrameCount: Int = 10,
   bgRandomFrameCount: Int = 10
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   let (fg, bg, statistics) = getTrainingBatches(
     dataset: trainingData, boundingBoxSize: boundingBoxSize,
+    fgRandomFrameCount: fgRandomFrameCount,
     bgRandomFrameCount: bgRandomFrameCount
   )
 

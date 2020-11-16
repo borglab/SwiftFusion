@@ -18,7 +18,7 @@ struct Fan01: ParsableCommand {
   var featureSize: Int = 30
 
   @Option(help: "Pretrained weights")
-  var weightsFile: String = "./oist_rae_weight_30.npy"
+  var weightsFile: String?
 
   // Just runs an RP tracker and saves image to file
   // Make sure you have a folder `Results/frank02` before running
@@ -33,8 +33,12 @@ struct Fan01: ParsableCommand {
       imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
       hiddenDimension: kHiddenDimension, latentDimension: featureSize
     )
-    rae.load(weights: np.load(weightsFile, allow_pickle: true))
 
+    if let weightsFile = weightsFile {
+      rae.load(weights: np.load(weightsFile, allow_pickle: true))
+    } else {
+      rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
+    }
     let (fig, _, _) = runProbabilisticTracker(
       directory: dataDir,
       encoder: rae,
