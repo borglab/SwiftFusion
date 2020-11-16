@@ -15,5 +15,7 @@
 import TensorFlow
 
 public protocol GenerativeDensity {
-    @differentiable func negativeLogLikelihood(_ data: Tensor<Double>) -> Double
+  associatedtype HyperParameters
+  init(from data: Tensor<Double>, given: HyperParameters?)
+  @differentiable func negativeLogLikelihood(_ data: Tensor<Double>) -> Double
 }
