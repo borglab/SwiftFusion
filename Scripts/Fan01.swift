@@ -20,7 +20,6 @@ struct Fan01: ParsableCommand {
   @Option(help: "Pretrained weights")
   var weightsFile: String?
 
-  // Just runs an RP tracker and saves image to file
   // Make sure you have a folder `Results/frank02` before running
   func run() {
     let np = Python.import("numpy")
