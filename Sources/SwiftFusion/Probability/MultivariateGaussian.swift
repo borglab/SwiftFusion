@@ -69,6 +69,12 @@ public struct MultivariateGaussian: GenerativeDensity {
       $0 = $0.reshaped(to: [1, 1])
     }
     
-    return t.scalarized()
+    return t.scalarized() / 2.0
+  }
+  
+  /// Calculated normalized probability
+  @differentiable public func probability(_ sample: Tensor<Double>) -> Double {
+    let E = negativeLogLikelihood(sample)
+    return exp(-E)*sqrt(_Raw.matrixDeterminant(covariance_inv!/(2.0 * .pi)).scalarized())
   }
 }
