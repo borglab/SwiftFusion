@@ -29,6 +29,11 @@ public struct SubsequenceMetrics: Codable {
   /// This is only defined up to the failure frame, i.e. `averageOverlap.count == NFsa`.
   private let averageOverlap: [Double]
 
+  /// overlap[i] is the raw overlap over all frames from 0 to i, inclusive.
+  ///
+  /// This is defined on all frames.
+  public let overlap: [Double]
+
   public init(groundTruth: [OrientedBoundingBox], prediction: [OrientedBoundingBox]) {
     precondition(groundTruth.count == prediction.count)
 
@@ -56,6 +61,7 @@ public struct SubsequenceMetrics: Codable {
     self.Nsa = overlaps.count
     self.accuracy = overlaps[0..<NFsa].reduce(0, +) / max(1, Double(NFsa))
     self.robustness = Double(NFsa) / max(1, Double(Nsa))
+    self.overlap = overlaps
   }
 
   public init(
@@ -63,13 +69,15 @@ public struct SubsequenceMetrics: Codable {
     robustness: Double,
     NFsa: Int,
     Nsa: Int,
-    averageOverlap: [Double]
+    averageOverlap: [Double],
+    overlap: [Double] = []
   ) {
     self.accuracy = accuracy
     self.robustness = robustness
     self.NFsa = NFsa
     self.Nsa = Nsa
     self.averageOverlap = averageOverlap
+    self.overlap = overlap
   }
 
   /// The extended average overlap. This is \phi_{s,a}(i) from [1].

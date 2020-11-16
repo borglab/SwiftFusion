@@ -12,7 +12,7 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_12.2.app
           wget https://storage.googleapis.com/swift-tensorflow-artifacts/macos-toolchains/swift-tensorflow-DEVELOPMENT-2020-08-26-a-osx.pkg
           sudo installer -pkg swift-tensorflow-DEVELOPMENT-2020-08-26-a-osx.pkg -target /
-          echo "::set-env name=PATH::/Library/Developer/Toolchains/swift-latest/usr/bin:${PATH}"
+          echo "PATH=/Library/Developer/Toolchains/swift-latest/usr/bin:${PATH}" >> $GITHUB_ENV
       - name: Build
         run: swift build -v
       - name: Test
