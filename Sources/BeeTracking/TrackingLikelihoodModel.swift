@@ -22,22 +22,53 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   public let foregroundModel: FG
   public let backgroundModel: BG
   
-  /// A likelihood model is trained on image patches
+  /// Colect all hyperparameters here
+  public struct HyperParameters {
+    let encoder: Encoder.HyperParameters
+    let foregroundModel: FG.HyperParameters
+    let backgroundModel: BG.HyperParameters
+    
+    /// Part
+    let backgroundPatches: Tensor<Double>
+  }
+  
+  /// Initialize from three parts
   public init(encoder: Encoder, foregroundModel: FG,  backgroundModel: BG) {
     self.encoder = encoder
     self.foregroundModel = foregroundModel
     self.backgroundModel = backgroundModel
   }
   
-  /// Train from a collection of image patches
-  /// - To Do: we have to be able to give extra parameters !
-  public init(from imageBatch: Tensor<Double>) {
-    let trainedEncoder = Encoder(from: imageBatch)
-    let fgPatches = trainedEncoder.encode(imageBatch)
-    let bgPatches = trainedEncoder.encode(imageBatch) // - To Do: should be different!
+  /**
+   Train encoder and foreground model from a foreground patches
+   - Parameters:
+   - fgPatches: [...,H,W,C] batch of foreground patches to train with
+   - backgroundModel: assumed to be trained separately
+   - p: optional hyperparameters.
+   */
+  public init(from fgPatches: Tensor<Double>, and backgroundModel: BG,
+              given p:HyperParameters? = nil) {
+    let trainedEncoder = Encoder(from: fgPatches, given: p?.encoder)
+    let fgFeatures = trainedEncoder.encode(fgPatches)
     self.init(encoder: trainedEncoder,
-              foregroundModel : FG(from: fgPatches),
-              backgroundModel : BG(from: bgPatches))
+              foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
+              backgroundModel : backgroundModel)
+  }
+  
+  /**
+   Train all models from a collection of foreground and background patches
+   - Parameters:
+   - fgPatches: [...,H,W,C] batch of foreground patches to train with
+   - backgroundModel: assumed to be trained separately
+   - p: optional hyperparameters.
+   */
+  public init(from fgPatches: Tensor<Double>, and bgPatches: Tensor<Double>,              given p:HyperParameters? = nil) {
+    let trainedEncoder = Encoder(from: fgPatches, given: p?.encoder)
+    let fgFeatures = trainedEncoder.encode(fgPatches)
+    let bgFeatures = trainedEncoder.encode(bgPatches)
+    self.init(encoder: trainedEncoder,
+              foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
+              backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel))
   }
 }
 
@@ -49,12 +80,20 @@ extension TrackingLikelihoodModel : McEmModel {
   /// As hidden variable we use the "true" pose of the patch
   public typealias Hidden = Pose2
   
-  /// Initialize with the manually labeled images
-  public init(_ data:[Datum], using sourceOfEntropy: inout AnyRandomNumberGenerator) {
-    // We do an initial training of the encode with the manually labeled images
-    let paches = data.map { $0.frame.patch(at: $0.manualLabel) }
-    let imageBatch = Tensor<Double>(paches)
-    self.init(from: imageBatch)
+  /**
+   Initialize with the manually labeled images
+   - Parameters:
+   - data: frames with and associated oriented bounding boxes
+   - sourceOfEntropy: random number generator
+   - p: optional hyperparameters.
+   */
+  public init(from data:[Datum],
+              using sourceOfEntropy: inout AnyRandomNumberGenerator,
+              given p:HyperParameters?) {
+    let patches = data.map { $0.frame.patch(at: $0.manualLabel) }
+    let imageBatch = Tensor<Double>(patches)
+    let backgroundModel = BG(from: imageBatch)
+    self.init(from: imageBatch, and: backgroundModel, given:p)
   }
   
   /// Given a datum and a model, sample from the hidden variables
