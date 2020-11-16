@@ -91,12 +91,12 @@ extension OISTBeeVideo {
             Double.random(in: Double(maxSide)..<Double(frame.shape[1] - maxSide), using: &deterministicEntropy),
             Double.random(in: Double(maxSide)..<Double(frame.shape[0] - maxSide), using: &deterministicEntropy))
 
-          // Conservatively reject any point that could possibly overlap with any of the labels.
-          for label in labels {
-            if (label.location.center.t - location).norm < Double(maxSide) {
-              continue
-            }
-          }
+          // // Conservatively reject any point that could possibly overlap with any of the labels.
+          // for label in labels {
+          //   if (label.location.center.t - location).norm < Double(maxSide) {
+          //     continue
+          //   }
+          // }
 
           // The point was not rejected, so return it.
           return location

@@ -9,7 +9,7 @@ import TensorFlow
 
 struct BeeTrackingTool: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [TrainRAE.self, InferTrackRAE.self, InferTrackRawPixels.self])
+    subcommands: [TrainRAE.self, InferTrackRAE.self, InferTrackRawPixels.self, NaiveRae.self])
 }
 
 /// The dimension of the hidden layer in the appearance model.
@@ -164,35 +164,150 @@ struct InferTrackRAE: ParsableCommand {
 
 /// Infers a track on a VOT video, using the raw pixel tracker.
 struct InferTrackRawPixels: ParsableCommand {
-  @Option(help: "Base directory of the VOT dataset")
-  var votBaseDirectory: String
+  func run() {
 
-  @Option(help: "Name of the VOT video to use")
-  var videoName: String
+    func rawPixelTracker(_ frames: [Tensor<Float>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox] {
+      var tracker = makeRawPixelTracker(frames: frames, target: frames[0].patch(at: start))
+      tracker.optimizer.precision = 1e0
+      let prediction = tracker.infer(knownStart: Tuple1(start.center))
+      return tracker.frameVariableIDs.map { varIds in
+        let poseId = varIds.head
+        return OrientedBoundingBox(center: prediction[poseId], rows: start.rows, cols: start.cols)
+      }
+    }
 
-  @Option(help: "How many frames to track")
-  var frameCount: Int = 50
+    var dataset = OISTBeeVideo()!
+    // Only do inference on the interesting tracks.
+    dataset.tracks = [3, 5, 6, 7].map { dataset.tracks[$0] }
+    let trackerEvaluationDataset = TrackerEvaluationDataset(dataset)
+    let eval = trackerEvaluationDataset.evaluate(
+      rawPixelTracker, sequenceCount: dataset.tracks.count, deltaAnchor: 100, outputFile: "rawpixel.json")
+    print(eval.trackerMetrics.accuracy)
+    print(eval.trackerMetrics.robustness)
+  }
+}
 
-  @Flag(help: "Print progress information")
+/// Tracking with a Naive Bayes with RAE
+struct NaiveRae: ParsableCommand {
+  @Option(help: "Where to load the RAE weights")
+  var loadWeights: String
+
+  @Option(help: "The dimension of the latent code in the RAE appearance model")
+  var kLatentDimension: Int
+
+  @Option(help: "The dimension of the hidden code in the RAE appearance model")
+  var kHiddenDimension = 100
+
+  @Flag
   var verbose: Bool = false
 
+  @Option
+  var outputFile: String
+
+  @Option
+  var truncate: Int
+
+  /// Returns predictions for `videoName` using the raw pixel tracker.
+  func naiveRaeTrack(dataset dataset_: OISTBeeVideo) {
+    var dataset = dataset_
+    dataset.labels = dataset.labels.map {
+      $0.filter({ $0.label == .Body })
+    }
+    // Make batch and do RAE
+    let (batch, _) = dataset.makeBatch(appearanceModelSize: (40, 70), batchSize: 200)
+    var statistics = FrameStatistics(batch)
+    statistics.mean = Tensor(62.26806976644069)
+    statistics.standardDeviation = Tensor(37.44683834503672)
+
+    let backgroundBatch = dataset.makeBackgroundBatch(
+      patchSize: (40, 70), appearanceModelSize: (40, 70),
+      statistics: statistics,
+      batchSize: 300
+    )
+
+    let (imageHeight, imageWidth, imageChannels) =
+      (batch.shape[1], batch.shape[2], batch.shape[3])
+    
+    if verbose { print("Loading RAE model, \(batch.shape)...") }
+    
+    let np = Python.import("numpy")
+
+    var rae = DenseRAE(
+      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
+      hiddenDimension: kHiddenDimension, latentDimension: kLatentDimension
+    )
+    rae.load(weights: np.load(loadWeights, allow_pickle: true))
+
+    if verbose { print("Fitting Naive Bayes model") }
+
+    var (foregroundModel, backgroundModel) = (
+      MultivariateGaussian(
+        dims: TensorShape([kLatentDimension]),
+        regularizer: 1e-3
+      ), GaussianNB(
+        dims: TensorShape([kLatentDimension]),
+        regularizer: 1e-3
+      )
+    )
+
+    let batchPositive = rae.encode(batch)
+    foregroundModel.fit(batchPositive)
+
+    let batchNegative = rae.encode(backgroundBatch)
+    backgroundModel.fit(batchNegative)
+
+    if verbose {
+      print("Foreground: \(foregroundModel)")
+      print("Background: \(backgroundModel)")
+    }
+
+    func tracker(_ frames: [Tensor<Float>], _ start: OrientedBoundingBox) -> [OrientedBoundingBox] {
+      var tracker = makeNaiveBayesAETracker(
+        model: rae,
+        statistics: statistics,
+        frames: frames,
+        targetSize: (start.rows, start.cols),
+        foregroundModel: foregroundModel, backgroundModel: backgroundModel
+      )
+      tracker.optimizer.cgls_precision = 1e-5
+      tracker.optimizer.precision = 1e-3
+      tracker.optimizer.max_iteration = 200
+      let prediction = tracker.infer(knownStart: Tuple1(start.center))
+      return tracker.frameVariableIDs.map { varIds in
+        let poseId = varIds.head
+        return OrientedBoundingBox(center: prediction[poseId], rows: start.rows, cols: start.cols)
+      }
+    }
+
+    // Only do inference on the interesting tracks.
+    var evalDataset = OISTBeeVideo(truncate: truncate)!
+    evalDataset.tracks = [3, 5, 6, 7].map { evalDataset.tracks[$0] }
+    let trackerEvaluationDataset = TrackerEvaluationDataset(evalDataset)
+    let eval = trackerEvaluationDataset.evaluate(
+      tracker, sequenceCount: evalDataset.tracks.count, deltaAnchor: 500, outputFile: outputFile)
+    print(eval.trackerMetrics.accuracy)
+    print(eval.trackerMetrics.robustness)
+  }
+
   func run() {
-    let video = VOTVideo(votBaseDirectory: votBaseDirectory, videoName: videoName)!
-    let videoSlice = video[0..<min(video.frames.count, frameCount)]
+    if verbose {
+      print("Loading dataset...")
+    }
 
-    let startPose = videoSlice.track[0].center
-    let startPatch = videoSlice.frames[0].patch(at: videoSlice.track[0])
+    startTimer("DATASET_LOAD")
+    let dataset: OISTBeeVideo = OISTBeeVideo(deferLoadingFrames: true)!
+    stopTimer("DATASET_LOAD")
 
-    var tracker = makeRawPixelTracker(frames: videoSlice.frames, target: startPatch)
+    if verbose {
+      print("Tracking...")
+    }
 
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
+    startTimer("RAE_TRACKING")
+    naiveRaeTrack(dataset: dataset)
+    stopTimer("RAE_TRACKING")
 
-    let prediction = tracker.infer(knownStart: Tuple1(startPose))
-
-    let boxes = tracker.frameVariableIDs.map { frameVariableIDs -> OrientedBoundingBox in
-      let poseID = frameVariableIDs.head
-      return OrientedBoundingBox(
-        center: prediction[poseID], rows: video.track[0].rows, cols: video.track[0].cols)
+    if verbose {
+      printTimers()
     }
 
     print(boxes.count)

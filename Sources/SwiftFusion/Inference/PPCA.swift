@@ -106,8 +106,12 @@ public struct PPCA {
     precondition(image.rank == 3 || (image.rank == 4), "wrong latent dimension \(image.shape)")
     let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
     if image.rank == 4 {
-      let v_T = (image - mu).reshaped(to: [H_ * W_ * C_, image.shape[0]]).transposed()
-      return matmul(v_T, W_inv!.transposed()).reshaped(to: [image.shape[0], latent_size])
+      if image.shape[0] == 1 {
+        return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [1, latent_size])
+      } else {
+        let v_T = (image - mu).reshaped(to: [H_ * W_ * C_, image.shape[0]]).transposed()
+        return matmul(v_T, W_inv!.transposed()).reshaped(to: [image.shape[0], latent_size])
+      }
     } else {
       return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
     }
