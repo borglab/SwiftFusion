@@ -40,9 +40,10 @@ public struct GaussianNB: GenerativeDensity {
 
   /// Initalize by fitting the model to the data
   ///  - data: Tensor of shape [N, <dims>]
-  public init(from imageBatch: Tensor<Double>) {
-    self.init(dims: imageBatch.shape.dropFirst())
-    fit(imageBatch)
+  public typealias HyperParameters = ()
+  public init(from data: Tensor<Double>, given p:HyperParameters? = nil) {
+    self.init(dims: data.shape.dropFirst())
+    fit(data)
   }
 
   /// Fit the model to the data
