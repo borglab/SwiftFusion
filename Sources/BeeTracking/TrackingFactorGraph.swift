@@ -5,43 +5,6 @@ import TensorFlow
 import PythonKit
 import Foundation
 
-/// A factor that specifies a prior on a pose.
-public struct WeightedPriorFactor<Pose: LieGroup>: LinearizableFactor1 {
-  public let edges: Variables.Indices
-  public let prior: Pose
-  public let weight: Double
-
-  public init(_ id: TypedID<Pose>, _ prior: Pose, weight: Double) {
-    self.edges = Tuple1(id)
-    self.prior = prior
-    self.weight = weight
-  }
-
-  @differentiable
-  public func errorVector(_ x: Pose) -> Pose.TangentVector {
-    return weight * prior.localCoordinate(x)
-  }
-}
-
-/// A factor that specifies a difference between two poses.
-public struct WeightedBetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
-  public let edges: Variables.Indices
-  public let difference: Pose
-  public let weight: Double
-
-  public init(_ startId: TypedID<Pose>, _ endId: TypedID<Pose>, _ difference: Pose, weight: Double) {
-    self.edges = Tuple2(startId, endId)
-    self.difference = difference
-    self.weight = weight
-  }
-
-  @differentiable
-  public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
-    let actualMotion = between(start, end)
-    return weight * difference.localCoordinate(actualMotion)
-  }
-}
-
 public struct WeightedBetweenFactorPose2: LinearizableFactor2 {
   public typealias Pose = Pose2
   public let edges: Variables.Indices
@@ -225,273 +188,78 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     }
     return result
   }
-
+  
+  // Try to initialize pose of the `i+1`-th variable by sampling
+  mutating func extendBySampling(x: inout VariableAssignments, fromFrame i:Int, withGraph g: FactorGraph)  {
+    // First get pose IDs: pose is assumed to be first variable in the frameVariableID tuple
+    let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
+    let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
+    
+    // Now get actual poses
+    let previousPose = x[previousPoseID]
+    var bestPose = x[currentPoseID]
+    
+    // Sample from motion model and take best pose
+    var bestError = g.error(at: x)
+    for _ in 0..<5 {
+      let noise = Tensor<Double>(randomNormal: [3]).scalars
+      x[currentPoseID] = previousPose.retract(Vector3(0.3 * noise[0], 8 * noise[1],  4.6 * noise[2]))
+      let candidateError = g.error(at: x)
+      if candidateError < bestError {
+        bestError = candidateError
+        bestPose = x[currentPoseID]
+      }
+    }
+    x[currentPoseID] = bestPose
+  }
+  
+  /// Extend the track
+  mutating func extendTrack(x: inout VariableAssignments, fromFrame i:Int,
+                            withSampling samplingFlag: Bool = false
+  ) {
+    let currentVarID = frameVariableIDs[i + 1]
+    let previousVarID = frameVariableIDs[i]
+    
+    // Create a tracking factor graph on just the `i+1`-th variable.
+    var g = graph(on: (i + 1)..<(i + 2))
+    
+    // The `i`-th variable is already initialized well, so add a prior factor that it stays
+    // near its current position.
+    addFixedBetweenFactor(x[previousVarID], currentVarID, &g)
+    
+    // Initialize
+    if (samplingFlag) {
+      // Try to initialize pose of the `i+1`-th variable by sampling
+      extendBySampling(x: &x, fromFrame:i, withGraph:g)
+    } else {
+      // Initialize `i+1`-th variable with the value of the previous variable.
+      x[currentVarID] = x[previousVarID, as: FrameVariables.self]
+    }
+    
+    // Optimize the factor graph.
+    try? optimizer.optimize(graph: g, initial: &x)
+  }
+  
   /// Returns a prediction.
   public mutating func infer(
-    knownStart: FrameVariables
+    knownStart: FrameVariables,
+    withSampling samplingFlag: Bool = false
   ) -> VariableAssignments {
     // Set the first variable to the known starting position.
     var x = variableTemplate
     x[frameVariableIDs[0]] = knownStart
-
+    
     // Initialize the variables one frame at a time. Each iteration intializes the `i+1`-th
     // variable.
     for i in 0..<(frames.count - 1) {
       print("Inferring for frame \(i + 1) of \(frames.count - 1)")
-
-      // Set the initial guess of the `i+1`-th variable to the value of the previous variable.
-      x[frameVariableIDs[i + 1]] = x[frameVariableIDs[i], as: FrameVariables.self]
-
-      // Create a tracking factor graph on just the `i+1`-th variable.
-      var g = graph(on: (i + 1)..<(i + 2))
-
-      // The `i`-th variable is already initialized well, so add a prior factor that it stays
-      // near its current position.
-      addFixedBetweenFactor(x[frameVariableIDs[i]], frameVariableIDs[i + 1], &g)
-
-//      let previousVarID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
-//      let currentVarID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
-//      let previousPose = x[previousVarID]
-//      var bestPose = x[currentVarID]
-//      var bestError = g.error(at: x)
-//      for _ in 0..<5 {
-//        let noise = Tensor<Double>(randomNormal: [3]).scalars
-//        x[currentVarID] = previousPose.retract(Vector3(
-//          0.3 * noise[0],
-//          8 * noise[1],
-//          4.6 * noise[2]))
-//        try? optimizer.optimize(graph: g, initial: &x)
-//        let candidateError = g.error(at: x)
-//        if candidateError < bestError {
-//          bestError = candidateError
-//          bestPose = x[currentVarID]
-//        }
-//      }
-//      x[currentVarID] = bestPose
-
-    // Optimize the factor graph.
-    try? optimizer.optimize(graph: g, initial: &x)
+      extendTrack(x: &x, fromFrame:i, withSampling:samplingFlag)
     }
-
-    // We could also do a final optimization on all the variables jointly here.
-
+    
+    // TODO: We could also do a final optimization on all the variables jointly here.
+    
     return x
   }
-}
-
-/// Returns a tracking configuration for a tracker using an RAE.
-///
-/// Parameter model: The RAE model to use.
-/// Parameter statistics: Normalization statistics for the frames.
-/// Parameter frames: The frames of the video where we want to run tracking.
-/// Parameter targetSize: The size of the target in the frames.
-public func makeRAETracker(
-  model: DenseRAE,
-  statistics: FrameStatistics,
-  frames: [Tensor<Float>],
-  targetSize: (Int, Int)
-) -> TrackingConfiguration<Tuple2<Pose2, Vector10>> {
-  var variableTemplate = VariableAssignments()
-  var frameVariableIDs = [Tuple2<TypedID<Pose2>, TypedID<Vector10>>]()
-  for _ in 0..<frames.count {
-    frameVariableIDs.append(
-      Tuple2(
-        variableTemplate.store(Pose2()),
-        variableTemplate.store(Vector10())))
-  }
-  return TrackingConfiguration(
-    frames: frames,
-    variableTemplate: variableTemplate,
-    frameVariableIDs: frameVariableIDs,
-    addPriorFactor: { (variables, values, graph) -> () in
-      let (poseID, latentID) = unpack(variables)
-      let (pose, latent) = unpack(values)
-      graph.store(WeightedPriorFactor(poseID, pose, weight: 1e-2))
-      graph.store(WeightedPriorFactor(latentID, latent, weight: 1e2))
-    },
-    addTrackingFactor: { (variables, frame, graph) -> () in
-      let (poseID, latentID) = unpack(variables)
-      graph.store(
-        AppearanceTrackingFactor<Vector10>(
-          poseID, latentID,
-          measurement: statistics.normalized(frame),
-          appearanceModel: { x in
-            model.decode(x.expandingShape(at: 0)).squeezingShape(at: 0)
-          },
-          appearanceModelJacobian: { x in
-            model.decodeJacobian(x.expandingShape(at: 0))
-              .reshaped(to: [model.imageHeight, model.imageWidth, model.imageChannels, model.latentDimension])
-          },
-          targetSize: targetSize))
-    },
-    addBetweenFactor: { (variables1, variables2, graph) -> () in
-      let (poseID1, latentID1) = unpack(variables1)
-      let (poseID2, latentID2) = unpack(variables2)
-      graph.store(WeightedBetweenFactor(poseID1, poseID2, Pose2(), weight: 1e-2))
-      graph.store(WeightedBetweenFactor(latentID1, latentID2, Vector10(), weight: 1e2))
-    })
-}
-
-/// Returns a tracking configuration for a tracker using an PPCA.
-///
-/// Parameter model: The PPCA model to use.
-/// Parameter statistics: Normalization statistics for the frames.
-/// Parameter frames: The frames of the video where we want to run tracking.
-/// Parameter targetSize: The size of the target in the frames.
-public func makePPCATracker(
-  model: PPCA,
-  statistics: FrameStatistics,
-  frames: [Tensor<Float>],
-  targetSize: (Int, Int)
-) -> TrackingConfiguration<Tuple2<Pose2, Vector10>> {
-  var variableTemplate = VariableAssignments()
-  var frameVariableIDs = [Tuple2<TypedID<Pose2>, TypedID<Vector10>>]()
-  for _ in 0..<frames.count {
-    frameVariableIDs.append(
-      Tuple2(
-        variableTemplate.store(Pose2()),
-        variableTemplate.store(Vector10())))
-  }
-  return TrackingConfiguration(
-    frames: frames,
-    variableTemplate: variableTemplate,
-    frameVariableIDs: frameVariableIDs,
-    addPriorFactor: { (variables, values, graph) -> () in
-      let (poseID, latentID) = unpack(variables)
-      let (pose, latent) = unpack(values)
-      graph.store(WeightedPriorFactor(poseID, pose, weight: 1e-2))
-      graph.store(WeightedPriorFactor(latentID, latent, weight: 1e2))
-    },
-    addTrackingFactor: { (variables, frame, graph) -> () in
-      let (poseID, latentID) = unpack(variables)
-      graph.store(
-        AppearanceTrackingFactor<Vector10>(
-          poseID, latentID,
-          measurement: statistics.normalized(frame),
-          appearanceModel: { x in
-            model.decode(x)
-          },
-          appearanceModelJacobian: { x in
-            model.W // .reshaped(to: [targetSize.0, targetSize.1, frames[0].shape[3], model.latent_size])
-          },
-          targetSize: targetSize
-        )
-      )
-    },
-    addBetweenFactor: { (variables1, variables2, graph) -> () in
-      let (poseID1, latentID1) = unpack(variables1)
-      let (poseID2, latentID2) = unpack(variables2)
-      graph.store(WeightedBetweenFactor(poseID1, poseID2, Pose2(), weight: 1e-2))
-      graph.store(WeightedBetweenFactor(latentID1, latentID2, Vector10(), weight: 1e2))
-    })
-}
-
-/// Returns a tracking configuration for a raw pixel tracker.
-///
-/// Parameter frames: The frames of the video where we want to run tracking.
-/// Parameter target: The pixels of the target.
-public func makeRawPixelTracker(
-  frames: [Tensor<Float>],
-  target: Tensor<Float>
-) -> TrackingConfiguration<Tuple1<Pose2>> {
-  var variableTemplate = VariableAssignments()
-  var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()
-  for _ in 0..<frames.count {
-    frameVariableIDs.append(
-      Tuple1(
-        variableTemplate.store(Pose2())))
-  }
-  return TrackingConfiguration(
-    frames: frames,
-    variableTemplate: variableTemplate,
-    frameVariableIDs: frameVariableIDs,
-    addPriorFactor: { (variables, values, graph) -> () in
-      let poseID = variables.head
-      let pose = values.head
-      graph.store(WeightedPriorFactor(poseID, pose, weight: 1e0))
-    },
-    addTrackingFactor: { (variables, frame, graph) -> () in
-      let poseID = variables.head
-      graph.store(
-        RawPixelTrackingFactor(poseID, measurement: frame, target: Tensor<Double>(target)))
-    },
-    addBetweenFactor: { (variables1, variables2, graph) -> () in
-      let poseID1 = variables1.head
-      let poseID2 = variables2.head
-      graph.store(WeightedBetweenFactor(poseID1, poseID2, Pose2(), weight: 1e0))
-    })
-}
-
-/// Returns `t` as a Swift tuple.
-fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
-  return (t.head, t.tail.head)
-}
-
-/// Returns `t` as a Swift tuple.
-fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
-  return (t.head)
-}
-
-/// Returns a tracking configuration for a tracker using an random projection.
-///
-/// Parameter model: The random projection model to use.
-/// Parameter statistics: Normalization statistics for the frames.
-/// Parameter frames: The frames of the video where we want to run tracking.
-/// Parameter targetSize: The size of the target in the frames.
-public func makeRandomProjectionTracker(
-  model: RandomProjection,
-  statistics: FrameStatistics,
-  frames: [Tensor<Float>],
-  targetSize: (Int, Int),
-  foregroundModel: MultivariateGaussian,
-  backgroundModel: GaussianNB
-) -> TrackingConfiguration<Tuple1<Pose2>> {
-  var variableTemplate = VariableAssignments()
-  var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()
-  for _ in 0..<frames.count {
-    frameVariableIDs.append(
-      Tuple1(
-        variableTemplate.store(Pose2())
-        ))
-  }
-
-  let addPrior = { (variables: Tuple1<TypedID<Pose2>>, values: Tuple1<Pose2>, graph: inout FactorGraph) -> () in
-    let (poseID) = unpack(variables)
-    let (pose) = unpack(values)
-    graph.store(WeightedPriorFactorPose2(poseID, pose, weight: 1e-2, rotWeight: 2e2))
-  }
-
-  let addTrackingFactor = { (variables: Tuple1<TypedID<Pose2>>, frame: Tensor<Float>, graph: inout FactorGraph) -> () in
-    let (poseID) = unpack(variables)
-    graph.store(
-      ProbablisticTrackingFactor(poseID,
-        measurement: statistics.normalized(frame),
-        encoder: model,
-        patchSize: targetSize,
-        appearanceModelSize: targetSize,
-        foregroundModel: foregroundModel,
-        backgroundModel: backgroundModel,
-        maxPossibleNegativity: 1e2
-      )
-    )
-  }
-
-  return TrackingConfiguration(
-    frames: frames,
-    variableTemplate: variableTemplate,
-    frameVariableIDs: frameVariableIDs,
-    addPriorFactor: addPrior,
-    addTrackingFactor: addTrackingFactor,
-    addBetweenFactor: { (variables1, variables2, graph) -> () in
-      let (poseID1) = unpack(variables1)
-      let (poseID2) = unpack(variables2)
-      graph.store(WeightedBetweenFactorPose2(poseID1, poseID2, Pose2(), weight: 1e-2, rotWeight: 2e2))
-    },
-    addFixedBetweenFactor: { (values, variables, graph) -> () in
-      let (prior) = unpack(values)
-      let (poseID) = unpack(variables)
-      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 4.6, sdTheta: 0.3))
-    })
 }
 
 /// Get the foreground and background batches
@@ -564,12 +332,13 @@ public func trainRPTracker(
 public func createSingleTrack(
   onTrack trackId: Int,
   withTracker tracker: inout TrackingConfiguration<Tuple1<Pose2>>,
-  andTestData testData: OISTBeeVideo
+  andTestData testData: OISTBeeVideo,
+  withSampling samplingFlag: Bool = false
 ) -> ([Pose2], [Pose2]) {
   precondition(trackId < testData.tracks.count, "specified track does not exist!!!")
 
   let startPose = testData.tracks[trackId].boxes[0].center
-  let prediction = tracker.infer(knownStart: Tuple1(startPose))
+  let prediction = tracker.infer(knownStart: Tuple1(startPose), withSampling: samplingFlag)
   let track = tracker.frameVariableIDs.map { prediction[unpack($0)] }
   let groundTruth = testData.tracks[trackId].boxes.map { $0.center }
   return (track, groundTruth)
@@ -579,22 +348,27 @@ public func createSingleTrack(
 /// Given a training set, it will train an RP tracker
 /// and run it on one track in the test set:
 ///  - output: image with track and overlap metrics
-public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int = 80) -> PythonObject {
+public func runRPTracker(
+  directory: URL, onTrack trackIndex: Int, forFrames: Int = 80,
+  withSampling samplingFlag: Bool = false,
+  withFeatureSize d: Int = 100,
+  savePatchesIn resultDirectory: String? = nil
+) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
   let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
 
-  precondition(testData.tracks.count == forFrames, "track length and required does not match")
+  precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
   
   var tracker = trainRPTracker(
     trainingData: trainingData,
-    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100
+    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d
   )
   
   // Run the tracker and return track with ground truth
   let (track, groundTruth) = createSingleTrack(
     onTrack: trackIndex, withTracker: &tracker,
-    andTestData: testData
+    andTestData: testData, withSampling: samplingFlag
   )
   
   // Now create trajectory and metrics plot
@@ -609,5 +383,22 @@ public func runRPTracker(directory: URL, onTrack trackIndex: Int, forFrames: Int
     track: track, withGroundTruth: groundTruth, on: axes[1]
   )
 
-  return fig
+  if let dir = resultDirectory {
+    /// Plot all the frames so we can visually inspect the situation
+    for i in track.indices {
+      let (fig_initial, _) = plotPatchWithGT(frame: testData.frames[i], actual: track[i], expected: groundTruth[i])
+      fig_initial.savefig("\(dir)/frank02_1st_img_track\(trackIndex)_\(d)_\(i).png", bbox_inches: "tight")
+    }
+  }
+
+  return (fig, track, groundTruth)
+}
+
+/// Returns `t` as a Swift tuple.
+fileprivate func unpack<A, B>(_ t: Tuple2<A, B>) -> (A, B) {
+  return (t.head, t.tail.head)
+}
+/// Returns `t` as a Swift tuple.
+fileprivate func unpack<A>(_ t: Tuple1<A>) -> (A) {
+  return (t.head)
 }

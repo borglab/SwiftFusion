@@ -451,7 +451,7 @@ struct TrainRAE: ParsableCommand {
 
     let dataset: OISTBeeVideo = { () -> OISTBeeVideo in
       startTimer("DATASET_LOAD")
-      return OISTBeeVideo(deferLoadingFrames: true)!
+      return OISTBeeVideo(directory: URL(fileURLWithPath: "./OIST_Data"), deferLoadingFrames: true)!
     }()
 
     stopTimer("DATASET_LOAD")
