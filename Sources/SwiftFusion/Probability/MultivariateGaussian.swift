@@ -47,6 +47,13 @@ public struct MultivariateGaussian: GenerativeDensity {
     self.regularizer = regularizer
   }
 
+  /// Initalize by fitting the model to the data
+  ///  - data: Tensor of shape [N, <dims>]
+  public init(from data: Tensor<Double>) {
+    self.init(dims: data.shape.dropFirst())
+    fit(data)
+  }
+  
   /// Fit the model to the data
   ///  - data: Tensor of shape [N, <dims>]
   public mutating func fit(_ data: Tensor<Double>) {

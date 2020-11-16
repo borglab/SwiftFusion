@@ -38,6 +38,13 @@ public struct GaussianNB: GenerativeDensity {
     self.regularizer = regularizer
   }
 
+  /// Initalize by fitting the model to the data
+  ///  - data: Tensor of shape [N, <dims>]
+  public init(from imageBatch: Tensor<Double>) {
+    self.init(dims: imageBatch.shape.dropFirst())
+    fit(imageBatch)
+  }
+
   /// Fit the model to the data
   ///  - data: Tensor of shape [N, <dims>]
   public mutating func fit(_ data: Tensor<Double>) {

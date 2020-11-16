@@ -39,13 +39,11 @@ final class MultivariateGaussianTests: XCTestCase {
   func testMultivariateNegativeLogLikelihood() {
     let data = T([[1.5, 0.9], [0.5, 1.9], [1.0, 1.5]])
     
-    var model = MultivariateGaussian(dims: data.shape.dropFirst())
-    
-    model.fit(data)
-    
+    let model = MultivariateGaussian(from: data)
+        
     XCTAssertEqual(
       model.negativeLogLikelihood(T([1.0, 1.5])),
-      1.33333333,
+      1.33333333 / 2.0,
       accuracy: 1e-5
     )
   }
