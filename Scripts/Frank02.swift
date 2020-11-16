@@ -19,6 +19,7 @@ struct Frank02: ParsableCommand {
 
   // Just runs an RP tracker and saves image to file
   // Make sure you have a folder `Results/frank02` before running
+  // TODO: use the generic version instead, remove runRPTracker
   func run() {
     let (fig, _, _) = runRPTracker(
       directory: URL(fileURLWithPath: "./OIST_Data"),
