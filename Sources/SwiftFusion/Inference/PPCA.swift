@@ -75,22 +75,24 @@ public struct PPCA {
     let (N_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
     
     self.mu = images.mean(squeezingAxes: [0])
-    let images_flattened = (images - mu).reshaped(to: [N_, H_ * W_ * C_]).transposed()
-    let (J_s, J_u, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
+    let d = H_ * W_ * C_
+    let images_flattened = (images - mu).reshaped(to: [N_, d]).transposed()
+    /// U.shape should be [d, rank]
+    let (S, U, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
+
+    let sigma_2 = S[latent_size...].mean()
     
-    let sigma_2 = J_s[latent_size...].mean()
-    
-    self.Ut = J_u![0..<J_u!.shape[0], 0..<latent_size].transposed()
+    self.Ut = U![TensorRange.ellipsis, 0..<latent_size].transposed()
 
     self.W = matmul(
       self.Ut!.transposed(),
-      (J_s[0..<latent_size] - sigma_2).diagonal()
+      (S[0..<latent_size] - sigma_2).diagonal()
     ).reshaped(to: [H_, W_, C_, latent_size])
 
     // TODO: Cache A^TA?
     if self.W_inv == nil {
-      // self.W_inv = pinv(W.reshaped(to: [H_ * W_ * C_, latent_size]))
-      let W_m = W.reshaped(to: [H_ * W_ * C_, latent_size])
+      // self.W_inv = pinv(W.reshaped(to: [d, latent_size]))
+      let W_m = W.reshaped(to: [d, latent_size])
       self.W_inv = matmul(pinv(matmul(W_m.transposed(), W_m)), W_m.transposed())
     }
   }
@@ -112,10 +114,14 @@ public struct PPCA {
   @differentiable
   public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3 || (image.rank == 4), "wrong latent dimension \(image.shape)")
-    let (H_, W_, C_) = (W.shape[0], W.shape[1], W.shape[2])
+    let (N_, H_, W_, C_) = (image.shape[0], W.shape[0], W.shape[1], W.shape[2])
     if image.rank == 4 {
-      let v_T = (image - mu).reshaped(to: [H_ * W_ * C_, image.shape[0]]).transposed()
-      return matmul(v_T, W_inv!.transposed()).reshaped(to: [image.shape[0], latent_size])
+      if N_ == 1 {
+        return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [1, latent_size])
+      } else {
+        let v_T = (image - mu).reshaped(to: [H_ * W_ * C_, N_]).transposed()
+        return matmul(v_T, W_inv!.transposed()).reshaped(to: [N_, latent_size])
+      }
     } else {
       return matmul(W_inv!, (image - mu).reshaped(to: [H_ * W_ * C_, 1])).reshaped(to: [latent_size])
     }

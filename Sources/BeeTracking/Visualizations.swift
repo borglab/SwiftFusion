@@ -40,7 +40,7 @@ public func plotTrajectory(track: [Pose2], withGroundTruth expected: [Pose2], on
 }
 
 /// Plot the tracking metrics
-public func plotMetrics(
+public func plotOverlap(
   track: [Pose2], withGroundTruth expected: [Pose2], on ax: PythonObject,
   boxSize: (Int, Int) = (40, 70)
 ) {
@@ -50,9 +50,8 @@ public func plotMetrics(
   }
   let metrics = SubsequenceMetrics(groundTruth: expected.map(box), prediction: track.map(box))
 
-  let eao = ExpectedAverageOverlap([metrics])
-  ax.plot(eao.curve)
-  ax.set_title("Expected Average Overlap")
+  ax.plot(metrics.overlap)
+  ax.set_title("Overlap")
 }
 
 /// plot Comparison image

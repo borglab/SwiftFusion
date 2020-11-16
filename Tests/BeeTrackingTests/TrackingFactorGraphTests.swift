@@ -15,7 +15,9 @@ class TrackingFactorGraphTests: XCTestCase {
 
     let (fg, bg, _) = getTrainingBatches(
       dataset: dataset, boundingBoxSize: (40, 70),
-      fgBatchSize: 10, bgBatchSize: 11, bgRandomFrameCount: 1
+      fgBatchSize: 10, bgBatchSize: 11, 
+      fgRandomFrameCount: 1,
+      bgRandomFrameCount: 1
     )
 
     XCTAssertEqual(fg.shape, TensorShape([10, 40, 70, 1]))
@@ -29,6 +31,7 @@ class TrackingFactorGraphTests: XCTestCase {
     let tracker : TrackingConfiguration<Tuple1<Pose2>> = trainRPTracker(
       trainingData: trainingData,
       frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100,
+      fgRandomFrameCount: 1,
       bgRandomFrameCount: 1
     )
 
@@ -41,6 +44,7 @@ class TrackingFactorGraphTests: XCTestCase {
     var tracker = trainRPTracker(
       trainingData: trainingData,
       frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100,
+      fgRandomFrameCount: 2,
       bgRandomFrameCount: 2
     )
     
