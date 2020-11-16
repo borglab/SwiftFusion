@@ -28,22 +28,23 @@ struct Fan04: ParsableCommand {
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
     let (imageHeight, imageWidth) = (40, 70)
 
-    // var ppca = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, 1]), toFeatureSize: featureSize)
-    var pca = PCAEncoder(latentSize: featureSize)
-
-    /// Training mode, trains the PPCA model and save to cache file
-    if training {
-      let pcaTrainingData = OISTBeeVideo(directory: dataDir, length: 100)!
-      var statistics = FrameStatistics(Tensor<Double>(0.0))
-      statistics.mean = Tensor(62.26806976644069)
-      statistics.standardDeviation = Tensor(37.44683834503672)
-      let trainingBatch = pcaTrainingData.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
-      pca.train(images: trainingBatch)
-      np.save("./pca_U_\(featureSize)", pca.U!.makeNumpyArray())
-    } else {
-      /// Just load the cached weight matrix
-      pca.U = Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!
-    }
+    // var pca = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, 1]), toFeatureSize: featureSize)
+    let pca: PCAEncoder = { () -> PCAEncoder in
+      /// Training mode, trains the PPCA model and save to cache file
+      if training {
+        let pcaTrainingData = OISTBeeVideo(directory: dataDir, length: 100)!
+        var statistics = FrameStatistics(Tensor<Double>(0.0))
+        statistics.mean = Tensor(62.26806976644069)
+        statistics.standardDeviation = Tensor(37.44683834503672)
+        let trainingBatch = pcaTrainingData.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
+        let encoder = PCAEncoder(from: trainingBatch, given: featureSize)
+        np.save("./pca_U_\(featureSize)", encoder.U.makeNumpyArray())
+        return encoder
+      } else {
+        /// Just load the cached weight matrix
+        return PCAEncoder(withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!)
+      }
+    }()
 
     let (fig, _, _) = runProbabilisticTracker(
       directory: dataDir,

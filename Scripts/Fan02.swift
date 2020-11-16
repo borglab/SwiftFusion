@@ -5,29 +5,73 @@ import BeeDataset
 import BeeTracking
 import PythonKit
 import Foundation
+import TensorFlow
 
 /// Fan02: Random Projections Error Landscape
 struct Fan02: ParsableCommand {
-  @Option(help: "Run on track number x")
-  var trackId: Int = 0
-  
-  @Option(help: "Run for number of frames")
-  var trackLength: Int = 80
-  
   @Option(help: "Size of feature space")
   var featureSize: Int = 100
 
-  // Just runs an RP tracker and saves image to file
+  // Visualize error landscape of PCA
   // Make sure you have a folder `Results/fan02` before running
   func run() {
-    let (fig, _, _) = runRPTracker(
-      directory: URL(fileURLWithPath: "./OIST_Data"),
-      onTrack: trackId, forFrames: trackLength, withSampling: true,
-      withFeatureSize: featureSize,
-      savePatchesIn: "Results/fan02"
+    let dataDir = URL(fileURLWithPath: "./OIST_Data")
+
+    let np = Python.import("numpy")
+    let plt = Python.import("matplotlib.pyplot")
+    
+      // train foreground and background model and create tracker
+    let trainingData = OISTBeeVideo(directory: dataDir, length: 100)!
+    // let testData = OISTBeeVideo(directory: dataDir, afterIndex: 100, length: forFrames)!
+
+    // let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
+    // let encoder = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
+    let encoder = PCAEncoder(withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!)
+
+    let (fg, bg, _) = getTrainingBatches(
+      dataset: trainingData, boundingBoxSize: (40, 70),
+      fgBatchSize: 3000,
+      bgBatchSize: 3000,
+      fgRandomFrameCount: 100,
+      bgRandomFrameCount: 100,
+      useCache: true
     )
 
-    /// Actual track v.s. ground truth track
-    fig.savefig("Results/fan02/fan02_track\(trackId)_\(featureSize).pdf", bbox_inches: "tight")
+    var (foregroundModel, backgroundModel) = (
+      MultivariateGaussian(
+        dims: TensorShape([featureSize]),
+        regularizer: 1e-3
+      ), GaussianNB(
+        dims: TensorShape([featureSize]),
+        regularizer: 1e-3
+      )
+    )
+
+    let batchPositive = encoder.encode(fg)
+    foregroundModel.fit(batchPositive)
+
+    let batchNegative = encoder.encode(bg)
+    backgroundModel.fit(batchNegative)
+
+    // print(foregroundModel.covariance_inv!.diagonalPart())
+    // print(backgroundModel.sigmas!)
+
+    // for i in 0..<min(30, encoder.d) {
+    //   let (fig, ax) = plt.subplots(1, 1).tuple2
+    //   let dots = TensorRange.ellipsis
+    //   let u_plot = ax.imshow(encoder.U[dots, i].reshaped(to: [40, 70, 1]).makeNumpyArray())
+    //   fig.colorbar(u_plot, ax: ax)
+    //   fig.savefig("Results/fan02/fan02_U_\(i)_\(featureSize).pdf", bbox_inches: "tight")
+    // }
+
+    let (fig, ax) = plt.subplots(1, 2).tuple2
+    let original = fg[0]
+    let reconstructed = matmul(
+      encoder.U.reshaped(to: [40*70, featureSize]), batchPositive[0].expandingShape(at: 1)
+    ).reshaped(to: [40, 70, 1])
+
+    ax[0].imshow(original.makeNumpyArray())
+    ax[1].imshow(reconstructed.makeNumpyArray())
+    fig.savefig("Results/fan02/fan02_recon_\(featureSize).pdf", bbox_inches: "tight")
   }
 }
