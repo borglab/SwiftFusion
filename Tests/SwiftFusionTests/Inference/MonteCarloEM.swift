@@ -40,6 +40,7 @@ struct MonteCarloEM<ModelType: McEmModel> {
   /// Run Monte Carlo EM given unlabeled data
   public mutating func run(with data:[ModelType.Datum],
                            iterationCount:Int,
+                           sampleCount:Int = 5,
                            hook: Hook? = {(_,_,_) in () }) -> ModelType {
     var model = ModelType(data, using: &self.sourceOfEntropy)
     
@@ -48,7 +49,7 @@ struct MonteCarloEM<ModelType: McEmModel> {
       var labeledData = [ModelType.LabeledDatum]()
       for datum in data {
         // Given a datum and a model, sample from the hidden variables
-        let sample = model.sample(count: 5, for: datum, using: &self.sourceOfEntropy)
+        let sample = model.sample(count: sampleCount, for: datum, using: &self.sourceOfEntropy)
         labeledData.append(contentsOf: sample.map { ($0, datum) })
       }
       

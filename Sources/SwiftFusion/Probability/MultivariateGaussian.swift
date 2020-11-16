@@ -74,6 +74,7 @@ public struct MultivariateGaussian: GenerativeDensity {
   
   /// Calculated normalized probability
   @differentiable public func probability(_ sample: Tensor<Double>) -> Double {
+    // - ToDo: Precalculate constant
     let E = negativeLogLikelihood(sample)
     return exp(-E)*sqrt(_Raw.matrixDeterminant(covariance_inv!/(2.0 * .pi)).scalarized())
   }

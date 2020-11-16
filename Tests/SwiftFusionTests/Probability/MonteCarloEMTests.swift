@@ -64,7 +64,7 @@ final class MonteCarloEMTests: XCTestCase {
   /// Test fitting a simple 2-component mixture
   func testTwoComponents() {
     var em = MonteCarloEM<TwoComponents>(sourceOfEntropy: deterministicEntropy)
-    let model : TwoComponents = em.run(with:data, iterationCount: 10, hook: {       print("iteration \($0)", $1.map {(label,_) in label == .one ? 1 : 2}, $2.c1.mean!, $2.c2.mean!)})
+    let model : TwoComponents = em.run(with:data, iterationCount: 5, hook: {       print("iteration \($0)", $1.map {(label,_) in label == .one ? 1 : 2}, $2.c1.mean!, $2.c2.mean!)})
     assertEqual(model.c1.mean!, Tensor<Double>([1.0, 2.0]), accuracy: 0.2)
     assertEqual(model.c2.mean!, Tensor<Double>([6.0, 8.0]), accuracy: 0.2)
   }
