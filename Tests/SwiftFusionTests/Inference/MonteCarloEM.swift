@@ -19,23 +19,25 @@ import XCTest
 public protocol McEmModel {
   associatedtype Datum /// main data a model is trained with
   associatedtype Hidden /// type for hidden variable associated with a Datum
-  typealias LabeledDatum = (Hidden, Datum)
   associatedtype HyperParameters
+  typealias LabeledDatum = (Hidden, Datum)
+
   init(from data: [Datum],
        using sourceOfEntropy: inout AnyRandomNumberGenerator,
        given: HyperParameters?)
   func sample(count:Int,
               for datum: Datum,
               using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden]
-  mutating func fit(_ labeledData: [LabeledDatum])
+  init(from labeledData: [LabeledDatum], given: HyperParameters?)
 }
 
 public extension McEmModel {
   /// Extension allows to have a default nil parameter
-  init(_ data: [Datum],
-       using sourceOfEntropy: inout AnyRandomNumberGenerator,
-       given: HyperParameters? = nil) {
+  init(from data: [Datum], using sourceOfEntropy: inout AnyRandomNumberGenerator) {
     self.init(from: data, using: &sourceOfEntropy, given: nil)
+  }
+  init(from labeledData: [LabeledDatum]) {
+    self.init(from: labeledData, given: nil)
   }
 }
 
@@ -54,7 +56,7 @@ public struct MonteCarloEM<ModelType: McEmModel> {
                            iterationCount:Int,
                            sampleCount:Int = 5,
                            hook: Hook? = {(_,_,_) in () }) -> ModelType {
-    var model = ModelType(data, using: &self.sourceOfEntropy)
+    var model = ModelType(from: data, using: &self.sourceOfEntropy)
     
     for i in 1...iterationCount {
       // Monte-Carlo E-step: given current model, sample hidden variables for each datum
@@ -66,7 +68,7 @@ public struct MonteCarloEM<ModelType: McEmModel> {
       }
       
       // M-step: fit model using labeled datums
-      model.fit(labeledData)
+      model = ModelType(from: labeledData)
       
       // Call hook if given
       hook?(i, labeledData, model)

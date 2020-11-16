@@ -18,6 +18,7 @@ import TensorFlow
 ///
 /// This is a density where each dimension has its own 1-d Gaussian density.
 public struct GaussianNB: GenerativeDensity {
+  public typealias HyperParameters = Double /// Just the regularizer
   public let dims: TensorShape
 
   /// Sample standard deviation
@@ -40,7 +41,6 @@ public struct GaussianNB: GenerativeDensity {
 
   /// Initalize by fitting the model to the data
   ///  - data: Tensor of shape [N, <dims>]
-  public typealias HyperParameters = ()
   public init(from data: Tensor<Double>, given p:HyperParameters? = nil) {
     self.init(dims: data.shape.dropFirst())
     fit(data)

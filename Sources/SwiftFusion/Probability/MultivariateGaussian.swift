@@ -17,10 +17,10 @@ import TensorFlow
 /// Calculate the covariance of a data matrix
 /// preconditon: X.rank == 2
 public func cov(_ X: Tensor<Double>) -> Tensor<Double> {
-    precondition(X.rank == 2, "cov() can only handle 2D data")
-    let X_norm = X - X.mean(squeezingAxes: 0)
-    let N = X.shape[0]
-    return matmul(X_norm.transposed(), X_norm) / Double(N - 1)
+  precondition(X.rank == 2, "cov() can only handle 2D data")
+  let X_norm = X - X.mean(squeezingAxes: 0)
+  let N = X.shape[0]
+  return matmul(X_norm.transposed(), X_norm) / Double(N - 1)
 }
 
 /// A Multivariate Gaussian Density
@@ -28,52 +28,46 @@ public func cov(_ X: Tensor<Double>) -> Tensor<Double> {
 /// This is a density where all dimensions
 /// share one multivariate Gaussian density.
 public struct MultivariateGaussian: GenerativeDensity {
-  public let dims: TensorShape
-
-  /// Sample standard deviation
-  public var covariance_inv: Optional<Tensor<Double>> = nil
-
-  /// Sample Mean
-  public var mean: Optional<Tensor<Double>> = nil
-
-  /// This avoids division by zero when the data is zero variance
-  public var regularizer: Double
-
-  /// Initialize a Multivariate Gaussian Model
-  /// Note: only supports 1-d data points
-  public init(dims: TensorShape, regularizer: Double = 1e-10) {
-    precondition(dims.count == 1, "Multivariate Gaussian only support 1-d tensor input")
-    self.dims = dims
-    self.regularizer = regularizer
-  }
-
-  /// Initalize by fitting the model to the data
-  ///  - data: Tensor of shape [N, <dims>]
-  public typealias HyperParameters = ()
-  public init(from data: Tensor<Double>, given p:HyperParameters? = nil) {
-    self.init(dims: data.shape.dropFirst())
-    fit(data)
+  public typealias T = Tensor<Double>
+  public typealias HyperParameters = Double /// Just the regularizer
+  
+  public let mean: T /// mean
+  public let information: T /// Information matrix
+  public let constant : Double /// normalization constant
+  
+  /**
+   Initialize a Multivariate Gaussian Model
+   - Parameters:
+    - mean: n-dimensional vector
+    - information: information matrix of shape [n,n]
+   */
+  public init(mean: T, information: T) {
+    precondition(mean.rank == 1, "mean has to be a vector")
+    let n = mean.shape[0]
+    precondition(information.shape == [n,n], "information has to be nxn")
+    self.mean = mean
+    self.information = information
+    self.constant = sqrt(_Raw.matrixDeterminant(information/(2.0 * .pi)).scalarized())
   }
   
-  /// Fit the model to the data
+  /// Initalize by fitting the model to the data
   ///  - data: Tensor of shape [N, <dims>]
-  public mutating func fit(_ data: Tensor<Double>) {
-    assert(data.shape.dropFirst() == dims)
-
-    self.mean = data.mean(squeezingAxes: 0)
+  public init(from data: T, given p:HyperParameters? = nil) {
+    assert(data.shape.dropFirst().rank == 1)
+    let mean = data.mean(squeezingAxes: 0)
     let cov_data = cov(data)
-    let regularized_cov = cov_data.withDiagonal(cov_data.diagonalPart() + regularizer)
-    self.covariance_inv = pinv(regularized_cov)
+    let r = p ?? 1e-10
+    let regularized_cov = cov_data.withDiagonal(cov_data.diagonalPart() + r)
+    self.init(mean:mean, information: pinv(regularized_cov))
   }
-
+  
   /// Calculated the negative log likelihood of *one* data point
   /// Note this is NOT normalized probability
-  @differentiable public func negativeLogLikelihood(_ sample: Tensor<Double>) -> Double {
-    precondition(sample.shape == self.dims)
-
-    let normalized = (sample - mean!).expandingShape(at: 1)
+  @differentiable public func negativeLogLikelihood(_ sample: T) -> Double {
+    precondition(sample.shape == mean.shape)
+    let normalized = (sample - mean).expandingShape(at: 1)
     /// FIXME: this is a workaround for bug in the derivative of `.scalarized()`
-    let t = matmul(normalized, transposed: true, matmul(covariance_inv!, normalized)).withDerivative {
+    let t = matmul(normalized, transposed: true, matmul(information, normalized)).withDerivative {
       $0 = $0.reshaped(to: [1, 1])
     }
     
@@ -81,9 +75,9 @@ public struct MultivariateGaussian: GenerativeDensity {
   }
   
   /// Calculated normalized probability
-  @differentiable public func probability(_ sample: Tensor<Double>) -> Double {
+  @differentiable public func probability(_ sample: T) -> Double {
     // - ToDo: Precalculate constant
     let E = negativeLogLikelihood(sample)
-    return exp(-E)*sqrt(_Raw.matrixDeterminant(covariance_inv!/(2.0 * .pi)).scalarized())
+    return exp(-E) * self.constant
   }
 }

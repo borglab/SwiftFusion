@@ -22,7 +22,7 @@ public protocol GenerativeDensity {
 
 public extension GenerativeDensity {
   /// Extension allows to have a default nil parameter
-  init(from data: Tensor<Double>, given: HyperParameters? = nil) {
+  init(from data: Tensor<Double>) {
     self.init(from: data, given: nil)
   }
 }

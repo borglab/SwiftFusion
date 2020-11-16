@@ -22,9 +22,7 @@ import XCTest
 struct TwoComponents : McEmModel {
   typealias Datum = Tensor<Double>
   enum Hidden { case one; case two}
-  struct HyperParameters {
-    var regularizer : Double = 1e-2
-  }
+  typealias HyperParameters = MultivariateGaussian.HyperParameters
 
   var c1, c2 : MultivariateGaussian
   
@@ -32,13 +30,8 @@ struct TwoComponents : McEmModel {
   init(from data:[Datum],
        using sourceOfEntropy: inout AnyRandomNumberGenerator,
        given p: HyperParameters?) {
-    let r = p?.regularizer
-    c1 = MultivariateGaussian(dims:[2], regularizer:r ?? 1e-2)
-    c1.covariance_inv = eye(rowCount: 2)
-    c1.mean = data[0]
-    c2 = MultivariateGaussian(dims:[2], regularizer:r ?? 1e-2)
-    c2.covariance_inv = eye(rowCount: 2)
-    c2.mean = data[1]
+    c1 = MultivariateGaussian(mean:data[0], information: eye(rowCount: 2))
+    c2 = MultivariateGaussian(mean:data[1], information: eye(rowCount: 2))
   }
   
   /// Given a datum and a model, sample from the hidden variables
@@ -54,24 +47,24 @@ struct TwoComponents : McEmModel {
   }
   
   /// Given an array of labeled datums, fit the two Gaussian mixture components
-  mutating func fit(_ labeledData: [LabeledDatum]) {
+  init(from labeledData: [LabeledDatum], given p: HyperParameters?=nil) {
     let data1 = labeledData.filter { $0.0 == .one}
     let data2 = labeledData.filter { $0.0 == .two}
-    c1.fit(Tensor<Double>(data1.map { $0.1 }))
-    c2.fit(Tensor<Double>(data2.map { $0.1 }))
+    self.c1 = MultivariateGaussian(from: Tensor<Double>(data1.map { $0.1 }), given:p)
+    self.c2 = MultivariateGaussian(from: Tensor<Double>(data2.map { $0.1 }), given:p)
   }
 }
 
 final class MonteCarloEMTests: XCTestCase {
   let data = [[1.0, 2.0], [1.0, 2.1], [6.0, 8.0], [6.2, 7.9]].map { Tensor<Double>($0)}
   
-  let deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
+  let deterministicEntropy = ARC4RandomNumberGenerator(seed: 11)
   
   /// Test fitting a simple 2-component mixture
   func testTwoComponents() {
     var em = MonteCarloEM<TwoComponents>(sourceOfEntropy: deterministicEntropy)
     let model : TwoComponents = em.run(with:data, iterationCount: 5)
-    assertEqual(model.c1.mean!, Tensor<Double>([1.0, 2.0]), accuracy: 0.2)
-    assertEqual(model.c2.mean!, Tensor<Double>([6.0, 8.0]), accuracy: 0.2)
+    assertEqual(model.c1.mean, Tensor<Double>([1.0, 2.0]), accuracy: 0.2)
+    assertEqual(model.c2.mean, Tensor<Double>([6.0, 8.0]), accuracy: 0.2)
   }
 }

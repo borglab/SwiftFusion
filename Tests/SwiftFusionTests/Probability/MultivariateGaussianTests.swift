@@ -50,10 +50,7 @@ final class MultivariateGaussianTests: XCTestCase {
   
   /// Test  negative log likelihood and probability for simple case
   func testMultivariateProbability() {
-    var model = MultivariateGaussian(dims:[2])
-    model.covariance_inv = eye(rowCount: 2)
-    model.mean = T(zeros:[2])
-    
+    let model = MultivariateGaussian(mean: T(zeros:[2]), information: eye(rowCount: 2))
     let v = T([1, 2])
     let expectedE : Double = (1+4)/2
     XCTAssertEqual(model.negativeLogLikelihood(v), expectedE, accuracy: 1e-5)
