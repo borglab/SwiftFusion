@@ -44,8 +44,8 @@ final class MultivariateGaussianTests: XCTestCase {
     model.fit(data)
     
     XCTAssertEqual(
-      model.negativeLogLikelihood(T([1.0, 1.5])),
-      1.33333333,
+      model.negativeLogLikelihood(Tensor<Double>([1.0, 1.5])),
+      1.33333333 / 2.0,
       accuracy: 1e-5
     )
   }

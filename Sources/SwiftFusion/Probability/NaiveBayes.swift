@@ -26,8 +26,8 @@ public struct GaussianNB: GenerativeDensity {
   /// Sample Mean
   public var mus: Optional<Tensor<Double>> = nil
 
-  /// Cached variance
-  public var sigma2s: Optional<Tensor<Double>> = nil
+  /// Cached precisions
+  public var precisions: Optional<Tensor<Double>> = nil
 
   /// This avoids division by zero when the data is zero variance
   public var regularizer: Double
@@ -45,7 +45,7 @@ public struct GaussianNB: GenerativeDensity {
 
     mus = data.mean(squeezingAxes: 0)
     sigmas = data.standardDeviation(squeezingAxes: 0) + regularizer
-    sigma2s = sigmas!.squared()
+    precisions = 1.0 / sigmas!.squared()
   }
 
   /// Calculated the negative log likelihood of *one* data point
@@ -53,8 +53,8 @@ public struct GaussianNB: GenerativeDensity {
   @differentiable public func negativeLogLikelihood(_ sample: Tensor<Double>) -> Double {
     precondition(sample.shape == self.dims)
 
-    let t = (sample - mus!).squared() / (2.0 * sigma2s!)
+    let t = (sample - mus!).squared() * precisions!
 
-    return t.sum().scalarized()
+    return t.sum().scalarized() / 2.0
   }
 }

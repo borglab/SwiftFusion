@@ -201,7 +201,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
-    for _ in 0..<5 {
+    for _ in 0..<1000 {
       let noise = Tensor<Double>(randomNormal: [3]).scalars
       x[currentPoseID] = previousPose.retract(Vector3(0.3 * noise[0], 8 * noise[1],  4.6 * noise[2]))
       let candidateError = g.error(at: x)
@@ -379,7 +379,7 @@ public func runRPTracker(
     withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
   )
   
-  plotMetrics(
+  plotOverlap(
     track: track, withGroundTruth: groundTruth, on: axes[1]
   )
 
