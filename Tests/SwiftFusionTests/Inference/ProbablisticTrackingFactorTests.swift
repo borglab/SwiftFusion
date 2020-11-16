@@ -18,20 +18,6 @@ import SwiftFusion
 import XCTest
 
 final class ProbablisticTrackingFactorTests: XCTestCase {
-  func testCreation() {
-    var v = VariableAssignments()
-    let poseId = v.store(Pose2())
-
-    let _ = ProbablisticTrackingFactor(poseId,
-      measurement: Tensor<Float>([[0]]),
-      encoder: PPCA(latentSize: 10),
-      patchSize: (10, 10),
-      appearanceModelSize: (10, 1),
-      foregroundModel: GaussianNB(dims: [10]),
-      backgroundModel: GaussianNB(dims: [10])
-    )
-  }
-
   /// Test sanity of the error by a simple case
   func testErrorSanity() {
     var v = VariableAssignments()
@@ -55,10 +41,6 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     W_inv[0, 1, 1, 0] = Tensor(1.0)
     encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
-    /// Training foreground and background models
-    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
-    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
-    
     var data_fg = Tensor<Double>(zeros: [2, 10])
     var data_bg = Tensor<Double>(zeros: [2, 10])
 
@@ -68,16 +50,17 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     data_bg[0, 2] = Tensor(1.1)
     data_bg[1, 2] = Tensor(0.9)
 
-    fg_model.fit(data_fg)
-    bg_model.fit(data_bg)
-
+    /// Training foreground and background models
+    let fgModel = GaussianNB(from: data_fg, regularizer: 1e-3)
+    let bgModel = GaussianNB(from: data_bg, regularizer: 1e-3)
+    
     let factor = ProbablisticTrackingFactor(poseId,
       measurement: image,
       encoder: encoder,
       patchSize: (3, 3),
       appearanceModelSize: (3, 3),
-      foregroundModel: fg_model,
-      backgroundModel: bg_model
+      foregroundModel: fgModel,
+      backgroundModel: bgModel
     )
     
     /// Check if we have the desired error at minima
@@ -108,10 +91,6 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     W_inv[0, 1, 1, 0] = Tensor(1.0)
     encoder.W_inv = W_inv.reshaped(to: [10, 3 * 3 * 3])
 
-    /// Training foreground and background models
-    var fg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
-    var bg_model = GaussianNB(dims: [featureDim], regularizer: 1e-3)
-    
     var data_fg = Tensor<Double>(zeros: [2, 10])
     var data_bg = Tensor<Double>(zeros: [2, 10])
 
@@ -121,16 +100,17 @@ final class ProbablisticTrackingFactorTests: XCTestCase {
     data_bg[0, 2] = Tensor(1.1)
     data_bg[1, 2] = Tensor(0.9)
 
-    fg_model.fit(data_fg)
-    bg_model.fit(data_bg)
-
+    /// Training foreground and background models
+    let fgModel = GaussianNB(from: data_fg, regularizer: 1e-3)
+    let bgModel = GaussianNB(from: data_bg, regularizer: 1e-3)
+    
     let factor = ProbablisticTrackingFactor(poseId,
       measurement: image,
       encoder: encoder,
       patchSize: (3, 3),
       appearanceModelSize: (3, 3),
-      foregroundModel: fg_model,
-      backgroundModel: bg_model
+      foregroundModel: fgModel,
+      backgroundModel: bgModel
     )
     
     var fg = FactorGraph()

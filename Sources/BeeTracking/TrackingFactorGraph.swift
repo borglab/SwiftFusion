@@ -330,21 +330,11 @@ public func trainRPTracker(
     fromShape: [boundingBoxSize.0, boundingBoxSize.1, 1], toFeatureSize: d
   )
 
-  var (foregroundModel, backgroundModel) = (
-    MultivariateGaussian(
-      dims: TensorShape([d]),
-      regularizer: 1e-3
-    ), GaussianNB(
-      dims: TensorShape([d]),
-      regularizer: 1e-3
-    )
-  )
-
   let batchPositive = randomProjector.encode(fg)
-  foregroundModel.fit(batchPositive)
+  let foregroundModel = MultivariateGaussian(from: batchPositive, given: 1e-3)
 
   let batchNegative = randomProjector.encode(bg)
-  backgroundModel.fit(batchNegative)
+  let backgroundModel = GaussianNB(from: batchNegative, given: 1e-3)
 
   let tracker = makeRandomProjectionTracker(
     model: randomProjector, statistics: statistics,

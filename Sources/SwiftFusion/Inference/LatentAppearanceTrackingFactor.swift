@@ -10,6 +10,13 @@ public protocol AppearanceModelEncoder {
   func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double>
 }
 
+public extension AppearanceModelEncoder {
+  /// Extension allows to have a default nil parameter
+  init(from imageBatch: Tensor<Double>) {
+    self.init(from: imageBatch, given: nil)
+  }
+}
+
 extension AppearanceModelEncoder {
   @differentiable
   fileprivate func encode<V: FixedSizeVector>(_ image: Tensor<Double>) -> V {

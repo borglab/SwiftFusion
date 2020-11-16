@@ -28,7 +28,7 @@ struct Fan02: ParsableCommand {
     // let encoder = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
     let encoder = PCAEncoder(withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!)
 
-    let (fg, bg, _) = getTrainingBatches(
+    let (fg, _, _) = getTrainingBatches(
       dataset: trainingData, boundingBoxSize: (40, 70),
       fgBatchSize: 3000,
       bgBatchSize: 3000,
@@ -37,21 +37,11 @@ struct Fan02: ParsableCommand {
       useCache: true
     )
 
-    var (foregroundModel, backgroundModel) = (
-      MultivariateGaussian(
-        dims: TensorShape([featureSize]),
-        regularizer: 1e-3
-      ), GaussianNB(
-        dims: TensorShape([featureSize]),
-        regularizer: 1e-3
-      )
-    )
-
     let batchPositive = encoder.encode(fg)
-    foregroundModel.fit(batchPositive)
-
-    let batchNegative = encoder.encode(bg)
-    backgroundModel.fit(batchNegative)
+//    let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
+//
+//    let batchNegative = encoder.encode(bg)
+//    let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
 
     // print(foregroundModel.covariance_inv!.diagonalPart())
     // print(backgroundModel.sigmas!)
