@@ -52,13 +52,18 @@ public struct MultivariateGaussian: GenerativeDensity {
   
   /// Initalize by fitting the model to the data
   ///  - data: Tensor of shape [N, <dims>]
-  public init(from data: T, given p:HyperParameters? = nil) {
+  public init(from data: T, regularizer r: Double) {
     assert(data.shape.dropFirst().rank == 1)
     let mean = data.mean(squeezingAxes: 0)
     let cov_data = cov(data)
-    let r = p ?? 1e-10
     let regularized_cov = cov_data.withDiagonal(cov_data.diagonalPart() + r)
     self.init(mean:mean, information: pinv(regularized_cov))
+  }
+  
+  /// Initalize by fitting the model to the data
+  ///  - data: Tensor of shape [N, <dims>]
+  public init(from data: T, given p:HyperParameters? = nil) {
+    self.init(from:data, regularizer: p ?? 1e-10)
   }
   
   /// Calculated the negative log likelihood of *one* data point

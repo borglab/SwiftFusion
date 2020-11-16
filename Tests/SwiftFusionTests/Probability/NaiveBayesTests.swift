@@ -26,8 +26,8 @@ final class NaiveBayesTests: XCTestCase {
     let sigma = Tensor<Double>.init(ones: [10, 10]) * 2.999
     let mu = Tensor<Double>.init(ones: [10, 10]) * 4.888
     
-    assertEqual(gnb.sigmas!, sigma, accuracy: 3e-1)
-    assertEqual(gnb.mus!, mu, accuracy: 3e-1)
+    assertEqual(gnb.sigmas, sigma, accuracy: 3e-1)
+    assertEqual(gnb.mu, mu, accuracy: 3e-1)
   }
 
   func testGaussianNB() {

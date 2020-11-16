@@ -91,21 +91,11 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
     useCache: true
   )
 
-  var (foregroundModel, backgroundModel) = (
-    MultivariateGaussian(
-      dims: TensorShape([d]),
-      regularizer: 1e-3
-    ), GaussianNB(
-      dims: TensorShape([d]),
-      regularizer: 1e-3
-    )
-  )
-
   let batchPositive = encoder.encode(fg)
-  foregroundModel.fit(batchPositive)
+  let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
 
   let batchNegative = encoder.encode(bg)
-  backgroundModel.fit(batchNegative)
+  let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
 
   let tracker = makeProbabilisticTracker(
     model: encoder, statistics: statistics,
