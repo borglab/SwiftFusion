@@ -7,7 +7,7 @@ import PythonKit
 import Foundation
 import TensorFlow
 
-/// Fan02: Random Projections Error Landscape
+/// Fan02: Reconstruction Evaluation
 struct Fan02: ParsableCommand {
   @Option(help: "Size of feature space")
   var featureSize: Int = 100
@@ -26,7 +26,10 @@ struct Fan02: ParsableCommand {
 
     // let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
     // let encoder = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
-    let encoder = PCAEncoder(withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!)
+    let encoder = PCAEncoder(
+      withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!,
+      andMean: Tensor<Double>(numpy: np.load("./pca_mu_\(featureSize).npy"))!
+    )
 
     let (fg, _, _) = getTrainingBatches(
       dataset: trainingData, boundingBoxSize: (40, 70),
