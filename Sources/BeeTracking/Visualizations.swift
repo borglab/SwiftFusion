@@ -142,10 +142,10 @@ public func plotErrorPlaneTranslation<
     backgroundModel: backgroundModel
   )
 
-  let trans_mins = [e, fg, bg].map { $0.min() }
-  let trans_maxs = [e, fg, bg].map { $0.max() }
-  let trans_min = Tensor<Double>(trans_mins).min().scalarized()
-  let trans_max = Tensor<Double>(trans_maxs).max().scalarized()
+  // let trans_mins = [e, fg, bg].map { $0.min() }
+  // let trans_maxs = [e, fg, bg].map { $0.max() }
+  // let trans_min = Tensor<Double>(trans_mins).min().scalarized()
+  // let trans_max = Tensor<Double>(trans_maxs).max().scalarized()
 
   // let targetSize = (40, 70)
   let (fig, axs) = plt.subplots(2, 2, figsize: Python.tuple([12, 10])).tuple2
@@ -154,17 +154,17 @@ public func plotErrorPlaneTranslation<
   ).makeNumpyArray() / 255.0, cmap: "gray")
   axs[0][0].title.set_text("Image with extra margin")
 
-  let fg_m = axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max)
+  let fg_m = axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest") // , vmin: trans_min, vmax: trans_max)
   fig.colorbar(fg_m, ax: axs[0][1])
   axs[0][1].title.set_text("Foreground Response")
   axs[0][1].set(xlabel: "x displacement", ylabel: "y displacement")
 
-  let bg_m = axs[1][0].imshow(bg.makeNumpyArray(), cmap: "hot", interpolation: "nearest" , vmin: trans_min, vmax: trans_max)
+  let bg_m = axs[1][0].imshow(bg.makeNumpyArray(), cmap: "hot", interpolation: "nearest" ) // , vmin: trans_min, vmax: trans_max)
   fig.colorbar(bg_m, ax: axs[1][0])
   axs[1][0].title.set_text("Background Response")
   axs[1][0].set(xlabel: "x displacement", ylabel: "y displacement")
 
-  let pcm = axs[1][1].imshow(e.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max)
+  let pcm = axs[1][1].imshow(e.makeNumpyArray(), cmap: "hot", interpolation: "nearest") // , vmin: trans_min, vmax: trans_max)
   fig.colorbar(pcm, ax: axs[1][1])
   axs[1][1].title.set_text("Total Response")
   axs[1][1].set(xlabel: "x displacement", ylabel: "y displacement")

@@ -29,12 +29,12 @@ struct Fan05: ParsableCommand {
     let trainingData = OISTBeeVideo(directory: dataDir, length: 100)!
     // let testData = OISTBeeVideo(directory: dataDir, afterIndex: 100, length: forFrames)!
 
-    // let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
-    // let encoder = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
-    let encoder = PCAEncoder(
-      withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!,
-      andMean: Tensor<Double>(numpy: np.load("./pca_mu_\(featureSize).npy"))!
-    )
+    let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
+    let encoder = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
+    // let encoder = PCAEncoder(
+    //   withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!,
+    //   andMean: Tensor<Double>(numpy: np.load("./pca_mu_\(featureSize).npy"))!
+    // )
 
     let (fg, bg, statistics) = getTrainingBatches(
       dataset: trainingData, boundingBoxSize: (40, 70),
@@ -54,8 +54,8 @@ struct Fan05: ParsableCommand {
     let deltaXRange = Array(-40..<40).map { Double($0) }
     let deltaYRange = Array(-40..<40).map { Double($0) }
 
-    let datasetToShow = OISTBeeVideo(directory: dataDir, afterIndex: frameId, length: 1)!
-    let frame = datasetToShow.frames[0]
+    let datasetToShow = OISTBeeVideo(directory: dataDir, afterIndex: frameId - 1, length: 2)!
+    let frame = datasetToShow.frames[1]
     let pose = datasetToShow.tracks[trackId].boxes[0].center
     let (fig, _) = plotErrorPlaneTranslation(
       frame: frame,
@@ -67,6 +67,6 @@ struct Fan05: ParsableCommand {
       foregroundModel: foregroundModel,
       backgroundModel: backgroundModel
     )
-    fig.savefig("Results/fan05/fan05_landscape_\(trackId)_\(frameId)_\(featureSize).pdf", bbox_inches: "tight")
+    fig.savefig("Results/fan05/fan05_pf_rand_mg_nb_\(trackId)_\(frameId)_\(featureSize).pdf", bbox_inches: "tight")
   }
 }

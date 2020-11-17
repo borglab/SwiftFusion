@@ -71,7 +71,7 @@ extension OISTBeeVideo {
     batchSize: Int = 200
   ) -> Tensor<Double> {
     /// Anything not completely overlapping labels
-    let maxSide = min(patchSize.0, patchSize.1)
+    let maxSide = max(patchSize.0, patchSize.1)
 
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
     let frames = self.randomFrames(randomFrameCount, using: &deterministicEntropy)

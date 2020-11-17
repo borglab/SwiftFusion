@@ -42,6 +42,6 @@ class PCAEncoderTests: XCTestCase {
     XCTAssertEqual(features.shape, [2])
 
     assertEqual(pca.encode(v.expandingShape(at: 0)), features.expandingShape(at: 0), accuracy: 1e-8)
-    assertEqual(pca.encode(Tensor(stacking: [v, v])), Tensor(stacking: [features, features]), accuracy: 1e-8)
+    assertEqual(pca.encode(Tensor(stacking: [v, v], alongAxis: 0)), Tensor(stacking: [features, features]), accuracy: 1e-8)
   }
 }

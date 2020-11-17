@@ -77,13 +77,14 @@ public struct PCAEncoder {
     let (N_) = (image.shape[0])
     if image.rank == 4 {
       if N_ == 1 {
-        return matmul(U, transposed: true, image.reshaped(to: [n, 1]) - mu).reshaped(to: [1, d])
+        return matmul(U, transposed: true, image.reshaped(to: [n, 1]) - mu.reshaped(to: [n, 1])).reshaped(to: [1, d])
       } else {
         let v = image.reshaped(to: [N_, n]) - mu.reshaped(to: [1, n])
         return matmul(v, U)
       }
     } else {
-      return matmul(U, transposed: true, image.reshaped(to: [n, 1]) - mu).reshaped(to: [d])
+      let v = image.reshaped(to: [n, 1]) - mu.reshaped(to: [n, 1])
+      return matmul(U, transposed: true, v).reshaped(to: [d])
     }
   }
 }
