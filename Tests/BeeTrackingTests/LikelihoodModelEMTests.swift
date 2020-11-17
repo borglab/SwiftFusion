@@ -34,7 +34,7 @@ final class TrackingLikelihoodModelEMTests: XCTestCase {
     var em = MonteCarloEM<RPGaussianNB>(sourceOfEntropy: deterministicEntropy)
     let model : TrackingLikelihoodModel = em.run(with:data, iterationCount: 3)
     XCTAssertEqual(model.encoder.B.shape, [5,70*40])
-    XCTAssertEqual(model.foregroundModel.mean!.shape, [5])
-    XCTAssertEqual(model.backgroundModel.dims, [5])
+    XCTAssertEqual(model.foregroundModel.mean.shape, [5])
+    XCTAssertEqual(model.backgroundModel.mu, [5])
   }
 }
