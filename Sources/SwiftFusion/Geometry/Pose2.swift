@@ -63,6 +63,25 @@ public struct Pose2: Codable, LieGroup, Equatable, KeyPathIterable {
   @differentiable public var rot: Rot2 { coordinate.rot }
 }
 
+// FRANK: Perturb randomly
+extension Pose2 {
+  public mutating func perturbWith(stddev v: Vector3,
+                                   seed: TensorFlowSeed = Context.local.randomSeed
+  ) {
+    let r = Tensor<Double>(randomNormal: [3]).scalars
+    let tv = Pose2.TangentVector(v.x * r[0], v.y * r[1], v.z * r[2])
+    self.move(along: tv)
+  }
+
+  public mutating func perturbWith(covariance cov: Tensor<Double>,
+                                   seed s: TensorFlowSeed = Context.local.randomSeed
+  ) {
+    let r = matmul(cholesky(cov), Tensor<Double>(randomNormal: [3, 1], seed: s)).scalars
+    let tv = Pose2.TangentVector(r[0], r[1], r[2])
+    self.move(along: tv)
+  }
+}
+
 // MARK: Convenience initializers
 extension Pose2 {
   /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
@@ -72,13 +91,19 @@ extension Pose2 {
   }
 
   public init(
-    randomWithCovariance covariance: Tensor<Double>,
-    seed: TensorFlowSeed = Context.local.randomSeed
+    randomWithStddev v: Vector3,
+    seed s: TensorFlowSeed = Context.local.randomSeed
   ) {
     self.init(0, 0, 0)
-    let r = matmul(cholesky(covariance), Tensor<Double>(randomNormal: [3, 1], seed: seed)).scalars
-    let tv = Pose2.TangentVector(r[0], r[1], r[2])
-    self.move(along: tv)
+    self.perturbWith(stddev: v, seed: s)
+  }
+
+  public init(
+    randomWithCovariance cov: Tensor<Double>,
+    seed s: TensorFlowSeed = Context.local.randomSeed
+  ) {
+    self.init(0, 0, 0)
+    self.perturbWith(covariance: cov, seed: s)
   }
 }
 

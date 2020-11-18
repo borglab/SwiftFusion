@@ -195,15 +195,14 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
     let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
     
-    // Now get actual poses
-    let previousPose = x[previousPoseID]
+    // Remember best pose
     var bestPose = x[currentPoseID]
     
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
     for _ in 0..<2000 {
-      let noise = Tensor<Double>(randomNormal: [3]).scalars
-      x[currentPoseID] = previousPose.retract(Vector3(0.3 * noise[0], 8 * noise[1],  4.6 * noise[2]))
+      x[currentPoseID] = x[previousPoseID]
+      x[currentPoseID].perturbWith(stddev: Vector3(0.3, 8, 4.6))
       let candidateError = g.error(at: x)
       if candidateError < bestError {
         bestError = candidateError
@@ -318,7 +317,7 @@ public func trainRPTracker(trainingData: OISTBeeVideo,
                            frames: [Tensor<Float>],
                            boundingBoxSize: (Int, Int),
                            withFeatureSize d: Int,
-						   fgRandomFrameCount: Int = 10,
+                           fgRandomFrameCount: Int = 10,
                            bgRandomFrameCount: Int = 10,
                            usingEM EMflag: Bool = true
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
