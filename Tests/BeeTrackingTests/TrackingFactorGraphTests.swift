@@ -41,7 +41,7 @@ class TrackingFactorGraphTests: XCTestCase {
     tracker = trainRPTracker(
       trainingData: trainingData,
       frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100,
-      bgRandomFrameCount: 1, usingEM: true
+      fgRandomFrameCount: 1, bgRandomFrameCount: 1, usingEM: true
     )
     XCTAssertEqual(tracker.frameVariableIDs.count, 2)
   }
