@@ -40,28 +40,11 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   }
   
   /**
-   Train encoder and foreground model from a foreground patches
-   - Parameters:
-   - foregroundPatches: [...,H,W,C] batch of foreground patches to train with
-   - backgroundModel: assumed to be trained separately
-   - p: optional hyperparameters.
-   */
-  public init(from foregroundPatches: Tensor<Double>,
-              with backgroundModel: BG,
-              given p:HyperParameters? = nil) {
-    let trainedEncoder = Encoder(from: foregroundPatches, given: p?.encoder)
-    let fgFeatures = trainedEncoder.encode(foregroundPatches)
-    self.init(encoder: trainedEncoder,
-              foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
-              backgroundModel : backgroundModel)
-  }
-  
-  /**
    Train all models from a collection of foreground and background patches
    - Parameters:
-   - foregroundPatches: [...,H,W,C] batch of foreground patches to train with
-   - backgroundModel: assumed to be trained separately
-   - p: optional hyperparameters.
+    - foregroundPatches: [...,H,W,C] batch of foreground patches to train with
+    - backgroundPatches: [...,H,W,C] batch of background patches to train with
+    - p: optional hyperparameters.
    */
   public init(from foregroundPatches: Tensor<Double>,
               and backgroundPatches: Tensor<Double>,
@@ -75,55 +58,73 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   }
 }
 
-/// Make it trainable with Monte Carlo EM
 extension TrackingLikelihoodModel : McEmModel {
+  /// Type of patch
+  public enum PatchType { case fg, bg }
+  
   /// As datum we have a (giant) image and a noisy manual label for an image patch
-  public typealias Datum = (frame: Tensor<Double>, manualLabel:OrientedBoundingBox)
+  public typealias Datum = (frame: Tensor<Double>, type: PatchType, obb:OrientedBoundingBox)
   
   /// As hidden variable we use the "true" pose of the patch
-  public typealias Hidden = Pose2
+  public enum Hidden { case fg(Pose2), bg }
   
+  /// Stack patches for all bounding boxes
+  public static func patches(at regions:[Datum]) -> Tensor<Double> {
+    return Tensor<Double>(regions.map { $0.frame.patch(at:$0.obb) } )
+  }
+
   /**
    Initialize with the manually labeled images
    - Parameters:
    - data: frames with and associated oriented bounding boxes
-   - sourceOfEntropy: random number generator
    - p: optional hyperparameters.
    */
   public init(from data:[Datum],
+              given p:HyperParameters?) {
+    let foregroundPatches = Self.patches(at: data.filter {$0.type == .fg})
+    let backgroundPatches = Self.patches(at: data.filter {$0.type == .bg})
+    self.init(from: foregroundPatches, and: backgroundPatches, given:p)
+  }
+  
+  /// version that complies, ignoring source of entropy
+  public init(from data:[Datum],
               using sourceOfEntropy: inout AnyRandomNumberGenerator,
               given p:HyperParameters?) {
-    let patches = data.map { $0.frame.patch(at: $0.manualLabel) }
-    let imageBatch = Tensor<Double>(patches)
-    let backgroundModel = BG(from: imageBatch) // needs to be given!
-    self.init(from: imageBatch, with: backgroundModel, given:p)
+    self.init(from: data, given:p)
   }
   
   /// Given a datum and a model, sample from the hidden variables
   public func sample(count n:Int, for datum: Datum,
                      using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
-    // Two approaches: optimize pose using LM, then sample from pose covariance around minimum
-    // Here we do importance sampling:
+    // We first approximate the posterior over foreground poses using importance sampling:
     let samples : [(Double, Pose2)] = (0..<n).map { _ in
       // sample from noise model on manual pose
-      var proposal = datum.manualLabel.center
+      var proposal = datum.obb.center
       proposal.perturbWith(stddev: Vector3(0.3, 8, 4.6))
       return (1.0, proposal)
     }
-    return resample(count:n, from:samples, using: &sourceOfEntropy)
+    
+    // Then resample to get unweighted samples:
+    let resampled = resample(count:n, from:samples, using: &sourceOfEntropy)
+    
+    // Finally, return as foreground labels:
+    return resampled.map { .fg($0) }
   }
   
   /// Given an array of frames labeled with sampled poses, create a new set of patches to train from
-  public init(from labeledData: [(Pose2, Datum)], given p: HyperParameters?) {
-    // Create new patches
-    let patches = labeledData.map { (pose,datum) -> Tensor<Double> in
-      let obb = datum.manualLabel
-      let newOBB = OrientedBoundingBox(center: pose, rows: obb.rows, cols: obb.cols)
-      return datum.frame.patch(at: newOBB)
+  public init(from labeledData: [LabeledDatum], given p: HyperParameters?) {
+    let data = labeledData.map {
+      (label:Hidden, datum:Datum) -> Datum in
+      switch label {
+      case .fg(let pose):
+        let obb = datum.obb
+        let newOBB = OrientedBoundingBox(center: pose, rows: obb.rows, cols: obb.cols)
+        return (datum.frame, datum.type, newOBB)
+      case .bg:
+        return datum
+      }
     }
-    let imageBatch = Tensor<Double>(patches)
-    let backgroundModel = BG(from: imageBatch) // needs to be given!
-    self.init(from: imageBatch, with: backgroundModel, given:p)
+    self.init(from: data, given:p)
   }
 }
 
