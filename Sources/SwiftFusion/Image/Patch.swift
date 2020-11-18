@@ -177,7 +177,7 @@ extension Tensor where Scalar: TensorFlowFloatingPoint {
   ///                 specified, then the result has the same size as `region`.
   @differentiable(wrt: region)
   public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil)
-    -> Tensor<Scalar>
+  -> Tensor<Scalar>
   {
     precondition(
       self.shape.count == 2 || self.shape.count == 3,
@@ -187,7 +187,13 @@ extension Tensor where Scalar: TensorFlowFloatingPoint {
       ArrayImage(Tensor<Float>(self)).patch(at: region, outputSize: outputSize).tensor)
     return self.shape.count == 2 ? result.reshaped(to: [result.shape[0], result.shape[1]]) : result
   }
-
+  
+  /// Stack patches for all bounding boxes
+  public func patches(at regions:[OrientedBoundingBox], outputSize s: (Int, Int)? = nil)
+  -> Tensor<Scalar> {
+    return Tensor<Scalar>(regions.map { self.patch(at:$0, outputSize:s) } )
+  }
+  
   /// Returns the patch of `self` at `region`, and its Jacobian with respect to the pose of the
   /// `region`.
   ///
