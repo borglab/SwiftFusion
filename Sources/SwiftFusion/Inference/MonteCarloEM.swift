@@ -72,11 +72,20 @@ public extension McEmModel {
   }
 }
 
+public extension McEmModel {
+  /// Extension allows to have a default nil parameter
+  init(_ data: [Datum],
+       using sourceOfEntropy: inout AnyRandomNumberGenerator,
+       given: HyperParameters? = nil) {
+    self.init(from: data, using: &sourceOfEntropy, given: nil)
+  }
+}
+
 /// Monte Carlo EM algorithm
 public struct MonteCarloEM<ModelType: McEmModel> {
   public typealias Hook = (Int, [ModelType.LabeledDatum], ModelType) -> ()
   var sourceOfEntropy: AnyRandomNumberGenerator
-
+  
   /// Initialize, possibly witha random number generator
   public init(sourceOfEntropy: RandomNumberGenerator = SystemRandomNumberGenerator()) {
     self.sourceOfEntropy = .init(sourceOfEntropy)
