@@ -42,14 +42,15 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   /**
    Train encoder and foreground model from a foreground patches
    - Parameters:
-   - fgPatches: [...,H,W,C] batch of foreground patches to train with
+   - foregroundPatches: [...,H,W,C] batch of foreground patches to train with
    - backgroundModel: assumed to be trained separately
    - p: optional hyperparameters.
    */
-  public init(from fgPatches: Tensor<Double>, and backgroundModel: BG,
+  public init(from foregroundPatches: Tensor<Double>,
+              with backgroundModel: BG,
               given p:HyperParameters? = nil) {
-    let trainedEncoder = Encoder(from: fgPatches, given: p?.encoder)
-    let fgFeatures = trainedEncoder.encode(fgPatches)
+    let trainedEncoder = Encoder(from: foregroundPatches, given: p?.encoder)
+    let fgFeatures = trainedEncoder.encode(foregroundPatches)
     self.init(encoder: trainedEncoder,
               foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
               backgroundModel : backgroundModel)
@@ -58,14 +59,16 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   /**
    Train all models from a collection of foreground and background patches
    - Parameters:
-   - fgPatches: [...,H,W,C] batch of foreground patches to train with
+   - foregroundPatches: [...,H,W,C] batch of foreground patches to train with
    - backgroundModel: assumed to be trained separately
    - p: optional hyperparameters.
    */
-  public init(from fgPatches: Tensor<Double>, and bgPatches: Tensor<Double>,              given p:HyperParameters? = nil) {
-    let trainedEncoder = Encoder(from: fgPatches, given: p?.encoder)
-    let fgFeatures = trainedEncoder.encode(fgPatches)
-    let bgFeatures = trainedEncoder.encode(bgPatches)
+  public init(from foregroundPatches: Tensor<Double>,
+              and backgroundPatches: Tensor<Double>,
+              given p:HyperParameters? = nil) {
+    let trainedEncoder = Encoder(from: foregroundPatches, given: p?.encoder)
+    let fgFeatures = trainedEncoder.encode(foregroundPatches)
+    let bgFeatures = trainedEncoder.encode(backgroundPatches)
     self.init(encoder: trainedEncoder,
               foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
               backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel))
@@ -92,24 +95,35 @@ extension TrackingLikelihoodModel : McEmModel {
               given p:HyperParameters?) {
     let patches = data.map { $0.frame.patch(at: $0.manualLabel) }
     let imageBatch = Tensor<Double>(patches)
-    let backgroundModel = BG(from: imageBatch)
-    self.init(from: imageBatch, and: backgroundModel, given:p)
+    let backgroundModel = BG(from: imageBatch) // needs to be given!
+    self.init(from: imageBatch, with: backgroundModel, given:p)
   }
   
   /// Given a datum and a model, sample from the hidden variables
-  public func sample(count:Int, for datum: Datum,
+  public func sample(count n:Int, for datum: Datum,
                      using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
-    // Two approaches: importance sampling, OR, what we do here:
-    // First optimize pose using LM, then sample from pose covariance around minimum
-    let labels = [Hidden]()
-    //    let labels : [Hidden] = (0..<count).map { _ in
-    //      let u = Double.random(in: 0..<p1+p2, using: &sourceOfEntropy)
-    //      return u<=p1 ? .one : .two
-    //    }
-    return labels
+    // Two approaches: optimize pose using LM, then sample from pose covariance around minimum
+    // Here we do importance sampling:
+    let samples : [(Double, Pose2)] = (0..<n).map { _ in
+      // sample from noise model on manual pose
+      var proposal = datum.manualLabel.center
+      proposal.perturbWith(stddev: Vector3(0.3, 8, 4.6))
+      return (1.0, proposal)
+    }
+    return resample(count:n, from:samples, using: &sourceOfEntropy)
   }
   
-  /// Given an array of labeled datums, fit the two Gaussian mixture components
-  mutating public func fit(_ labeledData: [LabeledDatum]) {
+  /// Given an array of frames labeled with sampled poses, create a new set of patches to train from
+  public init(from labeledData: [(Pose2, Datum)], given p: HyperParameters?) {
+    // Create new patches
+    let patches = labeledData.map { (pose,datum) -> Tensor<Double> in
+      let obb = datum.manualLabel
+      let newOBB = OrientedBoundingBox(center: pose, rows: obb.rows, cols: obb.cols)
+      return datum.frame.patch(at: newOBB)
+    }
+    let imageBatch = Tensor<Double>(patches)
+    let backgroundModel = BG(from: imageBatch) // needs to be given!
+    self.init(from: imageBatch, with: backgroundModel, given:p)
   }
 }
+

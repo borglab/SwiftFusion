@@ -23,18 +23,17 @@ import XCTest
 typealias RPGaussianNB = TrackingLikelihoodModel<RandomProjection,MultivariateGaussian, GaussianNB>
 
 final class TrackingLikelihoodModelEMTests: XCTestCase {
-    let deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
-  
   /// Test fitting a simple 2-component mixture
   func testTrackingLikelihoodModel() {
+    let generator = ARC4RandomNumberGenerator(seed: 42)
     let frame = Tensor<Double>(zeros:[1000,1000,1])
     let data = [Vector2(100, 200), Vector2(150, 201), Vector2(600, 800)].map {
       (frame, OrientedBoundingBox(center: Pose2(Rot2(0), $0), rows: 70, cols: 40))
     }
-    var em = MonteCarloEM<RPGaussianNB>(sourceOfEntropy: deterministicEntropy)
+    var em = MonteCarloEM<RPGaussianNB>(sourceOfEntropy: generator)
     let model : TrackingLikelihoodModel = em.run(with:data, iterationCount: 3)
     XCTAssertEqual(model.encoder.B.shape, [5,70*40])
     XCTAssertEqual(model.foregroundModel.mean.shape, [5])
-    XCTAssertEqual(model.backgroundModel.mu, [5])
+    XCTAssertEqual(model.backgroundModel.mu.shape, [70,40,1])
   }
 }
