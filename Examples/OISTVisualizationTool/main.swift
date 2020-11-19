@@ -322,21 +322,11 @@ struct NaiveRae: ParsableCommand {
 
     if verbose { print("Fitting Naive Bayes model") }
 
-    var (foregroundModel, backgroundModel) = (
-      MultivariateGaussian(
-        dims: TensorShape([kLatentDimension]),
-        regularizer: 1e-3
-      ), GaussianNB(
-        dims: TensorShape([kLatentDimension]),
-        regularizer: 1e-3
-      )
-    )
-
     let batchPositive = rae.encode(batch)
-    foregroundModel.fit(batchPositive)
+    let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
 
     let batchNegative = rae.encode(backgroundBatch)
-    backgroundModel.fit(batchNegative)
+    let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
 
     if verbose {
       print("Foreground: \(foregroundModel)")
@@ -552,21 +542,11 @@ struct NaivePca: ParsableCommand {
     
     if verbose { print("Fitting Naive Bayes model") }
 
-    var (foregroundModel, backgroundModel) = (
-      MultivariateGaussian(
-        dims: TensorShape([kLatentDimension]),
-        regularizer: 1e-3
-      ), GaussianNB(
-        dims: TensorShape([kLatentDimension]),
-        regularizer: 1e-3
-      )
-    )
-
     let batchPositive = ppca.encode(batch)
-    foregroundModel.fit(batchPositive)
+    let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
 
     let batchNegative = ppca.encode(backgroundBatch)
-    backgroundModel.fit(batchNegative)
+    let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
 
     if verbose {
       print("Foreground: \(foregroundModel)")
