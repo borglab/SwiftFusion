@@ -59,6 +59,7 @@ public struct BeeFrames: RandomAccessCollection {
   public func index(after i: Int) -> Int { i + 1 }
 
   public subscript(index: Int) -> Tensor<Double> {
-    return Tensor<Double>(Image(jpeg: directory.appendingPathComponent("frame\(index + 1).png")).tensor)
+    return Tensor<Double>(
+      Image(contentsOf: directory.appendingPathComponent("frame\(index + 1).png")).tensor)
   }
 }
