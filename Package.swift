@@ -27,6 +27,7 @@ let package = Package(
 
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
+    .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.0"),
     .package(url: "https://github.com/tensorflow/swift-models.git", .branch("b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4")),
   ],
   targets: [
