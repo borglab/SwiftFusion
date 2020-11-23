@@ -21,13 +21,13 @@ let package = Package(
   dependencies: [
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
-    .package(url: "https://github.com/google/swift-benchmark.git", .branch("master")),
+    .package(url: "https://github.com/google/swift-benchmark.git", from: "0.1.0"),
 
     .package(url: "https://github.com/saeta/penguin.git", .branch("master")),
 
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
-    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("99f323e550f7f0c3ed32d31a3c5d11a0f3c51e4b")),
+    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4")),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
