@@ -85,7 +85,7 @@ public extension McEmModel {
 public struct MonteCarloEM<ModelType: McEmModel> {
   public typealias Hook = (Int, [ModelType.LabeledDatum], ModelType) -> ()
   var sourceOfEntropy: AnyRandomNumberGenerator
-  
+
   /// Initialize, possibly witha random number generator
   public init(sourceOfEntropy: RandomNumberGenerator = SystemRandomNumberGenerator()) {
     self.sourceOfEntropy = .init(sourceOfEntropy)
