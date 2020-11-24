@@ -2,6 +2,7 @@
 // Pseudo inverse
 //===----------------------------------------------------------------------===//
 
+import _Differentiation
 import TensorFlow
 
 /// Calculate the pseudo-inverse of a matrix

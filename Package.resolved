@@ -5,8 +5,8 @@
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
-          "branch": "master",
-          "revision": "88bc092f4611e6acfa734b2e888880dcb65c0be1",
+          "branch": "main",
+          "revision": "2ed8978cfc91384f98c245cce3513f4345eec239",
           "version": null
         }
       },
@@ -26,15 +26,6 @@
           "branch": null,
           "revision": "8e0ef8bb7482ab97dcd2cd1d6855bd38921c345d",
           "version": "0.1.0"
-        }
-      },
-      {
-        "package": "swift-models",
-        "repositoryURL": "https://github.com/tensorflow/swift-models.git",
-        "state": {
-          "branch": null,
-          "revision": "b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4",
-          "version": null
         }
       },
       {

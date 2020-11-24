@@ -90,8 +90,6 @@ extension Vector1: FixedSizeVector {
   public static var dimension: Int { return 1 }
 }
 
-extension Vector1: ElementaryFunctions {}
-
 
 /// An element of R^2, with Euclidean inner product.
 public struct Vector2: KeyPathIterable {
@@ -186,8 +184,6 @@ extension Vector2: AdditiveArithmetic, Vector {
 extension Vector2: FixedSizeVector {
   public static var dimension: Int { return 2 }
 }
-
-extension Vector2: ElementaryFunctions {}
 
 
 /// An element of R^3, with Euclidean inner product.
@@ -291,8 +287,6 @@ extension Vector3: AdditiveArithmetic, Vector {
 extension Vector3: FixedSizeVector {
   public static var dimension: Int { return 3 }
 }
-
-extension Vector3: ElementaryFunctions {}
 
 
 /// An element of R^4, with Euclidean inner product.
@@ -404,8 +398,6 @@ extension Vector4: AdditiveArithmetic, Vector {
 extension Vector4: FixedSizeVector {
   public static var dimension: Int { return 4 }
 }
-
-extension Vector4: ElementaryFunctions {}
 
 
 /// An element of R^5, with Euclidean inner product.
@@ -525,8 +517,6 @@ extension Vector5: AdditiveArithmetic, Vector {
 extension Vector5: FixedSizeVector {
   public static var dimension: Int { return 5 }
 }
-
-extension Vector5: ElementaryFunctions {}
 
 
 /// An element of R^6, with Euclidean inner product.
@@ -654,8 +644,6 @@ extension Vector6: AdditiveArithmetic, Vector {
 extension Vector6: FixedSizeVector {
   public static var dimension: Int { return 6 }
 }
-
-extension Vector6: ElementaryFunctions {}
 
 
 /// An element of R^7, with Euclidean inner product.
@@ -791,8 +779,6 @@ extension Vector7: AdditiveArithmetic, Vector {
 extension Vector7: FixedSizeVector {
   public static var dimension: Int { return 7 }
 }
-
-extension Vector7: ElementaryFunctions {}
 
 
 /// An element of R^8, with Euclidean inner product.
@@ -936,8 +922,6 @@ extension Vector8: AdditiveArithmetic, Vector {
 extension Vector8: FixedSizeVector {
   public static var dimension: Int { return 8 }
 }
-
-extension Vector8: ElementaryFunctions {}
 
 
 /// An element of R^9, with Euclidean inner product.
@@ -1089,8 +1073,6 @@ extension Vector9: AdditiveArithmetic, Vector {
 extension Vector9: FixedSizeVector {
   public static var dimension: Int { return 9 }
 }
-
-extension Vector9: ElementaryFunctions {}
 
 
 /// An element of R^10, with Euclidean inner product.
@@ -1250,8 +1232,6 @@ extension Vector10: AdditiveArithmetic, Vector {
 extension Vector10: FixedSizeVector {
   public static var dimension: Int { return 10 }
 }
-
-extension Vector10: ElementaryFunctions {}
 
 
 /// An element of R^11, with Euclidean inner product.
@@ -1419,8 +1399,6 @@ extension Vector11: AdditiveArithmetic, Vector {
 extension Vector11: FixedSizeVector {
   public static var dimension: Int { return 11 }
 }
-
-extension Vector11: ElementaryFunctions {}
 
 
 /// An element of R^12, with Euclidean inner product.
@@ -1596,6 +1574,4 @@ extension Vector12: AdditiveArithmetic, Vector {
 extension Vector12: FixedSizeVector {
   public static var dimension: Int { return 12 }
 }
-
-extension Vector12: ElementaryFunctions {}
 
