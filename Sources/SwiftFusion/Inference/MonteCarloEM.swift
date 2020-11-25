@@ -15,6 +15,37 @@
 import TensorFlow
 import XCTest
 
+/// Use low-variance resampling method (rake method) to resample, with replacement `count`samples from `samples`
+public func resample<T, G: RandomNumberGenerator>(count n:Int, from samples: [(weight:Double,element:T)], using generator: inout G) -> [T] {
+  // Calculate total weight.
+  let sum = samples.map(\.weight).reduce(0, +)
+  
+  // Sample position of first rake spike.
+  let delta = sum/Double(n)
+  var position = Double.random(in: 0...delta, using: &generator)
+  
+  // Create a sample for each rake spike.
+  var index = 0
+  var cumulative = samples[index].weight
+  let result = (0..<n).map { _ -> T in
+    // Skip over samples until weight interval for index contains rake position.
+    while position > cumulative {
+      index += 1
+      cumulative += samples[index].weight
+    }
+    // Update rake position and return sample element.
+    position += delta
+    return samples[index].element
+  }
+  
+  return result
+}
+
+public func resample<T>(count n:Int, from samples: [(Double,T)]) -> [T] {
+  var g = SystemRandomNumberGenerator()
+  return resample(count:n, from:samples, using: &g)
+}
+
 /// Protocol for models that can be fitted with Monte Carle EM
 public protocol McEmModel {
   associatedtype Datum /// main data a model is trained with
@@ -41,13 +72,22 @@ public extension McEmModel {
   }
 }
 
+public extension McEmModel {
+  /// Extension allows to have a default nil parameter
+  init(_ data: [Datum],
+       using sourceOfEntropy: inout AnyRandomNumberGenerator,
+       given: HyperParameters? = nil) {
+    self.init(from: data, using: &sourceOfEntropy, given: nil)
+  }
+}
+
 /// Monte Carlo EM algorithm
 public struct MonteCarloEM<ModelType: McEmModel> {
   public typealias Hook = (Int, [ModelType.LabeledDatum], ModelType) -> ()
   var sourceOfEntropy: AnyRandomNumberGenerator
-  
+
   /// Initialize, possibly witha random number generator
-  init(sourceOfEntropy: RandomNumberGenerator = SystemRandomNumberGenerator()) {
+  public init(sourceOfEntropy: RandomNumberGenerator = SystemRandomNumberGenerator()) {
     self.sourceOfEntropy = .init(sourceOfEntropy)
   }
   

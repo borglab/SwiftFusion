@@ -28,13 +28,21 @@ class TrackingFactorGraphTests: XCTestCase {
     let trainingData = OISTBeeVideo(directory: datasetDirectory, length: 1)!
     let testData = OISTBeeVideo(directory: datasetDirectory, length: 2)!
 
-    let tracker : TrackingConfiguration<Tuple1<Pose2>> = trainRPTracker(
+    // Test regular training
+    var tracker : TrackingConfiguration<Tuple1<Pose2>> = trainRPTracker(
       trainingData: trainingData,
       frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100,
       fgRandomFrameCount: 1,
       bgRandomFrameCount: 1
     )
+    XCTAssertEqual(tracker.frameVariableIDs.count, 2)
 
+    // Test training with Monte Carlo EM
+    tracker = trainRPTracker(
+      trainingData: trainingData,
+      frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: 100,
+      fgRandomFrameCount: 1, bgRandomFrameCount: 1, usingEM: true
+    )
     XCTAssertEqual(tracker.frameVariableIDs.count, 2)
   }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// This file tests estimating a mixture of Gaissian with Monte Carle EM
+/// This file tests estimating a mixture of 2 Gaussians with Monte Carlo EM
 
 import SwiftFusion
 import TensorFlow
@@ -23,7 +23,7 @@ struct TwoComponents : McEmModel {
   typealias Datum = Tensor<Double>
   enum Hidden { case one; case two}
   typealias HyperParameters = MultivariateGaussian.HyperParameters
-
+  
   var c1, c2 : MultivariateGaussian
   
   /// Initialize to uninitialized components
@@ -58,11 +58,28 @@ struct TwoComponents : McEmModel {
 final class MonteCarloEMTests: XCTestCase {
   let data = [[1.0, 2.0], [1.0, 2.1], [6.0, 8.0], [6.2, 7.9]].map { Tensor<Double>($0)}
   
-  let deterministicEntropy = ARC4RandomNumberGenerator(seed: 11)
+  /// Test low-variance resampling
+  func testLowVarianceResampling() {
+    enum Thingy {case a,b,c}
+    var generator = ARC4RandomNumberGenerator(seed: 42)
+    // make sure we have a bunch of small weight samples that will not be resampled
+    let samples : [(Double,Thingy)] = [(0.1, .b), (60.0, .a),
+                                       (0.1, .b), (0.1, .b),
+                                       (90.0, .c), (0.1, .b)]
+    // resample and check counts
+    let resampled = resample(count:10, from:samples, using: &generator)
+    var counts = Dictionary<Thingy,Int>()
+    resampled.forEach { counts[$0, default: 0] += 1 }
+    XCTAssertEqual(counts[.a, default: 0], 4)
+    XCTAssertEqual(counts[.b, default: 0], 0)
+    XCTAssertEqual(counts[.c, default: 0], 6)
+    let _ = resample(count:10, from:samples) // make sure we can call default
+  }
   
   /// Test fitting a simple 2-component mixture
   func testTwoComponents() {
-    var em = MonteCarloEM<TwoComponents>(sourceOfEntropy: deterministicEntropy)
+    let generator = ARC4RandomNumberGenerator(seed: 11)
+    var em = MonteCarloEM<TwoComponents>(sourceOfEntropy: generator)
     let model : TwoComponents = em.run(with:data, iterationCount: 5)
     assertEqual(model.c1.mean, Tensor<Double>([1.0, 2.0]), accuracy: 0.2)
     assertEqual(model.c2.mean, Tensor<Double>([6.0, 8.0]), accuracy: 0.2)

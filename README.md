@@ -6,25 +6,78 @@ Think factor graphs a la [GTSAM](https://gtsam.org/) coupled with deep learning,
 
 Still very early, but feel free to explore! Subject to *massive* change :-)
 
-## Run tests
+## Getting Started
 
+### Swift on MacOS
+
+Using XCode is the easiest way to develop on Mac. Unfortunately, the current version of Xcode 12 has a bug, and you need to work with the XCode beta, available from Apple [here](https://developer.apple.com/download/).
+
+Follow the instructions to [install Swift for TensorFlow on MacOS](https://github.com/tensorflow/swift/blob/master/Installation.md#macos). Installing the latest development snapshot is recommended.
+
+To use experimental toolchain:
 ```
-swift test
+export PATH="/Library/Developer/Toolchains/swift-tensorflow-RELEASE-0.11.xctoolchain/usr/bin/:$PATH"
 ```
 
-## Run benchmarks
+To re-generate XCode project:
+```
+swift package generate-xcodeproj
+```
+
+### Installing Swift on Linux
+
+Requirements: Ubuntu 18.04 (if you use GPU). 
+
+Follow the instructions to [install Swift for TensorFlow on Linux](https://github.com/tensorflow/swift/blob/master/Installation.md#linux).  Installing the latest development snapshot is recommended.
+
+### Installing S4TF on Jetson Devices
+
+Download toolchain [here](https://storage.googleapis.com/swift-tensorflow-artifacts/oneoff-builds/swift-tensorflow-RELEASE-0.11-Jetson4.4.tar.gz), and then follow Linux instructions.
+
+### Run tests
+
+To check whether everything works you can run all the tests by changing to the SwiftFusion directory and
+```
+swift test --enable-test-discovery
+```
+
+### Run benchmarks
 
 ```
 swift run -c release -Xswiftc -cross-module-optimization SwiftFusionBenchmarks
 ```
 
-## Update dependency versions
+## Working with VS Code
 
-```
-swift package update
+To enable autocomplete in VSCode, install the plugin vknabel.vscode-swift-development-environment, and set the following plugin settings:
+
+- "sde.languageServerMode": "sourcekit-lsp",
+- "sourcekit-lsp.serverPath": "<your toolchain path>/usr/bin/sourcekit-lsp",
+- "sourcekit-lsp.toolchainPath": "<your toolchain path>",
+- "swift.path.swift_driver_bin": "<your toolchain path>/usr/bin/swift",
+
+Debugging within VS code is easiest via the CodeLLDB plugin so you can debug in vscode. You need to set the following setting:
+"lldb.library": "/swift-tensorflow-toolchain/usr/lib/liblldb.so"
+
+A sample launch.json file:
+
+```json
+{
+"version": "0.2.0",
+"configurations": [
+{
+"type": "lldb",
+"request": "launch",
+"name": "Debug",
+"program": "${workspaceFolder}/.build/x86_64-unknown-linux-gnu/debug/SwiftFusionPackageTests.xctest",
+"args": ["--enable-test-discovery"],
+"cwd": "${workspaceFolder}"
+}
+]
+}
 ```
 
-## Overview
+## Code Overview
 
 The main code is in Sources/SwiftFusion, which as a number of sub-directories:
 

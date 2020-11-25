@@ -6,7 +6,7 @@ import BeeTracking
 import PythonKit
 import Foundation
 
-/// Frank01: Random Projections Tracker, with sampling-based initialization
+/// Random Projections Tracker, with sampling-based initialization
 struct Frank02: ParsableCommand {
   @Option(help: "Run on track number x")
   var trackId: Int = 0

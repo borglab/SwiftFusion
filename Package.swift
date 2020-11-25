@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -24,22 +24,26 @@ let package = Package(
   dependencies: [
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
-    .package(url: "https://github.com/google/swift-benchmark.git", .branch("f70bf472b00aeaa05e2374373568c2fe459c11c7")),
+    .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", from: "0.1.0"),
 
-    .package(url: "https://github.com/saeta/penguin.git", .branch("master")),
+    .package(name: "Penguin", url: "https://github.com/saeta/penguin.git", .branch("b7b8f9bc2750af07d294d3f289e7699d5ae001ca")),
 
-    .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
+    .package(name: "TensorBoardX", url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
-    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("c67c9fc024d811e4134f379205ce49dd530f593a")),
-    .package(url: "https://github.com/apple/swift-argument-parser", from: "0.2.0"),
-    .package(url: "https://github.com/vojtamolda/Plotly.swift", from: "0.4.0"),
+    .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.0"),
+    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4")),
+    .package(name: "Plotly", url: "https://github.com/vojtamolda/Plotly.swift", from: "0.4.0"),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
     // Targets can depend on other targets in this package, and on products in packages which this package depends on.
     .target(
       name: "SwiftFusion",
-      dependencies: ["PenguinStructures", "PenguinTesting", "PenguinParallelWithFoundation"]),
+      dependencies: [
+        .product(name: "PenguinStructures", package: "Penguin"),
+        .product(name: "PenguinTesting", package: "Penguin"),
+        .product(name: "PenguinParallelWithFoundation", package: "Penguin")
+      ]),
     .target(
       name: "SwiftFusionBenchmarks",
       dependencies: [
@@ -62,14 +66,14 @@ let package = Package(
       ]),
     .target(
       name: "Pose3SLAMG2O",
-      dependencies: ["SwiftFusion", "TensorBoardX", "SwiftToolsSupport"],
+      dependencies: ["SwiftFusion", "TensorBoardX", .product(name: "SwiftToolsSupport", package: "swift-tools-support-core")],
       path: "Examples/Pose3SLAMG2O"),
     .target(
       name: "BeeTrackingTool",
       dependencies: [
         "BeeDataset",
         "BeeTracking",
-        "PenguinParallelWithFoundation",
+        .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
       path: "Examples/BeeTrackingTool"),
@@ -78,7 +82,7 @@ let package = Package(
       dependencies: [
         "BeeDataset",
         "BeeTracking",
-        "PenguinParallelWithFoundation",
+        .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
         "SwiftFusion",
         "Plotly",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -89,7 +93,7 @@ let package = Package(
       dependencies: [
         "BeeDataset",
         "BeeTracking",
-        "PenguinParallelWithFoundation",
+        .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
         "SwiftFusion",
         "Plotly",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -99,7 +103,7 @@ let package = Package(
       name: "SwiftFusionTests",
       dependencies: [
         "SwiftFusion",
-        "PenguinTesting",
+        .product(name: "PenguinTesting", package: "Penguin"),
         .product(name: "ModelSupport", package: "swift-models"),
       ]),
     .testTarget(
