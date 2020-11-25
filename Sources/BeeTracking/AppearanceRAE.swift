@@ -110,7 +110,7 @@ public struct DenseRAE: Layer {
   }
 
   /// Differentiable encoder
-  @differentiable
+  @differentiable(wrt: imageBatch)
   public func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double> {
     let batchSize = imageBatch.shape[0]
     let expectedShape: TensorShape = [batchSize, imageHeight, imageWidth, imageChannels]

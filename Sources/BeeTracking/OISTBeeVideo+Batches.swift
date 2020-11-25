@@ -117,13 +117,15 @@ extension OISTBeeVideo {
     return statistics.normalized(stacked)
   }
 
+  typealias LabeledFrame = (frameId: Int, (frame: Tensor<Double>, labels: [OISTBeeLabel]))
+  
   /// Returns `count` random frames.
   private func randomFrames<R: RandomNumberGenerator>(_ count: Int, using randomness: inout R)
-    -> [(frameId: Int, (frame: Tensor<Double>, labels: [OISTBeeLabel]))]
+  -> [LabeledFrame]
   {
     let selectedFrameIndices =
       self.frameIds.indices.randomSelectionWithoutReplacement(k: count, using: &randomness)
-    return [(frameId: Int, (frame: Tensor<Double>, labels: [OISTBeeLabel]))](
+    return [LabeledFrame](
       unsafeUninitializedCapacity: count
     ) {
       (b, actualCount) -> Void in

@@ -195,15 +195,14 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
     let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
     
-    // Now get actual poses
-    let previousPose = x[previousPoseID]
+    // Remember best pose
     var bestPose = x[currentPoseID]
     
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
     for _ in 0..<2000 {
-      let noise = Tensor<Double>(randomNormal: [3]).scalars
-      x[currentPoseID] = previousPose.retract(Vector3(0.3 * noise[0], 8 * noise[1],  4.6 * noise[2]))
+      x[currentPoseID] = x[previousPoseID]
+      x[currentPoseID].perturbWith(stddev: Vector3(0.3, 8, 4.6))
       let candidateError = g.error(at: x)
       if candidateError < bestError {
         bestError = candidateError
@@ -313,19 +312,21 @@ public func getTrainingBatches(
 
 /// Train a random projection tracker with a full Gaussian foreground model
 /// and a Naive Bayes background model.
-public func trainRPTracker(
-  trainingData: OISTBeeVideo,
-  frames: [Tensor<Float>],
-  boundingBoxSize: (Int, Int), withFeatureSize d: Int,
-  fgRandomFrameCount: Int = 10,
-  bgRandomFrameCount: Int = 10
+/// If EMflag is true we will do several iterations of Monte Carlo EM
+public func trainRPTracker(trainingData: OISTBeeVideo,
+                           frames: [Tensor<Float>],
+                           boundingBoxSize: (Int, Int),
+                           withFeatureSize d: Int,
+                           fgRandomFrameCount: Int = 10,
+                           bgRandomFrameCount: Int = 10,
+                           usingEM EMflag: Bool = true
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   let (fg, bg, statistics) = getTrainingBatches(
     dataset: trainingData, boundingBoxSize: boundingBoxSize,
     fgRandomFrameCount: fgRandomFrameCount,
     bgRandomFrameCount: bgRandomFrameCount
   )
-
+  
   let randomProjector = RandomProjection(
     fromShape: [boundingBoxSize.0, boundingBoxSize.1, 1], toFeatureSize: d
   )
@@ -341,7 +342,7 @@ public func trainRPTracker(
     frames: frames, targetSize: boundingBoxSize,
     foregroundModel: foregroundModel, backgroundModel: backgroundModel
   )
-
+  
   return tracker
 }
 
@@ -368,18 +369,19 @@ public func createSingleTrack(
 public func runRPTracker(
   directory: URL, onTrack trackIndex: Int, forFrames: Int = 80,
   withSampling samplingFlag: Bool = false,
+  usingEM EMflag: Bool = true,
   withFeatureSize d: Int = 100,
   savePatchesIn resultDirectory: String? = nil
 ) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
   // train foreground and background model and create tracker
   let trainingData = OISTBeeVideo(directory: directory, length: 100)!
   let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
-
+  
   precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
   
   var tracker = trainRPTracker(
     trainingData: trainingData,
-    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d
+    frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d, usingEM :EMflag
   )
   
   // Run the tracker and return track with ground truth
