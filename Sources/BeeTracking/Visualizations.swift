@@ -101,9 +101,9 @@ public func errorPlaneTranslation<
     return (fg: fg_nll, bg: bg_nll, e: result)
   }
 
-  var fg = Tensor<Double>(zeros: [deltaXs.count, deltaYs.count])
-  var bg = Tensor<Double>(zeros: [deltaXs.count, deltaYs.count])
-  var errors = Tensor<Double>(zeros: [deltaXs.count, deltaYs.count])
+  var fg = Tensor<Double>(zeros: [deltaYs.count, deltaXs.count])
+  var bg = Tensor<Double>(zeros: [deltaYs.count, deltaXs.count])
+  var errors = Tensor<Double>(zeros: [deltaYs.count, deltaXs.count])
   for (i, dx) in deltaXs.enumerated() {
     for (j, dy) in deltaYs.enumerated() {
       let (fg_nll, bg_nll, e) = error(at * Pose2(dx, dy, 0.0))
@@ -149,10 +149,12 @@ public func plotErrorPlaneTranslation<
 
   // let targetSize = (40, 70)
   let (fig, axs) = plt.subplots(2, 2, figsize: Python.tuple([12, 10])).tuple2
-  axs[0][0].imshow(frame.patch(
+  let img_m = axs[0][0].imshow(frame.patch(
     at: OrientedBoundingBox(center: pose, rows: 40 + 20 * 2, cols: 70 + 20 * 2)
   ).makeNumpyArray() / 255.0, cmap: "gray")
-  axs[0][0].title.set_text("Image with extra margin")
+  fig.colorbar(img_m, ax: axs[0][0])
+  axs[0][0].title.set_text("Image")
+  axs[0][0].set(xlabel: "x displacement", ylabel: "y displacement")
 
   let fg_m = axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest") // , vmin: trans_min, vmax: trans_max)
   fig.colorbar(fg_m, ax: axs[0][1])

@@ -15,26 +15,21 @@
 import TensorFlow
 import PenguinStructures
 
-/// A class performing common activities in the RandomProjection framework.
+/// A class performing common activities in the IdentityProjection framework.
 /// 
 /// NOTE: This class can do normalization
 /// 
 /// - Input shape for training: [N, H, W, C]
 /// - W matrix: [feature, H*W*C]
 /// - Output: [feature]
-public struct RandomProjection {
+public struct IdentityProjection {
   public typealias Patch = Tensor<Double>
-
-  /// Random Basis Matrix
-  /// When input image is of shape [N, H, W, C]
-  /// B is of shape [d, H * W * C]
-  public let B: Tensor<Double>
 
   /// Sample mean
   public let mean: Tensor<Double>
 
   /// Initialize the random projector with a normalized projection matrix
-  public init(fromShape shape: TensorShape, toFeatureSize d: Int, sampleMean: Tensor<Double>? = nil) {
+  public init(fromShape shape: TensorShape, sampleMean: Tensor<Double>? = nil) {
     let (H, W, C) = (shape[0], shape[1], shape[2])
     
     if let mu = sampleMean {
@@ -43,19 +38,12 @@ public struct RandomProjection {
     } else {
       mean = Tensor(zeros: [H, W, C])
     }
-    
-    B = Tensor<Double>(
-      stacking: (0..<d).map { _ in
-        let t = Tensor<Double>(randomNormal: [H * W * C])
-        return t/sqrt(t.squared().sum())
-      }
-    )
   }
 
   /// Initialize  given an image batch
   public typealias HyperParameters = Int
   public init(from imageBatch: Tensor<Double>, given d: HyperParameters? = nil) {
-    self.init(fromShape: imageBatch.shape.suffix(3), toFeatureSize: d ?? 5, sampleMean: imageBatch.mean(squeezingAxes: 0))
+    self.init(fromShape: imageBatch.shape.suffix(3), sampleMean: imageBatch.mean(squeezingAxes: 0))
   }
 
   /// Generate an feature from image or image batch
@@ -64,16 +52,15 @@ public struct RandomProjection {
   @differentiable
   public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3 || (image.rank == 4), "wrong feature dimension \(image.shape)")
-    let HWC = B.shape[1]
-    let d = B.shape[0]
     if image.rank == 4 {
-      let N = image.shape[0]
-      let v_T = (image - mean).reshaped(to: [N, HWC])
-      return matmul(v_T, B.transposed()).reshaped(to: [N, d])
+      let (N, H, W, C) = (image.shape[0], image.shape[1], image.shape[2], image.shape[3])
+      let v_T = (image - mean).reshaped(to: [N, H * W * C])
+      return v_T
     } else {
-      return matmul(B, (image - mean).reshaped(to: [HWC, 1])).reshaped(to: [d])
+      let (H, W, C) = (image.shape[0], image.shape[1], image.shape[2])
+      return (image - mean).reshaped(to: [H * W * C])
     }
   }
 }
 
-extension RandomProjection: AppearanceModelEncoder {}
+extension IdentityProjection: AppearanceModelEncoder {}

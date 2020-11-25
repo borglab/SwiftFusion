@@ -95,7 +95,7 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
   let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
 
   let batchNegative = encoder.encode(bg)
-  let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
+  let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
 
   let tracker = makeProbabilisticTracker(
     model: encoder, statistics: statistics,
@@ -113,13 +113,13 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
 /// Parameter statistics: Normalization statistics for the frames.
 /// Parameter frames: The frames of the video where we want to run tracking.
 /// Parameter targetSize: The size of the target in the frames.
-public func makeProbabilisticTracker<Encoder: AppearanceModelEncoder>(
+public func makeProbabilisticTracker<Encoder: AppearanceModelEncoder, ForegroundModel: GenerativeDensity, BackgroundModel: GenerativeDensity>(
   model: Encoder,
   statistics: FrameStatistics,
   frames: [Tensor<Float>],
   targetSize: (Int, Int),
-  foregroundModel: MultivariateGaussian,
-  backgroundModel: GaussianNB
+  foregroundModel: ForegroundModel,
+  backgroundModel: BackgroundModel
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   var variableTemplate = VariableAssignments()
   var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()

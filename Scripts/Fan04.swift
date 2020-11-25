@@ -50,7 +50,7 @@ struct Fan04: ParsableCommand {
       }
     }()
 
-    let (fig, _, _) = runProbabilisticTracker(
+    let (fig, track, gt) = runProbabilisticTracker(
       directory: dataDir,
       encoder: pca,
       onTrack: trackId, forFrames: trackLength, withSampling: true,
@@ -60,5 +60,15 @@ struct Fan04: ParsableCommand {
 
     /// Actual track v.s. ground truth track
     fig.savefig("Results/fan04/fan04_track\(trackId)_\(featureSize).pdf", bbox_inches: "tight")
+    fig.savefig("Results/fan04/fan04_track\(trackId)_\(featureSize).png", bbox_inches: "tight")
+
+    let json = JSONEncoder()
+    json.outputFormatting = .prettyPrinted
+
+    let track_data = try! json.encode(track)
+    try! track_data.write(to: URL(fileURLWithPath: "Results/fan04/fan04_track_\(trackId)_\(featureSize).json"))
+
+    let gt_data = try! json.encode(gt)
+    try! gt_data.write(to: URL(fileURLWithPath: "Results/fan04/fan04_gt_\(trackId)_\(featureSize).json"))
   }
 }
