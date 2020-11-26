@@ -70,3 +70,168 @@ public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2
   ax[1].title.set_text("Labeling")
   return (fig, ax)
 }
+
+/// Calculate the translation error plane (X-Y)
+public func errorPlaneTranslation<
+  Encoder: AppearanceModelEncoder,
+  FGModel: GenerativeDensity,
+  BGModel: GenerativeDensity
+> (
+  frame: Tensor<Float>,
+  at: Pose2,
+  deltaXs: [Double],
+  deltaYs: [Double],
+  statistics: FrameStatistics,
+  encoder: Encoder,
+  foregroundModel: FGModel,
+  backgroundModel: BGModel
+) -> (fg: Tensor<Double>, bg: Tensor<Double>, e: Tensor<Double>) {
+  let targetSize = (40, 70)
+  let measurement = statistics.normalized(frame)
+
+  func error(_ pose: Pose2) -> (fg: Double, bg: Double, e: Double) {
+    let region = OrientedBoundingBox(center: pose, rows: targetSize.0, cols: targetSize.1)
+    let patch = Tensor<Double>(measurement.patch(at: region, outputSize: targetSize))
+    let features = encoder.encode(patch.expandingShape(at: 0)).squeezingShape(at: 0)
+
+    let fg_nll = foregroundModel.negativeLogLikelihood(features)
+    let bg_nll = backgroundModel.negativeLogLikelihood(features)
+    let result = fg_nll - bg_nll
+
+    /// TODO: What is the idiomatic way of avoiding negative probability here?
+    return (fg: fg_nll, bg: bg_nll, e: result)
+  }
+
+  var fg = Tensor<Double>(zeros: [deltaYs.count, deltaXs.count])
+  var bg = Tensor<Double>(zeros: [deltaYs.count, deltaXs.count])
+  var errors = Tensor<Double>(zeros: [deltaYs.count, deltaXs.count])
+  for (i, dx) in deltaXs.enumerated() {
+    for (j, dy) in deltaYs.enumerated() {
+      let (fg_nll, bg_nll, e) = error(at * Pose2(dx, dy, 0.0))
+      /// x is horiz movement, but is vertical dim in imshow
+      fg[j, i] = Tensor(fg_nll)
+      bg[j, i] = Tensor(bg_nll)
+      errors[j, i] = Tensor(e)
+    }
+  }
+  return (fg, bg, errors)
+}
+
+/// Plot the translational error plane
+public func plotErrorPlaneTranslation<
+  Encoder: AppearanceModelEncoder,
+  FGModel: GenerativeDensity,
+  BGModel: GenerativeDensity
+> (
+  frame: Tensor<Float>,
+  at pose: Pose2,
+  deltaXs: [Double],
+  deltaYs: [Double],
+  statistics: FrameStatistics,
+  encoder: Encoder,
+  foregroundModel: FGModel,
+  backgroundModel: BGModel,
+  normalizeScale: Bool = false
+) -> (PythonObject, PythonObject) {
+  let plt = Python.import("matplotlib.pyplot")
+  let (fg, bg, e) = errorPlaneTranslation(
+    frame: frame,
+    at: pose,
+    deltaXs: deltaXs,
+    deltaYs: deltaYs,
+    statistics: statistics,
+    encoder: encoder,
+    foregroundModel: foregroundModel,
+    backgroundModel: backgroundModel
+  )
+
+  let trans_mins = [e, fg, bg].map { $0.min() }
+  let trans_maxs = [e, fg, bg].map { $0.max() }
+  let trans_min = Tensor<Double>(trans_mins).min().scalarized()
+  let trans_max = Tensor<Double>(trans_maxs).max().scalarized()
+  
+  let (fig, axs) = plt.subplots(2, 2, figsize: Python.tuple([12, 10])).tuple2
+  
+  // Plot the image patch
+  let img_m = axs[0][0].imshow(frame.patch(
+    at: OrientedBoundingBox(center: pose, rows: 40 + 20 * 2, cols: 70 + 20 * 2)
+  ).makeNumpyArray() / 255.0, cmap: "gray")
+  fig.colorbar(img_m, ax: axs[0][0])
+  axs[0][0].title.set_text("Image")
+  axs[0][0].set(xlabel: "x displacement", ylabel: "y displacement")
+
+  // Plot the foreground model
+  let fg_m = normalizeScale ?
+    axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max) :
+    axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest")
+
+  fig.colorbar(fg_m, ax: axs[0][1])
+  axs[0][1].title.set_text("Foreground Response")
+  axs[0][1].set(xlabel: "x displacement", ylabel: "y displacement")
+
+  // Plot the background model
+  let bg_m = normalizeScale ?
+    axs[1][0].imshow(bg.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max):
+    axs[1][0].imshow(bg.makeNumpyArray(), cmap: "hot", interpolation: "nearest")
+
+  fig.colorbar(bg_m, ax: axs[1][0])
+  axs[1][0].title.set_text("Background Response")
+  axs[1][0].set(xlabel: "x displacement", ylabel: "y displacement")
+
+  // Plot the response (error)
+  let pcm = normalizeScale ?
+    axs[1][1].imshow(e.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max):
+    axs[1][1].imshow(e.makeNumpyArray(), cmap: "hot", interpolation: "nearest")
+
+  fig.colorbar(pcm, ax: axs[1][1])
+  axs[1][1].title.set_text("Total Response")
+  axs[1][1].set(xlabel: "x displacement", ylabel: "y displacement")
+
+  return (fig, axs)
+}
+
+/// Plot the translational error plane for a `TrackingLikelihoodModel`
+public func plotErrorPlaneTranslation<
+  Encoder: AppearanceModelEncoder,
+  FGModel: GenerativeDensity,
+  BGModel: GenerativeDensity
+> (
+  frame: Tensor<Float>,
+  at pose: Pose2,
+  deltaXs: [Double],
+  deltaYs: [Double],
+  statistics: FrameStatistics,
+  likelihoodModel: TrackingLikelihoodModel<Encoder, FGModel, BGModel>,
+  normalizeScale: Bool = false
+) -> (PythonObject, PythonObject) {
+  plotErrorPlaneTranslation(
+    frame: frame,
+    at: pose,
+    deltaXs: deltaXs,
+    deltaYs: deltaYs,
+    statistics: statistics,
+    encoder: likelihoodModel.encoder,
+    foregroundModel: likelihoodModel.foregroundModel,
+    backgroundModel: likelihoodModel.backgroundModel,
+    normalizeScale: normalizeScale
+  )
+}
+
+/// Calculate the translational error plane, but for a `TrackingLikelihoodModel`
+public func errorPlaneTranslation<
+  Encoder: AppearanceModelEncoder,
+  FGModel: GenerativeDensity,
+  BGModel: GenerativeDensity
+> (
+  frame: Tensor<Float>,
+  at: Pose2,
+  deltaXs: [Double],
+  deltaYs: [Double],
+  statistics: FrameStatistics,
+  likelihoodModel: TrackingLikelihoodModel<Encoder, FGModel, BGModel>
+) -> (fg: Tensor<Double>, bg: Tensor<Double>, e: Tensor<Double>) {
+  errorPlaneTranslation(
+    frame: frame, at: at, deltaXs: deltaXs, deltaYs: deltaYs, statistics: statistics,
+    encoder: likelihoodModel.encoder, foregroundModel: likelihoodModel.foregroundModel, backgroundModel: likelihoodModel.backgroundModel
+  )
+}
