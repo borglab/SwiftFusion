@@ -189,3 +189,49 @@ public func plotErrorPlaneTranslation<
 
   return (fig, axs)
 }
+
+/// Plot the translational error plane for a `TrackingLikelihoodModel`
+public func plotErrorPlaneTranslation<
+  Encoder: AppearanceModelEncoder,
+  FGModel: GenerativeDensity,
+  BGModel: GenerativeDensity
+> (
+  frame: Tensor<Float>,
+  at pose: Pose2,
+  deltaXs: [Double],
+  deltaYs: [Double],
+  statistics: FrameStatistics,
+  likelihoodModel: TrackingLikelihoodModel<Encoder, FGModel, BGModel>,
+  normalizeScale: Bool = false
+) -> (PythonObject, PythonObject) {
+  plotErrorPlaneTranslation(
+    frame: frame,
+    at: pose,
+    deltaXs: deltaXs,
+    deltaYs: deltaYs,
+    statistics: statistics,
+    encoder: likelihoodModel.encoder,
+    foregroundModel: likelihoodModel.foregroundModel,
+    backgroundModel: likelihoodModel.backgroundModel,
+    normalizeScale: normalizeScale
+  )
+}
+
+/// Calculate the translational error plane, but for a `TrackingLikelihoodModel`
+public func errorPlaneTranslation<
+  Encoder: AppearanceModelEncoder,
+  FGModel: GenerativeDensity,
+  BGModel: GenerativeDensity
+> (
+  frame: Tensor<Float>,
+  at: Pose2,
+  deltaXs: [Double],
+  deltaYs: [Double],
+  statistics: FrameStatistics,
+  likelihoodModel: TrackingLikelihoodModel<Encoder, FGModel, BGModel>
+) -> (fg: Tensor<Double>, bg: Tensor<Double>, e: Tensor<Double>) {
+  errorPlaneTranslation(
+    frame: frame, at: at, deltaXs: deltaXs, deltaYs: deltaYs, statistics: statistics,
+    encoder: likelihoodModel.encoder, foregroundModel: likelihoodModel.foregroundModel, backgroundModel: likelihoodModel.backgroundModel
+  )
+}
