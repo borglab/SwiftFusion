@@ -14,11 +14,9 @@
 import TensorFlow
 import PenguinStructures
 
-/// A class performing common activities in the IdentityProjection framework.
+/// A class that does a identity feature mapping (directly outputs the pixels flattened)
 ///
-/// NOTE: This class can do normalization
-///
-/// - Input shape for training: [N, H, W, C]
+/// - Input shape for initialization: [N, H, W, C]
 /// - W matrix: [feature, H*W*C]
 /// - Output: [feature]
 public struct IdentityProjection {
