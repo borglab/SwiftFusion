@@ -71,6 +71,7 @@ public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2
   return (fig, ax)
 }
 
+/// Calculate the translation error plane (X-Y)
 public func errorPlaneTranslation<
   Encoder: AppearanceModelEncoder,
   FGModel: GenerativeDensity,
@@ -116,6 +117,7 @@ public func errorPlaneTranslation<
   return (fg, bg, errors)
 }
 
+/// Plot the translational error plane
 public func plotErrorPlaneTranslation<
   Encoder: AppearanceModelEncoder,
   FGModel: GenerativeDensity,
@@ -128,7 +130,8 @@ public func plotErrorPlaneTranslation<
   statistics: FrameStatistics,
   encoder: Encoder,
   foregroundModel: FGModel,
-  backgroundModel: BGModel
+  backgroundModel: BGModel,
+  normalizeScale: Bool = false
 ) -> (PythonObject, PythonObject) {
   let plt = Python.import("matplotlib.pyplot")
   let (fg, bg, e) = errorPlaneTranslation(
@@ -142,12 +145,14 @@ public func plotErrorPlaneTranslation<
     backgroundModel: backgroundModel
   )
 
-  // let trans_mins = [e, fg, bg].map { $0.min() }
-  // let trans_maxs = [e, fg, bg].map { $0.max() }
-  // let trans_min = Tensor<Double>(trans_mins).min().scalarized()
-  // let trans_max = Tensor<Double>(trans_maxs).max().scalarized()
-  // let targetSize = (40, 70)
+  let trans_mins = [e, fg, bg].map { $0.min() }
+  let trans_maxs = [e, fg, bg].map { $0.max() }
+  let trans_min = Tensor<Double>(trans_mins).min().scalarized()
+  let trans_max = Tensor<Double>(trans_maxs).max().scalarized()
+  
   let (fig, axs) = plt.subplots(2, 2, figsize: Python.tuple([12, 10])).tuple2
+  
+  // Plot the image patch
   let img_m = axs[0][0].imshow(frame.patch(
     at: OrientedBoundingBox(center: pose, rows: 40 + 20 * 2, cols: 70 + 20 * 2)
   ).makeNumpyArray() / 255.0, cmap: "gray")
@@ -155,17 +160,29 @@ public func plotErrorPlaneTranslation<
   axs[0][0].title.set_text("Image")
   axs[0][0].set(xlabel: "x displacement", ylabel: "y displacement")
 
-  let fg_m = axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest") // , vmin: trans_min, vmax: trans_max)
+  // Plot the foreground model
+  let fg_m = normalizeScale ?
+    axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max) :
+    axs[0][1].imshow(fg.makeNumpyArray(), cmap: "hot", interpolation: "nearest")
+
   fig.colorbar(fg_m, ax: axs[0][1])
   axs[0][1].title.set_text("Foreground Response")
   axs[0][1].set(xlabel: "x displacement", ylabel: "y displacement")
 
-  let bg_m = axs[1][0].imshow(bg.makeNumpyArray(), cmap: "hot", interpolation: "nearest" ) // , vmin: trans_min, vmax: trans_max)
+  // Plot the background model
+  let bg_m = normalizeScale ?
+    axs[1][0].imshow(bg.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max):
+    axs[1][0].imshow(bg.makeNumpyArray(), cmap: "hot", interpolation: "nearest")
+
   fig.colorbar(bg_m, ax: axs[1][0])
   axs[1][0].title.set_text("Background Response")
   axs[1][0].set(xlabel: "x displacement", ylabel: "y displacement")
 
-  let pcm = axs[1][1].imshow(e.makeNumpyArray(), cmap: "hot", interpolation: "nearest") // , vmin: trans_min, vmax: trans_max)
+  // Plot the response (error)
+  let pcm = normalizeScale ?
+    axs[1][1].imshow(e.makeNumpyArray(), cmap: "hot", interpolation: "nearest", vmin: trans_min, vmax: trans_max):
+    axs[1][1].imshow(e.makeNumpyArray(), cmap: "hot", interpolation: "nearest")
+
   fig.colorbar(pcm, ax: axs[1][1])
   axs[1][1].title.set_text("Total Response")
   axs[1][1].set(xlabel: "x displacement", ylabel: "y displacement")
