@@ -56,6 +56,19 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
               foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
               backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel))
   }
+  
+  /// Calculate the negative log likelihood of the likelihood model of a patch
+  @differentiable
+  public func negativeLogLikelihood(of patch: Tensor<Double>) -> Double {
+    let encoded = encoder.encode(patch.expandingShape(at: 0)).squeezingShape(at: 0)
+    return (foregroundModel.negativeLogLikelihood(encoded) - backgroundModel.negativeLogLikelihood(encoded))
+  }
+  
+  /// Calculate the probability of the likelihood model of a patch
+  @differentiable public func unnormalizedProbability(of patch: Tensor<Double>) -> Double {
+    let E = negativeLogLikelihood(of: patch)
+    return exp(-E)
+  }
 }
 
 extension TrackingLikelihoodModel : McEmModel {
@@ -101,7 +114,16 @@ extension TrackingLikelihoodModel : McEmModel {
       // sample from noise model on manual pose
       var proposal = datum.obb.center
       proposal.perturbWith(stddev: Vector3(0.3, 8, 4.6))
-      return (1.0, proposal)
+      return (
+        // The weight of the proposal, which equals to the unnormalized probability of the likelihood:
+        self.unnormalizedProbability(
+          of: datum.frame.patch(
+            at: OrientedBoundingBox(
+              center: proposal, rows: datum.obb.rows, cols: datum.obb.cols
+            )
+          )
+        ), proposal
+      )
     }
     
     // Then resample to get unweighted samples:
