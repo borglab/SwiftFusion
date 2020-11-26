@@ -7,7 +7,7 @@ import TensorFlow
 import PythonKit
 import Foundation
 
-/// Fan09: Raw Tracker, with Identity projection
+/// Fan09: PCA Tracker, with 2-cluster Gaussian Mixture
 struct Fan09: ParsableCommand {
   @Option(help: "Run on track number x")
   var trackId: Int = 0
@@ -18,16 +18,15 @@ struct Fan09: ParsableCommand {
   @Option(help: "Size of feature space")
   var featureSize: Int = 30
 
-  // Just runs an RP tracker and saves image to file
-  // Make sure you have a folder `Results/frank02` before running
+  // Make sure you have a folder `Results/fan09` before running
   func run() {
     let np = Python.import("numpy")
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
 
-    let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
-
-    let mean = Tensor<Double>(numpy: np.load("./pca_mu_\(featureSize).npy"))!.reshaped(to: [imageHeight, imageWidth, imageChannels])
-    let encoder = IdentityProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), sampleMean: mean)
+    let encoder = PCAEncoder(
+      withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!,
+      andMean: Tensor<Double>(numpy: np.load("./pca_mu_\(featureSize).npy"))!
+    )
 
     let (fig, track, gt) = runProbabilisticTracker(
       directory: dataDir,

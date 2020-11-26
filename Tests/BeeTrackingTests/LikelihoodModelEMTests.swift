@@ -20,10 +20,10 @@ import TensorFlow
 import XCTest
 
 // Test with a random projection feature space, and Gaussian/NB for FG/BG
-typealias RPGaussianNB = TrackingLikelihoodModel<RandomProjection,MultivariateGaussian, GaussianNB>
+typealias RPGaussianNB = TrackingLikelihoodModel<RandomProjection, MultivariateGaussian, GaussianNB>
 
 final class TrackingLikelihoodModelTests: XCTestCase {
-  /// Test fitting a simple 2-component mixture
+  /// Test fitting a likelihood model from foreground and background patches
   func testTrackingLikelihoodModel() {
     let frame = Tensor<Double>(zeros:[1000,1000,1])
     let boundingBoxes = [Vector2(100, 200), Vector2(150, 201), Vector2(600, 800)].map {
@@ -38,7 +38,7 @@ final class TrackingLikelihoodModelTests: XCTestCase {
 }
 
 final class TrackingLikelihoodModelEMTests: XCTestCase {
-  /// Test fitting a simple 2-component mixture
+  /// Test training the likelihood model with Monte-Carlo EM for 3 iterations
   func testTrackingLikelihoodModel() {
     let generator = ARC4RandomNumberGenerator(seed: 42)
     let frame = Tensor<Double>(zeros:[1000,1000,1])

@@ -71,16 +71,61 @@ public func runProbabilisticTracker<Encoder: AppearanceModelEncoder>(
   return (fig, track, groundTruth)
 }
 
+// Simple two-component mixture model in 2D
+struct TwoComponents : McEmModel {
+  typealias Datum = Tensor<Double>
+  enum Hidden { case one; case two}
+  typealias HyperParameters = MultivariateGaussian.HyperParameters
+  
+  public var c1, c2 : MultivariateGaussian
+  
+  /// Initialize to uninitialized components
+  init(from data:[Datum],
+       using sourceOfEntropy: inout AnyRandomNumberGenerator,
+       given p: HyperParameters?) {
+    c1 = MultivariateGaussian(mean:data[0], information: eye(rowCount: 10))
+    c2 = MultivariateGaussian(mean:data[1], information: eye(rowCount: 10))
+  }
+  
+  /// Given a datum and a model, sample from the hidden variables
+  func sample(count:Int, for datum: Datum,
+              using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
+    let E1 = c1.negativeLogLikelihood(datum)
+    let E2 = c2.negativeLogLikelihood(datum)
+
+    let p1_over_p2 = (c1.constant / c2.constant) * exp(E2 - E1)
+    let labels : [Hidden] = (0..<count).map { _ in
+      let u = Double.random(in: 0..<(p1_over_p2 + 1), using: &sourceOfEntropy)
+      return u<=p1_over_p2 ? .one : .two
+    }
+    return labels
+  }
+  
+  /// Given an array of labeled datums, fit the two Gaussian mixture components
+  init(from labeledData: [LabeledDatum], given p: HyperParameters?=nil) {
+    let data1 = labeledData.filter { $0.0 == .one}
+    let data2 = labeledData.filter { $0.0 == .two}
+    self.c1 = MultivariateGaussian(from: Tensor<Double>(data1.map { $0.1 }), given:p)
+    self.c2 = MultivariateGaussian(from: Tensor<Double>(data2.map { $0.1 }), given:p)
+  }
+}
+
 /// Train a random projection tracker with a full Gaussian foreground model
 /// and a Naive Bayes background model.
-public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
+public func trainProbabilisticTracker<
+  Encoder: AppearanceModelEncoder,
+  ForegroundModel: GenerativeDensity,
+  BackgroundModel: GenerativeDensity
+>(
   trainingData: OISTBeeVideo,
   encoder: Encoder,
   frames: [Tensor<Float>],
   boundingBoxSize: (Int, Int), withFeatureSize d: Int,
   fgRandomFrameCount: Int = 10,
   bgRandomFrameCount: Int = 10,
-  numberOfTrainingSamples: Int = 3000
+  numberOfTrainingSamples: Int = 3000,
+  foregroundModel: (_ batchPositive: Tensor<Double>) -> ForegroundModel,
+  backgroundModel: (_ batchNegative: Tensor<Double>) -> BackgroundModel
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   let (fg, bg, statistics) = getTrainingBatches(
     dataset: trainingData, boundingBoxSize: boundingBoxSize,
@@ -92,10 +137,16 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
   )
 
   let batchPositive = encoder.encode(fg)
-  let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
-
   let batchNegative = encoder.encode(bg)
-  let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
+
+  // let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
+  let generator = ARC4RandomNumberGenerator(seed: 11)
+  var em = MonteCarloEM<TwoComponents>(sourceOfEntropy: generator)
+  let twoComp = em.run(with: Tensor(concatenating: [batchPositive, batchNegative], alongAxis: 0).unstacked(alongAxis: 0), iterationCount: 10)
+  let foregroundModel = twoComp.c1
+  let backgroundModel = twoComp.c2
+
+  // let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
 
   let tracker = makeProbabilisticTracker(
     model: encoder, statistics: statistics,

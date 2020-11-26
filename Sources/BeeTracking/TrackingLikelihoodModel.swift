@@ -17,7 +17,7 @@ import TensorFlow
 import XCTest
 
 /// A likelihood model has a a feature encoder, a foreground model and a background model
-public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:GenerativeDensity, BG:GenerativeDensity> {
+public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG: GenerativeDensity, BG: GenerativeDensity> {
   public let encoder: Encoder
   public let foregroundModel: FG
   public let backgroundModel: BG
