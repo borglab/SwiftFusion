@@ -60,7 +60,7 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   /// Calculate the negative log likelihood of the likelihood model of a patch
   @differentiable
   public func negativeLogLikelihood(of patch: Tensor<Double>) -> Double {
-    let encoded = encoder.encode(patch.expandingShape(at: 0)).squeezingShape(at: 0)
+    let encoded = encoder.encode(sample: patch)
     return (foregroundModel.negativeLogLikelihood(encoded) - backgroundModel.negativeLogLikelihood(encoded))
   }
   
@@ -114,15 +114,15 @@ extension TrackingLikelihoodModel : McEmModel {
       // sample from noise model on manual pose
       var proposal = datum.obb.center
       proposal.perturbWith(stddev: Vector3(0.3, 8, 4.6))
+      let patch = datum.frame.patch(
+        at: OrientedBoundingBox(
+          center: proposal, rows: datum.obb.rows, cols: datum.obb.cols
+        )
+      )
+      
       return (
         // The weight of the proposal, which equals to the unnormalized probability of the likelihood:
-        self.unnormalizedProbability(
-          of: datum.frame.patch(
-            at: OrientedBoundingBox(
-              center: proposal, rows: datum.obb.rows, cols: datum.obb.cols
-            )
-          )
-        ), proposal
+        self.unnormalizedProbability(of: patch), proposal
       )
     }
     
