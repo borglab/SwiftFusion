@@ -1,6 +1,5 @@
 // swift-tools-version:5.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
-
 import PackageDescription
 
 let package = Package(
@@ -43,7 +42,12 @@ let package = Package(
         .product(name: "PenguinStructures", package: "Penguin"),
         .product(name: "PenguinTesting", package: "Penguin"),
         .product(name: "PenguinParallelWithFoundation", package: "Penguin")
-      ]),
+      ],
+      exclude: [
+        "Core/VectorN.swift.gyb",
+        "Inference/FactorBoilerplate.swift.gyb"
+      ]
+      ),
     .target(
       name: "SwiftFusionBenchmarks",
       dependencies: [
@@ -98,17 +102,27 @@ let package = Package(
         "Plotly",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
-    path: "Scripts"),
+      path: "Scripts",
+      exclude: ["README.md"]
+    ),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: [
         "SwiftFusion",
         .product(name: "PenguinTesting", package: "Penguin"),
         .product(name: "ModelSupport", package: "swift-models"),
-      ]),
+      ],
+      exclude: [
+        "Datasets",
+        "Core/VectorNTests.swift.gyb",
+        "Image"
+      ]
+    ),
     .testTarget(
       name: "BeeDatasetTests",
-      dependencies: ["BeeDataset"]),
+      dependencies: ["BeeDataset"],
+      exclude: ["fakeDataset"]
+    ),
     .testTarget(
       name: "BeeTrackingTests",
       dependencies: ["BeeTracking"]),

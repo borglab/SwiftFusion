@@ -1,4 +1,3 @@
-
 // Copyright 2020 The SwiftFusion Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +24,9 @@ public struct PCAEncoder {
   /// Basis
   public let U: Tensor<Double>
   
+  /// Data mean
+  public let mu: Tensor<Double>
+
   /// Size of latent
   public var d: Int {
     get {
@@ -50,15 +52,19 @@ public struct PCAEncoder {
     let n = H_ * W_ * C_
     let d = p ?? 10
 
-    let images_flattened = imageBatch.reshaped(to: [N_, n]).transposed()
-    let (_, U, _) = images_flattened.svd(computeUV: true, fullMatrices: false)
+    let images_flattened = imageBatch.reshaped(to: [N_, n])
+    let mu = images_flattened.mean(squeezingAxes: 0)
+  
+    let images_flattened_without_mean = (images_flattened - mu).transposed()
+    let (_, U, _) = images_flattened_without_mean.svd(computeUV: true, fullMatrices: false)
 
-    self.init(withBasis: U![TensorRange.ellipsis, 0..<d])
+    self.init(withBasis: U![TensorRange.ellipsis, 0..<d], andMean: mu)
   }
 
   /// Initialize a PCAEncoder
-  public init(withBasis U: Tensor<Double>) {
+  public init(withBasis U: Tensor<Double>, andMean mu: Tensor<Double>) {
     self.U = U
+    self.mu = mu
   }
 
   /// Generate an image according to a latent
@@ -70,13 +76,14 @@ public struct PCAEncoder {
     let (N_) = (image.shape[0])
     if image.rank == 4 {
       if N_ == 1 {
-        return matmul(U, transposed: true, image.reshaped(to: [n, 1])).reshaped(to: [1, d])
+        return matmul(U, transposed: true, image.reshaped(to: [n, 1]) - mu.reshaped(to: [n, 1])).reshaped(to: [1, d])
       } else {
-        let v = image.reshaped(to: [N_, n])
+        let v = image.reshaped(to: [N_, n]) - mu.reshaped(to: [1, n])
         return matmul(v, U)
       }
     } else {
-      return matmul(U, transposed: true, image.reshaped(to: [n, 1])).reshaped(to: [d])
+      let v = image.reshaped(to: [n, 1]) - mu.reshaped(to: [n, 1])
+      return matmul(U, transposed: true, v).reshaped(to: [d])
     }
   }
 }
