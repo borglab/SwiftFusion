@@ -39,10 +39,14 @@ struct Fan04: ParsableCommand {
         let trainingBatch = pcaTrainingData.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
         let encoder = PCAEncoder(from: trainingBatch, given: featureSize)
         np.save("./pca_U_\(featureSize)", encoder.U.makeNumpyArray())
+        np.save("./pca_mu_\(featureSize)", encoder.mu.makeNumpyArray())
         return encoder
       } else {
         /// Just load the cached weight matrix
-        return PCAEncoder(withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!)
+        return PCAEncoder(
+          withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!,
+          andMean: Tensor<Double>(numpy: np.load("./pca_mu_\(featureSize).npy"))!
+        )
       }
     }()
 
