@@ -15,6 +15,11 @@ public extension AppearanceModelEncoder {
   init(from imageBatch: Tensor<Double>) {
     self.init(from: imageBatch, given: nil)
   }
+  
+  @differentiable
+  func encode(sample: Tensor<Double>) -> Tensor<Double> {
+    encode(sample.expandingShape(at: 0)).squeezingShape(at: 0)
+  }
 }
 
 extension AppearanceModelEncoder {
