@@ -93,10 +93,12 @@ public struct MonteCarloEM<ModelType: McEmModel> {
   
   /// Run Monte Carlo EM given unlabeled data
   public mutating func run(with data:[ModelType.Datum],
+                           modelInitializer: (_ data: [ModelType.Datum], _ entropySource: inout AnyRandomNumberGenerator) -> ModelType,
+                           modelFitter: (_ data: [ModelType.LabeledDatum]) -> ModelType,
                            iterationCount:Int,
                            sampleCount:Int = 5,
                            hook: Hook? = {(_,_,_) in () }) -> ModelType {
-    var model = ModelType(from: data, using: &self.sourceOfEntropy)
+    var model = modelInitializer(data, &self.sourceOfEntropy)
     
     for i in 1...iterationCount {
       // Monte-Carlo E-step: given current model, sample hidden variables for each datum
@@ -108,11 +110,23 @@ public struct MonteCarloEM<ModelType: McEmModel> {
       }
       
       // M-step: fit model using labeled datums
-      model = ModelType(from: labeledData)
+      model = modelFitter(labeledData)
       
       // Call hook if given
       hook?(i, labeledData, model)
     }
+    return model
+  }
+  
+  /// Run Monte Carlo EM given unlabeled data
+  public mutating func run(with data:[ModelType.Datum],
+                           iterationCount:Int,
+                           sampleCount:Int = 5,
+                           hook: Hook? = {(_,_,_) in () }) -> ModelType {
+    let modelInitializer = { ModelType(from: $0, using: &$1) }
+    let modelFitter = { ModelType(from: $0) }
+    
+    let model = run(with: data, modelInitializer: modelInitializer, modelFitter: modelFitter, iterationCount: iterationCount, sampleCount: sampleCount, hook: hook)
     return model
   }
 }
