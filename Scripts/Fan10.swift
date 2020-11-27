@@ -55,18 +55,41 @@ struct Fan10: ParsableCommand {
 
     rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
 
-    var generator = ARC4RandomNumberGenerator(seed: 42)
+    let generator = ARC4RandomNumberGenerator(seed: 42)
     var em = MonteCarloEM<LikelihoodModel>(sourceOfEntropy: generator)
     
     let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!
     
     let trainingData = getTrainingDataEM(from: trainingDataset)
     
-    let trackingModel = em.run(with: trainingData, iterationCount: 3)
+    let trackingModel = em.run(
+      with: trainingData,
+      modelInitializer: { _,_ in
+        TrackingLikelihoodModel(
+          with: rae,
+          from: Tensor(
+            stacking: trainingData.filter { $0.type == .fg }.map { $0.frame!.patch(at: $0.obb) }
+          ), and: Tensor(
+            stacking: trainingData.filter { $0.type == .bg }.map { $0.frame!.patch(at: $0.obb) }
+          )
+        )
+      },
+      modelFitter: { _ in
+        TrackingLikelihoodModel(
+          with: rae,
+          from: Tensor(
+            stacking: trainingData.filter { $0.type == .fg }.map { $0.frame!.patch(at: $0.obb) }
+          ), and: Tensor(
+            stacking: trainingData.filter { $0.type == .bg }.map { $0.frame!.patch(at: $0.obb) }
+          )
+        )
+      },
+      iterationCount: 3
+    )
     
     let (fig, track, gt) = runProbabilisticTracker(
       directory: dataDir,
-      encoder: rae,
+      likelihoodModel: trackingModel,
       onTrack: trackId, forFrames: trackLength, withSampling: true,
       withFeatureSize: featureSize,
       savePatchesIn: "Results/fan10"
