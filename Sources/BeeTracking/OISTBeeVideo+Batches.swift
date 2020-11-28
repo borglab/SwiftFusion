@@ -62,7 +62,7 @@ extension OISTBeeVideo {
     return statistics.normalized(stacked)
   }
 
-  /// Returns a batch of locations of background
+  /// Returns a batch of locations of foreground
   /// bee bounding boxes.
   public func makeForegroundBoundingBoxes(
     patchSize: (Int, Int),
