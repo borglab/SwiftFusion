@@ -25,8 +25,8 @@ struct Fan10: ParsableCommand {
 
   func getTrainingDataEM(
     from dataset: OISTBeeVideo,
-    numberForeground: Int = 3000,
-    numberBackground: Int = 3000
+    numberForeground: Int = 300,
+    numberBackground: Int = 300
   ) -> [LikelihoodModel.Datum] {
     let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: numberBackground).map {
       (frame: $0.frame, type: LikelihoodModel.PatchType.bg, obb: $0.obb)
@@ -58,7 +58,7 @@ struct Fan10: ParsableCommand {
     let generator = ARC4RandomNumberGenerator(seed: 42)
     var em = MonteCarloEM<LikelihoodModel>(sourceOfEntropy: generator)
     
-    let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!
+    let trainingDataset = OISTBeeVideo(directory: dataDir, length: 30)!
     
     let trainingData = getTrainingDataEM(from: trainingDataset)
     

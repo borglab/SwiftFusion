@@ -14,6 +14,7 @@
 
 import SwiftFusion
 import TensorFlow
+import PythonKit
 
 // MARK: - The Regularized Autoencoder model.
 
@@ -299,4 +300,49 @@ public struct DenseRAELoss {
 
     return totalLoss
   }
+}
+
+/// Pretrained version of DenseRAE. Note this is created because Swift does not allow inheritance of structs.
+public struct PretrainedDenseRAE: AppearanceModelEncoder {
+  public var inner: DenseRAE
+  
+  /// The constructor that only does loading of the pretrained weights.
+  public init(from imageBatch: Tensor<Double>, given: HyperParameters?) {
+    let shape = imageBatch.shape
+    precondition(imageBatch.rank == 4, "Wrong image shape \(shape)")
+    let (_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
+
+    if let params = given {
+      var encoder = DenseRAE(
+        imageHeight: H_, imageWidth: W_, imageChannels: C_,
+        hiddenDimension: params.hiddenDimension, latentDimension: params.latentDimension
+      )
+
+      let np = Python.import("numpy")
+      
+      encoder.load(weights: np.load(params.weightFile, allow_pickle: true))
+      inner = encoder
+    } else {
+      inner = DenseRAE(
+        imageHeight: H_, imageWidth: W_, imageChannels: C_,
+        hiddenDimension: 1, latentDimension: 1
+      )
+      fatalError("Must provide hyperparameters to pretrained network")
+    }
+  }
+  
+  /// Constructor that does training of the network
+  public init(trainFrom imageBatch: Tensor<Double>, given: HyperParameters?) {
+    inner = DenseRAE(
+      from: imageBatch, given: (given != nil) ? (hiddenDimension: given!.hiddenDimension, latentDimension: given!.latentDimension) : nil
+    )
+  }
+  
+  @differentiable
+  public func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double> {
+    inner.encode(imageBatch)
+  }
+  
+  /// Initialize  given an image batch
+  public typealias HyperParameters = (hiddenDimension: Int, latentDimension: Int, weightFile: String)
 }
