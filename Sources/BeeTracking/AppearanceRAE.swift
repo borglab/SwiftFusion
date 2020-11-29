@@ -104,9 +104,40 @@ public struct DenseRAE: Layer {
     precondition(imageBatch.rank == 4, "Wrong image shape \(shape)")
     let (_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
     let (h,d) = parameters ?? (100,10)
-    self.init(imageHeight: H_, imageWidth: W_, imageChannels: C_,
+    
+    var model = DenseRAE(imageHeight: H_, imageWidth: W_, imageChannels: C_,
               hiddenDimension: h, latentDimension: d)
-    fatalError("DenseRAE::init(from:data) not implemented")
+    
+    let optimizer = Adam(for: model)
+    optimizer.learningRate = 1e-3
+    
+    let lossFunc = DenseRAELoss()
+    
+    // Thread-local variable that model layers read to know their mode
+    Context.local.learningPhase = .training
+
+    let epochs = TrainingEpochs(samples: imageBatch.unstacked(), batchSize: 200)
+    var trainLossResults: [Double] = []
+    let epochCount = 200
+    for (epochIndex, epoch) in epochs.prefix(epochCount).enumerated() {
+      var epochLoss: Double = 0
+      var batchCount: Int = 0
+      // epoch is a Slices object, see below
+      for batchSamples in epoch {
+        let batch = batchSamples.collated
+        let (loss, grad) = valueWithGradient(at: model) { lossFunc($0, batch) }
+        optimizer.update(&model, along: grad)
+        epochLoss += loss.scalarized()
+        batchCount += 1
+      }
+      epochLoss /= Double(batchCount)
+      trainLossResults.append(epochLoss)
+      if epochIndex % 50 == 0 {
+          print("Epoch \(epochIndex): Loss: \(epochLoss)")
+      }
+    }
+    
+    self = model
   }
 
   /// Differentiable encoder

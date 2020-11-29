@@ -5,6 +5,69 @@ import TensorFlow
 import PythonKit
 import Foundation
 
+/// Runs the random projections tracker
+/// Given a training set, it will train an RP tracker
+/// and run it on one track in the test set:
+///  - output: image with track and overlap metrics
+public func runProbabilisticTracker<
+  Encoder: AppearanceModelEncoder,
+  ForegroundModel: GenerativeDensity,
+  BackgroundModel: GenerativeDensity
+>(
+  directory: URL,
+  likelihoodModel: TrackingLikelihoodModel<Encoder, ForegroundModel, BackgroundModel>,
+  onTrack trackIndex: Int,
+  forFrames: Int = 80,
+  withSampling samplingFlag: Bool = false,
+  withFeatureSize d: Int = 100,
+  savePatchesIn resultDirectory: String? = nil
+) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
+  let testSetStart = 100
+  
+  // Create tracker
+  let testData = OISTBeeVideo(directory: directory, afterIndex: testSetStart, length: forFrames)!
+
+  precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
+  
+  var statistics = FrameStatistics(Tensor<Double>(0.0))
+  statistics.mean = Tensor(62.26806976644069)
+  statistics.standardDeviation = Tensor(37.44683834503672)
+  
+  var tracker = makeProbabilisticTracker(
+    model: likelihoodModel.encoder, statistics: statistics,
+    frames: testData.frames, targetSize: (40, 70),
+    foregroundModel: likelihoodModel.foregroundModel, backgroundModel: likelihoodModel.backgroundModel
+  )
+  
+  // Run the tracker and return track with ground truth
+  let (track, groundTruth) = createSingleTrack(
+    onTrack: trackIndex, withTracker: &tracker,
+    andTestData: testData, withSampling: samplingFlag
+  )
+  
+  // Now create trajectory and metrics plot
+  let plt = Python.import("matplotlib.pyplot")
+  let (fig, axes) = plt.subplots(2, 1, figsize: Python.tuple([6, 12])).tuple2
+  plotTrajectory(
+    track: track, withGroundTruth: groundTruth, on: axes[0],
+    withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
+  )
+  
+  plotOverlap(
+    track: track, withGroundTruth: groundTruth, on: axes[1]
+  )
+
+  if let dir = resultDirectory {
+    /// Plot all the frames so we can visually inspect the situation
+    for i in track.indices {
+      let (fig_initial, _) = plotPatchWithGT(frame: testData.frames[i], actual: track[i], expected: groundTruth[i])
+      fig_initial.savefig("\(dir)/track\(trackIndex)_\(d)_\(i).png", bbox_inches: "tight")
+      plt.close(fig: fig_initial)
+    }
+  }
+
+  return (fig, track, groundTruth)
+}
 
 /// Runs the random projections tracker
 /// Given a training set, it will train an RP tracker
@@ -113,13 +176,17 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
 /// Parameter statistics: Normalization statistics for the frames.
 /// Parameter frames: The frames of the video where we want to run tracking.
 /// Parameter targetSize: The size of the target in the frames.
-public func makeProbabilisticTracker<Encoder: AppearanceModelEncoder>(
+public func makeProbabilisticTracker<
+  Encoder: AppearanceModelEncoder,
+  ForegroundModel: GenerativeDensity,
+  BackgroundModel: GenerativeDensity
+>(
   model: Encoder,
   statistics: FrameStatistics,
   frames: [Tensor<Float>],
   targetSize: (Int, Int),
-  foregroundModel: MultivariateGaussian,
-  backgroundModel: GaussianNB
+  foregroundModel: ForegroundModel,
+  backgroundModel: BackgroundModel
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   var variableTemplate = VariableAssignments()
   var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()
