@@ -338,6 +338,12 @@ public struct PretrainedDenseRAE: AppearanceModelEncoder {
     )
   }
   
+  /// Save the weight to file
+  public func save(to path: String) {
+    let np = Python.import("numpy")
+    np.save(path, np.array(inner.numpyWeights, dtype: Python.object))
+  }
+  
   @differentiable
   public func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double> {
     inner.encode(imageBatch)
