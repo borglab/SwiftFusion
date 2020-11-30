@@ -60,6 +60,22 @@ extension OISTBeeVideo {
     let stacked = getUnnormalizedBatch(appearanceModelSize, batchSize, randomFrameCount: randomFrameCount)
     return statistics.normalized(stacked)
   }
+  
+  /// Returns a `[N, h, w, c]` batch of normalized patches that do not overlap with any bee
+  /// bee bounding boxes.
+  public func makeBackgroundBatch(
+    patchSize: (Int, Int), appearanceModelSize: (Int, Int),
+    statistics: FrameStatistics,
+    randomFrameCount: Int = 10,
+    batchSize: Int = 200
+  ) -> Tensor<Double> {
+    let images = makeBackgroundBoundingBoxes(patchSize: patchSize, batchSize: batchSize).map { (frame, obb) -> Tensor<Double> in
+      frame!.patch(at: obb, outputSize: appearanceModelSize)
+    }
+
+    let stacked = Tensor(stacking: images)
+    return statistics.normalized(stacked)
+  }
 
   /// Returns a batch of locations of foreground
   /// bee bounding boxes.
@@ -139,22 +155,6 @@ extension OISTBeeVideo {
     }
 
     return obbs
-  }
-
-  /// Returns a `[N, h, w, c]` batch of normalized patches that do not overlap with any bee
-  /// bee bounding boxes.
-  public func makeBackgroundBatch(
-    patchSize: (Int, Int), appearanceModelSize: (Int, Int),
-    statistics: FrameStatistics,
-    randomFrameCount: Int = 10,
-    batchSize: Int = 200
-  ) -> Tensor<Double> {
-    let images = makeBackgroundBoundingBoxes(patchSize: patchSize, batchSize: batchSize).map { (frame, obb) -> Tensor<Double> in
-      frame!.patch(at: obb, outputSize: appearanceModelSize)
-    }
-
-    let stacked = Tensor(stacking: images)
-    return statistics.normalized(stacked)
   }
 
   typealias LabeledFrame = (frameId: Int, (frame: Tensor<Double>, labels: [OISTBeeLabel]))
