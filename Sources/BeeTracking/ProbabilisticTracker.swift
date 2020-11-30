@@ -28,13 +28,9 @@ public func runProbabilisticTracker<
   let testData = OISTBeeVideo(directory: directory, afterIndex: testSetStart, length: forFrames)!
 
   precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
-  
-  var statistics = FrameStatistics(Tensor<Double>(0.0))
-  statistics.mean = Tensor(62.26806976644069)
-  statistics.standardDeviation = Tensor(37.44683834503672)
-  
+
   var tracker = makeProbabilisticTracker(
-    model: likelihoodModel.encoder, statistics: statistics,
+    model: likelihoodModel.encoder,
     frames: testData.frames, targetSize: (40, 70),
     foregroundModel: likelihoodModel.foregroundModel, backgroundModel: likelihoodModel.backgroundModel
   )
@@ -145,7 +141,7 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
   bgRandomFrameCount: Int = 10,
   numberOfTrainingSamples: Int = 3000
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
-  let (fg, bg, statistics) = getTrainingBatches(
+  let (fg, bg, _) = getTrainingBatches(
     dataset: trainingData, boundingBoxSize: boundingBoxSize,
     fgBatchSize: numberOfTrainingSamples,
     bgBatchSize: numberOfTrainingSamples,
@@ -161,7 +157,7 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
   let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
 
   let tracker = makeProbabilisticTracker(
-    model: encoder, statistics: statistics,
+    model: encoder,
     frames: frames, targetSize: boundingBoxSize,
     foregroundModel: foregroundModel, backgroundModel: backgroundModel
   )
@@ -173,7 +169,6 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
 /// Returns a tracking configuration for a tracker using an random projection.
 ///
 /// Parameter model: The random projection model to use.
-/// Parameter statistics: Normalization statistics for the frames.
 /// Parameter frames: The frames of the video where we want to run tracking.
 /// Parameter targetSize: The size of the target in the frames.
 public func makeProbabilisticTracker<
@@ -182,7 +177,6 @@ public func makeProbabilisticTracker<
   BackgroundModel: GenerativeDensity
 >(
   model: Encoder,
-  statistics: FrameStatistics,
   frames: [Tensor<Float>],
   targetSize: (Int, Int),
   foregroundModel: ForegroundModel,
@@ -207,7 +201,7 @@ public func makeProbabilisticTracker<
     let (poseID) = unpack(variables)
     graph.store(
       ProbablisticTrackingFactor(poseID,
-        measurement: statistics.normalized(frame),
+        measurement: frame,
         encoder: model,
         patchSize: targetSize,
         appearanceModelSize: targetSize,

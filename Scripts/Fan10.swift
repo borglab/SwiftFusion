@@ -7,10 +7,11 @@ import TensorFlow
 import PythonKit
 import Foundation
 
-typealias LikelihoodModel = TrackingLikelihoodModel<DenseRAE, MultivariateGaussian, GaussianNB>
-
 /// Fan10: RP Tracker, using the new tracking model
 struct Fan10: ParsableCommand {
+  
+  typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, GaussianNB>
+
   @Option(help: "Run on track number x")
   var trackId: Int = 0
 
@@ -45,16 +46,6 @@ struct Fan10: ParsableCommand {
     let np = Python.import("numpy")
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
 
-    let (imageHeight, imageWidth, imageChannels) =
-      (40, 70, 1)
-    
-    var rae = DenseRAE(
-      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
-      hiddenDimension: kHiddenDimension, latentDimension: featureSize
-    )
-
-    rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
-
     let generator = ARC4RandomNumberGenerator(seed: 42)
     var em = MonteCarloEM<LikelihoodModel>(sourceOfEntropy: generator)
     
@@ -64,7 +55,10 @@ struct Fan10: ParsableCommand {
     
     let trackingModel = em.run(
       with: trainingData,
-      iterationCount: 5
+      iterationCount: 5,
+      given: LikelihoodModel.HyperParameters(
+        encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy")
+      )
     )
     
     let (fig, track, gt) = runProbabilisticTracker(

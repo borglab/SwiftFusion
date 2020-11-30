@@ -95,8 +95,10 @@ public struct MonteCarloEM<ModelType: McEmModel> {
   public mutating func run(with data:[ModelType.Datum],
                            iterationCount:Int,
                            sampleCount:Int = 5,
-                           hook: Hook? = {(_,_,_) in () }) -> ModelType {
-    var model = ModelType(from: data, using: &self.sourceOfEntropy)
+                           hook: Hook? = {(_,_,_) in () },
+                           given hyperParams: ModelType.HyperParameters? = nil
+  ) -> ModelType {
+    var model = ModelType(from: data, using: &self.sourceOfEntropy, given: hyperParams)
     
     for i in 1...iterationCount {
       // Monte-Carlo E-step: given current model, sample hidden variables for each datum
@@ -108,7 +110,7 @@ public struct MonteCarloEM<ModelType: McEmModel> {
       }
       
       // M-step: fit model using labeled datums
-      model = ModelType(from: labeledData)
+      model = ModelType(from: labeledData, given: hyperParams)
       
       // Call hook if given
       hook?(i, labeledData, model)

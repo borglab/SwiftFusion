@@ -23,12 +23,15 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   
   /// Colect all hyperparameters here
   public struct HyperParameters {
-    let encoder: Encoder.HyperParameters
-    let foregroundModel: FG.HyperParameters
-    let backgroundModel: BG.HyperParameters
+    public init(encoder: Encoder.HyperParameters?, foregroundModel: FG.HyperParameters? = nil, backgroundModel: BG.HyperParameters? = nil) {
+      self.encoder = encoder
+      self.foregroundModel = foregroundModel
+      self.backgroundModel = backgroundModel
+    }
     
-    /// Part
-    let backgroundPatches: Tensor<Double>
+    let encoder: Encoder.HyperParameters?
+    let foregroundModel: FG.HyperParameters?
+    let backgroundModel: BG.HyperParameters?
   }
   
   /// Initialize from three parts
