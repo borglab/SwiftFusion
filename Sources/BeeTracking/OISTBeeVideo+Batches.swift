@@ -76,6 +76,8 @@ extension OISTBeeVideo {
     var patchesPerFrame = Array(repeating: batchSize / frames.count, count: frames.count)
     patchesPerFrame[0] += batchSize % frames.count
 
+    /// Samples bounding boxes randomly from each frame
+    /// returns array of (ref to frame, oriented bounding box)
     let obbs = zip(patchesPerFrame, frames).flatMap { args -> [(frame: Tensor<Double>?, obb: OrientedBoundingBox)] in
       let (patchCount, (_, (frame, labels))) = args
       let locations = labels.randomSelectionWithoutReplacement(k: patchCount, using: &deterministicEntropy).map(\.location.center)
@@ -147,47 +149,8 @@ extension OISTBeeVideo {
     randomFrameCount: Int = 10,
     batchSize: Int = 200
   ) -> Tensor<Double> {
-    /// Anything not completely overlapping labels
-    let maxSide = min(patchSize.0, patchSize.1)
-
-    var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
-    let frames = self.randomFrames(randomFrameCount, using: &deterministicEntropy)
-
-    // We need `batchSize / frames.count` patches from each frame, plus the remainder of the
-    // integer division.
-    var patchesPerFrame = Array(repeating: batchSize / frames.count, count: frames.count)
-    patchesPerFrame[0] += batchSize % frames.count
-
-    let images = zip(patchesPerFrame, frames).flatMap { args -> [Tensor<Double>] in
-      let (patchCount, (_, (frame, labels))) = args
-      let locations = (0..<patchCount).map { _ -> Vector2 in
-        let attemptCount = 1000
-        for _ in 0..<attemptCount {
-          // Sample a point uniformly at random in the frame, away from the edges.
-          let location = Vector2(
-            Double.random(in: Double(maxSide)..<Double(frame.shape[1] - maxSide), using: &deterministicEntropy),
-            Double.random(in: Double(maxSide)..<Double(frame.shape[0] - maxSide), using: &deterministicEntropy))
-
-          // Conservatively reject any point that could possibly overlap with any of the labels.
-          for label in labels {
-            if (label.location.center.t - location).norm < Double(maxSide) {
-              continue
-            }
-          }
-
-          // The point was not rejected, so return it.
-          return location
-        }
-        fatalError("could not find backround location after \(attemptCount) attempts")
-      }
-      return locations.map { location -> Tensor<Double> in
-        let theta = Double.random(in: 0..<(2 * .pi), using: &deterministicEntropy)
-        return frame.patch(
-          at: OrientedBoundingBox(
-            center: Pose2(Rot2(theta), location),
-            rows: patchSize.0, cols: patchSize.1),
-          outputSize: appearanceModelSize)
-      }
+    let images = makeBackgroundBoundingBoxes(patchSize: patchSize, batchSize: batchSize).map { (frame, obb) -> Tensor<Double> in
+      frame!.patch(at: obb, outputSize: appearanceModelSize)
     }
 
     let stacked = Tensor(stacking: images)
