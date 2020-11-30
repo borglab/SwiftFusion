@@ -55,26 +55,7 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
               foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
               backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel))
   }
-  
-  /**
-   Train only the probabilistic models from a collection of foreground and background patches
-   - Parameters:
-    - encoder: the encoder object
-    - foregroundPatches: [...,H,W,C] batch of foreground patches to train with
-    - backgroundPatches: [...,H,W,C] batch of background patches to train with
-    - p: optional hyperparameters.
-   */
-  public init(with encoder: Encoder,
-              from foregroundPatches: Tensor<Double>,
-              and backgroundPatches: Tensor<Double>,
-              given p:HyperParameters? = nil) {
-    let fgFeatures = encoder.encode(foregroundPatches)
-    let bgFeatures = encoder.encode(backgroundPatches)
-    self.init(encoder: encoder,
-              foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
-              backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel))
-  }
-  
+
   /// Calculate the negative log likelihood of the likelihood model of a patch
   @differentiable
   public func negativeLogLikelihood(of patch: Tensor<Double>) -> Double {
