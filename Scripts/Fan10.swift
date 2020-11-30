@@ -7,7 +7,7 @@ import TensorFlow
 import PythonKit
 import Foundation
 
-typealias LikelihoodModel = TrackingLikelihoodModel<DenseRAE, MultivariateGaussian, GaussianNB>
+typealias LikelihoodModel = TrackingLikelihoodModel<DenseRAE, MultivariateGaussian, MultivariateGaussian>
 
 /// Fan10: RP Tracker, using the new tracking model
 struct Fan10: ParsableCommand {
@@ -25,8 +25,8 @@ struct Fan10: ParsableCommand {
 
   func getTrainingDataEM(
     from dataset: OISTBeeVideo,
-    numberForeground: Int = 3000,
-    numberBackground: Int = 3000
+    numberForeground: Int = 300,
+    numberBackground: Int = 300
   ) -> [LikelihoodModel.Datum] {
     let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: numberBackground).map {
       (frame: $0.frame, type: LikelihoodModel.PatchType.bg, obb: $0.obb)
@@ -60,8 +60,9 @@ struct Fan10: ParsableCommand {
     
     let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!
     
-    let trainingData = getTrainingDataEM(from: trainingDataset)
+    let trainingData = getTrainingDataEM(from: trainingDataset, numberForeground: 3000, numberBackground: 3000)
     
+    precondition(trainingData.count == 600, "Wrong trainingData dims \(trainingData.count)")
     let trackingModel = em.run(
       with: trainingData,
       modelInitializer: { _,_ in

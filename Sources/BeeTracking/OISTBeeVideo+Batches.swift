@@ -79,7 +79,7 @@ extension OISTBeeVideo {
 
     let obbs = zip(patchesPerFrame, frames).flatMap { args -> [(frame: Tensor<Double>?, obb: OrientedBoundingBox)] in
       let (patchCount, (_, (frame, labels))) = args
-      let locations = labels.randomSelectionWithoutReplacement(k: patchCount, using: &deterministicEntropy).map(\.location.center)
+      let locations = labels.filter { $0.label == .Body }.randomSelectionWithoutReplacement(k: patchCount, using: &deterministicEntropy).map(\.location.center)
       return locations.map { location -> (frame: Tensor<Double>?, obb: OrientedBoundingBox) in
         return (frame: frame, obb: OrientedBoundingBox(
             center: location,
@@ -97,7 +97,7 @@ extension OISTBeeVideo {
     batchSize: Int = 200
   ) -> [(frame: Tensor<Double>?, obb: OrientedBoundingBox)] {
     /// Anything not completely overlapping labels
-    let maxSide = min(patchSize.0, patchSize.1)
+    let maxSide = 0 // max(patchSize.0, patchSize.1)
 
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
     let frames = self.randomFrames(self.frames.count, using: &deterministicEntropy)
@@ -118,7 +118,7 @@ extension OISTBeeVideo {
             Double.random(in: Double(maxSide)..<Double(frame.shape[0] - maxSide), using: &deterministicEntropy))
 
           // Conservatively reject any point that could possibly overlap with any of the labels.
-          for label in labels {
+          for label in labels.filter({ $0.label == .Body }) {
             if (label.location.center.t - location).norm < Double(maxSide) {
               continue
             }

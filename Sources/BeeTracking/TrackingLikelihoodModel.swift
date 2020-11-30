@@ -92,7 +92,7 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
 
 extension TrackingLikelihoodModel : McEmModel {
   /// Type of patch
-  public enum PatchType { case fg, bg }
+  public enum PatchType : Equatable { case fg, bg }
   
   /// As datum we have a (giant) image and a noisy manual label for an image patch
   public typealias Datum = (frame: Tensor<Double>?, type: PatchType, obb:OrientedBoundingBox)
