@@ -1,3 +1,4 @@
+import _Differentiation
 /// A point on a differentiable manifold with a `retract` map centered around `self`.
 ///
 /// This protocol helps you define manifolds with custom tangent vectors. Instructions:

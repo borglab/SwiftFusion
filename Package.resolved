@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "Benchmark",
+        "repositoryURL": "https://github.com/google/swift-benchmark.git",
+        "state": {
+          "branch": null,
+          "revision": "8e0ef8bb7482ab97dcd2cd1d6855bd38921c345d",
+          "version": "0.1.0"
+        }
+      },
+      {
         "package": "CSV.swift",
         "repositoryURL": "https://github.com/yaslab/CSV.swift.git",
         "state": {
@@ -14,8 +23,8 @@
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
-          "branch": null,
-          "revision": "b7b8f9bc2750af07d294d3f289e7699d5ae001ca",
+          "branch": "main",
+          "revision": "2ed8978cfc91384f98c245cce3513f4345eec239",
           "version": null
         }
       },
@@ -29,30 +38,12 @@
         }
       },
       {
-        "package": "Benchmark",
-        "repositoryURL": "https://github.com/google/swift-benchmark.git",
+        "package": "swift-argument-parser",
+        "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
         "state": {
           "branch": null,
-          "revision": "8e0ef8bb7482ab97dcd2cd1d6855bd38921c345d",
-          "version": "0.1.0"
-        }
-      },
-      {
-        "package": "swift-models",
-        "repositoryURL": "https://github.com/tensorflow/swift-models.git",
-        "state": {
-          "branch": null,
-          "revision": "b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4",
-          "version": null
-        }
-      },
-      {
-        "package": "SwiftProtobuf",
-        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
-        "state": {
-          "branch": null,
-          "revision": "426bef0ddfdc6449b7bd1418baafad6bbc56110b",
-          "version": "1.13.0"
+          "revision": "92646c0cdbaca076c8d3d0207891785b3379cbff",
+          "version": "0.3.1"
         }
       },
       {

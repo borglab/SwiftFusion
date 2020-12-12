@@ -1,3 +1,4 @@
+import _Differentiation
 import XCTest
 
 import TensorFlow

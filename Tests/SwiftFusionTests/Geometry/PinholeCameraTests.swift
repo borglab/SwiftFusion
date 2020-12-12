@@ -1,5 +1,6 @@
 
 @testable import SwiftFusion
+import _Differentiation
 import TensorFlow
 
 import XCTest

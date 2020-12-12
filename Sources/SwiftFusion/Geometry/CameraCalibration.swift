@@ -1,3 +1,4 @@
+import _Differentiation
 
 /// A protocol for camera calibration parameters.
 public protocol CameraCalibration: Differentiable {

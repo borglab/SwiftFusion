@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import _Differentiation
 import PenguinStructures
+import TensorFlow
 
 public typealias Matrix2 = FixedSizeMatrix<Array2<Vector2>>
 public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>

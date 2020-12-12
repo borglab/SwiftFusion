@@ -25,12 +25,11 @@ let package = Package(
     // .package(url: /* package url */, from: "1.0.0"),
     .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", from: "0.1.0"),
 
-    .package(name: "Penguin", url: "https://github.com/saeta/penguin.git", .branch("b7b8f9bc2750af07d294d3f289e7699d5ae001ca")),
+    .package(name: "Penguin", url: "https://github.com/saeta/penguin.git", .branch("main")),
 
     .package(name: "TensorBoardX", url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.0"),
-    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4")),
     .package(name: "Plotly", url: "https://github.com/vojtamolda/Plotly.swift", from: "0.4.0"),
   ],
   targets: [
@@ -59,8 +58,7 @@ let package = Package(
       dependencies: [
         "SwiftFusion",
         "Plotly",
-        .product(name: "Datasets", package: "swift-models"),
-        .product(name: "ModelSupport", package: "swift-models"),
+        "ModelSupport",
       ]),
     .target(
       name: "BeeTracking",
@@ -109,8 +107,8 @@ let package = Package(
       name: "SwiftFusionTests",
       dependencies: [
         "SwiftFusion",
+        "ModelSupport",
         .product(name: "PenguinTesting", package: "Penguin"),
-        .product(name: "ModelSupport", package: "swift-models"),
       ],
       exclude: [
         "Datasets",
@@ -125,5 +123,14 @@ let package = Package(
     ),
     .testTarget(
       name: "BeeTrackingTests",
-      dependencies: ["BeeTracking"]),
+      dependencies: [
+        "BeeTracking",
+        .product(name: "PenguinTesting", package: "Penguin"),
+        "ModelSupport",
+      ]),
+    .target(
+      name: "ModelSupport",
+      dependencies: ["STBImage"]),
+    .target(
+      name: "STBImage"),
   ])

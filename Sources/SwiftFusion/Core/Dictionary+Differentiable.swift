@@ -1,3 +1,4 @@
+import _Differentiation
 /// This file makes `Dictionary` differentiable.
 ///
 /// Note: This will eventually be moved into the Swift standard library. Once it is in the
