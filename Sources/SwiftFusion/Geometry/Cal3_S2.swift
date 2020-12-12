@@ -1,3 +1,4 @@
+import _Differentiation
 
 /// The five-parameter camera calibration.
 public struct Cal3_S2: Manifold, Equatable {

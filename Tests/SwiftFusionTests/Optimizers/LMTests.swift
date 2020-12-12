@@ -1,5 +1,6 @@
 // This file tests for the CGLS optimizer
 
+import _Differentiation
 import SwiftFusion
 import TensorFlow
 import XCTest

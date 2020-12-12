@@ -1,5 +1,6 @@
 // TODO: Move all these to Penguin.
 
+import _Differentiation
 import PenguinStructures
 
 /// A suitable `Index` type for a flattened view of a collection-of-collections having `OuterIndex`

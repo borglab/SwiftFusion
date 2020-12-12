@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import _Differentiation
+#if canImport(PythonKit)
 import PythonKit
+#endif
 import TensorFlow
 
 /// A wrapper for `Double` that traps instead of allowing `NaN`.
@@ -92,8 +95,6 @@ extension TrappingDouble: BinaryFloatingPoint {
   public mutating func round(_ rule: FloatingPointRoundingRule) { value.round(rule) }
 }
 
-extension TrappingDouble: ElementaryFunctions {}
-
 extension TrappingDouble: TensorFlowFloatingPoint {
   public var xlaScalarWrapper: XLAScalarWrapper { return value.xlaScalarWrapper }
   public static var xlaTensorScalarTypeRawValue: UInt32 { return Swift.Double.xlaTensorScalarTypeRawValue }
@@ -101,9 +102,11 @@ extension TrappingDouble: TensorFlowFloatingPoint {
   public static var tensorFlowDataType: TensorDataType { return Swift.Double.tensorFlowDataType }
 }
 
+#if canImport(PythonKit)
 extension TrappingDouble: PythonConvertible {
   public var pythonObject: PythonObject { value.pythonObject }
 }
+#endif
 
 extension TrappingDouble: Comparable {
   public static func < (_ lhs: Self, _ rhs: Self) -> Bool {

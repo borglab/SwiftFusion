@@ -108,6 +108,4 @@ extension Vector${dim}: FixedSizeVector {
   public static var dimension: Int { return ${dim} }
 }
 
-extension Vector${dim}: ElementaryFunctions {}
-
 % end

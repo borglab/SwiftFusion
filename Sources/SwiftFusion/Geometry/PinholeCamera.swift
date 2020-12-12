@@ -1,3 +1,4 @@
+import _Differentiation
 
 /// Pinhole camera model.
 public struct PinholeCamera<Calibration: CameraCalibration>: Differentiable {

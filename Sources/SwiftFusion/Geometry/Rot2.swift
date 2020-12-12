@@ -1,3 +1,4 @@
+import _Differentiation
 import TensorFlow
 
 /// Rot2 class is the Swift type for the SO(2) manifold of 2D Rotations around

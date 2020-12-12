@@ -1,3 +1,4 @@
+import _Differentiation
 import TensorFlow
 
 /// SE(3) Lie group of 3D Euclidean Poses.
