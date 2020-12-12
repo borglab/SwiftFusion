@@ -1,4 +1,5 @@
 // Unit tests for Rot3 class, which models SO(3)
+import _Differentiation
 import SwiftFusion
 import TensorFlow
 

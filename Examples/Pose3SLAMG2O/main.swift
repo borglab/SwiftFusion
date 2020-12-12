@@ -23,6 +23,7 @@
 /// - Does not use a proper general purpose solver.
 /// - Has not been compared against other implementations, so it could be wrong.
 
+import _Differentiation
 import Foundation
 import SwiftFusion
 import TensorFlow

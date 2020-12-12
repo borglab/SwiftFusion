@@ -14,6 +14,7 @@
 
 /// Contiguous storage for factors of statically unknown type.
 
+import _Differentiation
 import PenguinStructures
 
 // MARK: - Algorithms on arrays of `Factor`s.

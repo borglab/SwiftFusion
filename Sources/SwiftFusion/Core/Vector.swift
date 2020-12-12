@@ -1,3 +1,4 @@
+import _Differentiation
 import Foundation
 import PenguinStructures
 import TensorFlow

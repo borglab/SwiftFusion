@@ -5,6 +5,7 @@
 //  Frank Dellaert and Marc Rasi
 //  July 2020
 
+import _Differentiation
 import Foundation
 import PenguinStructures
 

@@ -28,7 +28,6 @@ let package = Package(
     .package(url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.0"),
-    .package(url: "https://github.com/tensorflow/swift-models.git", .branch("b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4")),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -46,8 +45,7 @@ let package = Package(
       name: "BeeDataset",
       dependencies: [
         "SwiftFusion",
-        .product(name: "Datasets", package: "swift-models"),
-        .product(name: "ModelSupport", package: "swift-models"),
+        "ModelSupport",
       ]),
     .target(
       name: "Pose3SLAMG2O",
@@ -58,9 +56,14 @@ let package = Package(
       dependencies: [
         "SwiftFusion",
         "PenguinTesting",
-        .product(name: "ModelSupport", package: "swift-models"),
+        "ModelSupport",
       ]),
     .testTarget(
       name: "BeeDatasetTests",
       dependencies: ["BeeDataset"]),
+    .target(
+      name: "ModelSupport",
+      dependencies: ["STBImage"]),
+    .target(
+      name: "STBImage"),
   ])

@@ -5,6 +5,7 @@
 //  Created by Frank Dellaert on 6/23/20.
 //
 
+import _Differentiation
 import TensorFlow
 import SwiftFusion
 

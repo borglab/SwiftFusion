@@ -14,6 +14,7 @@
 
 /// Benchmarks Pose2SLAM solutions.
 
+import _Differentiation
 import Benchmark
 import SwiftFusion
 import TensorFlow

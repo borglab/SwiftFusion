@@ -1,5 +1,6 @@
 // TODO: Move all these to Penguin.
 
+import _Differentiation
 import PenguinStructures
 
 public struct FlattenedScalars<Base: MutableCollection>
