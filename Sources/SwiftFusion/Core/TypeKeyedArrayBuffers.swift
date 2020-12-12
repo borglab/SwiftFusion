@@ -88,6 +88,21 @@ extension TypeKeyedArrayBuffers {
   }
 
   /// Returns a mapping from each key `k` of `self` into `bufferTransform(self[k])`.
+  public func mapBuffers(
+    _ bufferTransform: (AnyArrayBuffer<ElementAPI>) throws -> AnyArrayBuffer<ElementAPI>
+  ) rethrows -> TypeKeyedArrayBuffers {
+    try .init(_storage: _storage.mapValues(bufferTransform))
+  }
+
+  /// Returns a mapping from each key `k` of `self` into the corresponding array, transformed by
+  /// `bufferTransform`.
+  public func compactMapBuffers(
+    _ bufferTransform: (AnyArrayBuffer<ElementAPI>) throws -> AnyArrayBuffer<ElementAPI>?
+  ) rethrows -> TypeKeyedArrayBuffers {
+    try .init(_storage: _storage.compactMapValues(bufferTransform))
+  }
+
+  /// Returns a mapping from each key `k` of `self` into `bufferTransform(self[k])`.
   public func mapBuffers<NewElementAPI>(
     _ bufferTransform: (AnyArrayBuffer<ElementAPI>) throws -> AnyArrayBuffer<NewElementAPI>
   ) rethrows -> MappedArrayBuffers<NewElementAPI> {
