@@ -117,6 +117,27 @@ extension TypeKeyedArrayBuffers {
     try .init(_storage: _storage.compactMapValues(bufferTransform))
   }
 
+  /// Returns the first key in `self` such that `predicate(self[k], other[k]) == true`, or `nil` if
+  /// no such key exists.
+  ///
+  /// - Requires: `self.hasSameStructure(as: parameter)`
+  public func firstBufferKey<OtherElementAPI, OtherConstruction>(
+    homomorphicArgument other: TypeKeyedArrayBuffers<OtherElementAPI, OtherConstruction>,
+    where predicate: (
+      _ myBuffer: AnyArrayBuffer<ElementAPI>,
+      _ otherBuffer: AnyArrayBuffer<OtherElementAPI>) throws -> Bool
+  ) rethrows -> TypeID? {
+    precondition(
+      _storage.count == other._storage.count,
+      "parameter must have same structure as `self`")
+    return try _storage.first { kv in
+      guard let v1 = other._storage[kv.key] else {
+        fatalError("parameter must have same structure as `self`")
+      }
+      return try predicate(kv.value, v1)
+    }.map { $0.key }
+  }
+
   /// Invokes `update` on each buffer of self, passing the buffer having the same `key` in
   /// `parameter` as a second argument.
   ///
