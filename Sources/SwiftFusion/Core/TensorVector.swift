@@ -127,11 +127,11 @@ extension TensorVector: Vector {
 
   /// Returns the result of calling `body` on the scalars of `self`.
   public mutating func withUnsafeMutableBufferPointer<R>(
-    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+    _ body: (inout UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
     var scalars = self.tensor.scalars
     let r = try scalars.withUnsafeMutableBufferPointer { b in
-      try body(b)
+      try body(&b)
     }
     self.tensor = Tensor(shape: self.shape, scalars: scalars)
     return r

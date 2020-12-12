@@ -179,10 +179,10 @@ extension AnyVectorArrayBuffer: Vector {
 
   /// Returns the result of calling `body` on the scalars of `self`.
   public mutating func withUnsafeMutableBufferPointer<R>(
-    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+    _ body: (inout UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
     var buffer = Array(scalars)
-    let r = try buffer.withUnsafeMutableBufferPointer { try body($0) }
+    let r = try buffer.withUnsafeMutableBufferPointer { try body(&$0) }
     scalars.assign(buffer)
     return r
   }

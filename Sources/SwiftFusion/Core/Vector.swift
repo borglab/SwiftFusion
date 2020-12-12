@@ -77,7 +77,7 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   /// A default is provided that is correct for types that are represented as contiguous scalars
   /// in memory.
   mutating func withUnsafeMutableBufferPointer<R>(
-    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+    _ body: (inout UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R
   #endif
 }
@@ -232,14 +232,13 @@ extension Vector {
 
   /// Returns the result of calling `body` on the scalars of `self`.
   public mutating func withUnsafeMutableBufferPointer<R>(
-    _ body: (UnsafeMutableBufferPointer<Double>) throws -> R
+    _ body: (inout UnsafeMutableBufferPointer<Double>) throws -> R
   ) rethrows -> R {
-    return try withUnsafeMutablePointer(to: &self) { [dimension = self.dimension] p in
-      try body(
-          UnsafeMutableBufferPointer<Double>(
-              start: UnsafeMutableRawPointer(p)
-                  .assumingMemoryBound(to: Double.self),
-              count: dimension))
+    try withUnsafeMutablePointer(to: &self) { [dimension = self.dimension] p in
+      var b = UnsafeMutableBufferPointer<Double>(
+        start: UnsafeMutableRawPointer(p).assumingMemoryBound(to: Double.self),
+        count: dimension)
+      return try body(&b)
     }
   }
 }
