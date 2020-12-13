@@ -18,14 +18,15 @@ import PenguinStructures
 ///
 /// `ConstructionAPI` is a type that determines other aspects of the type's API.
 public struct TypeKeyedArrayBuffers<ElementAPI: AnyObject, ConstructionAPI> {
-  private var _storage: Storage
+  internal /*typeprivate*/ var _storage: Storage
   private init(_storage: Storage) { self._storage = _storage }
   
   /// A key that can be used to look up an untyped `ArrayBuffer` (i.e. `AnyArrayBuffer<ElementAPI>`)
-  fileprivate typealias UntypedKey = TypeID
+  internal typealias UntypedKey = TypeID
 
   /// The type of the backing store
-  private typealias Storage = InsertionOrderedDictionary<UntypedKey, AnyArrayBuffer<ElementAPI>>
+  internal /*typeprivate*/ typealias Storage
+    = InsertionOrderedDictionary<UntypedKey, AnyArrayBuffer<ElementAPI>>
   
   /// A dispatch table for the common capabilites of each buffer type.
   public typealias ElementAPI = ElementAPI

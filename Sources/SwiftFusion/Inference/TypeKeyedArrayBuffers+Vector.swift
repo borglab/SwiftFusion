@@ -30,6 +30,7 @@ extension TypeKeyedArrayBuffers: AdditiveArithmetic where ElementAPI == VectorAr
     lhs.updatedBuffers(homomorphicArgument: rhs) { $0 + $1 }
   }
 
+  @differentiable
   public static func += (lhs: inout Self, rhs: Self) {
     lhs.updateBuffers(homomorphicArgument: rhs) { $0 += $1 }
   }
@@ -38,6 +39,7 @@ extension TypeKeyedArrayBuffers: AdditiveArithmetic where ElementAPI == VectorAr
     lhs.updatedBuffers(homomorphicArgument: rhs) { $0 - $1 }
   }
 
+  @differentiable
   public static func -= (lhs: inout Self, rhs: Self) {
     lhs.updateBuffers(homomorphicArgument: rhs) { $0 -= $1 }
   }
@@ -55,3 +57,36 @@ extension TypeKeyedArrayBuffers: Differentiable where ElementAPI: Differentiable
     { .init() }
   }
 }
+
+public struct ScalarsFocus<V: Vector>: Lens {
+  public static var focus: WritableKeyPath<V, V.Scalars> { \.scalars }
+}
+
+
+extension TypeKeyedArrayBuffers: Vector
+  where ElementAPI == VectorArrayDispatch, ConstructionAPI == Any
+{
+  public typealias Scalars = FlattenedScalars<
+    InsertionOrderedDictionary<TypeID, AnyArrayBuffer<ElementAPI>>.Values>
+  
+  public var scalars : Scalars {
+    get { .init(_storage.values) }
+    set { /* ugh, this is bad */_storage.values = newValue.base }
+    // No obvious way to build _modify without inducing CoW
+  }
+
+  @differentiable
+  public static func *= (lhs: inout Self, rhs: Double) {
+    lhs._storage.values.updateAll { $0 *= rhs }
+  }
+
+  @differentiable
+  public func dot(_ other: Self) -> Double {
+    zip(_storage.values, other._storage.values).lazy.map { $0.dot($1) }.reduce(0, +)
+  }
+
+  public var dimension: Int {
+    _storage.values.lazy.map(\.dimension).reduce(0, +)
+  }
+}
+
