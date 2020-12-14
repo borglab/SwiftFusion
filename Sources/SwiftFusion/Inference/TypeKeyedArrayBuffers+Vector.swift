@@ -30,7 +30,7 @@ extension TypeKeyedArrayBuffers: AdditiveArithmetic where ElementAPI == VectorAr
     lhs.updatedBuffers(homomorphicArgument: rhs) { $0 + $1 }
   }
 
-  @differentiable
+//  @differentiable
   public static func += (lhs: inout Self, rhs: Self) {
     lhs.updateBuffers(homomorphicArgument: rhs) { $0 += $1 }
   }
@@ -39,7 +39,7 @@ extension TypeKeyedArrayBuffers: AdditiveArithmetic where ElementAPI == VectorAr
     lhs.updatedBuffers(homomorphicArgument: rhs) { $0 - $1 }
   }
 
-  @differentiable
+//  @differentiable
   public static func -= (lhs: inout Self, rhs: Self) {
     lhs.updateBuffers(homomorphicArgument: rhs) { $0 -= $1 }
   }

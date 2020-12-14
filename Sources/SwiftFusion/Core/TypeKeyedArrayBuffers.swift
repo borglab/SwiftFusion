@@ -143,9 +143,10 @@ extension TypeKeyedArrayBuffers {
   /// `parameter` as a second argument.
   ///
   /// - Requires: `self.hasSameStructure(as: parameter)`
+  @differentiable
   public mutating func updateBuffers<OtherElementAPI, OtherConstruction>(
     homomorphicArgument parameter: TypeKeyedArrayBuffers<OtherElementAPI, OtherConstruction>,
-    _ update: (
+    _ update: @differentiable (
       _ myBuffer: inout AnyArrayBuffer<ElementAPI>,
       _ parameter: AnyArrayBuffer<OtherElementAPI>) throws -> Void
   ) rethrows {
