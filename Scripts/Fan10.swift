@@ -62,11 +62,11 @@ struct Fan10: ParsableCommand {
         encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy")
       )
     )
-    
-    let imagesPath = URL(fileURLWithPath: "Results/fan10/fan10_ae_mg_mg")
-    if !FileManager.default.fileExists(atPath: imagesPath.absoluteString) {
+    let exprName = "fan10_ae_mg_mg_track\(trackId)_\(featureSize)"
+    let imagesPath = "Results/fan10/\(exprName)"
+    if !FileManager.default.fileExists(atPath: imagesPath) {
         do {
-            try FileManager.default.createDirectory(atPath: imagesPath.absoluteString, withIntermediateDirectories: true, attributes: nil)
+            try FileManager.default.createDirectory(atPath: imagesPath, withIntermediateDirectories: true, attributes: nil)
         } catch {
             print(error.localizedDescription);
         }
@@ -77,20 +77,20 @@ struct Fan10: ParsableCommand {
       likelihoodModel: trackingModel,
       onTrack: trackId, forFrames: trackLength, withSampling: true,
       withFeatureSize: featureSize,
-      savePatchesIn: "Results/fan10/fan10_ae_mg_mg"
+      savePatchesIn: "Results/fan10/\(exprName)"
     )
 
     /// Actual track v.s. ground truth track
-    fig.savefig("Results/fan10/fan10_ae_mg_mg_track\(trackId)_\(featureSize).pdf", bbox_inches: "tight")
-    fig.savefig("Results/fan10/fan10_ae_mg_mg_track\(trackId)_\(featureSize).png", bbox_inches: "tight")
+    fig.savefig("Results/fan10/\(exprName).pdf", bbox_inches: "tight")
+    fig.savefig("Results/fan10/\(exprName).png", bbox_inches: "tight")
 
     let json = JSONEncoder()
     json.outputFormatting = .prettyPrinted
 
     let track_data = try! json.encode(track)
-    try! track_data.write(to: URL(fileURLWithPath: "Results/fan10/fan10_ae_mg_mg_track_\(trackId)_\(featureSize).json"))
+    try! track_data.write(to: URL(fileURLWithPath: "Results/fan10/\(exprName)_track.json"))
 
     let gt_data = try! json.encode(gt)
-    try! gt_data.write(to: URL(fileURLWithPath: "Results/fan10/fan10_ae_mg_mg_gt_\(trackId)_\(featureSize).json"))
+    try! gt_data.write(to: URL(fileURLWithPath: "Results/fan10/\(exprName)_gt.json"))
   }
 }

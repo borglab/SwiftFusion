@@ -119,7 +119,7 @@ public struct DenseRAE: Layer {
 
     let epochs = TrainingEpochs(samples: imageBatch.unstacked(), batchSize: 200)
     var trainLossResults: [Double] = []
-    let epochCount = 200
+    let epochCount = 300
     for (epochIndex, epoch) in epochs.prefix(epochCount).enumerated() {
       var epochLoss: Double = 0
       var batchCount: Int = 0

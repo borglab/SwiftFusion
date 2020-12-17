@@ -34,10 +34,11 @@ struct Fan12: ParsableCommand {
     let kHiddenDimension = 100
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
 
-    let trainingDataset = OISTBeeVideo(directory: dataDir, length: 30)!
+    let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!
     
     let trainingData = Tensor<Double>(stacking: getTrainingData(from: trainingDataset).map { $0.frame!.patch(at: $0.obb) })
     
+    print("Training...")
     let rae: PretrainedDenseRAE = PretrainedDenseRAE(
       trainFrom: trainingData,
       given: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "")
