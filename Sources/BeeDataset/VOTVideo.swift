@@ -111,7 +111,11 @@ extension VOTVideo {
 
       // Check that the vertices form a rectangle, by checking that opposing sides have matching
       // lengths and opposite directions.
-      let sides = (0..<4).map { i in vertices[i] - vertices[(i + 1) % 4] }
+      let sides = (0..<4).map { i -> Vector2 in
+        let vertex = vertices[i]
+        let nextVertex = vertices[(i + 1) % 4]
+        return vertex - nextVertex
+      }
       func sidesAgree(_ s1: Vector2, _ s2: Vector2) -> Bool {
         return (s1 + s2).norm < 1
       }

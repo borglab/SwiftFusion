@@ -14,6 +14,7 @@
 
 /// Benchmarks Pose3SLAM solutions.
 
+import _Differentiation
 import Benchmark
 import SwiftFusion
 

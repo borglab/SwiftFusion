@@ -1,3 +1,4 @@
+import _Differentiation
 import TensorFlow
 
 /// SE(2) Lie group of 2D Euclidean Poses.

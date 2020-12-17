@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import _Differentiation
 import Foundation
 
 /// An error from a failure in searching for the solution in LM iterations

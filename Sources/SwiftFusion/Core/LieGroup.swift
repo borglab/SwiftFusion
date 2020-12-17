@@ -1,3 +1,4 @@
+import _Differentiation
 import TensorFlow
 
 /// An element of a Lie group.
@@ -112,11 +113,11 @@ public protocol LieGroupCoordinate: ManifoldCoordinate {
   init()
 
   /// Returns the group inverse.
-  @differentiable
+  @differentiable(wrt: self)
   func inverse() -> Self
 
   /// The group operation.
-  @differentiable
+  @differentiable(wrt: (lhs, rhs))
   static func * (_ lhs: Self, _ rhs: Self) -> Self
 
   /// The Adjoint group action of `self` on `v`.
@@ -154,6 +155,7 @@ extension LieGroupCoordinate {
 
   /// The default implementation of `Adjoint`, provided so that implementers can test their
   /// implementation against the default implementation.
+  @differentiable(wrt: v)
   public func defaultAdjoint(_ v: LocalCoordinate) -> LocalCoordinate {
     let identity = Self()
     func log(_ g: Self) -> LocalCoordinate { return identity.localCoordinate(g) }

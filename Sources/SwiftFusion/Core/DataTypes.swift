@@ -1,3 +1,4 @@
+import _Differentiation
 extension Vector5: ManifoldCoordinate {
   /// The local coordinate type of the manifold.
   ///
@@ -69,13 +70,18 @@ extension Vector5: LieGroupCoordinate {
   }
 
   /// Returns the group inverse.
-  @differentiable
+  @differentiable(wrt: self)
   public func inverse() -> Self {
     -self
   }
 
+  @differentiable(wrt: v)
+  public func Adjoint(_ v: LocalCoordinate) -> LocalCoordinate {
+    defaultAdjoint(v)
+  }
+
   /// The group operation.
-  @differentiable
+  @differentiable(wrt: (lhs, rhs))
   public static func * (_ lhs: Self, _ rhs: Self) -> Self {
     lhs + rhs
   }

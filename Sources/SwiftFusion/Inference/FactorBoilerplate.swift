@@ -19,6 +19,7 @@
 /// etc. It takes less boilerplate to conform to these fixed-arity protocols than it does to
 /// conform to the arbitrary-arity protocols `Factor`, `VectorFactor`, and `LinearizableFactor`.
 
+import _Differentiation
 import PenguinStructures
 
 

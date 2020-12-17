@@ -1,5 +1,6 @@
 // This file tests for the various identities in Rot2
 
+import _Differentiation
 import SwiftFusion
 
 import XCTest

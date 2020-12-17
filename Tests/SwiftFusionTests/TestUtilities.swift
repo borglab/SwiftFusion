@@ -1,3 +1,4 @@
+import _Differentiation
 import PenguinStructures
 import TensorFlow
 import SwiftFusion

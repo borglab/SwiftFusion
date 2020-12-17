@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Datasets
+import _Differentiation
 import Foundation
+import ModelSupport
 
 /// Downloads the bee dataset (if it's not already present), and returns its URL on the local
 /// system.

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import _Differentiation
 import PenguinStructures
 
 /// A Gaussian distribution over the input, represented as a materialized Jacobian matrix and

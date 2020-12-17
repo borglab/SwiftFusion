@@ -1,4 +1,5 @@
 
+import _Differentiation
 import TensorFlow
 
 /// SO(3) group of 3D Rotations
@@ -247,6 +248,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
   }
 
   /// Construct from Tensor
+  @differentiable
   init(_ matrix: Matrix3) {
     R = matrix
   }
