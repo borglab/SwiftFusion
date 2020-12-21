@@ -66,4 +66,7 @@ let package = Package(
       dependencies: ["STBImage"]),
     .target(
       name: "STBImage"),
+    .target(
+      name: "Repro",
+      dependencies: ["SwiftFusion"]),
   ])
