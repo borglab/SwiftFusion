@@ -100,10 +100,8 @@ extension Vector {
     }
 
     mutableSelf = self
-    mutableSelf.withUnsafeMutableBufferPointer { b in
-      for (i, j) in zip(b.indices, distinctScalars.indices) {
-        b[i] = distinctScalars[j]
-      }
+    _ = mutableSelf.withUnsafeMutableBufferPointer { b in
+      b.assign(distinctScalars)
     }
     XCTAssertTrue(mutableSelf.scalars.elementsEqual(distinctScalars))
   }
