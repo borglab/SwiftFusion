@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import SwiftFusion
 import TensorFlow
 import XCTest
@@ -24,12 +23,15 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   
   /// Colect all hyperparameters here
   public struct HyperParameters {
-    let encoder: Encoder.HyperParameters
-    let foregroundModel: FG.HyperParameters
-    let backgroundModel: BG.HyperParameters
+    public init(encoder: Encoder.HyperParameters?, foregroundModel: FG.HyperParameters? = nil, backgroundModel: BG.HyperParameters? = nil) {
+      self.encoder = encoder
+      self.foregroundModel = foregroundModel
+      self.backgroundModel = backgroundModel
+    }
     
-    /// Part
-    let backgroundPatches: Tensor<Double>
+    let encoder: Encoder.HyperParameters?
+    let foregroundModel: FG.HyperParameters?
+    let backgroundModel: BG.HyperParameters?
   }
   
   /// Initialize from three parts
@@ -56,7 +58,7 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
               foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
               backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel))
   }
-  
+
   /// Calculate the negative log likelihood of the likelihood model of a patch
   @differentiable
   public func negativeLogLikelihood(of patch: Tensor<Double>) -> Double {
@@ -76,14 +78,14 @@ extension TrackingLikelihoodModel : McEmModel {
   public enum PatchType { case fg, bg }
   
   /// As datum we have a (giant) image and a noisy manual label for an image patch
-  public typealias Datum = (frame: Tensor<Double>, type: PatchType, obb:OrientedBoundingBox)
+  public typealias Datum = (frame: Tensor<Double>?, type: PatchType, obb:OrientedBoundingBox)
   
   /// As hidden variable we use the "true" pose of the patch
   public enum Hidden { case fg(Pose2), bg }
   
   /// Stack patches for all bounding boxes
   public static func patches(at regions:[Datum]) -> Tensor<Double> {
-    return Tensor<Double>(regions.map { $0.frame.patch(at:$0.obb) } )
+    return Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } )
   }
 
   /**
@@ -114,7 +116,7 @@ extension TrackingLikelihoodModel : McEmModel {
       // sample from noise model on manual pose
       var proposal = datum.obb.center
       proposal.perturbWith(stddev: Vector3(0.3, 8, 4.6))
-      let patch = datum.frame.patch(
+      let patch = datum.frame!.patch(
         at: OrientedBoundingBox(
           center: proposal, rows: datum.obb.rows, cols: datum.obb.cols
         )
@@ -149,4 +151,3 @@ extension TrackingLikelihoodModel : McEmModel {
     self.init(from: data, given:p)
   }
 }
-

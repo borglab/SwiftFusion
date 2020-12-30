@@ -14,6 +14,7 @@
 
 import SwiftFusion
 import TensorFlow
+import PythonKit
 
 // MARK: - The Regularized Autoencoder model.
 
@@ -104,9 +105,40 @@ public struct DenseRAE: Layer {
     precondition(imageBatch.rank == 4, "Wrong image shape \(shape)")
     let (_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
     let (h,d) = parameters ?? (100,10)
-    self.init(imageHeight: H_, imageWidth: W_, imageChannels: C_,
+    
+    var model = DenseRAE(imageHeight: H_, imageWidth: W_, imageChannels: C_,
               hiddenDimension: h, latentDimension: d)
-    fatalError("DenseRAE::init(from:data) not implemented")
+    
+    let optimizer = Adam(for: model)
+    optimizer.learningRate = 1e-3
+    
+    let lossFunc = DenseRAELoss()
+    
+    // Thread-local variable that model layers read to know their mode
+    Context.local.learningPhase = .training
+
+    let epochs = TrainingEpochs(samples: imageBatch.unstacked(), batchSize: 200)
+    var trainLossResults: [Double] = []
+    let epochCount = 300
+    for (epochIndex, epoch) in epochs.prefix(epochCount).enumerated() {
+      var epochLoss: Double = 0
+      var batchCount: Int = 0
+      // epoch is a Slices object, see below
+      for batchSamples in epoch {
+        let batch = batchSamples.collated
+        let (loss, grad) = valueWithGradient(at: model) { lossFunc($0, batch) }
+        optimizer.update(&model, along: grad)
+        epochLoss += loss.scalarized()
+        batchCount += 1
+      }
+      epochLoss /= Double(batchCount)
+      trainLossResults.append(epochLoss)
+      if epochIndex % 50 == 0 {
+          print("Epoch \(epochIndex): Loss: \(epochLoss)")
+      }
+    }
+    
+    self = model
   }
 
   /// Differentiable encoder
@@ -268,4 +300,55 @@ public struct DenseRAELoss {
 
     return totalLoss
   }
+}
+
+/// Pretrained version of DenseRAE. Note this is created because Swift does not allow inheritance of structs.
+public struct PretrainedDenseRAE: AppearanceModelEncoder {
+  public var inner: DenseRAE
+  
+  /// The constructor that only does loading of the pretrained weights.
+  public init(from imageBatch: Tensor<Double>, given: HyperParameters?) {
+    let shape = imageBatch.shape
+    precondition(imageBatch.rank == 4, "Wrong image shape \(shape)")
+    let (_, H_, W_, C_) = (shape[0], shape[1], shape[2], shape[3])
+
+    if let params = given {
+      var encoder = DenseRAE(
+        imageHeight: H_, imageWidth: W_, imageChannels: C_,
+        hiddenDimension: params.hiddenDimension, latentDimension: params.latentDimension
+      )
+
+      let np = Python.import("numpy")
+      
+      encoder.load(weights: np.load(params.weightFile, allow_pickle: true))
+      inner = encoder
+    } else {
+      inner = DenseRAE(
+        imageHeight: H_, imageWidth: W_, imageChannels: C_,
+        hiddenDimension: 1, latentDimension: 1
+      )
+      fatalError("Must provide hyperparameters to pretrained network")
+    }
+  }
+  
+  /// Constructor that does training of the network
+  public init(trainFrom imageBatch: Tensor<Double>, given: HyperParameters?) {
+    inner = DenseRAE(
+      from: imageBatch, given: (given != nil) ? (hiddenDimension: given!.hiddenDimension, latentDimension: given!.latentDimension) : nil
+    )
+  }
+  
+  /// Save the weight to file
+  public func save(to path: String) {
+    let np = Python.import("numpy")
+    np.save(path, np.array(inner.numpyWeights, dtype: Python.object))
+  }
+  
+  @differentiable
+  public func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double> {
+    inner.encode(imageBatch)
+  }
+  
+  /// Initialize  given an image batch
+  public typealias HyperParameters = (hiddenDimension: Int, latentDimension: Int, weightFile: String)
 }

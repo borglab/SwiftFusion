@@ -18,6 +18,23 @@ struct Fan05: ParsableCommand {
   @Option(help: "Which track to show")
   var trackId: Int = 0
 
+  typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, MultivariateGaussian>
+
+  func getTrainingDataEM(
+    from dataset: OISTBeeVideo,
+    numberForeground: Int = 300,
+    numberBackground: Int = 300
+  ) -> [LikelihoodModel.Datum] {
+    let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: numberBackground).map {
+      (frame: $0.frame, type: LikelihoodModel.PatchType.bg, obb: $0.obb)
+    }
+    let fgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: numberForeground).map {
+      (frame: $0.frame, type: LikelihoodModel.PatchType.fg, obb: $0.obb)
+    }
+    
+    return fgBoxes + bgBoxes
+  }
+  
   // Visualize error landscape of PCA
   // Make sure you have a folder `Results/fan05` before running
   func run() {
@@ -26,36 +43,27 @@ struct Fan05: ParsableCommand {
     let np = Python.import("numpy")
 
       // train foreground and background model and create tracker
-    let trainingData = OISTBeeVideo(directory: dataDir, length: 100)!
-    // let testData = OISTBeeVideo(directory: dataDir, afterIndex: 100, length: forFrames)!
-    let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
-    // let encoder = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
-  
-    // let encoder = PCAEncoder(
-    //   withBasis: Tensor<Double>(numpy: np.load("./pca_U_\(featureSize).npy"))!,
-    //   andMean: Tensor<Double>(numpy: np.load("./pca_mu_\(featureSize).npy"))!
-    // )
-    var encoder = DenseRAE(
-      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
-      hiddenDimension: 100, latentDimension: featureSize
+    let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!
+    let trainingData = getTrainingDataEM(from: trainingDataset)
+
+    let generator = ARC4RandomNumberGenerator(seed: 42)
+    var em = MonteCarloEM<LikelihoodModel>(sourceOfEntropy: generator)
+
+    let kHiddenDimension = 100
+    let trackingModel = em.run(
+      with: trainingData,
+      iterationCount: 3,
+      hook: { i, _, _ in
+        print("EM run iteration \(i)")
+      },
+      given: LikelihoodModel.HyperParameters(
+        encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy")
+      )
     )
-
-    encoder.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
-
-    let (fg, bg, statistics) = getTrainingBatches(
-      dataset: trainingData, boundingBoxSize: (40, 70),
-      fgBatchSize: 3000,
-      bgBatchSize: 3000,
-      fgRandomFrameCount: 100,
-      bgRandomFrameCount: 100,
-      useCache: true
-    )
-
-    let batchPositive = encoder.encode(fg)
-    let foregroundModel = MultivariateGaussian(from: batchPositive, regularizer: 1e-3)
-
-    let batchNegative = encoder.encode(bg)
-    let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
+    
+    var statistics = FrameStatistics(Tensor([1.0]))
+    statistics.mean = Tensor(0.0)
+    statistics.standardDeviation = Tensor(1.0)
 
     let deltaXRange = Array(-60..<60).map { Double($0) }
     let deltaYRange = Array(-40..<40).map { Double($0) }
@@ -69,11 +77,11 @@ struct Fan05: ParsableCommand {
       deltaXs: deltaXRange,
       deltaYs: deltaYRange,
       statistics: statistics,
-      encoder: encoder,
-      foregroundModel: foregroundModel,
-      backgroundModel: backgroundModel
+      encoder: trackingModel.encoder,
+      foregroundModel: trackingModel.foregroundModel,
+      backgroundModel: trackingModel.backgroundModel
     )
-    fig.savefig("Results/fan05/fan05_pf_ae_mg_mg_\(trackId)_\(frameId)_\(featureSize).pdf", bbox_inches: "tight")
-    fig.savefig("Results/fan05/fan05_pf_ae_mg_mg_\(trackId)_\(frameId)_\(featureSize).png", bbox_inches: "tight")
+    fig.savefig("Results/fan05/fan05_em_ae_mg_mg_\(trackId)_\(frameId)_\(featureSize).pdf", bbox_inches: "tight")
+    fig.savefig("Results/fan05/fan05_em_ae_mg_mg_\(trackId)_\(frameId)_\(featureSize).png", bbox_inches: "tight")
   }
 }
