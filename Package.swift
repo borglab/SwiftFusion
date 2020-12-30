@@ -132,5 +132,7 @@ let package = Package(
       name: "ModelSupport",
       dependencies: ["STBImage"]),
     .target(
-      name: "STBImage"),
+      name: "STBImage",
+      exclude: 
+        ["CMakeLists.txt"]),
   ])

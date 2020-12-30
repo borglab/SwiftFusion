@@ -25,12 +25,9 @@ final class OISTBeeVideoBatchesTests: XCTestCase {  /// Directory of a fake data
 
   /// Tests getting a batch of bee patches and a batch of background patches.
   func testBeeBatch() throws {
-    if let _ = ProcessInfo.processInfo.environment["CI"] {
-      throw XCTSkip("Test skipped on CI because it downloads a lot of data.")
-    }
     ComputeThreadPools.local =
         NonBlockingThreadPool<PosixConcurrencyPlatform>(name: "mypool", threadCount: 5)
-    let video = OISTBeeVideo(directory: datasetDirectory, deferLoadingFrames: true)!
+    let video = OISTBeeVideo(directory: datasetDirectory, deferLoadingFrames: false)!
     let (batch, statistics) = video.makeBatch(
       appearanceModelSize: (100, 100),
       randomFrameCount: 2,
