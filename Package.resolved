@@ -2,12 +2,39 @@
   "object": {
     "pins": [
       {
+        "package": "CSV.swift",
+        "repositoryURL": "https://github.com/yaslab/CSV.swift.git",
+        "state": {
+          "branch": null,
+          "revision": "81d2874c51db364d7e1d71b0d99018a294c87ac1",
+          "version": "2.4.3"
+        }
+      },
+      {
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
           "branch": "main",
           "revision": "2ed8978cfc91384f98c245cce3513f4345eec239",
           "version": null
+        }
+      },
+      {
+        "package": "Plotly",
+        "repositoryURL": "https://github.com/vojtamolda/Plotly.swift",
+        "state": {
+          "branch": null,
+          "revision": "6e80119ba37b913e5460459556e2bf58f02eba67",
+          "version": "0.4.0"
+        }
+      },
+      {
+        "package": "swift-argument-parser",
+        "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
+        "state": {
+          "branch": null,
+          "revision": "92646c0cdbaca076c8d3d0207891785b3379cbff",
+          "version": "0.3.1"
         }
       },
       {

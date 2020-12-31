@@ -25,6 +25,8 @@ public struct BeeVideo {
 
   /// Labeled tracks for this video.
   public var tracks: [[BeeTrackPoint]]
+
+  var directory: URL?
 }
 
 /// The location of a bee within a frame of a `BeeVideo`.
@@ -38,9 +40,9 @@ public struct BeeTrackPoint {
 
 extension BeeVideo {
   /// Creates an instance from the video named `videoName`.
-  public init?(videoName: String) {
+  public init?(videoName: String, deferLoadingFrames: Bool = false) {
     let dataset = Self.downloadDatasetIfNotPresent()
-    self.init(directory: dataset.appendingPathComponent(videoName))
+    self.init(directory: dataset.appendingPathComponent(videoName), deferLoadingFrames: deferLoadingFrames)
   }
 
   /// Creates an instance from the data in the given `directory`.
@@ -52,15 +54,11 @@ extension BeeVideo {
   /// The format of a track file is:
   /// - A line "<height> <width>" specifying the size of the bounding boxes in the track.
   /// - Followed by arbitrarily many lines "<frame index> <x> <y> <theta>".
-  public init?(directory: URL) {
+  public init?(directory: URL, deferLoadingFrames: Bool = false) {
     self.frames = []
     self.tracks = []
+    self.directory = directory
 
-    func loadFrame(_ index: Int) -> Tensor<Double>? {
-      let path = directory.appendingPathComponent("frame\(index).jpeg")
-      guard FileManager.default.fileExists(atPath: path.path) else { return nil }
-      return Tensor<Double>(Image(contentsOf: path).tensor)
-    }
     while let frame = loadFrame(self.frames.count) {
       self.frames.append(frame)
     }
@@ -89,6 +87,12 @@ extension BeeVideo {
     }
   }
 
+  public func loadFrame(_ index: Int) -> Tensor<Double>? {
+    let path = self.directory!.appendingPathComponent("frame\(index).jpeg")
+    guard FileManager.default.fileExists(atPath: path.path) else { return nil }
+    return Tensor<Double>(Image(contentsOf: path).tensor)
+  }
+  
   private static func downloadDatasetIfNotPresent() -> URL {
     let downloadDir = DatasetUtilities.defaultDirectory.appendingPathComponent(
       "bee_videos", isDirectory: true)

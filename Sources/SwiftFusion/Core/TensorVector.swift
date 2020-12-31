@@ -64,7 +64,7 @@ public struct TensorVector {
 
   /// Creates an instance that views `tensor` as a `Vector`.
   @differentiable
-  init(_ tensor: Tensor<Double>) {
+  public init(_ tensor: Tensor<Double>) {
     self.scalars = Scalars(storage: tensor.reshaped(to: [tensor.scalarCount]))
     self.shape = tensor.shape
   }

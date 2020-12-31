@@ -15,19 +15,38 @@
 import _Differentiation
 import PenguinStructures
 
-/// A factor that specifies a difference between two poses.
-public struct BetweenFactor<Pose: LieGroup>: LinearizableFactor2 {
+/// A factor that specifies a difference between two instances of a Group.
+public struct BetweenFactor<Group: LieGroup>: LinearizableFactor2 {
   public let edges: Variables.Indices
-  public let difference: Pose
-
-  public init(_ startId: TypedID<Pose>, _ endId: TypedID<Pose>, _ difference: Pose) {
+  public let difference: Group
+  
+  public init(_ startId: TypedID<Group>, _ endId: TypedID<Group>, _ difference: Group) {
     self.edges = Tuple2(startId, endId)
     self.difference = difference
   }
-
+  
   @differentiable
-  public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
+  public func errorVector(_ start: Group, _ end: Group) -> Group.TangentVector {
     let actualMotion = between(start, end)
     return difference.localCoordinate(actualMotion)
+  }
+}
+
+/// A factor that specifies a difference between two instances of a Group, version with weight.
+public struct WeightedBetweenFactor<Group: LieGroup>: LinearizableFactor2 {
+  public let edges: Variables.Indices
+  public let difference: Group
+  public let weight: Double
+  
+  public init(_ startId: TypedID<Group>, _ endId: TypedID<Group>, _ difference: Group, weight: Double) {
+    self.edges = Tuple2(startId, endId)
+    self.difference = difference
+    self.weight = weight
+  }
+  
+  @differentiable
+  public func errorVector(_ start: Group, _ end: Group) -> Group.TangentVector {
+    let actualMotion = between(start, end)
+    return weight * difference.localCoordinate(actualMotion)
   }
 }

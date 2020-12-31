@@ -28,7 +28,8 @@ class PPCATests: XCTestCase {
     let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
     let generic_factor = AppearanceTrackingFactor(
       TypedID<Pose2>(0), TypedID<Vector5>(0),
-      measurement: factor.measurement, appearanceModel: ppca.decodeWithJacobian
+      measurement: Tensor<Float>(factor.measurement),
+      appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }
     )
 
     for _ in 0..<2 {
@@ -55,7 +56,7 @@ class PPCATests: XCTestCase {
         assertEqual(
           custom.errorVector_linearComponent(v).tensor,
           autodiff.errorVector_linearComponent(v).tensor,
-          accuracy: 1e-6)
+          accuracy: 1e-4)
       }
 
       // Compare the vector-Jacobian-products (reverse derivative).
@@ -64,8 +65,36 @@ class PPCATests: XCTestCase {
         assertEqual(
           custom.errorVector_linearComponent_adjoint(e).flatTensor,
           autodiff.errorVector_linearComponent_adjoint(e).flatTensor,
-          accuracy: 1e-6)
+          accuracy: 1e-4)
       }
+    }
+  }
+
+  /// Test that the VJP of the AppearanceTrackingFactor is the same as the automatically derived VJP of the PPCATrackingFactor.
+  func testVJP() {
+    let factor = PPCATrackingFactor.testFixture(TypedID<Pose2>(0), TypedID<Vector5>(0), seed: (4, 4))
+
+    let ppca = PPCA(W: factor.W, mu: factor.mu.tensor)
+    let generic_factor = AppearanceTrackingFactor(
+      TypedID<Pose2>(0), TypedID<Vector5>(0),
+      measurement: Tensor<Float>(factor.measurement),
+      appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }
+    )
+
+    for _ in 0..<5 {
+      let linearizationPoint = Tuple2(
+        Pose2(randomWithCovariance: eye(rowCount: 3), seed: (5, 5)),
+        Vector5(flatTensor: Tensor(randomNormal: [5], seed: (6, 6))))
+
+      let pbFactor = pullback(at: linearizationPoint) { factor.errorVector(at: $0) }
+      let pbGeneric_factor = pullback(at: linearizationPoint) { generic_factor.errorVector(at: $0) }
+
+      let tangentVector = TensorVector(Tensor<Double>(randomNormal: factor.mu.tensor.shape))
+
+      assertEqual(
+        pbFactor(tangentVector).flatTensor,
+        pbGeneric_factor(tangentVector).flatTensor,
+        accuracy: 1e-4)
     }
   }
 
@@ -97,7 +126,8 @@ class PPCATests: XCTestCase {
     let ppca = PPCA(W: ppca_factor.W.tiled(multiples: [1, 1, 3, 1]), mu: ppca_factor.mu.tensor.tiled(multiples: [1, 1, 3]))
     let generic_factor = AppearanceTrackingFactor(
       TypedID<Pose2>(0), TypedID<Vector5>(0),
-      measurement: ppca_factor.measurement.tiled(multiples: [1, 1, 3]), appearanceModel: ppca.decodeWithJacobian
+      measurement: Tensor<Float>(ppca_factor.measurement.tiled(multiples: [1, 1, 3])),
+      appearanceModel: ppca.decode, appearanceModelJacobian: { _ in ppca.W }
     )
 
     var x = VariableAssignments()

@@ -9,7 +9,7 @@ import TensorFlow
 % end
 
 /// An element of R^${dim}, with Euclidean inner product.
-public struct Vector${dim}: KeyPathIterable {
+public struct Vector${dim}: Codable, KeyPathIterable {
   % for coordinate in coordinates:
   @differentiable public var ${coordinate}: Double
   % end

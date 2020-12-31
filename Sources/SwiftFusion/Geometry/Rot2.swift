@@ -3,7 +3,7 @@ import TensorFlow
 
 /// Rot2 class is the Swift type for the SO(2) manifold of 2D Rotations around
 /// the origin.
-public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
+public struct Rot2: Codable, Manifold, LieGroup, Equatable, KeyPathIterable {
 
   // MARK: - Manifold conformance
 
@@ -41,6 +41,16 @@ public struct Rot2: Manifold, LieGroup, Equatable, KeyPathIterable {
   /// Sine value.
   @differentiable
   public var s: Double { coordinate.s }
+
+  /// Creates an instance from the given `direction`, which does not necessarily have to be
+  /// normalized.
+  ///
+  /// The created instance rotates `(1, 0)` to point in the same direction as `direction`.
+  @differentiable
+  public init(direction: Vector2) {
+    let norm = direction.norm
+    self.init(c: direction.x / norm, s: direction.y / norm)
+  }
 }
 
 extension Rot2: CustomDebugStringConvertible {
@@ -72,7 +82,7 @@ extension Rot2 {
 
 // MARK: - Global coordinate system
 
-public struct Rot2Coordinate: Equatable, KeyPathIterable {
+public struct Rot2Coordinate: Codable, Equatable, KeyPathIterable {
   public var c, s: Double
 }
 

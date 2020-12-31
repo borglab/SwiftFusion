@@ -140,3 +140,20 @@ extension VariableAssignments {
     return result
   }
 }
+
+extension VariableAssignments {
+  /// Accesses the tuple of variables indexed by the given `indices`, which is a tuple of variable
+  /// ids.
+  public subscript<Value: VariableTuple>(indices: Value.Indices, as type: Value.Type = Value.self) -> Value {
+    get {
+      return Value.withBufferBaseAddresses(self) {
+        Value(at: indices, in: $0)
+      }
+    }
+    set {
+      Value.withMutableBufferBaseAddresses(&self) {
+        newValue.assign(into: indices, in: $0)
+      }
+    }
+  }
+}

@@ -34,6 +34,8 @@ public struct GenericCGLS {
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
   public mutating func optimize(gfg: GaussianFactorGraph, initial x: inout VariableAssignments) {
+    startTimer("cgls")
+    defer { stopTimer("cgls") }
     step += 1
 
     var r = (-1) * gfg.errorVectors(at: x) // r(0) = b - A * x(0), the residual
@@ -42,6 +44,7 @@ public struct GenericCGLS {
     var gamma = s.squaredNorm // γ(0) = ||s(0)||^2
 
     while step < max_iteration && gamma > precision {
+      incrementCounter("cgls step")
       // print("[CGLS    ] residual = \(r.squaredNorm), true = \(gfg.errorVectors(at: x).squaredNorm)")
       let q = gfg.errorVectors_linearComponent(at: p) // q(k) = A * p(k)
 
