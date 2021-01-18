@@ -12,4 +12,6 @@ public protocol CameraCalibration: Differentiable {
   /// Converts from normalized coordinate to image coordinate.
   @differentiable
   func uncalibrate(_ np: Vector2) -> Vector2
+
+  func zeroTangentVector() -> TangentVector
 }

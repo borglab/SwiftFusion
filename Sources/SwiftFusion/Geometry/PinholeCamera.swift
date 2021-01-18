@@ -78,7 +78,7 @@ extension PinholeCamera {
           p.x * (R[0, 2] - u * R[2, 2]) + p.y * (R[1, 2] - v * R[2, 2]))
 
         return (
-          TangentVector(wTc: dpose, calibration: calibration.zeroTangentVector),
+          TangentVector(wTc: dpose, calibration: calibration.zeroTangentVector()),
           dpoint)
       }
     )
