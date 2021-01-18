@@ -46,13 +46,7 @@ struct Andrew01: ParsableCommand {
             bgRandomFrameCount: trainingDatasetSize,
             numberOfTrainingSamples: 3000
         )
-        //   trainingData = OISTBeeVideo(directory:  URL(fileURLWithPath: "./OIST_Data"), length: 100)!
-        //   var tracker = trainRPTracker(~
-        //   trainingData: trainingData,
-        //   frames: frames, boundingBoxSize: (40, 70), withFeatureSize: 100, usingEM :false
-        // )
-        let prediction = tracker.infer(knownStart: Tuple1(start.center), withSampling: false)//).map { OrientedBoundingBox(center: $0, rows: 70, cols: 40)}
-        print(type(of: prediction))
+        let prediction = tracker.infer(knownStart: Tuple1(start.center), withSampling: false)
         let track = tracker.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
         return track
     }
