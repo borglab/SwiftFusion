@@ -75,6 +75,9 @@ extension TypeKeyedArrayBuffers {
     get {
       _storage[existingKey: k.untyped][existingElementType: k.elementType]
     }
+    set {
+      _storage[existingKey: k.untyped][existingElementType: k.elementType] = newValue
+    }
     _modify {
       yield &_storage[existingKey: k.untyped][existingElementType: k.elementType]
     }
@@ -191,6 +194,9 @@ extension ArrayBuffersByElementType {
   public subscript<Element>(id: ElementKey<Element>) -> Element {
     get {
       self[id.buffer][id.indexInBuffer]
+    }
+    set {
+      self[id.buffer][id.indexInBuffer] = newValue
     }
     _modify {
       yield &self[id.buffer][id.indexInBuffer]
