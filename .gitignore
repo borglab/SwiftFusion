@@ -8,3 +8,5 @@ xcuserdata/
 /.idea
 /OIST_Data/
 /Results/
+*.npy
+*.json

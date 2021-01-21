@@ -265,6 +265,15 @@ extension TrackerEvaluationSequence {
         metrics: SubsequenceMetrics(groundTruth: $0.0.groundTruth, prediction: $0.1),
         prediction: $0.1)
     }
+    zip(subsequences, subsequencePredictions).map {
+    let plt = Python.import("matplotlib.pyplot")
+      let (fig, axes) = plt.subplots(1, 1, figsize: Python.tuple([6, 12])).tuple2
+      plotTrajectory(
+        track: $0.1.map{$0.center}, withGroundTruth: $0.0.groundTruth.map{$0.center}, on: axes[0],
+        withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
+      )
+      fig.savefig("Results/andrew01/andrew01_\(outputFile).pdf", bbox_inches: "tight")
+    }
     let result = SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
       sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))

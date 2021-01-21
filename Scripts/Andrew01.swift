@@ -18,27 +18,41 @@ struct Andrew01: ParsableCommand {
   var trackLength: Int = 80
   
   @Option(help: "Size of feature space")
-  var featureSize: Int = 100
+  var featureSize: Int = 5
+
+  @Option(help: "Pretrained weights")
+  var weightsFile: String?
 
   // Just runs an RP tracker and saves image to file
   // Make sure you have a folder `Results/frank02` before running
   func run() {
-    let dataDir = URL(fileURLWithPath: "./OIST_Data")
-    let data = OISTBeeVideo(directory: dataDir)!
-    
-    
+    let np = Python.import("numpy")
+    let kHiddenDimension = 100
+
     let (imageHeight, imageWidth, imageChannels) =
       (40, 70, 1)
-    
-    let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
+    var rae = DenseRAE(
+      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
+      hiddenDimension: kHiddenDimension, latentDimension: featureSize
+    )
 
-    let trackerEvaluation = TrackerEvaluationDataset(data)
+    if let weightsFile = weightsFile {
+      rae.load(weights: np.load(weightsFile, allow_pickle: true))
+    } else {
+      rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
+    }
+
+    let dataDir = URL(fileURLWithPath: "./OIST_Data")
+    let data = OISTBeeVideo(directory: dataDir, length: 100)!
+    let testData = OISTBeeVideo(directory: dataDir, afterIndex: 100, length: 80)!
+
+    let trackerEvaluation = TrackerEvaluationDataset(testData)
     
     let evalTracker: Tracker = {frames, start in
         let trainingDatasetSize = 100
         var tracker = trainProbabilisticTracker(
             trainingData: data,
-            encoder: rp,
+            encoder: rae,
             frames: frames,
             boundingBoxSize: (40, 70),
             withFeatureSize: 100,
