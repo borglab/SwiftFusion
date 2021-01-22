@@ -48,6 +48,8 @@ func assertAllKeyPathEqual<T: KeyPathIterable>(
 
 /// Factor graph with 2 2D factors on 3 2D variables.
 public enum SimpleGaussianFactorGraph {
+  public typealias VariableAssignments = AllVectors
+  
   public static let x1ID = TypedID<Vector2>(2)
   public static let x2ID = TypedID<Vector2>(0)
   public static let l1ID = TypedID<Vector2>(1)

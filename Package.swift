@@ -25,7 +25,7 @@ let package = Package(
     // .package(url: /* package url */, from: "1.0.0"),
     .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", from: "0.1.0"),
 
-    .package(name: "Penguin", url: "https://github.com/saeta/penguin.git", .branch("main")),
+    .package(name: "Penguin", url: "https://github.com/saeta/penguin.git", .branch("upcast-preserve-dispatcher")),
 
     .package(name: "TensorBoardX", url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),

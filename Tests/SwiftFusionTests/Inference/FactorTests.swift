@@ -191,7 +191,7 @@ class FactorTests: XCTestCase {
     XCTAssertEqual(forwardResult[0], Vector2(3, 2))  // matrix1 * [1 2]
     XCTAssertEqual(forwardResult[1], Vector2(6, 7))  // matrix2 * [1 2]
 
-    var adjointResult = VariableAssignments()
+    var adjointResult = AllVectors()
     let adjointResultId = adjointResult.store(Vector2(0, 0))
     factors.errorVectors_linearComponent_adjoint(
       AnyElementArrayBuffer(forwardResult), into: &adjointResult)

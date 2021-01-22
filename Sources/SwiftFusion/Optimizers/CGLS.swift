@@ -33,7 +33,10 @@ public struct GenericCGLS {
   /// Optimize the Gaussian Factor Graph with a initial estimate
   /// Reference: Bjorck96book_numerical-methods-for-least-squares-problems
   /// Page 289, Algorithm 7.4.1
-  public mutating func optimize(gfg: GaussianFactorGraph, initial x: inout VariableAssignments) {
+  public mutating func optimize(
+    gfg: GaussianFactorGraph,
+    initial x: inout GaussianFactorGraph.VariableAssignments
+  ) {
     startTimer("cgls")
     defer { stopTimer("cgls") }
     step += 1

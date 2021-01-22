@@ -23,7 +23,7 @@ import SwiftFusion
 class GaussianFactorGraphTests: XCTestCase {
   /// Stores a factor in the graph and evaluates the graph error vector.
   func testStoreFactors() {
-    var x = VariableAssignments()
+    var x = AllVectors()
     let id1 = x.store(Vector1(1))
     let id2 = x.store(Vector2(2, 3))
 
@@ -48,7 +48,7 @@ class GaussianFactorGraphTests: XCTestCase {
   /// Adds some scalar jacobians and tests that the resulting graph produces the correct error
   /// vectors.
   func testAddScalarJacobians() {
-    var x = VariableAssignments()
+    var x = AllVectors()
     let id1 = x.store(Vector2(1, 2))
     let id2 = x.store(Vector2(3, 4))
     let id3 = x.store(Vector3(5, 6, 7))
@@ -80,7 +80,7 @@ class GaussianFactorGraphTests: XCTestCase {
   }
   
   func testJacobianFactorSanity() {
-    var x = VariableAssignments()
+    var x = AllVectors()
     let id0 = x.store(Vector3(1.0, 1.0, 1.0))
     let id1 = x.store(Vector3(0.5, 0.5, 0.5))
     let id2 = x.store(Vector3(1.0/3, 1.0/3, 1.0/3))

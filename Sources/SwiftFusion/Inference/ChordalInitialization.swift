@@ -102,7 +102,7 @@ public struct ChordalInitialization {
     /// The orientation graph, with only unconstrained rotation factors
     var orientationGraph = FactorGraph()
     /// orientation storage
-    var orientations = VariableAssignments()
+    var orientations = GaussianFactorGraph.VariableAssignments()
     /// association to lookup the vector-based storage from the pose3 ID
     var associations = Dictionary<Int, TypedID<Matrix3>>()
     
@@ -128,10 +128,10 @@ public struct ChordalInitialization {
     
     // optimize
     var optimizer = GenericCGLS()
-    let linearGraph = orientationGraph.linearized(at: orientations)
+    let linearGraph = orientationGraph.linearized(at: .init(orientations))
     optimizer.optimize(gfg: linearGraph, initial: &orientations)
     
-    return normalizeRelaxedRotations(orientations, associations: associations, ids: ids)
+    return normalizeRelaxedRotations(.init(orientations), associations: associations, ids: ids)
   }
   
   /// This function finds the closest Rot3 to the unconstrained 3x3 matrix with SVD.

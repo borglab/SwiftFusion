@@ -17,6 +17,9 @@ import PenguinStructures
 
 /// A factor graph whose factors are all `GaussianFactor`s.
 public struct GaussianFactorGraph {
+  /// The variables in a gaussian factor graph are all vectors
+  public typealias VariableAssignments = AllVectors
+  
   /// Dictionary from factor type to contiguous storage for that type.
   var storage: [ObjectIdentifier: AnyGaussianFactorArrayBuffer]
 
@@ -67,17 +70,18 @@ public struct GaussianFactorGraph {
   
   /// Returns the error vectors, at `x`, of all the factors.
   public func errorVectors(at x: AllVectors) -> AllVectors {
-    return AllVectors(storage: storage.mapValues { factors in
-      // Note: This is a safe upcast.
-      AnyElementArrayBuffer(unsafelyCasting: factors.errorVectors(at: x))
+    return AllVectors(
+      storage: storage.mapValues { factors in
+        let v: AnyVectorArrayBuffer = factors.errorVectors(at: .init(x))
+        return AnyElementArrayBuffer(v)
     })
   }
 
   /// Returns the linear component of `errorVectors`, evaluated at `x`.
   public func errorVectors_linearComponent(at x: AllVectors) -> AllVectors {
-    return AllVectors(storage: storage.mapValues { factors in
-      // Note: This is a safe upcast.
-      AnyElementArrayBuffer(unsafelyCasting: factors.errorVectors_linearComponent(x))
+    return AllVectors(
+      storage: storage.mapValues { factors in
+        AnyElementArrayBuffer(factors.errorVectors_linearComponent(.init(x)))
     })
   }
 

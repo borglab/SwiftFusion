@@ -14,8 +14,8 @@
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
-          "branch": "main",
-          "revision": "2ed8978cfc91384f98c245cce3513f4345eec239",
+          "branch": "upcast-preserve-dispatcher",
+          "revision": "9fe09d8e42cb1fb7d9f55dd464c1554823d5d468",
           "version": null
         }
       },

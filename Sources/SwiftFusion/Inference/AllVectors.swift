@@ -21,7 +21,137 @@ import PenguinStructures
 /// statically that `AllVectors` only contains vector values, and (2) we use `AllVectors` in some
 /// places for things other than variable assignments (e.g. a collection of error vectors is one
 /// error vector per factor).
-public typealias AllVectors = VariableAssignments
+public struct AllVectors {
+  /// Dictionary from variable type to contiguous storage for that type.
+  var storage: [ObjectIdentifier: AnyElementArrayBuffer] = [:]
+
+  /// Creates an empty instance.
+  public init() {}
+
+  /// Creates an instance backed by the given `storage`.
+  internal init(storage: [ObjectIdentifier: AnyElementArrayBuffer]) {
+    assert(storage.values.allSatisfy { $0.dispatch is VectorArrayDispatch })
+    self.storage = storage
+  }
+
+  /*
+  /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
+  public mutating func store<T: Vector>(_ value: T) -> TypedID<T> {
+    let perTypeID = storage[
+      ObjectIdentifier(T.self),
+      default: AnyVectorArrayBuffer(ArrayBuffer<T>())
+    ].unsafelyAppend(value)
+    return TypedID(perTypeID)
+  }
+
+  /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
+  public mutating func store<T: Differentiable>(_ value: T) -> TypedID<T>
+    where T.TangentVector: Vector
+  {
+    let perTypeID = storage[
+      ObjectIdentifier(T.self),
+      // Note: This is a safe upcast.
+      default: AnyVectorArrayBuffer(
+        unsafelyCasting: AnyDifferentiableArrayBuffer(ArrayBuffer<T>()))
+    ].unsafelyAppend(value)
+    return TypedID(perTypeID)
+  }
+   */
+  /// Stores `value` as the assignment of a new variable, and returns the new variable's id.
+  public mutating func store<T: Vector>(_ value: T) -> TypedID<T> {
+    let perTypeID = storage[
+      ObjectIdentifier(T.self),
+      // Note: This is a safe upcast.
+      default: AnyElementArrayBuffer(AnyVectorArrayBuffer(ArrayBuffer<T>()))
+    ].unsafelyAppend(value)
+    return TypedID(perTypeID)
+  }
+
+  /// Traps with an error indicating that an attempt was made to access a stored
+  /// variable of a type that is not represented in `self`.
+  private static var noSuchType: AnyElementArrayBuffer {
+    fatalError("No such stored variable type")
+  }
+
+  /// Accesses the stored value with the given ID.
+  public subscript<T>(id: TypedID<T>) -> T {
+    get {
+      storage[
+        ObjectIdentifier(T.self), default: Self.noSuchType][
+        existingElementType: Type<T>()][id.perTypeID]
+    }
+    _modify {
+      yield &storage[
+        ObjectIdentifier(T.self), default: Self.noSuchType][
+        existingElementType: Type<T>()][id.perTypeID]
+    }
+  }
+}
+
+/// Differentiable operations.
+// TODO: There are some mutating operations here that copy, mutate, and write back. Make these
+// more efficient.
+extension AllVectors {
+  /// For each differentiable value in `self`, the zero value of its tangent vector.
+  public var tangentVectorZeros: AllVectors {
+    let r = Dictionary(uniqueKeysWithValues: storage.compactMap {
+      (key, value) -> (ObjectIdentifier, AnyElementArrayBuffer)? in
+      guard let differentiableValue = AnyArrayBuffer<VectorArrayDispatch>(value) else {
+        return nil
+      }
+      return (
+        ObjectIdentifier(differentiableValue.tangentVectorType),
+        AnyElementArrayBuffer(differentiableValue.tangentVectorZeros)
+      )
+    })
+    return AllVectors(storage: r)
+  }
+
+  /// Moves each differentiable variable along the corresponding element of `direction`.
+  ///
+  /// See `FactorGraph.linearized(at:)` for documentation about the correspondence between
+  /// differentiable variables and their linearizations.
+  public mutating func move(along direction: AllVectors) {
+    storage = storage.mapValues { value in
+      guard var diffVal = AnyArrayBuffer<VectorArrayDispatch>(value) else {
+        return value
+      }
+      guard let dirElem = direction.storage[ObjectIdentifier(diffVal.tangentVectorType)] else {
+        return value
+      }
+      diffVal.move(along: dirElem)
+      return AnyElementArrayBuffer(diffVal)
+    }
+  }
+
+  /// See `move(along:)`.
+  public func moved(along direction: AllVectors) -> Self {
+    // TODO: Make sure that this is efficient when we have a unique reference.
+    var result = self
+    result.move(along: direction)
+    return result
+  }
+}
+
+extension AllVectors {
+  /// Accesses the tuple of variables indexed by the given `indices`, which is a tuple of variable
+  /// ids.
+  public subscript<Value: VariableTuple>(indices: Value.Indices, as type: Value.Type = Value.self) -> Value {
+    get {
+      return Value.withBufferBaseAddresses(VariableAssignments(self)) {
+        Value(at: indices, in: $0)
+      }
+    }
+    set {
+      var t = VariableAssignments()
+      swap(&self.storage, &t.storage)
+      Value.withMutableBufferBaseAddresses(&t) {
+        newValue.assign(into: indices, in: $0)
+      }
+      swap(&self.storage, &t.storage)
+    }
+  }
+}
 
 /// Vector operations.
 // TODO: There are some mutating operations here that copy, mutate, and write back. Make these
@@ -43,12 +173,13 @@ extension AllVectors {
   ///
   /// Precondition: All the variables in `rhs` are vectors.
   public static func * (_ lhs: Double, _ rhs: Self) -> Self {
-    VariableAssignments(storage: rhs.storage.mapValues { value in
-      var vector = AnyArrayBuffer<VectorArrayDispatch>(unsafelyCasting: value)
-      vector.scale(by: lhs)
-      // Note: This is a safe upcast.
-      return AnyElementArrayBuffer(unsafelyCasting: vector)
-    })
+    AllVectors(
+      storage: rhs.storage.mapValues { value in
+        var vector = AnyArrayBuffer<VectorArrayDispatch>(unsafelyCasting: value)
+        vector.scale(by: lhs)
+        // Note: This is a safe upcast.
+        return AnyElementArrayBuffer(unsafelyCasting: vector)
+      })
   }
 
   /// Returns the vector sum of `lhs` with `rhs`, where `lhs` and `rhs` are viewed as vectors in the
@@ -65,7 +196,7 @@ extension AllVectors {
       // Note: This is a safe upcast.
       return (key, AnyElementArrayBuffer(unsafelyCasting: resultVector))
     })
-    return VariableAssignments(storage: r)
+    return .init(storage: r)
   }
 
   /// Stores an `ErrorVector` for a factor of type `F`.
@@ -86,5 +217,14 @@ extension AllVectors {
     return ArrayBuffer<F.ErrorVector>(unsafelyDowncasting: array).withUnsafeBufferPointer { b in
       b[perFactorID]
     }
+  }
+}
+
+extension VariableAssignments {
+  /// Convert source to VariableAssignments.
+  ///
+  /// This is effectively an upcast.
+  init(_ source: AllVectors) {
+    storage = source.storage
   }
 }

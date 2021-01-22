@@ -55,7 +55,7 @@ class VariableAssignmentsTests: XCTestCase {
     let v1ID = x.store(Vector1(2))
     let v2ID = x.store(Vector2(3, 4))
 
-    var t = VariableAssignments()
+    var t = AllVectors()
     _ = t.store(Vector1(10))
     _ = t.store(Vector2(20, 20))
 
@@ -65,14 +65,14 @@ class VariableAssignmentsTests: XCTestCase {
   }
 
   func testSquaredNorm() {
-    var x = VariableAssignments()
+    var x = AllVectors()
     _ = x.store(Vector1(2))
     _ = x.store(Vector2(3, 4))
     XCTAssertEqual(x.squaredNorm, 29)
   }
 
   func testScalarMultiply() {
-    var x = VariableAssignments()
+    var x = AllVectors()
     let v1ID = x.store(Vector1(2))
     let v2ID = x.store(Vector2(3, 4))
 
@@ -82,11 +82,11 @@ class VariableAssignmentsTests: XCTestCase {
   }
 
   func testPlus() {
-    var x = VariableAssignments()
+    var x = AllVectors()
     let v1ID = x.store(Vector1(2))
     let v2ID = x.store(Vector2(3, 4))
 
-    var t = VariableAssignments()
+    var t = AllVectors()
     _ = t.store(Vector1(10))
     _ = t.store(Vector2(20, 20))
 

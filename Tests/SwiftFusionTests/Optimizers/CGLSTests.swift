@@ -12,7 +12,7 @@ final class CGLSTests: XCTestCase {
     let gfg = SimpleGaussianFactorGraph.create()
     
     var optimizer = GenericCGLS(precision: 1e-7, max_iteration: 10)
-    var x: VariableAssignments = SimpleGaussianFactorGraph.zeroDelta()
+    var x: AllVectors = SimpleGaussianFactorGraph.zeroDelta()
     optimizer.optimize(gfg: gfg, initial: &x)
     
     let expected = SimpleGaussianFactorGraph.correctDelta()

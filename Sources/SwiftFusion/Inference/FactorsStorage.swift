@@ -56,7 +56,9 @@ extension ArrayStorage where Element: VectorFactor {
     typealias LVariables = Element.LinearizableComponent.Variables
     typealias GradVariables = LVariables.TangentVector
     Variables.withBufferBaseAddresses(x) { varsBufs in
-      GradVariables.withMutableBufferBaseAddresses(&result) { gradBufs in
+      var tmp = VariableAssignments()
+      swap(&tmp.storage, &result.storage)
+      GradVariables.withMutableBufferBaseAddresses(&tmp) { gradBufs in
         for factor in self {
           let vars = Variables(at: factor.edges, in: varsBufs)
           let (lFactor, lVars) = factor.linearizableComponent(at: vars)
@@ -66,6 +68,7 @@ extension ArrayStorage where Element: VectorFactor {
           newGrads.assign(into: gradIndices, in: gradBufs)
         }
       }
+      swap(&tmp.storage, &result.storage)
     }
   }
 }
@@ -115,10 +118,12 @@ extension ArrayStorage where Element: GaussianFactor {
   /// - Requires: `result` contains elements at all of `self`'s elements' inputs.
   func errorVectors_linearComponent_adjoint(
     _ y: ArrayBuffer<Element.ErrorVector>,
-    into result: inout VariableAssignments
+    into result: inout AllVectors
   ) {
     typealias Variables = Element.Variables
-    Variables.withMutableBufferBaseAddresses(&result) { varsBufs in
+    var tmp = VariableAssignments()
+    swap(&tmp.storage, &result.storage)
+    Variables.withMutableBufferBaseAddresses(&tmp) { varsBufs in
       withUnsafeMutableBufferPointer { fs in
         y.withUnsafeBufferPointer { es in
           assert(fs.count == es.count)
@@ -130,6 +135,7 @@ extension ArrayStorage where Element: GaussianFactor {
         }
       }
     }
+    swap(&tmp.storage, &result.storage)
   }
 }
 
@@ -271,7 +277,7 @@ public class GaussianFactorArrayDispatch: VectorFactorArrayDispatch {
   /// - Requires: `result` contains elements at all of `self`'s elements' inputs.
   final let errorVectors_linearComponent_adjoint: (
     _ self_: Self_, _ y: AnyElementArrayBuffer,
-    _ result: inout VariableAssignments
+    _ result: inout AllVectors
   ) -> Void
   
   /// Creates an instance for elements of type `Element`.
@@ -314,7 +320,7 @@ extension AnyArrayBuffer where Dispatch: GaussianFactorArrayDispatch {
   /// - Requires: `result` contains elements at all of `self`'s elements' inputs.
   func errorVectors_linearComponent_adjoint(
     _ y: AnyElementArrayBuffer,
-    into result: inout VariableAssignments
+    into result: inout AllVectors
   ) {
     dispatch.errorVectors_linearComponent_adjoint(self.upcast, y, &result)
   }
