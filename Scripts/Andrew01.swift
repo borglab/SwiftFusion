@@ -55,17 +55,43 @@ struct Andrew01: ParsableCommand {
             encoder: rae,
             frames: frames,
             boundingBoxSize: (40, 70),
-            withFeatureSize: 100,
+            withFeatureSize: 5,
             fgRandomFrameCount: trainingDatasetSize,
-            bgRandomFrameCount: trainingDatasetSize,
-            numberOfTrainingSamples: 3000
+            bgRandomFrameCount: trainingDatasetSize
         )
-        let prediction = tracker.infer(knownStart: Tuple1(start.center), withSampling: false)
+        let prediction = tracker.infer(knownStart: Tuple1(start.center), withSampling: true)
         let track = tracker.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
+
         return track
     }
-  
-    trackerEvaluation.evaluate(evalTracker, sequenceCount: 3, deltaAnchor: 360, outputFile: "andrew01")
+
+    var results = trackerEvaluation.evaluate(evalTracker, sequenceCount: 5, deltaAnchor: 175, outputFile: "andrew01")
+    
+    
+    for (index, value) in results.sequences.prefix(5).enumerated() {
+      var i: Int = 0
+      zip(value.subsequences.first!.frames, zip(value.subsequences.first!.prediction, value.subsequences.first!.groundTruth)).map {
+        let (fig, axes) = plotPatchWithGT(frame: $0.0, actual: $0.1.0.center, expected: $0.1.1.center)
+        fig.savefig("Results/andrew01/sequence\(index)/andrew01_\(i).png", bbox_inches: "tight")
+        i = i + 1
+      }
+      let plt = Python.import("matplotlib.pyplot")
+      let (fig, axes) = plt.subplots(1, 2, figsize: Python.tuple([20, 20])).tuple2
+      fig.suptitle("Tracking positions and Subsequence Average Overlap with Accuracy \(String(format: "%.2f", value.subsequences.first!.metrics.accuracy)) and Robustness \(value.subsequences.first!.metrics.robustness).")
+      
+      value.subsequences.map {
+        plotTrajectory(
+          track: $0.prediction.map{$0.center}, withGroundTruth: $0.groundTruth.map{$0.center}, on: axes[0],
+          withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
+        )
+      }
+      plotOverlap(
+          metrics: value.subsequences.first!.metrics, on: axes[1]
+      )
+      fig.savefig("Results/andrew01/andrew01_subsequence\(index).pdf", bbox_inches: "tight")
+    }
+    
+
 
   }
 }

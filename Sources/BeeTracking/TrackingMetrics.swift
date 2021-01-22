@@ -200,9 +200,9 @@ extension TrackerEvaluationDataset {
       expectedAverageOverlap: ExpectedAverageOverlap(
         sequenceEvaluations.flatMap { $0.subsequences }.map { $0.metrics }))
 
-    let encoder = JSONEncoder()
-    let data = try! encoder.encode(result)
-    FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
+    //let encoder = JSONEncoder()
+    //let data = try! encoder.encode(result)
+    //FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
 
     return result
   }
@@ -263,24 +263,18 @@ extension TrackerEvaluationSequence {
     let subsequenceEvaluations = zip(subsequences, subsequencePredictions).map {
       SubsequenceEvaluationResults(
         metrics: SubsequenceMetrics(groundTruth: $0.0.groundTruth, prediction: $0.1),
-        prediction: $0.1)
+        prediction: $0.1,
+        groundTruth: $0.0.groundTruth,
+        frames: $0.0.frames)
     }
-    zip(subsequences, subsequencePredictions).map {
-    let plt = Python.import("matplotlib.pyplot")
-      let (fig, axes) = plt.subplots(1, 1, figsize: Python.tuple([6, 12])).tuple2
-      plotTrajectory(
-        track: $0.1.map{$0.center}, withGroundTruth: $0.0.groundTruth.map{$0.center}, on: axes[0],
-        withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
-      )
-      fig.savefig("Results/andrew01/andrew01_\(outputFile).pdf", bbox_inches: "tight")
-    }
+
     let result = SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
       sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))
 
-    let encoder = JSONEncoder()
-    let data = try! encoder.encode(result)
-    FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
+    //let encoder = JSONEncoder()
+    //let data = try! encoder.encode(result)
+    //FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
 
     return result
   }
@@ -327,6 +321,8 @@ public struct SequenceEvaluationResults: Codable {
 public struct SubsequenceEvaluationResults: Codable {
   public let metrics: SubsequenceMetrics
   public let prediction: [OrientedBoundingBox]
+  public let groundTruth: [OrientedBoundingBox]
+  public let frames: [Tensor<Float>]
 }
 
 /// Given `frames` and a `start` region containing an object to track, returns predicted regions

@@ -54,6 +54,12 @@ public func plotOverlap(
   ax.set_title("Overlap")
 }
 
+/// Plot the tracking metrics
+public func plotOverlap(metrics: SubsequenceMetrics, on ax: PythonObject) {
+  ax.plot(metrics.overlap)
+  ax.set_title("Overlap")
+}
+
 /// plot Comparison image
 public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2) -> (PythonObject, PythonObject) {
   let plt = Python.import("matplotlib.pyplot")
