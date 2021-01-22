@@ -153,7 +153,7 @@ extension OISTBeeVideo {
             rows: patchSize.0, cols: patchSize.1))
       }
     }
-    
+
     return obbs
   }
 

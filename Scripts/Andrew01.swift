@@ -9,7 +9,7 @@ import Foundation
 
 import PenguinStructures
 
-/// Fan03: RP Tracker, with sampling-based initialization
+/// Andrew01: RAE Tracker
 struct Andrew01: ParsableCommand {
   @Option(help: "Run on track number x")
   var trackId: Int = 0
@@ -23,8 +23,8 @@ struct Andrew01: ParsableCommand {
   @Option(help: "Pretrained weights")
   var weightsFile: String?
 
-  // Just runs an RP tracker and saves image to file
-  // Make sure you have a folder `Results/frank02` before running
+  // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
+  // Make sure you have a folder `Results/andrew01` before running
   func run() {
     let np = Python.import("numpy")
     let kHiddenDimension = 100

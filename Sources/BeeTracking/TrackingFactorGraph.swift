@@ -272,31 +272,29 @@ public func getTrainingBatches(
 ) -> (fg: Tensor<Double>, bg: Tensor<Double>, statistics: FrameStatistics) {
   precondition(dataset.frames.count >= bgRandomFrameCount)
   let np = Python.import("numpy")
+
   var statistics = FrameStatistics(Tensor<Double>(0.0))
   statistics.mean = Tensor(62.26806976644069)
   statistics.standardDeviation = Tensor(37.44683834503672)
 
-  print("entering")
   /// Caching
   let cachePath = "./training_batch_cache"
   let cacheURL = URL(fileURLWithPath: "\(cachePath)_fg.npy")
-  print("entering2")
   if useCache && FileManager.default.fileExists(atPath: cacheURL.path) {
     let foregroundBatch = Tensor<Double>(numpy: np.load("\(cachePath)_fg.npy"))!
     let backgroundBatch = Tensor<Double>(numpy: np.load("\(cachePath)_bg.npy"))!
-    print("hi")
+
     precondition(foregroundBatch.shape[0] == fgBatchSize, "Wrong foreground dataset cache, please delete and regenerate!")
     precondition(backgroundBatch.shape[0] == bgBatchSize, "Wrong background dataset cache, please delete and regenerate!")
-    print("bye")
     
     return (fg: foregroundBatch, bg: backgroundBatch, statistics: statistics)
   }
-  print("entering3")
+
   let foregroundBatch = dataset.makeBatch(
     statistics: statistics, appearanceModelSize: boundingBoxSize,
     randomFrameCount: fgRandomFrameCount, batchSize: fgBatchSize
   )
-  print("entering4")
+
   let backgroundBatch = dataset.makeBackgroundBatch(
     patchSize: boundingBoxSize, appearanceModelSize: boundingBoxSize,
     statistics: statistics,
@@ -308,7 +306,7 @@ public func getTrainingBatches(
     np.save("\(cachePath)_fg", foregroundBatch.makeNumpyArray())
     np.save("\(cachePath)_bg", backgroundBatch.makeNumpyArray())
   }
-  print("leaving function")
+
   return (fg: foregroundBatch, bg: backgroundBatch, statistics: statistics)
 }
 
@@ -328,10 +326,11 @@ public func trainRPTracker(trainingData: OISTBeeVideo,
     fgRandomFrameCount: fgRandomFrameCount,
     bgRandomFrameCount: bgRandomFrameCount
   )
-  print(statistics)
+  
   let randomProjector = RandomProjection(
     fromShape: [boundingBoxSize.0, boundingBoxSize.1, 1], toFeatureSize: d
   )
+
   let batchPositive = randomProjector.encode(fg)
   let foregroundModel = MultivariateGaussian(from: batchPositive, given: 1e-3)
 
@@ -343,6 +342,7 @@ public func trainRPTracker(trainingData: OISTBeeVideo,
     frames: frames, targetSize: boundingBoxSize,
     foregroundModel: foregroundModel, backgroundModel: backgroundModel
   )
+  
   return tracker
 }
 
@@ -362,7 +362,6 @@ public func createSingleTrack(
   return (track, groundTruth)
 }
 
-
 /// Runs the random projections tracker
 /// Given a training set, it will train an RP tracker
 /// and run it on one track in the test set:
@@ -375,7 +374,7 @@ public func runRPTracker(
   savePatchesIn resultDirectory: String? = nil
 ) -> (fig: PythonObject, track: [Pose2], groundTruth: [Pose2]) {
   // train foreground and background model and create tracker
-  var trainingData = OISTBeeVideo(directory: directory, length: 100)!
+  let trainingData = OISTBeeVideo(directory: directory, length: 100)!
   let testData = OISTBeeVideo(directory: directory, afterIndex: 100, length: forFrames)!
   
   precondition(testData.tracks[trackIndex].boxes.count == forFrames, "track length and required does not match")
@@ -384,14 +383,13 @@ public func runRPTracker(
     trainingData: trainingData,
     frames: testData.frames, boundingBoxSize: (40, 70), withFeatureSize: d, usingEM :EMflag
   )
-
-
-    // Run the tracker and return track with ground truth
+  
+  // Run the tracker and return track with ground truth
   let (track, groundTruth) = createSingleTrack(
     onTrack: trackIndex, withTracker: &tracker,
     andTestData: testData, withSampling: samplingFlag
   )
-  // let _ = trackerEvaluation.evaluate(makeProbabilisticTracker())
+  
   // Now create trajectory and metrics plot
   let plt = Python.import("matplotlib.pyplot")
   let (fig, axes) = plt.subplots(2, 1, figsize: Python.tuple([6, 12])).tuple2
