@@ -200,10 +200,6 @@ extension TrackerEvaluationDataset {
       expectedAverageOverlap: ExpectedAverageOverlap(
         sequenceEvaluations.flatMap { $0.subsequences }.map { $0.metrics }))
 
-    //let encoder = JSONEncoder()
-    //let data = try! encoder.encode(result)
-    //FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
-
     return result
   }
 }
@@ -271,10 +267,6 @@ extension TrackerEvaluationSequence {
     let result = SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
       sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))
-
-    //let encoder = JSONEncoder()
-    //let data = try! encoder.encode(result)
-    //FileManager.default.createFile(atPath: "\(outputFile).json", contents: data, attributes: nil)
 
     return result
   }
