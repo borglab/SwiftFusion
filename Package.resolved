@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "LoggerKit",
+        "repositoryURL": "https://github.com/pvieito/LoggerKit.git",
+        "state": {
+          "branch": "master",
+          "revision": "6c0f5ac4d5561086fe6e6381fa35eceb108f1c7a",
+          "version": null
+        }
+      },
+      {
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
@@ -29,12 +38,30 @@
         }
       },
       {
-        "package": "swift-argument-parser",
-        "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
+        "package": "PythonKit",
+        "repositoryURL": "https://github.com/pvieito/PythonKit.git",
+        "state": {
+          "branch": "master",
+          "revision": "260ae70cddeadf42a7a0edce0dfc7f00343b5d1a",
+          "version": null
+        }
+      },
+      {
+        "package": "Rainbow",
+        "repositoryURL": "https://github.com/onevcat/Rainbow",
         "state": {
           "branch": null,
-          "revision": "92646c0cdbaca076c8d3d0207891785b3379cbff",
-          "version": "0.3.1"
+          "revision": "626c3d4b6b55354b4af3aa309f998fae9b31a3d9",
+          "version": "3.2.0"
+        }
+      },
+      {
+        "package": "TensorFlow",
+        "repositoryURL": "https://github.com/tensorflow/swift-apis",
+        "state": {
+          "branch": "main",
+          "revision": "230d48576fdb80955613b3013a84561be0f92e94",
+          "version": null
         }
       },
       {
@@ -47,21 +74,12 @@
         }
       },
       {
-        "package": "swift-models",
-        "repositoryURL": "https://github.com/tensorflow/swift-models.git",
+        "package": "swift-numerics",
+        "repositoryURL": "https://github.com/apple/swift-numerics",
         "state": {
-          "branch": null,
-          "revision": "b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4",
+          "branch": "main",
+          "revision": "4a2cbc186b1f8cbbc1ace12cef43d65784b2559e",
           "version": null
-        }
-      },
-      {
-        "package": "SwiftProtobuf",
-        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
-        "state": {
-          "branch": null,
-          "revision": "da9a52be9cd36c63993291ce3f1b65dafcd1e826",
-          "version": "1.14.0"
         }
       },
       {
@@ -75,11 +93,11 @@
       },
       {
         "package": "TensorBoardX",
-        "repositoryURL": "https://github.com/ProfFan/tensorboardx-s4tf.git",
+        "repositoryURL": "https://github.com/dan-zheng/tensorboardx-s4tf.git",
         "state": {
-          "branch": null,
-          "revision": "02838220694f4236ba84a83856581b76ee9cf1bc",
-          "version": "0.1.3"
+          "branch": "tensorflow-as-swiftpm-dependency",
+          "revision": "22852fff51e32640d4aab2bac1510ab1ebdc25df",
+          "version": null
         }
       }
     ]
