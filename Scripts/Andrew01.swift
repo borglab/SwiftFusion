@@ -11,7 +11,6 @@ import PenguinStructures
 
 /// Andrew01: RAE Tracker
 struct Andrew01: ParsableCommand {
-  
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
   

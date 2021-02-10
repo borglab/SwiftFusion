@@ -39,6 +39,11 @@ extension Cal3_S2: CameraCalibration {
   }
 }
 
+extension Cal3_S2 {
+  public func zeroTangentVector() -> Cal3_S2.TangentVector {
+    return Vector5(0.0, 0.0, 0.0, 0.0, 0.0)
+  }
+}
 
 /// Manifold coordinate for Cal3_S2.
 public struct Cal3_S2Coordinate: Equatable {

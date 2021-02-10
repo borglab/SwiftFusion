@@ -79,12 +79,12 @@ final class PinholeCameraTests: XCTestCase {
     let dxExpected = (
       PinholeCamera<Cal3_S2>.TangentVector(
         wTc: Vector6(-1.0, -2.0, -1.0, -1.0, 0.0, 1.0), 
-        calibration: K.zeroTangentVector),
+        calibration: K.zeroTangentVector()),
       Vector3(1.0, 0.0, 1.0))
     let dyExpected = (
       PinholeCamera<Cal3_S2>.TangentVector(
         wTc: Vector6(2.0, 1.0, -1.0, 0.0, -1.0, -1.0), 
-        calibration: K.zeroTangentVector),
+        calibration: K.zeroTangentVector()),
       Vector3(0.0, -1.0, -1.0))
 
     assertAllKeyPathEqual(p, Vector2(1.0, -1.0), accuracy: 1e-10)
