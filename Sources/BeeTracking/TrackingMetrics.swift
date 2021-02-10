@@ -281,7 +281,7 @@ extension TrackerEvaluationDataset {
     for track in video.tracks {
       let sequence = TrackerEvaluationSequence(
         frames: Array(
-          video.frames[track.startFrameIndex..<(track.startFrameIndex + track.boxes.count)]),
+          video.frames[track.startFrameIndex..<(track.boxes.count)]),
         groundTruth: track.boxes)
       sequences.append(sequence)
     }

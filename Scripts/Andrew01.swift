@@ -11,14 +11,11 @@ import PenguinStructures
 
 /// Andrew01: RAE Tracker
 struct Andrew01: ParsableCommand {
-  @Option(help: "Run on track number x")
-  var trackId: Int = 0
-  
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
   
   @Option(help: "Size of feature space")
-  var featureSize: Int = 5
+  var featureSize: Int = 256
 
   @Option(help: "Pretrained weights")
   var weightsFile: String?
@@ -27,10 +24,12 @@ struct Andrew01: ParsableCommand {
   // Make sure you have a folder `Results/andrew01` before running
   func run() {
     let np = Python.import("numpy")
-    let kHiddenDimension = 100
+    let kHiddenDimension = 512
 
     let (imageHeight, imageWidth, imageChannels) =
       (40, 70, 1)
+
+    
     var rae = DenseRAE(
       imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
       hiddenDimension: kHiddenDimension, latentDimension: featureSize
@@ -42,20 +41,26 @@ struct Andrew01: ParsableCommand {
       rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
     }
 
+    // let (imageHeight, imageWidth, imageChannels) =
+    //   (40, 70, 1)
+      
+    // let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
+
+    let trainingDatasetSize = 100
+
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
-    let data = OISTBeeVideo(directory: dataDir, length: 100)!
-    let testData = OISTBeeVideo(directory: dataDir, afterIndex: 100, length: 80)!
+    let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
+    let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
 
     let trackerEvaluation = TrackerEvaluationDataset(testData)
     
     let evalTracker: Tracker = {frames, start in
-        let trainingDatasetSize = 100
         var tracker = trainProbabilisticTracker(
             trainingData: data,
             encoder: rae,
             frames: frames,
             boundingBoxSize: (40, 70),
-            withFeatureSize: 5,
+            withFeatureSize: featureSize,
             fgRandomFrameCount: trainingDatasetSize,
             bgRandomFrameCount: trainingDatasetSize
         )
@@ -64,32 +69,36 @@ struct Andrew01: ParsableCommand {
 
         return track
     }
+    let plt = Python.import("matplotlib.pyplot")
+    let sequenceCount = 19
+    var results = trackerEvaluation.evaluate(evalTracker, sequenceCount: sequenceCount, deltaAnchor: 175, outputFile: "andrew01")
 
-    var results = trackerEvaluation.evaluate(evalTracker, sequenceCount: 5, deltaAnchor: 175, outputFile: "andrew01")
-    
-    
-    for (index, value) in results.sequences.prefix(5).enumerated() {
+    for (index, value) in results.sequences.prefix(sequenceCount).enumerated() {
       var i: Int = 0
       zip(value.subsequences.first!.frames, zip(value.subsequences.first!.prediction, value.subsequences.first!.groundTruth)).map {
-        let (fig, axes) = plotPatchWithGT(frame: $0.0, actual: $0.1.0.center, expected: $0.1.1.center)
+        let (fig, axes) = plotFrameWithPatches(frame: $0.0, actual: $0.1.0.center, expected: $0.1.1.center, firstGroundTruth: value.subsequences.first!.groundTruth.first!.center)
         fig.savefig("Results/andrew01/sequence\(index)/andrew01_\(i).png", bbox_inches: "tight")
+        plt.close("all")
         i = i + 1
       }
-      let plt = Python.import("matplotlib.pyplot")
+      
+      
       let (fig, axes) = plt.subplots(1, 2, figsize: Python.tuple([20, 20])).tuple2
       fig.suptitle("Tracking positions and Subsequence Average Overlap with Accuracy \(String(format: "%.2f", value.subsequences.first!.metrics.accuracy)) and Robustness \(value.subsequences.first!.metrics.robustness).")
       
       value.subsequences.map {
-        plotTrajectory(
-          track: $0.prediction.map{$0.center}, withGroundTruth: $0.groundTruth.map{$0.center}, on: axes[0],
-          withTrackColors: plt.cm.jet, withGtColors: plt.cm.gray
+        plotPoseDifference(
+          track: $0.prediction.map{$0.center}, withGroundTruth: $0.groundTruth.map{$0.center}, on: axes[0]
         )
       }
       plotOverlap(
           metrics: value.subsequences.first!.metrics, on: axes[1]
       )
-      fig.savefig("Results/andrew01/andrew01_subsequence\(index).pdf", bbox_inches: "tight")
+      fig.savefig("Results/andrew01/andrew01_subsequence\(index).png", bbox_inches: "tight")
+      print("Accuracy for sequence is \(value.sequenceMetrics.accuracy) with Robustness of \(value.sequenceMetrics.robustness)")
     }
+
+    print("Accuracy for all sequences is \(results.trackerMetrics.accuracy) with Robustness of \(results.trackerMetrics.robustness)")
     
 
 
