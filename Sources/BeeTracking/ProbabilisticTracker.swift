@@ -149,12 +149,10 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
     bgRandomFrameCount: bgRandomFrameCount,
     useCache: true
   )
-  //Adjust numberOfTrainingSamples?
   let batchPositive = encoder.encode(fg)
   let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
 
   let batchNegative = encoder.encode(bg)
-  //Try another MultivariateGaussian here
   let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
 
   let tracker = makeProbabilisticTracker(
