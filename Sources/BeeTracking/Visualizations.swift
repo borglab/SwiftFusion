@@ -54,6 +54,12 @@ public func plotOverlap(
   ax.set_title("Overlap")
 }
 
+/// Plot the tracking metrics
+public func plotOverlap(metrics: SubsequenceMetrics, on ax: PythonObject) {
+  ax.plot(metrics.overlap)
+  ax.set_title("Overlap")
+}
+
 /// plot Comparison image
 public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2) -> (PythonObject, PythonObject) {
   let plt = Python.import("matplotlib.pyplot")
@@ -68,6 +74,50 @@ public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2
     at: OrientedBoundingBox(center: expected, rows: 40 + 20 * extraMarginMultiplier, cols: 70 + 20 * extraMarginMultiplier)
   ).makeNumpyArray() / 255.0)
   ax[1].title.set_text("Labeling")
+  return (fig, ax)
+}
+
+public func plotPoseDifference(track: [Pose2], withGroundTruth expected: [Pose2], on ax: PythonObject) {
+  var thetaDiff = zip(track, expected).map{pow(($0.0.rot.theta - $0.1.rot.theta), 2.0)}
+  var posDiff = zip(track, expected).map{pow(($0.0.t.x - $0.1.t.x), 2.0) + pow(($0.0.t.y - $0.1.t.y), 2.0)}
+  ax.plot(thetaDiff, posDiff)
+  ax.set_title("L2 Theta Difference (X-axis) vs. L2 X, Y Difference Over Time")
+}
+
+/// plot Comparison image
+public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: Pose2, firstGroundTruth: Pose2) -> (PythonObject, PythonObject) {
+  let plt = Python.import("matplotlib.pyplot")
+  let mpl = Python.import("matplotlib")
+
+  let (fig, ax) = plt.subplots(figsize: Python.tuple([8, 4])).tuple2
+  ax.imshow(frame.makeNumpyArray() / 255.0)
+  let actualBoundingBox = OrientedBoundingBox(center: actual, rows: 40, cols: 70)
+  ax.plot(Python.list(actualBoundingBox.corners.map{$0.x} + [actualBoundingBox.corners.first!.x]), Python.list(actualBoundingBox.corners.map{$0.y} + [actualBoundingBox.corners.first!.y]), "r-")
+  // ax.plot(Python.tuple(actualBoundingBox.rot.)
+  var supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([actualBoundingBox.center.t.x, actualBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"r",
+    orientation: actualBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  ax.add_patch(supportPatch) 
+
+  let expectedBoundingBox = OrientedBoundingBox(center: expected, rows: 40, cols: 70)
+  ax.plot(Python.list(expectedBoundingBox.corners.map{$0.x} + [expectedBoundingBox.corners.first!.x]), Python.list(expectedBoundingBox.corners.map{$0.y} + [expectedBoundingBox.corners.first!.y]), "g-")
+
+  supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([expectedBoundingBox.center.t.x, expectedBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"g",
+    orientation: expectedBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  ax.add_patch(supportPatch) 
+  ax.set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
+  ax.set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
+
+  ax.title.set_text("Prediction (Red) vs. Actual (Green)")
   return (fig, ax)
 }
 
