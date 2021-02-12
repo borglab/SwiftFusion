@@ -165,6 +165,7 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
 }
 
 
+
 /// Returns a tracking configuration for a tracker using an random projection.
 ///
 /// Parameter model: The random projection model to use.
@@ -227,6 +228,140 @@ public func makeProbabilisticTracker<
       let (poseID) = unpack(variables)
       graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 8, sdTheta:0.4))
     })
+}
+
+public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: GenerativeDensity, BG: GenerativeDensity> {
+  public let encoder: Encoder
+  public let foregroundModel: FG
+  public let backgroundModel: BG
+  public var trackingConfiguration: TrackingConfiguration<Tuple1<Pose2>>
+
+  /// Colect all hyperparameters here
+  public struct HyperParameters {
+    public init(encoder: Encoder.HyperParameters?, foregroundModel: FG.HyperParameters? = nil, backgroundModel: BG.HyperParameters? = nil) {
+      self.encoder = encoder
+      self.foregroundModel = foregroundModel
+      self.backgroundModel = backgroundModel
+    }
+    
+    let encoder: Encoder.HyperParameters?
+    let foregroundModel: FG.HyperParameters?
+    let backgroundModel: BG.HyperParameters?
+  }
+
+  /// Initialize from three parts
+  public init(encoder: Encoder, foregroundModel: FG,  backgroundModel: BG, trackingConfiguration: TrackingConfiguration<Tuple1<Pose2>>) {
+    self.encoder = encoder
+    self.foregroundModel = foregroundModel
+    self.backgroundModel = backgroundModel
+    self.trackingConfiguration = trackingConfiguration
+  }
+
+  public init(foregroundPatches: Tensor<Double>, backgroundPatches: Tensor<Double>, frames: [Tensor<Float>], given p:HyperParameters? = nil) {
+    
+    let trainedEncoder = Encoder(from: foregroundPatches, given: p?.encoder)
+    let batchPositive = trainedEncoder.encode(foregroundPatches)
+    let foregroundModel = FG(from:batchPositive, given:p?.foregroundModel)
+
+    let batchNegative = trainedEncoder.encode(backgroundPatches)
+    let backgroundModel = BG(from: batchNegative, given:p?.backgroundModel)
+
+    let tracker = makeProbabilisticTracker(
+      model: trainedEncoder,
+      frames: frames, targetSize: (40, 70),
+      foregroundModel: foregroundModel, backgroundModel: backgroundModel
+    )
+    self.init(encoder: trainedEncoder, foregroundModel: foregroundModel, backgroundModel: backgroundModel, trackingConfiguration: tracker)
+    
+  }
+
+  public mutating func infer(start: OrientedBoundingBox) -> [OrientedBoundingBox] {
+    let prediction = self.trackingConfiguration.infer(knownStart: Tuple1(start.center), withSampling: true)
+    let track = self.trackingConfiguration.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
+    return track
+  }
+
+  public mutating func infer(start: OrientedBoundingBox, frames: [Tensor<Float>]) -> [OrientedBoundingBox] {
+    var tracker = makeProbabilisticTracker(
+      model: self.encoder,
+      frames: frames, targetSize: (40, 70),
+      foregroundModel: self.foregroundModel, backgroundModel: self.backgroundModel
+    )
+    let prediction = tracker.infer(knownStart: Tuple1(start.center), withSampling: true)
+    let track = tracker.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
+    return track
+  }
+
+}
+
+extension ProbablisticTracker : McEmModel {
+  /// Type of patch
+  public enum PatchType { case fg, bg }
+  
+  /// As datum we have a (giant) image and a noisy manual label for an image patch
+  public typealias Datum = (frame: Tensor<Double>?, type: PatchType, obb:OrientedBoundingBox)
+  
+  /// As hidden variable we use the "true" pose of the patch
+  public enum Hidden { case fg(Pose2), bg }
+  
+  /// Stack patches for all bounding boxes
+  public static func patches(at regions:[Datum]) -> Tensor<Double> {
+    return Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } )
+  }
+
+  /**
+   Initialize with the manually labeled images
+   - Parameters:
+   - data: frames with and associated oriented bounding boxes
+   - p: optional hyperparameters.
+   */
+  public init(from data:[Datum],
+              given p:HyperParameters?) {
+    let foregroundPatches = Self.patches(at: data.filter {$0.type == .fg})
+    let backgroundPatches = Self.patches(at: data.filter {$0.type == .bg})
+    self.init(foregroundPatches: foregroundPatches, backgroundPatches: backgroundPatches, frames: [Tensor<Float>(data.first!.frame!)], given:p)
+  }
+  
+  /// version that complies, ignoring source of entropy
+  public init(from data:[Datum],
+              using sourceOfEntropy: inout AnyRandomNumberGenerator,
+              given p:HyperParameters?) {
+    self.init(from: data, given:p)
+  }
+  
+  /// Given a datum and a model, sample from the hidden variables
+  public func sample(count n:Int, for datum: Datum,
+                     using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
+    var mutableSelf = self
+    if datum.type == .fg {
+      let samples: [Pose2] = (0..<n).map {_ in 
+      return mutableSelf.infer(start: datum.obb, frames: [Tensor<Float>(datum.frame!), Tensor<Float>(datum.frame!)])[1].center
+      }
+      return samples.map { .fg($0) }
+    }
+    else {
+      return (0..<n).map {_ in 
+      return .bg
+      }
+    }
+    
+  }
+  
+  /// Given an array of frames labeled with sampled poses, create a new set of patches to train from
+  public init(from labeledData: [LabeledDatum], given p: HyperParameters?) {
+    let data = labeledData.map {
+      (label:Hidden, datum:Datum) -> Datum in
+      switch label {
+      case .fg(let pose):
+        let obb = datum.obb
+        let newOBB = OrientedBoundingBox(center: pose, rows: obb.rows, cols: obb.cols)
+        return (datum.frame, datum.type, newOBB)
+      case .bg:
+        return datum
+      }
+    }
+    self.init(from: data, given:p)
+  }
 }
 
 /// Returns `t` as a Swift tuple.
