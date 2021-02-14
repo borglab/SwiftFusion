@@ -60,6 +60,7 @@ struct Andrew02: ParsableCommand {
     var model = em.run(
             with: trainingData,
             iterationCount: 3,
+            sampleCount: 2,
             hook: { i, _, _ in
                 print("EM run iteration \(i)")
             },
@@ -72,7 +73,7 @@ struct Andrew02: ParsableCommand {
         return model.infer(start: start, frames: frames)
     }
     let plt = Python.import("matplotlib.pyplot")
-    let sequenceCount = 19
+    let sequenceCount = 1
     var results = trackerEvaluation.evaluate(evalTracker, sequenceCount: sequenceCount, deltaAnchor: 175, outputFile: "andrew01")
 
     for (index, value) in results.sequences.prefix(sequenceCount).enumerated() {

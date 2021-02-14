@@ -40,12 +40,6 @@ struct Andrew01: ParsableCommand {
     } else {
       rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
     }
-
-    // let (imageHeight, imageWidth, imageChannels) =
-    //   (40, 70, 1)
-      
-    // let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
-
     let trainingDatasetSize = 100
 
     let dataDir = URL(fileURLWithPath: "./OIST_Data")

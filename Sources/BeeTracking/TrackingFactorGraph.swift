@@ -190,7 +190,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   }
   
   // Try to initialize pose of the `i+1`-th variable by sampling
-  mutating func extendBySampling(x: inout VariableAssignments, fromFrame i:Int, withGraph g: FactorGraph)  {
+  mutating func extendBySampling(x: inout VariableAssignments, fromFrame i:Int, withGraph g: FactorGraph, numberOfSamples: Int = 2000)  {
     // First get pose IDs: pose is assumed to be first variable in the frameVariableID tuple
     let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
     let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
@@ -200,7 +200,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
-    for _ in 0..<2000 {
+    for _ in 0..<numberOfSamples {
       x[currentPoseID] = x[previousPoseID]
       x[currentPoseID].perturbWith(stddev: Vector3(0.3, 8, 4.6))
       let candidateError = g.error(at: x)
