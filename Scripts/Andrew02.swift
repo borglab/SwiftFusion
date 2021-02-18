@@ -23,8 +23,8 @@ struct Andrew02: ParsableCommand {
   typealias CurrentModel = ProbablisticTracker<PretrainedDenseRAE, MultivariateGaussian, MultivariateGaussian>
   func getTrainingDataEM(
   from dataset: OISTBeeVideo,
-  numberForeground: Int = 300,
-  numberBackground: Int = 300) -> [CurrentModel.Datum] {
+  numberForeground: Int = 1000,
+  numberBackground: Int = 1000) -> [CurrentModel.Datum] {
     let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: numberBackground).map {
       (frame: $0.frame, type: CurrentModel.PatchType.bg, obb: $0.obb)
     }
@@ -60,7 +60,7 @@ struct Andrew02: ParsableCommand {
     var model = em.run(
             with: trainingData,
             iterationCount: 3,
-            sampleCount: 2,
+            sampleCount: 0,
             hook: { i, _, _ in
                 print("EM run iteration \(i)")
             },
@@ -73,7 +73,7 @@ struct Andrew02: ParsableCommand {
         return model.infer(start: start, frames: frames)
     }
     let plt = Python.import("matplotlib.pyplot")
-    let sequenceCount = 1
+    let sequenceCount = 19
     var results = trackerEvaluation.evaluate(evalTracker, sequenceCount: sequenceCount, deltaAnchor: 175, outputFile: "andrew01")
 
     for (index, value) in results.sequences.prefix(sequenceCount).enumerated() {

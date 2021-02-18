@@ -228,7 +228,7 @@ public func makeProbabilisticTracker<
     addFixedBetweenFactor: { (values, variables, graph) -> () in
       let (prior) = unpack(values)
       let (poseID) = unpack(variables)
-      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 8, sdTheta:0.4))
+      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 8, sdTheta:0.5))
     })
 }
 
@@ -284,6 +284,7 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
   }
 
   public mutating func infer(start: OrientedBoundingBox, frames: [Tensor<Float>]) -> [OrientedBoundingBox] {
+    print("\(start.center),\(frames.first!.shape)")
     var tracker = makeProbabilisticTracker(
       model: self.encoder,
       frames: frames, targetSize: (40, 70),
@@ -296,6 +297,7 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
   }
 
   public mutating func sampleFromFactorGraph(start: OrientedBoundingBox, frames: [Tensor<Float>], numberOfSamples: Int) -> [[OrientedBoundingBox]] {
+    print("\(start.center),\(frames.first!.shape)")
     var tracker = makeProbabilisticTracker(
       model: self.encoder,
       frames: frames, targetSize: (40, 70),
@@ -308,16 +310,17 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
     var samples = [[OrientedBoundingBox]]()
     samples.append(track)
 
-    for _ in (1..<numberOfSamples) {
+    for _ in (0..<numberOfSamples) {
       let currentVarID = tracker.frameVariableIDs[tracker.frameVariableIDs.count - 1]
       let previousVarID = tracker.frameVariableIDs[tracker.frameVariableIDs.count - 2]
       
       var graph = tracker.graph(on: (tracker.frameVariableIDs.count - 1)..<(tracker.frameVariableIDs.count))
       //tracker.addFixedBetweenFactor(prediction[previousVarID], currentVarID, &graph)
-      tracker.extendBySampling(x: &prediction, fromFrame:(tracker.frameVariableIDs.count - 2), withGraph:graph, numberOfSamples: 1)
+      tracker.extendBySampling(x: &prediction, fromFrame:(tracker.frameVariableIDs.count - 2), withGraph:graph, numberOfSamples: 2000)
       track = tracker.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
       samples.append(track)
     }
+    print(samples.count)
     return samples
   }
 
