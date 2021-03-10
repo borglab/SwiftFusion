@@ -90,7 +90,7 @@ public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: 
   let mpl = Python.import("matplotlib")
 
   let (fig, ax) = plt.subplots(figsize: Python.tuple([8, 4])).tuple2
-  ax.imshow(frame.makeNumpyArray() / 255.0)
+  ax.imshow(frame.makeNumpyArray() / 255.0, cmap: "gray")
   let actualBoundingBox = OrientedBoundingBox(center: actual, rows: 40, cols: 70)
   ax.plot(actualBoundingBox.corners.map{$0.x} + [actualBoundingBox.corners.first!.x], actualBoundingBox.corners.map{$0.y} + [actualBoundingBox.corners.first!.y], "r-")
   // ax.plot(Python.tuple(actualBoundingBox.rot.)
@@ -104,13 +104,13 @@ public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: 
   ax.add_patch(supportPatch) 
 
   let expectedBoundingBox = OrientedBoundingBox(center: expected, rows: 40, cols: 70)
-  ax.plot(Python.list(expectedBoundingBox.corners.map{$0.x} + [expectedBoundingBox.corners.first!.x]), Python.list(expectedBoundingBox.corners.map{$0.y} + [expectedBoundingBox.corners.first!.y]), "g-")
+  ax.plot(Python.list(expectedBoundingBox.corners.map{$0.x} + [expectedBoundingBox.corners.first!.x]), Python.list(expectedBoundingBox.corners.map{$0.y} + [expectedBoundingBox.corners.first!.y]), "b-")
 
   supportPatch = mpl.patches.RegularPolygon(
     Python.tuple([expectedBoundingBox.center.t.x, expectedBoundingBox.center.t.y]),
     numVertices:3,
     radius:10,
-    color:"g",
+    color:"b",
     orientation: expectedBoundingBox.center.rot.theta - (Double.pi / 2)
   )
   ax.add_patch(supportPatch) 

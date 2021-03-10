@@ -182,7 +182,8 @@ public func makeProbabilisticTracker<
   frames: [Tensor<Float>],
   targetSize: (Int, Int),
   foregroundModel: ForegroundModel,
-  backgroundModel: BackgroundModel
+  backgroundModel: BackgroundModel,
+  betweenVector: Vector3 = Vector3(0.5, 8, 8)
 ) -> TrackingConfiguration<Tuple1<Pose2>> {
   var variableTemplate = VariableAssignments()
   var frameVariableIDs = [Tuple1<TypedID<Pose2>>]()
@@ -228,7 +229,7 @@ public func makeProbabilisticTracker<
     addFixedBetweenFactor: { (values, variables, graph) -> () in
       let (prior) = unpack(values)
       let (poseID) = unpack(variables)
-      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 8, sdTheta:0.5))
+      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: betweenVector.x, sdY: betweenVector.y, sdTheta:betweenVector.x))
     })
 }
 
@@ -236,27 +237,32 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
   public let encoder: Encoder
   public let foregroundModel: FG
   public let backgroundModel: BG
+  public var forFrames: OISTBeeVideo
   public var trackingConfiguration: TrackingConfiguration<Tuple1<Pose2>>
 
   /// Colect all hyperparameters here
   public struct HyperParameters {
-    public init(encoder: Encoder.HyperParameters?, foregroundModel: FG.HyperParameters? = nil, backgroundModel: BG.HyperParameters? = nil) {
+    public init(encoder: Encoder.HyperParameters?, foregroundModel: FG.HyperParameters? = nil, backgroundModel: BG.HyperParameters? = nil, onFrames: OISTBeeVideo, frameStatistics: FrameStatistics) {
       self.encoder = encoder
       self.foregroundModel = foregroundModel
       self.backgroundModel = backgroundModel
+      self.onFrames = onFrames
+      self.frameStatistics = frameStatistics
     }
-    
+    let onFrames: OISTBeeVideo
     let encoder: Encoder.HyperParameters?
     let foregroundModel: FG.HyperParameters?
     let backgroundModel: BG.HyperParameters?
+    let frameStatistics: FrameStatistics
   }
 
   /// Initialize from three parts
-  public init(encoder: Encoder, foregroundModel: FG,  backgroundModel: BG, trackingConfiguration: TrackingConfiguration<Tuple1<Pose2>>) {
+  public init(encoder: Encoder, foregroundModel: FG,  backgroundModel: BG, trackingConfiguration: TrackingConfiguration<Tuple1<Pose2>>, forFrames: OISTBeeVideo) {
     self.encoder = encoder
     self.foregroundModel = foregroundModel
     self.backgroundModel = backgroundModel
     self.trackingConfiguration = trackingConfiguration
+    self.forFrames = forFrames
   }
 
   public init(foregroundPatches: Tensor<Double>, backgroundPatches: Tensor<Double>, frames: [Tensor<Float>], given p:HyperParameters? = nil) {
@@ -267,13 +273,12 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
 
     let batchNegative = trainedEncoder.encode(backgroundPatches)
     let backgroundModel = BG(from: batchNegative, given:p?.backgroundModel)
-
     let tracker = makeProbabilisticTracker(
       model: trainedEncoder,
       frames: frames, targetSize: (40, 70),
       foregroundModel: foregroundModel, backgroundModel: backgroundModel
     )
-    self.init(encoder: trainedEncoder, foregroundModel: foregroundModel, backgroundModel: backgroundModel, trackingConfiguration: tracker)
+    self.init(encoder: trainedEncoder, foregroundModel: foregroundModel, backgroundModel: backgroundModel, trackingConfiguration: tracker, forFrames: p!.onFrames)
     
   }
 
@@ -301,26 +306,26 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
     var tracker = makeProbabilisticTracker(
       model: self.encoder,
       frames: frames, targetSize: (40, 70),
-      foregroundModel: self.foregroundModel, backgroundModel: self.backgroundModel
+      foregroundModel: self.foregroundModel, backgroundModel: self.backgroundModel,
+      betweenVector: Vector3(0.1, 2.0, 2.0)
     )
     
     
     var prediction = tracker.infer(knownStart: Tuple1(start.center), withSampling: true)
     var track = tracker.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
     var samples = [[OrientedBoundingBox]]()
-    samples.append(track)
+    //samples.append(track)
 
     for _ in (0..<numberOfSamples) {
       let currentVarID = tracker.frameVariableIDs[tracker.frameVariableIDs.count - 1]
       let previousVarID = tracker.frameVariableIDs[tracker.frameVariableIDs.count - 2]
       
       var graph = tracker.graph(on: (tracker.frameVariableIDs.count - 1)..<(tracker.frameVariableIDs.count))
-      //tracker.addFixedBetweenFactor(prediction[previousVarID], currentVarID, &graph)
+      tracker.addFixedBetweenFactor(prediction[previousVarID], currentVarID, &graph)
       tracker.extendBySampling(x: &prediction, fromFrame:(tracker.frameVariableIDs.count - 2), withGraph:graph, numberOfSamples: 2000)
       track = tracker.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
       samples.append(track)
     }
-    print(samples.count)
     return samples
   }
 
@@ -329,16 +334,13 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
 extension ProbablisticTracker : McEmModel {
   /// Type of patch
   public enum PatchType { case fg, bg }
-  
   /// As datum we have a (giant) image and a noisy manual label for an image patch
-  public typealias Datum = (frame: Tensor<Double>?, type: PatchType, obb:OrientedBoundingBox)
-  
+  public typealias Datum = (frameID: Int, type: PatchType, obb:OrientedBoundingBox)
   /// As hidden variable we use the "true" pose of the patch
   public enum Hidden { case fg(Pose2), bg }
-  
   /// Stack patches for all bounding boxes
-  public static func patches(at regions:[Datum]) -> Tensor<Double> {
-    return Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } )
+  public static func patches(at regions:[Datum], given p:HyperParameters?) -> Tensor<Double> {
+    return p!.frameStatistics.normalized(Tensor<Double>(regions.map { Tensor<Double>(Tensor<Float>(p!.onFrames.loadFrame($0.frameID)!).patch(at:$0.obb))} ))
   }
 
   /**
@@ -349,9 +351,9 @@ extension ProbablisticTracker : McEmModel {
    */
   public init(from data:[Datum],
               given p:HyperParameters?) {
-    let foregroundPatches = Self.patches(at: data.filter {$0.type == .fg})
-    let backgroundPatches = Self.patches(at: data.filter {$0.type == .bg})
-    self.init(foregroundPatches: foregroundPatches, backgroundPatches: backgroundPatches, frames: [Tensor<Float>(data.first!.frame!)], given:p)
+    let foregroundPatches = Self.patches(at: data.filter {$0.type == .fg}, given: p!)
+    let backgroundPatches = Self.patches(at: data.filter {$0.type == .bg}, given: p!)
+    self.init(foregroundPatches: foregroundPatches, backgroundPatches: backgroundPatches, frames: [Tensor<Float>(p!.onFrames.loadFrame(data.first!.frameID)!)], given:p)
   }
   
   /// version that complies, ignoring source of entropy
@@ -367,13 +369,14 @@ extension ProbablisticTracker : McEmModel {
     let plt = Python.import("matplotlib.pyplot")
     var mutableSelf = self
     if datum.type == .fg {
-      let predictions = mutableSelf.sampleFromFactorGraph(start: datum.obb, frames: [Tensor<Float>(datum.frame!), Tensor<Float>(datum.frame!)], numberOfSamples: n)
+      let predictions = mutableSelf.sampleFromFactorGraph(start: datum.obb, frames: [Tensor<Float>(forFrames.loadFrame(datum.frameID)!), Tensor<Float>(forFrames.loadFrame(datum.frameID)!)], numberOfSamples: n)
+      //let samples: [Pose2] = [datum.obb.center]//predictions.map{$0[1].center}
       let samples: [Pose2] = predictions.map{$0[1].center}
-      // for (index, sample) in samples.enumerated() {
-      //   let (fig, axes) = plotFrameWithPatches(frame: Tensor<Float>(datum.frame!), actual: sample, expected: datum.obb.center, firstGroundTruth: datum.obb.center)
-      //   fig.savefig("Results/andrew01/em/andrew02_\(index).png", bbox_inches: "tight")
-      //   plt.close("all")
-      // }
+      for (index, sample) in samples.enumerated() {
+        let (fig, axes) = plotFrameWithPatches(frame: Tensor<Float>(forFrames.loadFrame(datum.frameID)!), actual: sample, expected: datum.obb.center, firstGroundTruth: datum.obb.center)
+        fig.savefig("Results/andrew01/em/andrew02_\(index).png", bbox_inches: "tight")
+        plt.close("all")
+      }
       return samples.map { .fg($0) }
     }
     else {
@@ -392,7 +395,7 @@ extension ProbablisticTracker : McEmModel {
       case .fg(let pose):
         let obb = datum.obb
         let newOBB = OrientedBoundingBox(center: pose, rows: obb.rows, cols: obb.cols)
-        return (datum.frame, datum.type, newOBB)
+        return (datum.frameID, datum.type, newOBB)
       case .bg:
         return datum
       }

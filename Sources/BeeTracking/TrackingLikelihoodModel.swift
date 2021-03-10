@@ -14,31 +14,35 @@
 import SwiftFusion
 import TensorFlow
 import XCTest
+import PythonKit
 
 /// A likelihood model has a a feature encoder, a foreground model and a background model
 public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:GenerativeDensity, BG:GenerativeDensity> {
   public let encoder: Encoder
   public let foregroundModel: FG
   public let backgroundModel: BG
+  public let frameStatistics: FrameStatistics
   
   /// Colect all hyperparameters here
   public struct HyperParameters {
-    public init(encoder: Encoder.HyperParameters?, foregroundModel: FG.HyperParameters? = nil, backgroundModel: BG.HyperParameters? = nil) {
+    public init(encoder: Encoder.HyperParameters?, foregroundModel: FG.HyperParameters? = nil, backgroundModel: BG.HyperParameters? = nil, frameStatistics: FrameStatistics? = nil) {
       self.encoder = encoder
       self.foregroundModel = foregroundModel
       self.backgroundModel = backgroundModel
+      self.frameStatistics = frameStatistics
     }
-    
+    let frameStatistics: FrameStatistics?
     let encoder: Encoder.HyperParameters?
     let foregroundModel: FG.HyperParameters?
     let backgroundModel: BG.HyperParameters?
   }
   
   /// Initialize from three parts
-  public init(encoder: Encoder, foregroundModel: FG,  backgroundModel: BG) {
+  public init(encoder: Encoder, foregroundModel: FG,  backgroundModel: BG, frameStatistics: FrameStatistics? = nil) {
     self.encoder = encoder
     self.foregroundModel = foregroundModel
     self.backgroundModel = backgroundModel
+    self.frameStatistics = frameStatistics!
   }
   
   /**
@@ -56,7 +60,8 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
     let bgFeatures = trainedEncoder.encode(backgroundPatches)
     self.init(encoder: trainedEncoder,
               foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
-              backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel))
+              backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel),
+              frameStatistics: p!.frameStatistics)
   }
 
   /// Calculate the negative log likelihood of the likelihood model of a patch
@@ -68,7 +73,7 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   
   /// Calculate the probability of the likelihood model of a patch
   @differentiable public func unnormalizedProbability(of patch: Tensor<Double>) -> Double {
-    let E = negativeLogLikelihood(of: patch)
+    let E = negativeLogLikelihood(of: patch) + 1e6
     return exp(-E)
   }
 }
@@ -84,8 +89,8 @@ extension TrackingLikelihoodModel : McEmModel {
   public enum Hidden { case fg(Pose2), bg }
   
   /// Stack patches for all bounding boxes
-  public static func patches(at regions:[Datum]) -> Tensor<Double> {
-    return Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } )
+  public static func patches(at regions:[Datum], given p:HyperParameters?) -> Tensor<Double> {
+    return p!.frameStatistics!.normalized(Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } ))
   }
 
   /**
@@ -96,8 +101,8 @@ extension TrackingLikelihoodModel : McEmModel {
    */
   public init(from data:[Datum],
               given p:HyperParameters?) {
-    let foregroundPatches = Self.patches(at: data.filter {$0.type == .fg})
-    let backgroundPatches = Self.patches(at: data.filter {$0.type == .bg})
+    let foregroundPatches = Self.patches(at: data.filter {$0.type == .fg}, given: p)
+    let backgroundPatches = Self.patches(at: data.filter {$0.type == .bg}, given: p)
     self.init(from: foregroundPatches, and: backgroundPatches, given:p)
   }
   
@@ -112,15 +117,19 @@ extension TrackingLikelihoodModel : McEmModel {
   public func sample(count n:Int, for datum: Datum,
                      using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
     // We first approximate the posterior over foreground poses using importance sampling:
-    let samples : [(Double, Pose2)] = (0..<n).map { _ in
+    let samples : [(Double, Pose2)] = (0..<5).map { index in
       // sample from noise model on manual pose
       var proposal = datum.obb.center
-      proposal.perturbWith(stddev: Vector3(0.3, 8, 4.6))
-      let patch = datum.frame!.patch(
+      proposal.perturbWith(stddev: Vector3(0.1, 2, 2))
+      let patch = self.frameStatistics.normalized(datum.frame!.patch(
         at: OrientedBoundingBox(
           center: proposal, rows: datum.obb.rows, cols: datum.obb.cols
         )
-      )
+      ))
+      // let plt = Python.import("matplotlib.pyplot")
+      // let (fig, axes) = plotFrameWithPatches(frame: Tensor<Float>(datum.frame!), actual: proposal, expected: datum.obb.center, firstGroundTruth: datum.obb.center)
+      // fig.savefig("Results/andrew01/em/andrew02_\(index).png", bbox_inches: "tight")
+      // plt.close("all")
       
       return (
         // The weight of the proposal, which equals to the unnormalized probability of the likelihood:
@@ -130,7 +139,9 @@ extension TrackingLikelihoodModel : McEmModel {
     
     // Then resample to get unweighted samples:
     let resampled = resample(count:n, from:samples, using: &sourceOfEntropy)
-    
+    // let weights = samples.map{ $0.0 }
+    // let maxWeightIdx = weights.index(of: weights.max()!)!
+    // let resampled = [samples[maxWeightIdx]]
     // Finally, return as foreground labels:
     return resampled.map { .fg($0) }
   }
