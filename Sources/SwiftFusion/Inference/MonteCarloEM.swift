@@ -104,10 +104,15 @@ public struct MonteCarloEM<ModelType: McEmModel> {
       // Monte-Carlo E-step: given current model, sample hidden variables for each datum
       var labeledData = [ModelType.LabeledDatum]()
       labeledData.reserveCapacity(data.count)
+
+      var j = 0
       for datum in data {
+        print("\(j)/\(data.count) iterations complete")
         // Given a datum and a model, sample from the hidden variables
+        print(sampleCount, datum)
         let sample = model.sample(count: sampleCount, for: datum, using: &self.sourceOfEntropy)
         labeledData.append(contentsOf: sample.map { ($0, datum) })
+        j = j + 1
       }
       
       // M-step: fit model using labeled datums

@@ -69,7 +69,7 @@ extension OISTBeeVideo {
     randomFrameCount: Int = 10,
     batchSize: Int = 200
   ) -> Tensor<Double> {
-    let images = makeBackgroundBoundingBoxes(patchSize: patchSize, batchSize: batchSize).map { (frame, obb) -> Tensor<Double> in
+    let images = makeBackgroundBoundingBoxes(patchSize: patchSize, batchSize: batchSize).map { (frameID, frame, obb) -> Tensor<Double> in
       frame!.patch(at: obb, outputSize: appearanceModelSize)
     }
 
@@ -82,11 +82,11 @@ extension OISTBeeVideo {
   public func makeForegroundBoundingBoxes(
     patchSize: (Int, Int),
     batchSize: Int = 200
-  ) -> [(frame: Tensor<Double>?, obb: OrientedBoundingBox)] {
+  ) -> [(frameID: Int, frame: Tensor<Double>?, obb: OrientedBoundingBox)] {
     /// Anything not completely overlapping labels
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
     let frames = self.randomFrames(self.frames.count, using: &deterministicEntropy)
-
+    
     // We need `batchSize / frames.count` patches from each frame, plus the remainder of the
     // integer division.
     var patchesPerFrame = Array(repeating: batchSize / frames.count, count: frames.count)
@@ -94,11 +94,12 @@ extension OISTBeeVideo {
 
     /// Samples bounding boxes randomly from each frame
     /// returns array of (ref to frame, oriented bounding box)
-    let obbs = zip(patchesPerFrame, frames).flatMap { args -> [(frame: Tensor<Double>?, obb: OrientedBoundingBox)] in
-      let (patchCount, (_, (frame, labels))) = args
+    let obbs = zip(patchesPerFrame, frames).flatMap { args -> [(frameID: Int, frame: Tensor<Double>?, obb: OrientedBoundingBox)] in
+      let (patchCount, (frameID, (frame, labels))) = args
+
       let locations = labels.randomSelectionWithoutReplacement(k: patchCount, using: &deterministicEntropy).map(\.location.center)
-      return locations.map { location -> (frame: Tensor<Double>?, obb: OrientedBoundingBox) in
-        return (frame: frame, obb: OrientedBoundingBox(
+      return locations.map { location -> (frameID: Int, frame: Tensor<Double>?, obb: OrientedBoundingBox) in
+        return (frameID: frameID, frame: frame, obb: OrientedBoundingBox(
             center: location,
             rows: patchSize.0, cols: patchSize.1))
       }
@@ -112,7 +113,7 @@ extension OISTBeeVideo {
   public func makeBackgroundBoundingBoxes(
     patchSize: (Int, Int),
     batchSize: Int = 200
-  ) -> [(frame: Tensor<Double>?, obb: OrientedBoundingBox)] {
+  ) -> [(frameID: Int, frame: Tensor<Double>?, obb: OrientedBoundingBox)] {
     /// Anything not completely overlapping labels
     let maxSide = min(patchSize.0, patchSize.1)
 
@@ -124,8 +125,8 @@ extension OISTBeeVideo {
     var patchesPerFrame = Array(repeating: batchSize / frames.count, count: frames.count)
     patchesPerFrame[0] += batchSize % frames.count
 
-    let obbs = zip(patchesPerFrame, frames).flatMap { args -> [(frame: Tensor<Double>?, obb: OrientedBoundingBox)] in
-      let (patchCount, (_, (frame, labels))) = args
+    let obbs = zip(patchesPerFrame, frames).flatMap { args -> [(frameID: Int, frame: Tensor<Double>?, obb: OrientedBoundingBox)] in
+      let (patchCount, (frameID, (frame, labels))) = args
       let locations = (0..<patchCount).map { _ -> Vector2 in
         let attemptCount = 1000
         for _ in 0..<attemptCount {
@@ -146,9 +147,9 @@ extension OISTBeeVideo {
         }
         fatalError("could not find backround location after \(attemptCount) attempts")
       }
-      return locations.map { location -> (frame: Tensor<Double>?, obb: OrientedBoundingBox) in
+      return locations.map { location -> (frameID: Int, frame: Tensor<Double>?, obb: OrientedBoundingBox) in
         let theta = Double.random(in: 0..<(2 * .pi), using: &deterministicEntropy)
-        return (frame: frame, obb: OrientedBoundingBox(
+        return (frameID: frameID, frame: frame, obb: OrientedBoundingBox(
             center: Pose2(Rot2(theta), location),
             rows: patchSize.0, cols: patchSize.1))
       }

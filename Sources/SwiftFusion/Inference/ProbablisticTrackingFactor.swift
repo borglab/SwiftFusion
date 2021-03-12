@@ -81,7 +81,7 @@ public struct ProbablisticTrackingFactor<
     let result = maxPossibleNegativity + foregroundModel.negativeLogLikelihood(features) - backgroundModel.negativeLogLikelihood(features)
 
     if result < 0 {
-      print("Warning: Negative value encountered in errorVector! (\(result))")
+      // print("Warning: Negative value encountered in errorVector! (\(result))")
     }
 
     /// TODO: What is the idiomatic way of avoiding negative probability here?
