@@ -102,6 +102,9 @@ struct Andrew02: ParsableCommand {
       fig.suptitle("Tracking positions and Subsequence Average Overlap with Accuracy \(String(format: "%.2f", value.subsequences.first!.metrics.accuracy)) and Robustness \(value.subsequences.first!.metrics.robustness).")
       
       value.subsequences.map {
+        let encoder = JSONEncoder()
+        let data = try! encoder.encode($0.prediction)
+        FileManager.default.createFile(atPath: "prediction_rae_em_\(featureSize)_sequence_\(index).json", contents: data, attributes: nil)
         plotPoseDifference(
           track: $0.prediction.map{$0.center}, withGroundTruth: $0.groundTruth.map{$0.center}, on: axes[0]
         )

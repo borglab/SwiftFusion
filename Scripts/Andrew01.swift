@@ -109,8 +109,8 @@ struct Andrew01: ParsableCommand {
     }
 
     print("Accuracy for all sequences is \(results.trackerMetrics.accuracy) with Robustness of \(results.trackerMetrics.robustness)")
-    // let f = Python.open("Results/EAO/rp_\(featureSize).data", "wb")
-    // pickle.dump(results.expectedAverageOverlap.curve, f)
+    let f = Python.open("Results/EAO/rp_\(featureSize).data", "wb")
+    pickle.dump(results.expectedAverageOverlap.curve, f)
 
 
   }

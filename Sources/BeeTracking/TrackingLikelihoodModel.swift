@@ -42,7 +42,15 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
     self.encoder = encoder
     self.foregroundModel = foregroundModel
     self.backgroundModel = backgroundModel
-    self.frameStatistics = frameStatistics!
+    if frameStatistics != nil {
+      self.frameStatistics = frameStatistics!
+    }
+    else {
+      var statistics = FrameStatistics(Tensor<Double>(0.0))
+      statistics.mean = Tensor(62.26806976644069)
+      statistics.standardDeviation = Tensor(37.44683834503672)
+      self.frameStatistics = statistics
+    }
   }
   
   /**
@@ -61,7 +69,7 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
     self.init(encoder: trainedEncoder,
               foregroundModel : FG(from: fgFeatures, given:p?.foregroundModel),
               backgroundModel : BG(from: bgFeatures, given:p?.backgroundModel),
-              frameStatistics: p!.frameStatistics)
+              frameStatistics: p?.frameStatistics)
   }
 
   /// Calculate the negative log likelihood of the likelihood model of a patch
@@ -90,7 +98,15 @@ extension TrackingLikelihoodModel : McEmModel {
   
   /// Stack patches for all bounding boxes
   public static func patches(at regions:[Datum], given p:HyperParameters?) -> Tensor<Double> {
-    return p!.frameStatistics!.normalized(Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } ))
+    if p != nil {
+       return p!.frameStatistics!.normalized(Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } ))
+    }
+    else {
+      var statistics = FrameStatistics(Tensor<Double>(0.0))
+      statistics.mean = Tensor(62.26806976644069)
+      statistics.standardDeviation = Tensor(37.44683834503672)
+      return statistics.normalized(Tensor<Double>(regions.map { $0.frame!.patch(at:$0.obb) } ))
+    }
   }
 
   /**
@@ -117,7 +133,7 @@ extension TrackingLikelihoodModel : McEmModel {
   public func sample(count n:Int, for datum: Datum,
                      using sourceOfEntropy: inout AnyRandomNumberGenerator) -> [Hidden] {
     // We first approximate the posterior over foreground poses using importance sampling:
-    let samples : [(Double, Pose2)] = (0..<5).map { index in
+    let samples : [(Double, Pose2)] = (0..<n).map { index in
       // sample from noise model on manual pose
       var proposal = datum.obb.center
       proposal.perturbWith(stddev: Vector3(0.1, 2, 2))

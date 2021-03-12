@@ -114,8 +114,8 @@ public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: 
     orientation: expectedBoundingBox.center.rot.theta - (Double.pi / 2)
   )
   ax.add_patch(supportPatch) 
-  ax.set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
-  ax.set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
+  ax.set_xlim(expected.t.x - 100, expected.t.x + 100)
+  ax.set_ylim(expected.t.y - 100, expected.t.y + 100)
 
   ax.title.set_text("Prediction (Red) vs. Actual (Green)")
   return (fig, ax)
