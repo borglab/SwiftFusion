@@ -28,15 +28,15 @@ struct Andrew04: ParsableCommand {
 
   func getTrainingDataEM(
     from dataset: OISTBeeVideo,
-    numberForeground: Int = 3000,
-    numberBackground: Int = 3000
+    numberForeground: Int = 2500,
+    numberBackground: Int = 2500
   ) -> [LikelihoodModel.Datum] {
     let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: numberBackground).map {
       (frame: $0.frame, type: LikelihoodModel.PatchType.bg, obb: $0.obb)
     }
     let fgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: numberForeground).map {
       (frame: $0.frame, type: LikelihoodModel.PatchType.fg, obb: $0.obb)
-    }.filter{$0.obb.center.rot.theta != -1.5707963267948966}
+    }//.filter{$0.obb.center.rot.theta != -1.5707963267948966}
     
     return fgBoxes + bgBoxes
   }

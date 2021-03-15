@@ -12,7 +12,7 @@ struct Fan12: ParsableCommand {
   typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, GaussianNB>
 
   @Option(help: "Size of feature space")
-  var featureSize: Int = 256
+  var featureSize: Int = 128
 
   @Flag(help: "Training mode")
   var training: Bool = false
@@ -31,7 +31,7 @@ struct Fan12: ParsableCommand {
   // Just runs an RP tracker and saves image to file
   // Make sure you have a folder `Results/fan12` before running
   func run() {
-    let kHiddenDimension = 512
+    let kHiddenDimension = 256
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
 
     let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!

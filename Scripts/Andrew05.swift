@@ -10,12 +10,12 @@ import Foundation
 import PenguinStructures
 
 /// Andrew01: RAE Tracker
-struct Andrew01: ParsableCommand {
+struct Andrew05: ParsableCommand {
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
   
   @Option(help: "Size of feature space")
-  var featureSize: Int = 16
+  var featureSize: Int = 256
 
   @Option(help: "Pretrained weights")
   var weightsFile: String?
@@ -26,23 +26,6 @@ struct Andrew01: ParsableCommand {
     let np = Python.import("numpy")
     let plt = Python.import("matplotlib.pyplot")
     let pickle = Python.import("pickle")
-    let kHiddenDimension = 256
-
-    let (imageHeight, imageWidth, imageChannels) =
-      (40, 70, 1)
-
-    
-    // var rae = DenseRAE(
-    //   imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
-    //   hiddenDimension: kHiddenDimension, latentDimension: featureSize
-    // )
-
-    // if let weightsFile = weightsFile {
-    //   rae.load(weights: np.load(weightsFile, allow_pickle: true))
-    // } else {
-    //   rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
-    // }
-    //let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
 
     let trainingDatasetSize = 100
 
@@ -50,30 +33,14 @@ struct Andrew01: ParsableCommand {
     let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
 
-    var statistics = FrameStatistics(Tensor<Double>(0.0))
-    statistics.mean = Tensor(62.26806976644069)
-    statistics.standardDeviation = Tensor(37.44683834503672)
-    let trainingBatch = data.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
-    let rae = PCAEncoder(from: trainingBatch, given: featureSize)
     let trackerEvaluation = TrackerEvaluationDataset(testData)
     var i = 0
     let evalTracker: Tracker = {frames, start in
-        var tracker = trainProbabilisticTracker(
-            trainingData: data,
-            encoder: rae,
-            frames: frames,
-            boundingBoxSize: (40, 70),
-            withFeatureSize: featureSize,
-            fgRandomFrameCount: trainingDatasetSize,
-            bgRandomFrameCount: trainingDatasetSize,
-            numberOfTrainingSamples: 3000
-        )
-        
-        let prediction = tracker.infer(knownStart: Tuple1(start.center), withSampling: true)
-        let track = tracker.frameVariableIDs.map { OrientedBoundingBox(center: prediction[unpack($0)], rows: 40, cols:70) }
-        
+        let decoder = JSONDecoder()
+        let trackPath = "Results/andrew01/rae_256_updated_preds/prediction_rae_256_sequence_\(i).json"
+        let decodedTrack = try! decoder.decode([OrientedBoundingBox].self, from: Data(contentsOf: URL(fileURLWithPath: trackPath)))
         i = i + 1
-        return track
+        return decodedTrack
     }
     
     let sequenceCount = 19
@@ -92,11 +59,11 @@ struct Andrew01: ParsableCommand {
       let (fig, axes) = plt.subplots(1, 2, figsize: Python.tuple([20, 20])).tuple2
       fig.suptitle("Tracking positions and Subsequence Average Overlap with Accuracy \(String(format: "%.2f", value.subsequences.first!.metrics.accuracy)) and Robustness \(value.subsequences.first!.metrics.robustness).")
       
+      print("First Ground Truth")
       value.subsequences.map {
-        //zip($0.prediction, $0.groundTruth).enumerated().map{($0.0, $0.1.0.center, $0.1.1.center)})
-        let encoder = JSONEncoder()
-        let data = try! encoder.encode($0.prediction)
-        FileManager.default.createFile(atPath: "prediction_ppca_\(featureSize)_sequence_\(index).json", contents: data, attributes: nil)
+        print($0.prediction.first!)
+        $0.prediction.map{print("\(round($0.center.t.x)) \(round($0.center.t.y)) \($0.center.rot.theta) \(40) \(70)")}
+        
         plotPoseDifference(
           track: $0.prediction.map{$0.center}, withGroundTruth: $0.groundTruth.map{$0.center}, on: axes[0]
         )
@@ -109,8 +76,8 @@ struct Andrew01: ParsableCommand {
     }
 
     print("Accuracy for all sequences is \(results.trackerMetrics.accuracy) with Robustness of \(results.trackerMetrics.robustness)")
-    let f = Python.open("Results/EAO/ppca_\(featureSize).data", "wb")
-    pickle.dump(results.expectedAverageOverlap.curve, f)
+    // let f = Python.open("Results/EAO/rae_\(featureSize).data", "wb")
+    // pickle.dump(results.expectedAverageOverlap.curve, f)
 
 
   }
