@@ -11,6 +11,7 @@ import PenguinStructures
 
 /// Andrew01: RAE Tracker
 struct Andrew05: ParsableCommand {
+
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
   
@@ -19,6 +20,7 @@ struct Andrew05: ParsableCommand {
 
   @Option(help: "Pretrained weights")
   var weightsFile: String?
+
 
   // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
   // Make sure you have a folder `Results/andrew01` before running
@@ -37,7 +39,7 @@ struct Andrew05: ParsableCommand {
     var i = 0
     let evalTracker: Tracker = {frames, start in
         let decoder = JSONDecoder()
-        let trackPath = "Results/andrew01/rae_256_updated_preds/prediction_rae_256_sequence_\(i).json"
+        let trackPath = "prediction_rae_em_256_sequence_\(i).json"
         let decodedTrack = try! decoder.decode([OrientedBoundingBox].self, from: Data(contentsOf: URL(fileURLWithPath: trackPath)))
         i = i + 1
         return decodedTrack
@@ -76,8 +78,8 @@ struct Andrew05: ParsableCommand {
     }
 
     print("Accuracy for all sequences is \(results.trackerMetrics.accuracy) with Robustness of \(results.trackerMetrics.robustness)")
-    // let f = Python.open("Results/EAO/rae_\(featureSize).data", "wb")
-    // pickle.dump(results.expectedAverageOverlap.curve, f)
+    let f = Python.open("Results/EAO/rae_em_\(featureSize).data", "wb")
+    pickle.dump(results.expectedAverageOverlap.curve, f)
 
 
   }

@@ -12,7 +12,7 @@ import PenguinStructures
 /// Fan10: RP Tracker, using the new tracking model
 struct Andrew04: ParsableCommand {
   
-  typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, MultivariateGaussian>
+  typealias LikelihoodModel = TrackingLikelihoodModel<RandomProjection, MultivariateGaussian, MultivariateGaussian>
 
   @Option(help: "Run on track number x")
   var trackId: Int = 3
@@ -28,8 +28,8 @@ struct Andrew04: ParsableCommand {
 
   func getTrainingDataEM(
     from dataset: OISTBeeVideo,
-    numberForeground: Int = 2500,
-    numberBackground: Int = 2500
+    numberForeground: Int = 3000,
+    numberBackground: Int = 3000
   ) -> [LikelihoodModel.Datum] {
     let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: numberBackground).map {
       (frame: $0.frame, type: LikelihoodModel.PatchType.bg, obb: $0.obb)
@@ -69,7 +69,8 @@ struct Andrew04: ParsableCommand {
         print("EM run iteration \(i)")
       },
       given: LikelihoodModel.HyperParameters(
-        encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy"), frameStatistics: statistics
+        //encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy"), frameStatistics: statistics
+        encoder: 64, frameStatistics: statistics
       )
     )
     print("at test data!")
@@ -98,7 +99,7 @@ struct Andrew04: ParsableCommand {
         return track
     }
     
-    let sequenceCount = 19
+    let sequenceCount = 1
     var results = trackerEvaluation.evaluate(evalTracker, sequenceCount: sequenceCount, deltaAnchor: 175, outputFile: "andrew01")
 
     for (index, value) in results.sequences.prefix(sequenceCount).enumerated() {
