@@ -69,8 +69,7 @@ struct Andrew04: ParsableCommand {
         print("EM run iteration \(i)")
       },
       given: LikelihoodModel.HyperParameters(
-        //encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy"), frameStatistics: statistics
-        encoder: 64, frameStatistics: statistics
+        encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy"), frameStatistics: statistics
       )
     )
     print("at test data!")
