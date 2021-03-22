@@ -26,23 +26,23 @@ struct Andrew01: ParsableCommand {
     let np = Python.import("numpy")
     let plt = Python.import("matplotlib.pyplot")
     let pickle = Python.import("pickle")
-    let kHiddenDimension = 256
+    let kHiddenDimension = 512
 
     let (imageHeight, imageWidth, imageChannels) =
       (40, 70, 1)
 
     
-    // var rae = DenseRAE(
-    //   imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
-    //   hiddenDimension: kHiddenDimension, latentDimension: featureSize
-    // )
+    var rae = DenseRAE(
+      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
+      hiddenDimension: kHiddenDimension, latentDimension: featureSize
+    )
 
-    // if let weightsFile = weightsFile {
-    //   rae.load(weights: np.load(weightsFile, allow_pickle: true))
-    // } else {
-    //   rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
-    // }
-    //let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
+    if let weightsFile = weightsFile {
+      rae.load(weights: np.load(weightsFile, allow_pickle: true))
+    } else {
+      rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
+    }
+    //let rae = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
 
     let trainingDatasetSize = 100
 
@@ -50,11 +50,11 @@ struct Andrew01: ParsableCommand {
     let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
 
-    var statistics = FrameStatistics(Tensor<Double>(0.0))
-    statistics.mean = Tensor(62.26806976644069)
-    statistics.standardDeviation = Tensor(37.44683834503672)
-    let trainingBatch = data.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
-    let rae = PCAEncoder(from: trainingBatch, given: featureSize)
+    // var statistics = FrameStatistics(Tensor<Double>(0.0))
+    // statistics.mean = Tensor(62.26806976644069)
+    // statistics.standardDeviation = Tensor(37.44683834503672)
+    // let trainingBatch = data.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
+    // let rae = PCAEncoder(from: trainingBatch, given: featureSize)
     let trackerEvaluation = TrackerEvaluationDataset(testData)
     var i = 0
     let evalTracker: Tracker = {frames, start in
@@ -109,7 +109,7 @@ struct Andrew01: ParsableCommand {
     }
 
     print("Accuracy for all sequences is \(results.trackerMetrics.accuracy) with Robustness of \(results.trackerMetrics.robustness)")
-    let f = Python.open("Results/EAO/ppca_\(featureSize).data", "wb")
+    let f = Python.open("Results/EAO/rp_\(featureSize).data", "wb")
     pickle.dump(results.expectedAverageOverlap.curve, f)
 
 
