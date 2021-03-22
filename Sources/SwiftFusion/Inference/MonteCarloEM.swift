@@ -94,7 +94,7 @@ public struct MonteCarloEM<ModelType: McEmModel> {
   /// Run Monte Carlo EM given unlabeled data
   public mutating func run(with data:[ModelType.Datum],
                            iterationCount:Int,
-                           sampleCount:Int = 5,
+                           sampleCount:Int = 1,
                            hook: Hook? = {(_,_,_) in () },
                            given hyperParams: ModelType.HyperParameters? = nil
   ) -> ModelType {
