@@ -9,6 +9,7 @@ import Foundation
 
 import PenguinStructures
 
+// Andrew06: Determine ability of densities to determine likelihood of unseen data
 struct Andrew06: ParsableCommand {
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
@@ -63,17 +64,12 @@ struct Andrew06: ParsableCommand {
         } else {
             rae.load(weights: np.load("./oist_rae_weight_\(d).npy", allow_pickle: true))
         }
-        // let raeBatchPositive = rae.encode(fg)
-        // let raeForegroundModel = MultivariateGaussian(from:raeBatchPositive, regularizer: 1e-3)
 
         let raeBatchNegative = rae.encode(bg)
         let raeBackgroundModel = MultivariateGaussian(from: raeBatchNegative, regularizer: 1e-3)
         let raeNBBackgroundModel = GaussianNB(from: raeBatchNegative, regularizer: 1e-3)
 
         let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: d)
-        // let rpBatchPositive = rp.encode(fg)
-        // let rpForegroundModel = MultivariateGaussian(from:rpBatchPositive, regularizer: 1e-3)
-
         let rpBatchNegative = rp.encode(bg)
         let rpBackgroundModel = MultivariateGaussian(from: rpBatchNegative, regularizer: 1e-3)
         let rpNBBackgroundModel = GaussianNB(from: rpBatchNegative, regularizer: 1e-3)
@@ -82,8 +78,6 @@ struct Andrew06: ParsableCommand {
         statistics.mean = Tensor(62.26806976644069)
         statistics.standardDeviation = Tensor(37.44683834503672)
         let ppca = PCAEncoder(from: data.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000), given: d)
-        // let ppcaBatchPositive = ppca.encode(fg)
-        // let ppcaForegroundModel = MultivariateGaussian(from:ppcaBatchPositive, regularizer: 1e-3)
 
         let ppcaBatchNegative = ppca.encode(bg)
         let ppcaBackgroundModel = MultivariateGaussian(from: ppcaBatchNegative, regularizer: 1e-3)
@@ -111,9 +105,11 @@ struct Andrew06: ParsableCommand {
         print("RP \(d), MG \(rpMGLikelihood/Double(valBg.shape[0]))                  NB \(rpNBLikelihood/Double(valBg.shape[0]))")
         print("PPCA \(d), MG \(ppcaMGLikelihood/Double(valBg.shape[0]))                  NB \(ppcaNBLikelihood/Double(valBg.shape[0]))")
 
-        let (fig, axes) = plt.subplots(1, 2, figsize: Python.tuple([6, 6])).tuple2
-        axes[0].hist(rp.encode(bg).makeNumpyArray()[np.arange(bg.shape[0]), 0])
-        axes[1].hist(rp.encode(valBg).makeNumpyArray()[np.arange(valBg.shape[0]), 0])
+        let (fig, axes) = plt.subplots(figsize: Python.tuple([6, 6])).tuple2
+        axes.hist(rp.encode(bg).makeNumpyArray()[np.arange(bg.shape[0]), 0], color:"g", alpha:0.5, label:"train")
+        axes.hist(rp.encode(valBg).makeNumpyArray()[np.arange(valBg.shape[0]), 0], color:"r", alpha:0.5, label:"val")
+        //axes[1].hist(rp.encode(valBg).makeNumpyArray()[np.arange(valBg.shape[0]), 0])
+        axes.legend()
         fig.savefig("./rp_\(d)_histograms", bbox_inches: "tight")
 
     }
