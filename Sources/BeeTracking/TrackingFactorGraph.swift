@@ -190,7 +190,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   }
   
   // Try to initialize pose of the `i+1`-th variable by sampling
-  mutating func extendBySampling(x: inout VariableAssignments, fromFrame i:Int, withGraph g: FactorGraph, numberOfSamples: Int = 2048, perturbVector: Vector3 = Vector3(0.4, 8, 4.6))  {
+  mutating func extendBySampling(x: inout VariableAssignments, fromFrame i:Int, withGraph g: FactorGraph, numberOfSamples: Int = 200, perturbVector: Vector3 = Vector3(0.3, 8, 4.6))  {
     // First get pose IDs: pose is assumed to be first variable in the frameVariableID tuple
     let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
     let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head

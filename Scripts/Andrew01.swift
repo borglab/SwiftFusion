@@ -20,7 +20,7 @@ struct Andrew01: ParsableCommand {
   @Option(help: "Pretrained weights")
   var weightsFile: String?
 
-  // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
+  // Runs RAE tracker on n number of sequences and outputs relevant tracking metrics
   // Make sure you have a folder `Results/andrew01` before running
   func run() {
     let np = Python.import("numpy")
@@ -31,7 +31,12 @@ struct Andrew01: ParsableCommand {
     let (imageHeight, imageWidth, imageChannels) =
       (40, 70, 1)
 
-    
+    let trainingDatasetSize = 100
+
+    let dataDir = URL(fileURLWithPath: "./OIST_Data")
+    let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
+    let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
+
     var rae = DenseRAE(
       imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
       hiddenDimension: kHiddenDimension, latentDimension: featureSize
@@ -42,19 +47,15 @@ struct Andrew01: ParsableCommand {
     } else {
       rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
     }
-    //let rae = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
+    // To train RP
+    //let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
 
-    let trainingDatasetSize = 100
-
-    let dataDir = URL(fileURLWithPath: "./OIST_Data")
-    let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
-    let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
-
+    // To train PPCA
     // var statistics = FrameStatistics(Tensor<Double>(0.0))
     // statistics.mean = Tensor(62.26806976644069)
     // statistics.standardDeviation = Tensor(37.44683834503672)
     // let trainingBatch = data.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
-    // let rae = PCAEncoder(from: trainingBatch, given: featureSize)
+    // let ppca = PCAEncoder(from: trainingBatch, given: featureSize)
     let trackerEvaluation = TrackerEvaluationDataset(testData)
     var i = 0
     let evalTracker: Tracker = {frames, start in
@@ -93,7 +94,6 @@ struct Andrew01: ParsableCommand {
       fig.suptitle("Tracking positions and Subsequence Average Overlap with Accuracy \(String(format: "%.2f", value.subsequences.first!.metrics.accuracy)) and Robustness \(value.subsequences.first!.metrics.robustness).")
       
       value.subsequences.map {
-        //zip($0.prediction, $0.groundTruth).enumerated().map{($0.0, $0.1.0.center, $0.1.1.center)})
         let encoder = JSONEncoder()
         let data = try! encoder.encode($0.prediction)
         FileManager.default.createFile(atPath: "prediction_ppca_\(featureSize)_sequence_\(index).json", contents: data, attributes: nil)

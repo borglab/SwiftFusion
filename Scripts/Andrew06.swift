@@ -111,9 +111,11 @@ struct Andrew06: ParsableCommand {
         print("RP \(d), MG \(rpMGLikelihood/Double(valBg.shape[0]))                  NB \(rpNBLikelihood/Double(valBg.shape[0]))")
         print("PPCA \(d), MG \(ppcaMGLikelihood/Double(valBg.shape[0]))                  NB \(ppcaNBLikelihood/Double(valBg.shape[0]))")
 
-        let (fig, axes) = plt.subplots(1, 2, figsize: Python.tuple([6, 6])).tuple2
-        axes[0].hist(rp.encode(bg).makeNumpyArray()[np.arange(bg.shape[0]), 0])
-        axes[1].hist(rp.encode(valBg).makeNumpyArray()[np.arange(valBg.shape[0]), 0])
+        let (fig, axes) = plt.subplots(figsize: Python.tuple([6, 6])).tuple2
+        axes.hist(rp.encode(bg).makeNumpyArray()[np.arange(bg.shape[0]), 0], color:"g", alpha:0.5, label:"train")
+        axes.hist(rp.encode(valBg).makeNumpyArray()[np.arange(valBg.shape[0]), 0], color:"r", alpha:0.5, label:"val")
+        //axes[1].hist(rp.encode(valBg).makeNumpyArray()[np.arange(valBg.shape[0]), 0])
+        axes.legend()
         fig.savefig("./rp_\(d)_histograms", bbox_inches: "tight")
 
     }

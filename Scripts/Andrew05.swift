@@ -39,7 +39,7 @@ struct Andrew05: ParsableCommand {
     var i = 0
     let evalTracker: Tracker = {frames, start in
         let decoder = JSONDecoder()
-        let trackPath = "prediction_rae_em_256_sequence_\(i).json"
+        let trackPath = "./Results/andrew01/rae_256_updated_preds/prediction_rae_256_sequence_\(i).json"
         let decodedTrack = try! decoder.decode([OrientedBoundingBox].self, from: Data(contentsOf: URL(fileURLWithPath: trackPath)))
         i = i + 1
         return decodedTrack
