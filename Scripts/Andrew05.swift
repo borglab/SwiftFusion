@@ -9,7 +9,7 @@ import Foundation
 
 import PenguinStructures
 
-/// Andrew01: RAE Tracker
+/// Andrew05: Run saved predictions
 struct Andrew05: ParsableCommand {
 
   @Option(help: "Run for number of frames")
@@ -21,9 +21,6 @@ struct Andrew05: ParsableCommand {
   @Option(help: "Pretrained weights")
   var weightsFile: String?
 
-
-  // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
-  // Make sure you have a folder `Results/andrew01` before running
   func run() {
     let np = Python.import("numpy")
     let plt = Python.import("matplotlib.pyplot")

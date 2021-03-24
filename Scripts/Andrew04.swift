@@ -9,10 +9,10 @@ import Foundation
 
 import PenguinStructures
 
-/// Fan10: RP Tracker, using the new tracking model
+/// Andrew04: EM with the likelihood model only
 struct Andrew04: ParsableCommand {
   
-  typealias LikelihoodModel = TrackingLikelihoodModel<RandomProjection, MultivariateGaussian, MultivariateGaussian>
+  typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, MultivariateGaussian>
 
   @Option(help: "Run on track number x")
   var trackId: Int = 3
@@ -55,9 +55,7 @@ struct Andrew04: ParsableCommand {
     
     var em = MonteCarloEM<LikelihoodModel>(sourceOfEntropy: generator)
     
-    //let trainingDataset = OISTBeeVideo(directory: dataDir, length: 30)!
     let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
-    //let trainingData = getTrainingDataEM(from: data)
     
     var statistics = FrameStatistics(Tensor<Double>(0.0))
     statistics.mean = Tensor(62.26806976644069)
@@ -69,14 +67,13 @@ struct Andrew04: ParsableCommand {
         print("EM run iteration \(i)")
       },
       given: LikelihoodModel.HyperParameters(
-        //encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy"), frameStatistics: statistics
-        encoder: 64, frameStatistics: statistics
+        encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy"), frameStatistics: statistics
       )
     )
     print("at test data!")
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
 
-    
+    // For PPCA
     // var statistics = FrameStatistics(Tensor<Double>(0.0))
     // statistics.mean = Tensor(62.26806976644069)
     // statistics.standardDeviation = Tensor(37.44683834503672)

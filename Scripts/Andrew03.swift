@@ -9,7 +9,7 @@ import Foundation
 
 import PenguinStructures
 
-/// Andrew01: RAE Tracker
+/// Andrew03: t-SNE to determine how the encoded images separate in higher dimensions
 struct Andrew03: ParsableCommand {
   typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, MultivariateGaussian>
   @Option(help: "Run for number of frames")
@@ -37,9 +37,6 @@ struct Andrew03: ParsableCommand {
     return fgBoxes + bgBoxes
   }
 
-
-  // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
-  // Make sure you have a folder `Results/andrew01` before running
   func run() {
     let np = Python.import("numpy")
     let plt = Python.import("matplotlib.pyplot")
@@ -87,17 +84,9 @@ struct Andrew03: ParsableCommand {
     let batchNegative = rae.encode(bg)
     let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
     let nbBackgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
-
-    let normalizedPositive = matmul(batchPositive - foregroundModel.mean, foregroundModel.information) - matmul(batchPositive - backgroundModel.mean, backgroundModel.information)
-    let nbNormalizedPositive = matmul(batchPositive - foregroundModel.mean, foregroundModel.information) - (batchNegative - nbBackgroundModel.mu) / nbBackgroundModel.sigmas.squared()
-    
-    let normalizedNegative = matmul(batchNegative - foregroundModel.mean, foregroundModel.information) - matmul(batchNegative - backgroundModel.mean, backgroundModel.information)
-    let nbNormalizedNegative = matmul(batchNegative - foregroundModel.mean, foregroundModel.information) - (batchNegative - nbBackgroundModel.mu) / nbBackgroundModel.sigmas.squared()
     
     let fg_encoded_output = batchPositive.makeNumpyArray()
     let bg_encoded_output = batchNegative.makeNumpyArray()
-    let fg_nb_encoded_output = nbNormalizedPositive.makeNumpyArray()
-    let bg_nb_encoded_output = nbNormalizedNegative.makeNumpyArray()
     let tsne_model = tsne.TSNE(n_components: 2, verbose: 1, perplexity: 50, n_iter: 2000, random_state:42)
     let tsne_results = tsne_model.fit_transform(X: np.concatenate([fg_encoded_output, bg_encoded_output]))
 

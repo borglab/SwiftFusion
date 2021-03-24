@@ -34,12 +34,11 @@ struct Andrew02: ParsableCommand {
     }
     let fgBoxes = allFgBoxes.map {
       (frameID: $0.frameID, type: CurrentModel.PatchType.fg, obb: $0.obb)
-    }.filter{$0.obb.center.rot.theta != -1.5707963267948966}
+    }
     
     return fgBoxes + bgBoxes
   }
   // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
-  // Make sure you have a folder `Results/andrew01` before running
   func run() {
     let np = Python.import("numpy")
     let pickle = Python.import("pickle")
