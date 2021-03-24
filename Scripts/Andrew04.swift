@@ -63,6 +63,7 @@ struct Andrew04: ParsableCommand {
     let likelihoodModel = em.run(
       with: getTrainingDataEM(from: data),
       iterationCount: 3,
+      sampleCount: 1,
       hook: { i, _, _ in
         print("EM run iteration \(i)")
       },
