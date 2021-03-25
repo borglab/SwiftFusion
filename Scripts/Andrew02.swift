@@ -57,15 +57,12 @@ struct Andrew02: ParsableCommand {
     let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
 
     let trainingData = getTrainingDataEM(from: data, allBgBoxes: data.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: 300), allFgBoxes: data.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: 300))
-    print("I'm here")
 
     let generator = ARC4RandomNumberGenerator(seed: 42)
     var em = MonteCarloEM<CurrentModel>(sourceOfEntropy: generator)
 
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
     let trackerEvaluation = TrackerEvaluationDataset(testData)
-    print("now I'm here")
-    print(data.frameIds)
     var model = em.run(
             with: trainingData,
             iterationCount: 1,
