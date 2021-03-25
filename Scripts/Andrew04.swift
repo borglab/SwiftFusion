@@ -71,7 +71,7 @@ struct Andrew04: ParsableCommand {
         encoder: PretrainedDenseRAE.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featureSize, weightFile: "./oist_rae_weight_\(featureSize).npy"), frameStatistics: statistics
       )
     )
-    print("at test data!")
+
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
 
     // For PPCA
@@ -81,7 +81,7 @@ struct Andrew04: ParsableCommand {
     // let trainingBatch = data.makeBatch(statistics: statistics, appearanceModelSize: (imageHeight, imageWidth), batchSize: 3000)
     // let rp = PCAEncoder(from: trainingBatch, given: featureSize)
     let trackerEvaluation = TrackerEvaluationDataset(testData)
-    print("created dataset")
+
     var i = 0
     let evalTracker: Tracker = {frames, start in
         var tracker = makeProbabilisticTracker(

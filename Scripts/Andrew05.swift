@@ -36,7 +36,7 @@ struct Andrew05: ParsableCommand {
     var i = 0
     let evalTracker: Tracker = {frames, start in
         let decoder = JSONDecoder()
-        let trackPath = "./Results/andrew01/rae_256_updated_preds/prediction_rae_256_sequence_\(i).json"
+        let trackPath = "./Results/andrew01/rae_256_updated_preds/prediction_rae_em_256_sequence_\(i).json"
         let decodedTrack = try! decoder.decode([OrientedBoundingBox].self, from: Data(contentsOf: URL(fileURLWithPath: trackPath)))
         i = i + 1
         return decodedTrack
@@ -57,11 +57,8 @@ struct Andrew05: ParsableCommand {
       
       let (fig, axes) = plt.subplots(1, 2, figsize: Python.tuple([20, 20])).tuple2
       fig.suptitle("Tracking positions and Subsequence Average Overlap with Accuracy \(String(format: "%.2f", value.subsequences.first!.metrics.accuracy)) and Robustness \(value.subsequences.first!.metrics.robustness).")
-      
-      print("First Ground Truth")
+
       value.subsequences.map {
-        print($0.prediction.first!)
-        $0.prediction.map{print("\(round($0.center.t.x)) \(round($0.center.t.y)) \($0.center.rot.theta) \(40) \(70)")}
         
         plotPoseDifference(
           track: $0.prediction.map{$0.center}, withGroundTruth: $0.groundTruth.map{$0.center}, on: axes[0]

@@ -289,7 +289,6 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
   }
 
   public mutating func infer(start: OrientedBoundingBox, frames: [Tensor<Float>]) -> [OrientedBoundingBox] {
-    print("\(start.center),\(frames.first!.shape)")
     var tracker = makeProbabilisticTracker(
       model: self.encoder,
       frames: frames, targetSize: (40, 70),
@@ -302,7 +301,6 @@ public struct ProbablisticTracker<Encoder: AppearanceModelEncoder, FG: Generativ
   }
 
   public mutating func sampleFromFactorGraph(start: OrientedBoundingBox, frames: [Tensor<Float>], numberOfSamples: Int) -> [[OrientedBoundingBox]] {
-    print("\(start.center),\(frames.first!.shape)")
     var tracker = makeProbabilisticTracker(
       model: self.encoder,
       frames: frames, targetSize: (40, 70),
@@ -370,13 +368,7 @@ extension ProbablisticTracker : McEmModel {
     var mutableSelf = self
     if datum.type == .fg {
       let predictions = mutableSelf.sampleFromFactorGraph(start: datum.obb, frames: [Tensor<Float>(forFrames.loadFrame(datum.frameID)!), Tensor<Float>(forFrames.loadFrame(datum.frameID)!)], numberOfSamples: n)
-      //let samples: [Pose2] = [datum.obb.center]//predictions.map{$0[1].center}
       let samples: [Pose2] = predictions.map{$0[1].center}
-      for (index, sample) in samples.enumerated() {
-        let (fig, axes) = plotFrameWithPatches(frame: Tensor<Float>(forFrames.loadFrame(datum.frameID)!), actual: sample, expected: datum.obb.center, firstGroundTruth: datum.obb.center)
-        fig.savefig("Results/andrew01/em/andrew02_\(index).png", bbox_inches: "tight")
-        plt.close("all")
-      }
       return samples.map { .fg($0) }
     }
     else {
