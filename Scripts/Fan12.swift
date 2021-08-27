@@ -12,7 +12,7 @@ struct Fan12: ParsableCommand {
   typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, GaussianNB>
 
   @Option(help: "Size of feature space")
-  var featureSize: Int = 256
+  var featureSize: Int = 5
 
   @Flag(help: "Training mode")
   var training: Bool = false
