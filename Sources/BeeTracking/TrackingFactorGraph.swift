@@ -134,7 +134,8 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   ) -> ()
 
   /// The optimizer to use during inference.
-  public var optimizer = LM()
+  // public var optimizer = LM()
+  public var optimizer = GradientDescent(learningRate: 1e-5)
 
   /// Creates an instance.
   ///
@@ -172,9 +173,10 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     self.addBetweenFactor = addBetweenFactor
     self.addFixedBetweenFactor = addFixedBetweenFactor!
 
-    self.optimizer.precision = 1e-1
-    self.optimizer.max_iteration = 100
-    self.optimizer.cgls_precision = 1e-5
+    // For LM
+    // self.optimizer.precision = 1e-1
+    // self.optimizer.max_iteration = 100
+    // self.optimizer.cgls_precision = 1e-5
   }
 
   /// Returns a `FactorGraph` for the tracking problem on the frames at `frameIndices`.
@@ -194,23 +196,64 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // First get pose IDs: pose is assumed to be first variable in the frameVariableID tuple
     let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
     let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
-    
     // Remember best pose
     var bestPose = x[currentPoseID]
-    
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
-    for _ in 0..<2000 {
+    
+    var posex = [Double]()
+    var posey = [Double]()
+    var posetheta = [Double]()
+    var error = [Double]()
+    var besterror = [Double]()
+    // time x , time y , time theta , time error
+    for _ in 0..<10000 {    //2000
       x[currentPoseID] = x[previousPoseID]
       x[currentPoseID].perturbWith(stddev: Vector3(0.3, 8, 4.6))
       let candidateError = g.error(at: x)
+      ///
+      // print("x", x)
+      // print("theta", x[currentPoseID].rot.theta, "vector", x[currentPoseID].t.x, x[currentPoseID].t.y)
+      // print("g.error(at: x)", g.error(at: x))
+      // print("frame", i)
+      
+      ///
       if candidateError < bestError {
         bestError = candidateError
         bestPose = x[currentPoseID]
       }
+
+      // APPEND CURRENT ERROR
+      posex.append(x[currentPoseID].t.x)
+      posey.append(x[currentPoseID].t.y)
+      posetheta.append(x[currentPoseID].rot.theta)
+      error.append(candidateError)
+      besterror.append(bestError)
     }
     x[currentPoseID] = bestPose
+    let np = Python.import("numpy")
+    let posex_np = Tensor(posex).makeNumpyArray()
+    let posey_np = Tensor(posey).makeNumpyArray()
+    let posetheta_np = Tensor(posetheta).makeNumpyArray()
+    let error_np = Tensor(error).makeNumpyArray()
+    let besterror_np = Tensor(besterror).makeNumpyArray()
+
+    let folderName = "sampling"
+    if !FileManager.default.fileExists(atPath: folderName) {
+      do {
+          try FileManager.default.createDirectory(atPath: folderName, withIntermediateDirectories: true, attributes: nil)
+      } catch {
+          print(error.localizedDescription)
+      }
+    }
+
+    np.save("./sampling/sampling_frame_\(i)_posex.npy", posex_np)
+    np.save("./sampling/sampling_frame_\(i)_posey.npy", posey_np)
+    np.save("./sampling/sampling_frame_\(i)_posetheta.npy", posetheta_np)
+    np.save("./sampling/sampling_frame_\(i)_error.npy", error_np)
+    np.save("./sampling/sampling_frame_\(i)_besterror.npy", besterror_np)
   }
+  
   
   /// Extend the track
   mutating func extendTrack(x: inout VariableAssignments, fromFrame i:Int,
@@ -218,14 +261,12 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   ) {
     let currentVarID = frameVariableIDs[i + 1]
     let previousVarID = frameVariableIDs[i]
-    
     // Create a tracking factor graph on just the `i+1`-th variable.
     var g = graph(on: (i + 1)..<(i + 2))
     
     // The `i`-th variable is already initialized well, so add a prior factor that it stays
     // near its current position.
     addFixedBetweenFactor(x[previousVarID], currentVarID, &g)
-    
     // Initialize
     if (samplingFlag) {
       // Try to initialize pose of the `i+1`-th variable by sampling
@@ -256,7 +297,6 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     }
     
     // TODO: We could also do a final optimization on all the variables jointly here.
-    
     return x
   }
 }

@@ -189,3 +189,10 @@ public struct LM {
     }
   }
 }
+
+extension LM: Optimizer {
+  public mutating func optimize(graph: FactorGraph, initial: inout VariableAssignments) {
+    try? self.optimize(graph: graph, initial: &initial, hook: nil)
+  }
+}
+

@@ -133,6 +133,29 @@ extension LinearizableFactor1 {
 }
 
 
+/// A factor, with 2 variable(s), in a factor graph. Uses Vector1
+public protocol LinearizableFactor1a: LinearizableFactor, LinearizableFactor1_
+  where Variables == Tuple1<V0>, LinearizableComponent == Self {}
+
+extension LinearizableFactor1a {
+  /// The variable vertex for this factor's 0-th variable.
+  public var input0ID: TypedID<V0> { return edges.head }
+
+
+  // Implements the error as the scalar value of the 1D Vector.
+  public func error(at x: Variables) -> Double {
+    return (errorVector(at: x) as! Vector1).x
+  }
+
+  // Forwarding implementation.
+  @differentiable
+  public func errorVector(at x: Variables) -> ErrorVector {
+    return errorVector(x.head)
+  }
+}
+
+
+
 
 // Artifact of Swift weakness.
 /// Do not use this. Use `Factor2` instead.
@@ -244,7 +267,8 @@ extension LinearizableFactor2 {
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
-    return 0.5 * errorVector(at: x).squaredNorm
+    return errorVector(at: x).squaredNorm
+    // return 0.5 * errorVector(at: x).squaredNorm
   }
 
   // Forwarding implementation.
