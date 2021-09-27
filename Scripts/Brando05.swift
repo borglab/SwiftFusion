@@ -19,7 +19,8 @@ struct Brando05: ParsableCommand {
     let np = Python.import("numpy")
     let featureSizes = [256]
     let kHiddenDimensions = [512]
-    let iterations = [1,2,3,4,5,6,7]
+    // let iterations = [1,2,3,4,5,6,7]
+    let iterations = [1]
     let trainingDatasetSize = 100
 
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
@@ -39,7 +40,7 @@ struct Brando05: ParsableCommand {
     // var classifier = SmallerNNClassifier(
     //   imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, latentDimension: featureSize
     // )
-    var classifier = LargerNNClassifier(
+    var classifier = NNClassifier(
       imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, hiddenDimension: kHiddenDimension, latentDimension: featureSize
     )
     // LOAD THE CLASSIFIER

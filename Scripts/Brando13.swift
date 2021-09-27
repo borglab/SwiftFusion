@@ -7,10 +7,38 @@ import PythonKit
 import Foundation
 import PenguinStructures
 
-/// Brando12: OPTIMIZATION CONVERGENCE VISUALIZATION - RAE + MVG
+/// Brando13: OPTIMIZATION CONVERGENCE VISUALIZATION with LM
 struct Brando13: ParsableCommand {
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
+
+  @Option(help: "Classifier or rae")
+  var useClassifier: Bool = false
+
+  func initialize_and_perturb(p: Pose2) -> (Double, Double, Double, Pose2, VariableAssignments, TypedID<Pose2>, FactorGraph) {
+    // CREATE A PLACEHOLDER FOR POSE
+    var v = VariableAssignments()
+    let poseId = v.store(p)
+    v[poseId].perturbWith(stddev: Vector3(0.3, 8, 4.6))
+    let dx = v[poseId].t.x - p.t.x
+    let dy = v[poseId].t.y - p.t.y
+    let dtheta = v[poseId].rot.theta - p.rot.theta
+    let startpose = v[poseId]
+    let fg = FactorGraph()
+
+    return (dx, dy, dtheta, startpose, v, poseId, fg)
+  }
+
+  func initialize_empty_arrays() -> (Bool, [Double], [Double], [Double], [Double]) {
+    var conv = true
+    var errors = [Double]()
+    var xs = [Double]()
+    var ys = [Double]()
+    var thetas = [Double]()
+    return (conv, errors, xs, ys, thetas)
+  }
+
+
 
   func run() {
     let np = Python.import("numpy")
@@ -19,65 +47,68 @@ struct Brando13: ParsableCommand {
 
     // LOAD THE IMAGE AND THE GROUND TRUTH ORIENTED BOUNDING BOX
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
-    let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
+    let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
     let frames = testData.frames
     let firstTrack = testData.tracks[0]
     // let firstTrack = testData.tracks[5]
     let firstFrame = frames[0]
     let firstObb = firstTrack.boxes[0]
     // let firstObb = firstTrack.boxes[5]
-
-
-    // CREATE A PLACEHOLDER FOR POSE
-    var v = VariableAssignments()
-
-
-    // LOAD THE CLASSIFIER
-    let (imageHeight, imageWidth, imageChannels) =
-      (40, 70, 1)
-    let featureSize = 256
-    let kHiddenDimension = 512
-    var rae = DenseRAE(
-      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
-      hiddenDimension: kHiddenDimension, latentDimension: featureSize
-    )
-    rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
-    print("hello2")
-    let (fg, bg, _) = getTrainingBatches(
-        dataset: data, boundingBoxSize: (40, 70),
-        fgBatchSize: 3000,
-        bgBatchSize: 3000,
-        fgRandomFrameCount: 10,
-        bgRandomFrameCount: 10,
-        useCache: true
-    )
-    let batchPositive = rae.encode(fg)
-    // let foregroundModel = GaussianNB(from:batchPositive, regularizer: 1e-3)
-    let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
-
-
-    let batchNegative = rae.encode(bg)
-    // let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
-    let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
-        
-    
-
-    
+      
 
     //OPTIMIZER GRADIENT DESCENT
-    let lr = 1e-5
-    var optimizer = GradientDescent(learningRate: lr)
+    // let lr = 1e-7
+    // var optimizer = GradientDescent(learningRate: lr)
+    let it_limit = 200
+      /// The set of steps taken.
+    var step: Int = 0
+    
+    /// Desired precision, TODO(fan): make this actually work
+    var precision: Double = 1e-10
+
+    /// The precision of the CGLS solver.
+    var cgls_precision: Double = 1e-10
+    
+    /// Maximum number of L-M iterations
+    var max_iteration: Int = 50
+    
+    /// Maximum number of G-N iterations
+    var max_inner_iteration: Int = 400
+    
+    /// Maximam Lambda
+    var max_lambda: Double = 1e32
+    
+    /// Minimum Lambda
+    var min_lambda: Double = 1e-16
+    
+    /// Initial Lambda
+    // var initial_lambda: Double = 1e-4
+    var initial_lambda: Double = 1e7
+    
+    /// Lambda Factor
+    var lambda_factor: Double = 2
+
 
     //CREATE A FOLDER TO CONTAIN THE END-RESULT IMAGES OF THE OPTIMIZATION
-    let folderName = "Results/GD_optimization_RAE_\(lr)_final_images"
-      if !FileManager.default.fileExists(atPath: folderName) {
-      do {
-          try FileManager.default.createDirectory(atPath: folderName, withIntermediateDirectories: true, attributes: nil)
-      } catch {
-          print(error.localizedDescription)
-      }
-      }
+    let str: String
+    if useClassifier{
+      str = "NNC"
+    } else {
+      str = "RAE"
+    }
+    let folderName = "Results/LM_optimization_\(str)__17_09_2021_final_images_4subplots"
+    if !FileManager.default.fileExists(atPath: folderName) {
+    do {
+        try FileManager.default.createDirectory(atPath: folderName, withIntermediateDirectories: true, attributes: nil)
+    } catch {
+        print(error.localizedDescription)
+    }
+    }
+
+
+
+
 
     //CREATE A FIG
     print("hello1")
@@ -94,105 +125,297 @@ struct Brando13: ParsableCommand {
         axs[i,j].get_yaxis().set_visible(false)
       }
     }
-    axs[0,0].set_title("fabs(theta) < 0.1", fontsize:8)
-    axs[0,1].set_title("fabs(theta) < 0.2", fontsize:8)
-    axs[1,0].set_title("fabs(theta) < 0.3", fontsize:8)
-    axs[1,1].set_title("fabs(theta) >= 0.3", fontsize:8)
+    axs[0,0].set_title("fabs(theta) < 5deg", fontsize:8)
+    axs[0,1].set_title("fabs(theta) < 10deg", fontsize:8)
+    axs[1,0].set_title("fabs(theta) < 25deg", fontsize:8)
+    axs[1,1].set_title("fabs(theta) >= 25deg", fontsize:8)
 
     print("hello")
     let xy_thresh = 20.0 //pixels
     let theta_thresh = 0.5 //radians // consider doing overlap.
 
-    //PERFORM THIS OPTIMIZATION J TIMES
-    for j in 0..<200 {
+    
+    // NN Params
+    let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
+    let featureSize = 256
+    let kHiddenDimension = 512
 
-      // RANDOMLY PERTURB THE GROUND TRUTH POSE AND CALCULATE THE PERTURBATION
-      let poseId = v.store(firstObb.center)
-      v[poseId].perturbWith(stddev: Vector3(0.3, 8, 4.6))
-      let dx = v[poseId].t.x - firstObb.center.t.x
-      let dy = v[poseId].t.y - firstObb.center.t.y
-      let dtheta = v[poseId].rot.theta - firstObb.center.rot.theta
-      let startpose = v[poseId]
 
-      // CREATE THE FACTOR AND FACTOR GRAPH
-      var fg = FactorGraph()
-      let factor = ProbablisticTrackingFactor(poseId,
-        measurement: firstFrame,
-        encoder: rae,
-        patchSize: (40, 70),
-        appearanceModelSize: (40, 70),
-        foregroundModel: foregroundModel,
-        backgroundModel: backgroundModel,
-        maxPossibleNegativity: 1e10
-      )
-      fg.store(factor)
+    if useClassifier {
+      print("using classifier")
+      // var classifier = NNClassifier(
+      //   imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, hiddenDimension: kHiddenDimension, latentDimension: featureSize
+      // )
+      // classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featureSize)_1_doubletraining.npy", allow_pickle: true))
+      
+      // for j in 0...200 {
+      //   // RANDOMLY PERTURB THE GROUND TRUTH POSE AND CALCULATE THE PERTURBATION
+      //   var (dx, dy, dtheta, startpose, v, poseId, fg) = initialize_and_perturb(p: firstObb.center)
+      //   // CREATE THE FACTOR AND FACTOR GRAPH
+      //   let factorNNC = ProbablisticTrackingFactor2(poseId,
+      //     measurement: firstFrame,
+      //     classifier: classifier,
+      //     patchSize: (40, 70),
+      //     appearanceModelSize: (40, 70)
+      //   )
+      //   fg.store(factorNNC)
+      //   print(firstObb.center)
 
-      let it_limit = 1000
 
+      //   // PERFORM GRADIENT DESCENT
+      // var (conv, errors, xs, ys, thetas) = initialize_empty_arrays()
+      // print("starting optimization")
+      // for i in 0..<it_limit {
+      //   errors.append(factorNNC.errorVector(v[poseId]).x)
+      //   xs.append(v[poseId].t.x)
+      //   ys.append(v[poseId].t.y)
+      //   thetas.append(v[poseId].rot.theta)
+      //   // print("iteration \(i) error:", factor.errorVector(v[poseId]).x, "x:", v[poseId].t.x, "y:", v[poseId].t.y, "theta:", v[poseId].rot.theta)
+      //   let oldpose = v[poseId]
+      //   optimizer.update(&v, objective: fg)
+      //   // WHEN DIFF IS SO SMALL, THE OPTIMIZATION HAS CONVERGED
+      //   if abs(v[poseId].t.x - oldpose.t.x) < 0.000001 && abs(v[poseId].t.y - oldpose.t.y) < 0.000001 && abs(v[poseId].rot.theta - oldpose.rot.theta) < 0.000001{
+      //     // print("converged on iteration number \(i). Final Error:", factor.errorVector(v[poseId]), "Initial error:", factor.errorVector(startpose))
+      //     break
+      //   }
+      //   if i == it_limit-1 {
+      //     conv = false
+      //     // print("no convergence :( Final Error:", factor.errorVector(v[poseId]), "Initial error:", factor.errorVector(startpose))
+      //   }
+      // }
+      // // PLOT THE FINAL OPTIMIZATION RESULT
+      // let x_out_of_bounds = (v[poseId].t.x > firstObb.center.t.x + xy_thresh) || (v[poseId].t.x < firstObb.center.t.x - xy_thresh)
+      // let y_out_of_bounds =  (v[poseId].t.y > firstObb.center.t.y + xy_thresh) || (v[poseId].t.y < firstObb.center.t.y - xy_thresh)
+      // let theta_out_of_bounds = (v[poseId].rot.theta > firstObb.center.rot.theta + theta_thresh) || (v[poseId].rot.theta < firstObb.center.rot.theta - theta_thresh)
+      // if !x_out_of_bounds && !theta_out_of_bounds && !y_out_of_bounds {
+      //     // plot a green dot
+      //     // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"r", marker: ",")
+      //     // ax.scatter(startpose.t.x,startpose.t.y,c:"r", marker: ",")
+      //     if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 5 {
+      //         axs[0,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
+      //     } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 10 {
+      //         axs[0,1].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
+      //     } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 25 {
+      //         axs[1,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
+      //     } else {
+      //         axs[1,1].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
+      //     }
+          
+      // } else {
+      //     // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"g", marker: ",")
+      //     // ax.scatter(startpose.t.x,startpose.t.y,c:"g", marker: ",")
+      //     if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 5 {
+      //         axs[0,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
+      //     } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 10 {
+      //         axs[0,1].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
+      //     } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 25 {
+      //         axs[1,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
+      //     } else {
+      //         axs[1,1].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
+      //     }
+      // }
+      // let (figs, axes) = plotFrameWithPatches3(frame: firstFrame, start: startpose, end: v[poseId], expected: firstObb.center, firstGroundTruth: firstObb.center, errors: errors, xs: xs, ys: ys, thetas: thetas)
+      // var final_err: Double
+      // var label_err: Double
+      // var start_err: Double
+
+      
+      // final_err = factorNNC.errorVector(v[poseId]).x
+      // label_err = factorNNC.errorVector(firstObb.center).x
+      // start_err = factorNNC.errorVector(startpose).x
+
+      // axes.set_title(String(axes.get_title())! + "\n final err = \(final_err)" 
+      // + "\n label err = \(label_err).x)" 
+      // + "\n start err = \(start_err)"
+      // + "\n learning rate = \(lr)"
+      // + "\n converged = \(conv)")
+      // figs.savefig(folderName + "/optimization_final_\(j).png", bbox_inches: "tight")
+      // // let (figs2, axes2) = plotXYandTheta(xs: xs, ys: ys, thetas: thetas)
+      // // figs2.savefig(folderName + "/optimization_final_\(j)_XYtheta.png", bbox_inches: "tight")
+      // plt.close("all")
+      // fig.savefig(folderName + "/optimization_covergence_red_n_green_dots.png", bbox_inches: "tight")
 
       
 
-      // PERFORM GRADIENT DESCENT
-      var conv = true
-      var errors = [Double]()
+      
+      // }
+        
 
-      for i in 0..<it_limit {
-        errors.append(factor.errorVector(v[poseId]).x)
-        print("iteration \(i) error:", factor.errorVector(v[poseId]).x, "x:", v[poseId].t.x, "y:", v[poseId].t.y, "theta:", v[poseId].rot.theta)
-        let oldpose = v[poseId]
-        optimizer.update(&v, objective: fg)
-        // WHEN DIFF IS SO SMALL, THE OPTIMIZATION HAS CONVERGED
-        if abs(v[poseId].t.x - oldpose.t.x) < 0.000001 && abs(v[poseId].t.y - oldpose.t.y) < 0.000001 && abs(v[poseId].rot.theta - oldpose.rot.theta) < 0.000001{
-          print("converged on iteration number \(i). Final Error:", factor.errorVector(v[poseId]), "Initial error:", factor.errorVector(startpose))
-          break
+      
+
+
+
+    } else {
+      // LOAD RAE AND TRAIN BG AND FG MODELS
+      var rae = DenseRAE(
+      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels,
+      hiddenDimension: kHiddenDimension, latentDimension: featureSize
+      )
+      rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
+      let (fg, bg, _) = getTrainingBatches(
+          dataset: data, boundingBoxSize: (40, 70), fgBatchSize: 3000, bgBatchSize: 3000,
+          fgRandomFrameCount: 10, bgRandomFrameCount: 10, useCache: true
+      )
+      let batchPositive = rae.encode(fg)
+      let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
+      let batchNegative = rae.encode(bg)
+      let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
+      
+      for j in 0...200 {
+        
+        // RANDOMLY PERTURB THE GROUND TRUTH POSE AND CALCULATE THE PERTURBATION
+        var (dx, dy, dtheta, startpose, v, poseId, fg) = initialize_and_perturb(p: firstObb.center)
+        // CREATE THE FACTOR AND FACTOR GRAPH
+        let factorRAE = ProbablisticTrackingFactor(poseId,
+            measurement: firstFrame,
+            encoder: rae,
+            patchSize: (40, 70),
+            appearanceModelSize: (40, 70),
+            foregroundModel: foregroundModel,
+            backgroundModel: backgroundModel,
+            maxPossibleNegativity: 1e7
+        )
+        fg.store(factorRAE)
+        print(firstObb.center)
+        // PERFORM GRADIENT DESCENT
+        var (conv, errors, xs, ys, thetas) = initialize_empty_arrays()
+        print("starting optimization LM")
+        var old_error = fg.linearizableError(at: v)
+        
+        var lambda: Double = initial_lambda
+        var inner_iter_step = 0
+        var inner_success = false
+        var all_done = false
+        var i = 0
+        precision = 1e-10
+        max_iteration = 50
+        step = 0
+        for i in 0..<max_iteration { // outer loop
+          // print("LM iteration", i)
+          // i+=1
+          
+          let gfg = fg.linearized(at: v)
+          let dx = v.tangentVectorZeros
+          
+          // Try lambda steps
+          while true {            
+            var damped = gfg
+            
+            damped.addScalarJacobians(lambda)
+            
+            let old_linear_error = damped.error(at: dx)
+            
+            var dx_t = dx
+            var optimizer = GenericCGLS(precision: cgls_precision, max_iteration: max_inner_iteration)
+            optimizer.optimize(gfg: damped, initial: &dx_t)
+            let oldval = v
+            v.move(along: dx_t)
+            let this_error = fg.linearizableError(at: v)
+            let delta_error = old_error - this_error
+            //APPEND
+            errors.append(factorRAE.errorVector(v[poseId]).x)
+            xs.append(v[poseId].t.x)
+            ys.append(v[poseId].t.y)
+            thetas.append(v[poseId].rot.theta)
+            
+            let new_linear_error = damped.error(at: dx_t)
+            let model_fidelity = delta_error / (old_linear_error - new_linear_error)
+            
+            inner_success = false
+            if delta_error > .ulpOfOne && model_fidelity > 0.01 {
+              old_error = this_error
+              
+              // Success, decrease lambda
+              if lambda > min_lambda {
+                lambda = lambda / lambda_factor
+              }
+              
+              inner_success = true
+            } else {
+              
+              // increase lambda and retry
+              v = oldval
+              if lambda > max_lambda {
+                print("OOOOOOOHHHHHH SHIT!")
+                break
+              }
+              lambda = lambda * lambda_factor
+            }
+            
+            if model_fidelity > 0.5 && delta_error < precision || this_error < precision {
+              inner_success = true
+              all_done = true
+              break
+            }
+            
+            inner_iter_step += 1
+            if inner_success {
+              break
+            }
+          }
+          
+          step += 1
+          
+          if all_done {
+            break
+          }
+          if i == max_iteration-1 {
+            conv = false
+          }
         }
-        if i == it_limit-1 {
-          conv = false
-          print("no convergence :( Final Error:", factor.errorVector(v[poseId]), "Initial error:", factor.errorVector(startpose))
-        }
-      }
-      // PLOT THE FINAL OPTIMIZATION RESULT
-      let x_out_of_bounds = (v[poseId].t.x > firstObb.center.t.x + xy_thresh) || (v[poseId].t.x < firstObb.center.t.x - xy_thresh)
-      let y_out_of_bounds =  (v[poseId].t.y > firstObb.center.t.y + xy_thresh) || (v[poseId].t.y < firstObb.center.t.y - xy_thresh)
-      let theta_out_of_bounds = (v[poseId].rot.theta > firstObb.center.rot.theta + theta_thresh) || (v[poseId].rot.theta < firstObb.center.rot.theta - theta_thresh)
+        
+        
+        // PLOT THE FINAL OPTIMIZATION RESULT
+        let x_out_of_bounds = (v[poseId].t.x > firstObb.center.t.x + xy_thresh) || (v[poseId].t.x < firstObb.center.t.x - xy_thresh)
+        let y_out_of_bounds =  (v[poseId].t.y > firstObb.center.t.y + xy_thresh) || (v[poseId].t.y < firstObb.center.t.y - xy_thresh)
+        let theta_out_of_bounds = (v[poseId].rot.theta > firstObb.center.rot.theta + theta_thresh) || (v[poseId].rot.theta < firstObb.center.rot.theta - theta_thresh)
         if !x_out_of_bounds && !theta_out_of_bounds && !y_out_of_bounds {
             // plot a green dot
             // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"r", marker: ",")
             // ax.scatter(startpose.t.x,startpose.t.y,c:"r", marker: ",")
-            if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.1 {
-                axs[0,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 1)
-            } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.2 {
-                axs[0,1].plot(startpose.t.x,startpose.t.y,"g,", ms: 1)
-            } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.3 {
-                axs[1,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 1)
+            if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 5 {
+                axs[0,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
+            } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 10 {
+                axs[0,1].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
+            } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 25 {
+                axs[1,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
             } else {
-                axs[1,1].plot(startpose.t.x,startpose.t.y,"g,", ms: 1)
+                axs[1,1].plot(startpose.t.x,startpose.t.y,"g,", ms: 2)
             }
             
         } else {
             // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"g", marker: ",")
             // ax.scatter(startpose.t.x,startpose.t.y,c:"g", marker: ",")
-            if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.1 {
-                axs[0,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 1)
-            } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.2 {
-                axs[0,1].plot(startpose.t.x,startpose.t.y,"r,", ms: 1)
-            } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.3 {
-                axs[1,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 1)
+            if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 5 {
+                axs[0,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
+            } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 10 {
+                axs[0,1].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
+            } else if fabs(startpose.rot.theta*180/Double.pi - firstObb.center.rot.theta*180/Double.pi) < 25 {
+                axs[1,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
             } else {
-                axs[1,1].plot(startpose.t.x,startpose.t.y,"r,", ms: 1)
+                axs[1,1].plot(startpose.t.x,startpose.t.y,"r,", ms: 2)
             }
         }
-        let (figs, axes) = plotFrameWithPatches3(frame: firstFrame, start: startpose, end: v[poseId], expected: firstObb.center, firstGroundTruth: firstObb.center, errors: errors)
-        axes.set_title(String(axes.get_title())! + "\n final err = \(factor.errorVector(v[poseId]).x)" 
-        + "\n label err = \(factor.errorVector(firstObb.center).x)" 
-        + "\n start err = \(factor.errorVector(startpose).x)"
-        + "\n learning rate = \(lr)"
-        + "\n converged = \(conv)")
-        figs.savefig(folderName + "/optimization_final_\(j).png", bbox_inches: "tight")
-        plt.close("all")
-        fig.savefig(folderName + "/optimization_covergence_red_n_green_dots.png", bbox_inches: "tight")
+          let (figs, axes) = plotFrameWithPatches3(frame: firstFrame, start: startpose, end: v[poseId], expected: firstObb.center, firstGroundTruth: firstObb.center, errors: errors, xs: xs, ys: ys, thetas: thetas)
+          var final_err: Double
+          var label_err: Double
+          var start_err: Double
 
+          final_err = factorRAE.errorVector(v[poseId]).x
+          label_err = factorRAE.errorVector(firstObb.center).x
+          start_err = factorRAE.errorVector(startpose).x
+        
+          axes.set_title(String(axes.get_title())! + "\n final err = \(final_err)" 
+          + "\n label err = \(label_err).x)" 
+          + "\n start err = \(start_err)"
+          + "\n converged = \(conv)")
+          figs.savefig(folderName + "/optimization_final_\(j).png", bbox_inches: "tight")
+          // let (figs2, axes2) = plotXYandTheta(xs: xs, ys: ys, thetas: thetas)
+          // figs2.savefig(folderName + "/optimization_final_\(j)_XYtheta.png", bbox_inches: "tight")
+          plt.close("all")
+          fig.savefig(folderName + "/optimization_covergence_red_n_green_dots.png", bbox_inches: "tight")
+
+      }
     }
-    print("done")
   }
 }

@@ -17,7 +17,11 @@ import PenguinParallelWithFoundation
 
 struct Scripts: ParsableCommand {
   static var configuration = CommandConfiguration(
-    subcommands: [Brando01.self, Brando02.self, Brando03.self, Brando04.self, Brando05.self, Brando06.self, Brando07.self, Brando08.self, Brando09.self, Brando10.self, Brando11.self, Brando12.self, Brando13.self, Andrew01.self, Andrew05.self, Fan01.self, Fan02.self, Fan03.self, Fan04.self, Fan05.self, Fan10.self, Fan12.self, Fan13.self, Fan14.self,
+    subcommands: [Brando01.self, Brando02.self, Brando03.self, Brando04.self, 
+    Brando05.self, Brando06.self, Brando07.self, Brando08.self, Brando09.self, 
+    Brando10.self, Brando11.self, Brando12.self, Brando13.self, Brando14.self, Andrew01.self, 
+    Andrew05.self, Fan01.self, Fan02.self, Fan03.self, Fan04.self, Fan05.self, 
+    Fan10.self, Fan12.self, Fan13.self, Fan14.self,
                   Frank01.self, Frank02.self, Frank03.self, Frank04.self])
 }
 

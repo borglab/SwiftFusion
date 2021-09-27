@@ -26,15 +26,15 @@ struct Brando06: ParsableCommand {
         let fgpatches = Tensor<Double>(stacking: fgBoxes.map { $0.frame!.patch(at: $0.obb)})
         let bgpatches = Tensor<Double>(stacking: bgBoxes.map { $0.frame!.patch(at: $0.obb)})
         let np = Python.import("numpy")
-        let kHiddenDimensions = [256,512]
-        let featSizes = [64,128,256]
+        let kHiddenDimensions = [512]
+        let featSizes = [512]
         print("uu")
         var plt = Python.import("matplotlib.pyplot")
         
         
         for i in featSizes {
         for j in kHiddenDimensions {
-        for num in 1...7 {
+        for num in 1...1 {
 
             let featureSize = i
             let kHiddenDimension = j
@@ -51,15 +51,43 @@ struct Brando06: ParsableCommand {
             if let weightsFile = weightsFile {
             classifier.load(weights: np.load(weightsFile, allow_pickle: true))
             } else {
-            classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featureSize)_\(num).npy", allow_pickle: true))
+            // classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featureSize)_\(num).npy", allow_pickle: true))
+            classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_512_512_1_doubletraining.npy", allow_pickle: true))
             }
 
             let outfg = classifier.classify(fgpatches)
             let outbg = classifier.classify(bgpatches)
             let softmaxfg = softmax(outfg)
             let softmaxbg = softmax(outbg)
-            print(outfg[0...3])
-            print(softmaxfg[0...3])
+            // print(outfg[0...3])
+            // print("printing foreground:", softmaxfg[0...10])
+            // print("printing background:", softmaxbg[0...10])
+            let folderName = "Results/brando06/classified_images"
+            if !FileManager.default.fileExists(atPath: folderName) {
+            do {
+                try FileManager.default.createDirectory(atPath: folderName, withIntermediateDirectories: true, attributes: nil)
+            } catch {
+                print(error.localizedDescription)
+            }
+            }
+            for i in 0...30 {
+                //Background
+                var (fig, ax) = plt.subplots(figsize: Python.tuple([8, 4])).tuple2
+                var patch = bgpatches[i,0...,0...,0]
+                var fr = np.squeeze(patch.makeNumpyArray())
+                ax.imshow(fr / 255.0, cmap: "gray")
+                ax.set_title("background image: \noutput index 0: \(softmaxbg[i][0])\noutput index 1: \(softmaxbg[i][1])")
+                fig.savefig(folderName + "/bgpatch\(i).png", bbox_inches: "tight")
+                plt.close("all")
+                //Foreground
+                (fig, ax) = plt.subplots(figsize: Python.tuple([8, 4])).tuple2
+                patch = fgpatches[i,0...,0...,0]
+                fr = np.squeeze(patch.makeNumpyArray())
+                ax.imshow(fr / 255.0, cmap: "gray")
+                ax.set_title("foreground image: \noutput index 0: \(softmaxfg[i][0])\noutput index 1: \(softmaxfg[i][1])")
+                fig.savefig(folderName + "/fgpatch\(i).png", bbox_inches: "tight")
+                plt.close("all")
+            }
 
             let shapefg = outfg.shape
             let shapebg = outbg.shape

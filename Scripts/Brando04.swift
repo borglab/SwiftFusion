@@ -10,7 +10,7 @@ import Foundation
 
 
 
-/// Fan12: RAE training
+/// Brando04: NNClassifier training
 struct Brando04: ParsableCommand {
   typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, GaussianNB>
 
