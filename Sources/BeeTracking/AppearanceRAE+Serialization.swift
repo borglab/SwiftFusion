@@ -8,8 +8,6 @@ extension Dense where Scalar: NumpyScalarCompatible {
   mutating func load(weights: PythonObject) {
     let weight = Tensor<Scalar>(numpy: weights[0])!
     let bias = Tensor<Scalar>(numpy: weights[1])!
-    print(self.weight.shape)
-    print(weight.shape)
     precondition(
       self.weight.shape == weight.shape,
       "expected weight matrix \(self.weight.shape) but got \(weight.shape)")
@@ -17,7 +15,6 @@ extension Dense where Scalar: NumpyScalarCompatible {
       self.bias.shape == bias.shape, "expected bias \(self.bias.shape) but got \(bias.shape)")
     self.weight = weight
     self.bias = bias
-    print("loaded")
   }
 
   /// The weight and bias as numpy arrays.
