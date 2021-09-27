@@ -170,19 +170,37 @@ public func plotFrameWithPatches2(frame: Tensor<Float>, actual_box1: OrientedBou
 }
 
 
+public func plotXYandTheta(xs: [Double], ys: [Double], thetas: [Double]) -> (PythonObject, PythonObject) {
+
+  let plt = Python.import("matplotlib.pyplot")
+  let np = Python.import("numpy")
+
+  let (fig, axs) = plt.subplots(1,2,figsize: Python.tuple([8, 4])).tuple2
+
+  let ax2 = axs[0]
+  ax2.plot(np.arange(0,xs.count), xs)
+  ax2.plot(np.arange(0,xs.count), ys)
+  ax2.title.set_text("X and Y")
+
+
+  let ax3 = axs[1]
+  ax3.plot(np.arange(0,xs.count), thetas)
+  ax3.title.set_text("Theta")
+
+  return (fig, axs)
+
+
+}
+
+
+
 
 /// plot Optimization beginning, end, 
-public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2, expected: Pose2, firstGroundTruth: Pose2, errors: [Double]) -> (PythonObject, PythonObject) {
+public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2, expected: Pose2, firstGroundTruth: Pose2, errors: [Double], xs: [Double], ys: [Double], thetas: [Double]) -> (PythonObject, PythonObject) {
   let plt = Python.import("matplotlib.pyplot")
   let mpl = Python.import("matplotlib")
-  // print("plottingFrameWithPatches")
-  // print("actual Pose", actual, expected)
-  // print("eh")
-  let (fig, axs) = plt.subplots(1,2,figsize: Python.tuple([8, 4])).tuple2
-  // print("printing the frame shape")
-  // print(frame)
-  // print(frame.shape)
-  let ax = axs[0]
+  let (fig, axs) = plt.subplots(2,3,figsize: Python.tuple([18, 10])).tuple2
+  let ax = axs[0][0]
   let np = Python.import("numpy")
   let fr = np.squeeze(frame.makeNumpyArray())
   ax.imshow(fr / 255.0, cmap: "gray")
@@ -234,9 +252,22 @@ public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2
   // print("eh7")
   ax.title.set_text("Start (Green), End (Red), vs. Label (Blue)")
 
-  let ax1 = axs[1]
+  let ax1 = axs[0][1]
   ax1.plot(np.arange(0,errors.count), errors)
   ax1.title.set_text("Error value")
+
+
+  let ax2 = axs[0][2]
+  ax2.plot(np.arange(0,xs.count), xs)
+  ax2.title.set_text("X")
+
+  let ax4 = axs[1][1]
+  ax4.plot(np.arange(0,xs.count), ys)
+  ax4.title.set_text("Y")
+
+  let ax5 = axs[1][2]
+  ax5.plot(np.arange(0,xs.count), thetas)
+  ax5.title.set_text("Theta")
 
   // var spec = mpl.gridspec.GridSpec(ncols: 2, nrows: 1, width_ratios: [2, 1])
 

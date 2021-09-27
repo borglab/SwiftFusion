@@ -26,6 +26,7 @@ public struct GradientDescent {
   /// Moves `values` along the gradient of `objective`'s error function for a single gradient
   /// descent step.
   public func update(_ values: inout VariableAssignments, objective: FactorGraph) {
+    // print(objective.errorGradient(at: values))
     values.move(along: -learningRate * objective.errorGradient(at: values))
   }
 }

@@ -17,6 +17,7 @@ extension Dense where Scalar: NumpyScalarCompatible {
       self.bias.shape == bias.shape, "expected bias \(self.bias.shape) but got \(bias.shape)")
     self.weight = weight
     self.bias = bias
+    print("loaded")
   }
 
   /// The weight and bias as numpy arrays.

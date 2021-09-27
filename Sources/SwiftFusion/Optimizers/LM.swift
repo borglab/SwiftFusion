@@ -82,8 +82,12 @@ public struct LM {
     var inner_iter_step = 0
     var inner_success = false
     var all_done = false
-    
+    var i = 0
     for _ in 0..<max_iteration { // outer loop
+      print("LM iteration", i)
+      i+=1
+
+
       // Do logging first
       if let h = hook {
         h(graph, val, lambda, step)
