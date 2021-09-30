@@ -189,11 +189,14 @@ extension TrackerEvaluationDataset {
     deltaAnchor: Int,
     outputFile: String
   ) -> TrackerEvaluationResults {
+    // print("yooo")
     let sequenceEvaluations = sequences.prefix(sequenceCount).enumerated().map {
       (i, sequence) -> SequenceEvaluationResults in
       print("Evaluating sequence \(i + 1) of \(sequenceCount)")
       return sequence.evaluate(tracker, deltaAnchor: deltaAnchor, outputFile: "\(outputFile)-sequence\(i)")
     }
+    // print("yooo2")
+
     let result = TrackerEvaluationResults(
       sequences: sequenceEvaluations,
       trackerMetrics: TrackerMetrics(sequenceEvaluations.map { $0.sequenceMetrics }),
@@ -249,13 +252,26 @@ extension TrackerEvaluationSequence {
           else {
             continue
           }
+          // print("a")
           let subsequence = subsequences[i]
           print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
+          // print("gggg")
+          // print(buf.baseAddress)
+          // if i print subsequence.frames it infinite loops
+          // print(subsequence)
+          // print(subsequence.groundTruth[0])
+          // print(tracker(subsequence.frames, subsequence.groundTruth[0]))
           (buf.baseAddress! + i).initialize(to: tracker(subsequence.frames, subsequence.groundTruth[0]))
+          // print("d")
+
         }
       }
+      // print("b")
+
       actualCount = subsequences.count
     }
+    // print("c")
+
     let subsequenceEvaluations = zip(subsequences, subsequencePredictions).map {
       SubsequenceEvaluationResults(
         metrics: SubsequenceMetrics(groundTruth: $0.0.groundTruth, prediction: $0.1),
@@ -263,10 +279,11 @@ extension TrackerEvaluationSequence {
         groundTruth: $0.0.groundTruth,
         frames: $0.0.frames)
     }
-
+    // print("e")
     let result = SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
       sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))
+    // print("f")
 
     return result
   }
@@ -281,7 +298,7 @@ extension TrackerEvaluationDataset {
     for track in video.tracks {
       let sequence = TrackerEvaluationSequence(
         frames: Array(
-          video.frames[track.startFrameIndex..<(track.startFrameIndex + track.boxes.count)]),
+          video.frames[track.startFrameIndex..<(track.boxes.count)]),
         groundTruth: track.boxes)
       sequences.append(sequence)
     }

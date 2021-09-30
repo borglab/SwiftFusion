@@ -71,4 +71,70 @@ extension DenseRAE {
       self.decoder_conv1.numpyWeights
     ].reduce([], +)
   }
+
+}
+
+
+extension NNClassifier {
+  /// Loads model weights from the numpy arrays in `weights`.
+  public mutating func load(weights: PythonObject) {
+    self.encoder_conv1.load(weights: weights[0..<2])
+    self.encoder1.load(weights: weights[2..<4])
+    self.encoder2.load(weights: weights[4..<6])
+    self.encoder3.load(weights: weights[6..<8])
+  }
+
+  /// The model weights as numpy arrays.
+  public var numpyWeights: PythonObject {
+    [
+      self.encoder_conv1.numpyWeights,
+      self.encoder1.numpyWeights,
+      self.encoder2.numpyWeights,
+      self.encoder3.numpyWeights
+    ].reduce([], +)
+  }
+}
+
+
+extension SmallerNNClassifier {
+  /// Loads model weights from the numpy arrays in `weights`.
+  public mutating func load(weights: PythonObject) {
+    self.encoder_conv1.load(weights: weights[0..<2])
+    self.encoder1.load(weights: weights[2..<4])
+    self.encoder2.load(weights: weights[4..<6])
+  }
+
+  /// The model weights as numpy arrays.
+  public var numpyWeights: PythonObject {
+    [
+      self.encoder_conv1.numpyWeights,
+      self.encoder1.numpyWeights,
+      self.encoder2.numpyWeights,
+    ].reduce([], +)
+  }
+}
+
+
+
+extension LargerNNClassifier {
+  /// Loads model weights from the numpy arrays in `weights`.
+  public mutating func load(weights: PythonObject) {
+    self.encoder_conv1.load(weights: weights[0..<2])
+    self.encoder1.load(weights: weights[2..<4])
+    self.encoder2.load(weights: weights[4..<6])
+    self.encoder3.load(weights: weights[6..<8])
+    self.encoder4.load(weights: weights[8..<10])
+
+  }
+
+  /// The model weights as numpy arrays.
+  public var numpyWeights: PythonObject {
+    [
+      self.encoder_conv1.numpyWeights,
+      self.encoder1.numpyWeights,
+      self.encoder2.numpyWeights,
+      self.encoder3.numpyWeights,
+      self.encoder4.numpyWeights
+    ].reduce([], +)
+  }
 }

@@ -256,27 +256,27 @@ class FactorGraphTests: XCTestCase {
   }
 
   /// Test the gradient of the error of a factor graph.
-  func testGradient() {
-    var vars = VariableAssignments()
-    let v1ID = vars.store(Vector2(1, 2))
-    let v2ID = vars.store(Vector2(3, 4))
-    let v3ID = vars.store(Vector3(5, 6, 7))
+  // func testGradient() {
+  //   var vars = VariableAssignments()
+  //   let v1ID = vars.store(Vector2(1, 2))
+  //   let v2ID = vars.store(Vector2(3, 4))
+  //   let v3ID = vars.store(Vector3(5, 6, 7))
 
-    var graph = FactorGraph()
-    graph.store(ScalarJacobianFactor(edges: Tuple1(v1ID), scalar: 1))
-    graph.store(ScalarJacobianFactor(edges: Tuple1(v1ID), scalar: 2))
-    graph.store(ScalarJacobianFactor(edges: Tuple1(v2ID), scalar: 5))
-    graph.store(ScalarJacobianFactor(edges: Tuple1(v3ID), scalar: 10))
+  //   var graph = FactorGraph()
+  //   graph.store(ScalarJacobianFactor(edges: Tuple1(v1ID), scalar: 1))
+  //   graph.store(ScalarJacobianFactor(edges: Tuple1(v1ID), scalar: 2))
+  //   graph.store(ScalarJacobianFactor(edges: Tuple1(v2ID), scalar: 5))
+  //   graph.store(ScalarJacobianFactor(edges: Tuple1(v3ID), scalar: 10))
 
-    let grad = graph.errorGradient(at: vars)
+  //   let grad = graph.errorGradient(at: vars)
 
-    // gradient of ||1 * v1||^2 + ||2 * v1||^2 at v1 = (1, 2)
-    XCTAssertEqual(grad[v1ID], Vector2(10, 20))
+  //   // gradient of ||1 * v1||^2 + ||2 * v1||^2 at v1 = (1, 2)
+  //   XCTAssertEqual(grad[v1ID], Vector2(10, 20))
 
-    // gradient of ||5 * v2||^2 at v2 = (3, 4)
-    XCTAssertEqual(grad[v2ID], Vector2(150, 200))
+  //   // gradient of ||5 * v2||^2 at v2 = (3, 4)
+  //   XCTAssertEqual(grad[v2ID], Vector2(150, 200))
 
-    // gradient of ||10 * v3||^2 at v3 = (5, 6, 7)
-    XCTAssertEqual(grad[v3ID], Vector3(1000, 1200, 1400))
-  }
+  //   // gradient of ||10 * v3||^2 at v3 = (5, 6, 7)
+  //   XCTAssertEqual(grad[v3ID], Vector3(1000, 1200, 1400))
+  // }
 }

@@ -149,12 +149,14 @@ public func trainProbabilisticTracker<Encoder: AppearanceModelEncoder>(
     bgRandomFrameCount: bgRandomFrameCount,
     useCache: true
   )
-
   let batchPositive = encoder.encode(fg)
+  // let foregroundModel = GaussianNB(from:batchPositive, regularizer: 1e-3)
   let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
 
+
   let batchNegative = encoder.encode(bg)
-  let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
+  // let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
+  let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
 
   let tracker = makeProbabilisticTracker(
     model: encoder,
@@ -207,7 +209,7 @@ public func makeProbabilisticTracker<
         appearanceModelSize: targetSize,
         foregroundModel: foregroundModel,
         backgroundModel: backgroundModel,
-        maxPossibleNegativity: 1e4
+        maxPossibleNegativity: 1e7
       )
     )
   }
@@ -226,7 +228,7 @@ public func makeProbabilisticTracker<
     addFixedBetweenFactor: { (values, variables, graph) -> () in
       let (prior) = unpack(values)
       let (poseID) = unpack(variables)
-      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 4.6, sdTheta: 0.3))
+      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 8, sdTheta:0.4))
     })
 }
 

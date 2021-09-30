@@ -142,7 +142,7 @@ struct InferTrackRAE: ParsableCommand {
       frames: videoSlice.frames,
       targetSize: (video.track[0].rows, video.track[0].cols))
 
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
+    // if verbose { tracker.optimizer.verbosity = .SUMMARY } FOR LM Optimizer
 
     let startPose = videoSlice.track[0].center
     let startPatch = Tensor<Double>(videoSlice.frames[0].patch(
@@ -185,7 +185,7 @@ struct InferTrackRawPixels: ParsableCommand {
 
     var tracker = makeRawPixelTracker(frames: videoSlice.frames, target: startPatch)
 
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
+    // if verbose { tracker.optimizer.verbosity = .SUMMARY } FOR LM Optimizer
 
     let prediction = tracker.infer(knownStart: Tuple1(startPose))
 

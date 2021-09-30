@@ -30,7 +30,6 @@ let package = Package(
     .package(name: "TensorBoardX", url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.0"),
-    .package(name: "Plotly", url: "https://github.com/vojtamolda/Plotly.swift", from: "0.4.0"),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -57,7 +56,6 @@ let package = Package(
       name: "BeeDataset",
       dependencies: [
         "SwiftFusion",
-        "Plotly",
         "ModelSupport",
       ]),
     .target(
@@ -86,7 +84,6 @@ let package = Package(
         "BeeTracking",
         .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
         "SwiftFusion",
-        "Plotly",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
     path: "Examples/OISTVisualizationTool"),
@@ -97,11 +94,20 @@ let package = Package(
         "BeeTracking",
         .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
         "SwiftFusion",
-        "Plotly",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
       path: "Scripts",
       exclude: ["README.md"]
+    ),
+    .testTarget(
+      name: "BrandoTests",
+      dependencies: [
+        "SwiftFusion",
+        "BeeDataset",
+        "BeeTracking",
+        .product(name: "PenguinTesting", package: "Penguin"),
+        "ModelSupport",
+      ]
     ),
     .testTarget(
       name: "SwiftFusionTests",

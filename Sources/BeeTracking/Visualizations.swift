@@ -60,6 +60,7 @@ public func plotOverlap(metrics: SubsequenceMetrics, on ax: PythonObject) {
   ax.set_title("Overlap")
 }
 
+
 /// plot Comparison image
 public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2) -> (PythonObject, PythonObject) {
   let plt = Python.import("matplotlib.pyplot")
@@ -76,6 +77,204 @@ public func plotPatchWithGT(frame: Tensor<Float>, actual: Pose2, expected: Pose2
   ax[1].title.set_text("Labeling")
   return (fig, ax)
 }
+
+public func plotPoseDifference(track: [Pose2], withGroundTruth expected: [Pose2], on ax: PythonObject) {
+  var thetaDiff = zip(track, expected).map{pow(($0.0.rot.theta - $0.1.rot.theta), 2.0)}
+  var posDiff = zip(track, expected).map{pow(($0.0.t.x - $0.1.t.x), 2.0) + pow(($0.0.t.y - $0.1.t.y), 2.0)}
+  ax.plot(thetaDiff, posDiff)
+  ax.set_title("L2 Theta Difference (X-axis) vs. L2 X, Y Difference Over Time")
+}
+
+public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: Pose2, firstGroundTruth: Pose2) -> (PythonObject, PythonObject) {
+  let plt = Python.import("matplotlib.pyplot")
+  let mpl = Python.import("matplotlib")
+  // print("plottingFrameWithPatches")
+  // print("actual Pose", actual, expected)
+  // print("eh")
+  let (fig, ax) = plt.subplots(figsize: Python.tuple([8, 4])).tuple2
+  // print("printing the frame shape")
+  // print(frame)
+  // print(frame.shape)
+  let np = Python.import("numpy")
+  let fr = np.squeeze(frame.makeNumpyArray())
+  ax.imshow(fr / 255.0, cmap: "gray")
+  // print("eh2")
+  let actualBoundingBox = OrientedBoundingBox(center: actual, rows: 40, cols: 70)
+  ax.plot(actualBoundingBox.corners.map{$0.x} + [actualBoundingBox.corners.first!.x], actualBoundingBox.corners.map{$0.y} + [actualBoundingBox.corners.first!.y], "r-")
+  // print("eh3")
+  // ax.plot(Python.tuple(actualBoundingBox.rot.)
+  var supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([actualBoundingBox.center.t.x, actualBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"r",
+    orientation: actualBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  ax.add_patch(supportPatch) 
+
+
+  let expectedBoundingBox = OrientedBoundingBox(center: expected, rows: 40, cols: 70)
+  ax.plot(Python.list(expectedBoundingBox.corners.map{$0.x} + [expectedBoundingBox.corners.first!.x]), Python.list(expectedBoundingBox.corners.map{$0.y} + [expectedBoundingBox.corners.first!.y]), "b-")
+  // print("eh5")
+  supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([expectedBoundingBox.center.t.x, expectedBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"b",
+    orientation: expectedBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  // print("eh6")
+  ax.add_patch(supportPatch) 
+  ax.set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
+  ax.set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
+  // print("eh7")
+  ax.title.set_text("Prediction (Red) vs. Actual (Green)")
+  return (fig, ax)
+}
+
+
+/// plot Comparison image
+public func plotFrameWithPatches2(frame: Tensor<Float>, actual_box1: OrientedBoundingBox, actual_box2: OrientedBoundingBox, expected: Pose2, firstGroundTruth: Pose2) -> (PythonObject, PythonObject) {
+  let plt = Python.import("matplotlib.pyplot")
+  let mpl = Python.import("matplotlib")
+  let (fig, ax) = plt.subplots(1, 2, figsize: Python.tuple([8, 4])).tuple2
+  let np = Python.import("numpy")
+  let fr = np.squeeze(frame.makeNumpyArray())
+  ax[0].imshow(fr / 255.0, cmap: "gray")
+  ax[1].imshow(fr / 255.0, cmap: "gray")
+  ax[0].set_axis_off()
+  ax[1].set_axis_off()
+  let actualBoundingBox = OrientedBoundingBox(center: actual_box1.center, rows: actual_box1.rows, cols: actual_box1.cols)
+  ax[0].plot(actualBoundingBox.corners.map{$0.x} + [actualBoundingBox.corners.first!.x], actualBoundingBox.corners.map{$0.y} + [actualBoundingBox.corners.first!.y], "r-")
+  var supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([actualBoundingBox.center.t.x, actualBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"r",
+    orientation: actualBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  ax[0].add_patch(supportPatch) 
+  ax[0].add_patch(supportPatch) 
+  ax[0].set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
+  ax[0].set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
+  ax[0].title.set_text("RAE 256")
+
+  let actualBoundingBox2 = OrientedBoundingBox(center: actual_box2.center, rows: actual_box2.rows, cols: actual_box2.cols)
+  ax[1].plot(actualBoundingBox2.corners.map{$0.x} + [actualBoundingBox2.corners.first!.x], actualBoundingBox2.corners.map{$0.y} + [actualBoundingBox2.corners.first!.y], "r-")
+
+  ax[1].set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
+  ax[1].set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
+  ax[1].title.set_text("SiamMask")
+
+  return (fig, ax)
+}
+
+
+public func plotXYandTheta(xs: [Double], ys: [Double], thetas: [Double]) -> (PythonObject, PythonObject) {
+
+  let plt = Python.import("matplotlib.pyplot")
+  let np = Python.import("numpy")
+
+  let (fig, axs) = plt.subplots(1,2,figsize: Python.tuple([8, 4])).tuple2
+
+  let ax2 = axs[0]
+  ax2.plot(np.arange(0,xs.count), xs)
+  ax2.plot(np.arange(0,xs.count), ys)
+  ax2.title.set_text("X and Y")
+
+
+  let ax3 = axs[1]
+  ax3.plot(np.arange(0,xs.count), thetas)
+  ax3.title.set_text("Theta")
+
+  return (fig, axs)
+
+
+}
+
+
+
+
+/// plot Optimization beginning, end, 
+public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2, expected: Pose2, firstGroundTruth: Pose2, errors: [Double], xs: [Double], ys: [Double], thetas: [Double]) -> (PythonObject, PythonObject) {
+  let plt = Python.import("matplotlib.pyplot")
+  let mpl = Python.import("matplotlib")
+  let (fig, axs) = plt.subplots(2,3,figsize: Python.tuple([18, 10])).tuple2
+  let ax = axs[0][0]
+  let np = Python.import("numpy")
+  let fr = np.squeeze(frame.makeNumpyArray())
+  ax.imshow(fr / 255.0, cmap: "gray")
+  // print("eh2")
+  let startBoundingBox = OrientedBoundingBox(center: start, rows: 40, cols: 70)
+  ax.plot(startBoundingBox.corners.map{$0.x} + [startBoundingBox.corners.first!.x], startBoundingBox.corners.map{$0.y} + [startBoundingBox.corners.first!.y], "g-")
+  // print("eh3")
+  // ax.plot(Python.tuple(startBoundingBox.rot.)
+
+  let expectedBoundingBox = OrientedBoundingBox(center: expected, rows: 40, cols: 70)
+  ax.plot(Python.list(expectedBoundingBox.corners.map{$0.x} + [expectedBoundingBox.corners.first!.x]), Python.list(expectedBoundingBox.corners.map{$0.y} + [expectedBoundingBox.corners.first!.y]), "b-")
+  // print("eh5")
+  var supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([expectedBoundingBox.center.t.x, expectedBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"b",
+    orientation: expectedBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  // print("eh6")
+  ax.add_patch(supportPatch) 
+  supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([startBoundingBox.center.t.x, startBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"g",
+    orientation: startBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  ax.add_patch(supportPatch) 
+
+
+  let endBoundingBox = OrientedBoundingBox(center: end, rows: 40, cols: 70)
+  ax.plot(endBoundingBox.corners.map{$0.x} + [endBoundingBox.corners.first!.x], endBoundingBox.corners.map{$0.y} + [endBoundingBox.corners.first!.y], "r-")
+  // print("eh3")
+  // ax.plot(Python.tuple(endBoundingBox.rot.)
+  supportPatch = mpl.patches.RegularPolygon(
+    Python.tuple([endBoundingBox.center.t.x, endBoundingBox.center.t.y]),
+    numVertices:3,
+    radius:10,
+    color:"r",
+    orientation: endBoundingBox.center.rot.theta - (Double.pi / 2)
+  )
+  ax.add_patch(supportPatch) 
+
+
+
+  ax.set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
+  ax.set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
+  // print("eh7")
+  ax.title.set_text("Start (Green), End (Red), vs. Label (Blue)")
+
+  let ax1 = axs[0][1]
+  ax1.plot(np.arange(0,errors.count), errors)
+  ax1.title.set_text("Error value")
+
+
+  let ax2 = axs[0][2]
+  ax2.plot(np.arange(0,xs.count), xs)
+  ax2.title.set_text("X")
+
+  let ax4 = axs[1][1]
+  ax4.plot(np.arange(0,xs.count), ys)
+  ax4.title.set_text("Y")
+
+  let ax5 = axs[1][2]
+  ax5.plot(np.arange(0,xs.count), thetas)
+  ax5.title.set_text("Theta")
+
+  // var spec = mpl.gridspec.GridSpec(ncols: 2, nrows: 1, width_ratios: [2, 1])
+
+
+  return (fig, ax)
+}
+
 
 /// Calculate the translation error plane (X-Y)
 public func errorPlaneTranslation<
