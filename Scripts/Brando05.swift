@@ -19,7 +19,6 @@ struct Brando05: ParsableCommand {
     let np = Python.import("numpy")
     let featureSizes = [256]
     let kHiddenDimensions = [512]
-    // let iterations = [1,2,3,4,5,6,7]
     let iterations = [1]
     let trainingDatasetSize = 100
 
@@ -37,16 +36,11 @@ struct Brando05: ParsableCommand {
     let (imageHeight, imageWidth, imageChannels) =
       (40, 70, 1)
 
-    // var classifier = SmallerNNClassifier(
-    //   imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, latentDimension: featureSize
-    // )
     var classifier = NNClassifier(
       imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, hiddenDimension: kHiddenDimension, latentDimension: featureSize
     )
     // LOAD THE CLASSIFIER
-    // classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featureSize)_\(j)_doubletraining.npy", allow_pickle: true))
     classifier.load(weights: np.load("./classifiers/classifiers_today/large_classifier_weight_\(kHiddenDimension)_\(featureSize)_\(j).npy", allow_pickle: true))
-    // classifier.load(weights: np.load("./classifiers/classifiers_today/small_classifier_weight_\(featureSize)_\(j).npy", allow_pickle: true))
 
     let evalTracker: Tracker = {frames, start in
         var tracker = makeProbabilisticTracker2(
@@ -59,8 +53,6 @@ struct Brando05: ParsableCommand {
         return track
 
     }
-    // print(evalTracker)
-    // return
 
     let plt = Python.import("matplotlib.pyplot")
     let sequenceCount = 1
@@ -73,9 +65,7 @@ struct Brando05: ParsableCommand {
       if !FileManager.default.fileExists(atPath: folderName) {
       do {
           try FileManager.default.createDirectory(atPath: folderName, withIntermediateDirectories: true, attributes: nil)
-          // print("here")
           try FileManager.default.createDirectory(atPath: folderName + "/sequence0", withIntermediateDirectories: true, attributes: nil)
-          // print("here2")
       } catch {
           print(error.localizedDescription)
       }
