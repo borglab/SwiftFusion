@@ -174,9 +174,9 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     self.addFixedBetweenFactor = addFixedBetweenFactor!
 
     // For LM
-    // self.optimizer.precision = 1e-1
-    // self.optimizer.max_iteration = 100
-    // self.optimizer.cgls_precision = 1e-5
+    self.optimizer.precision = 1e-1
+    self.optimizer.max_iteration = 100
+    self.optimizer.cgls_precision = 1e-5
   }
 
   /// Returns a `FactorGraph` for the tracking problem on the frames at `frameIndices`.
@@ -205,7 +205,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
       x[currentPoseID] = x[previousPoseID]
       x[currentPoseID].perturbWith(stddev: Vector3(0.2, 8, 8))
       let candidateError = g.error(at: x)
-      
+
       if candidateError < bestError {
         bestError = candidateError
         bestPose = x[currentPoseID]
@@ -252,7 +252,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // Initialize the variables one frame at a time. Each iteration intializes the `i+1`-th
     // variable.
     for i in 0..<(frames.count - 1) {
-      print("Inferring for frame \(i + 1) of \(frames.count - 1)")
+      print("Infr \(i + 1)/\(frames.count - 1) ", terminator: "")
       extendTrack(x: &x, fromFrame:i, withSampling:samplingFlag)
     }
     

@@ -100,16 +100,6 @@ let package = Package(
       exclude: ["README.md"]
     ),
     .testTarget(
-      name: "BrandoTests",
-      dependencies: [
-        "SwiftFusion",
-        "BeeDataset",
-        "BeeTracking",
-        .product(name: "PenguinTesting", package: "Penguin"),
-        "ModelSupport",
-      ]
-    ),
-    .testTarget(
       name: "SwiftFusionTests",
       dependencies: [
         "SwiftFusion",

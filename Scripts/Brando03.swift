@@ -9,37 +9,18 @@ import Foundation
 
 import PenguinStructures
 
-/// Brando01 SiamMask
+/// Brando01 SiamMask Tracker
 struct Brando03: ParsableCommand {
-  // @Option(help: "Run on track number x")
-  // var trackId: Int = 0
-  
-  // @Option(help: "Run for number of frames")
-  // var trackLength: Int = 80
-  
-  // @Option(help: "Size of feature space")
-  // var featureSize: Int = 5
 
-  // @Option(help: "Pretrained weights")
-  // var weightsFile: String?
-
-  // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
-  // Make sure you have a folder `Results/andrew01` before running
   func run() {
 
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
-    // let data = OISTBeeVideo(directory: dataDir, length: 100)!
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: 100, length: 80)!
-    // print("number of frames in training data:", data.labels.count)
     print("number of frames in testing data", testData.labels.count, "\n\n")
 
 
     let trackerEvaluation = TrackerEvaluationDataset(testData)
-    // let shpl = Python.import("shapely")
     let os = Python.import("os")
-
-    // print(os.environ)
-    // let plt = Python.import("matplotlib")
     let torch = Python.import("torch")
 
     let np = Python.import("numpy")
@@ -58,15 +39,11 @@ struct Brando03: ParsableCommand {
     parser.add_argument("--resume")
     parser.add_argument("--config")
     parser.add_argument("--base_path")
-    // parser.add_argument("--cpu")
-    // let args = parser.parse_args(["--resume", "../SiamMask/experiments/siammask_sharp/SiamMask_VOT.pth", "--config", "../SiamMask/experiments/siammask_sharp/config_vot.json", "--base_path", "./OIST_Data/downsampled"])
-    // let args = parser.parse_args(["--resume", "../SiamMask/checkpoint_e20.pth", "--config", "../SiamMask/experiments/siammask_sharp/config_vot.json", "--base_path", "./OIST_Data/downsampled"])
     let args = parser.parse_args(["--resume", "../SiamMask/model_sharp/checkpoint_e20.pth", "--config", "../SiamMask/experiments/siammask_sharp/config_vot.json", "--base_path", "./OIST_Data/downsampled"])
 
     print("ARGUMENTS", args)
 
 
-    // let imutils = Python.import("utils")
     print(Python.version)
     print("hello")
     let evalTracker: Tracker = { frames, start in
@@ -78,44 +55,25 @@ struct Brando03: ParsableCommand {
         // # Setup Model
         let cfg = cfhelper.load_config(args)
         let custom = Python.import("SiamMask.experiments.siammask_sharp.custom")
-        // // from custom import Custom
         var siammask = custom.Custom(anchors: cfg["anchors"])
-        // if args.resume:
-        // assert isfile(args.resume), 'Please download {} first.'.format(args.resume)
         siammask = ldhelper.load_pretrain(siammask, args.resume)
 
         siammask.eval().to(device)
-
-        // # Parse Image file
-        // img_files = sorted(glob.glob(join(args.base_path, '*.jp*')))
-        // ims = [cv2.imread(imf) for imf in img_files]
-
-        // # Select ROI
-        // cv2.namedWindow("SiamMask", cv2.WND_PROP_FULLSCREEN)
-        // # cv2.setWindowProperty("SiamMask", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        // try:
-        //     init_rect = cv2.selectROI('SiamMask', ims[0], False, False)
         let init_rect = Python.tuple([Int(start.center.t.x)-20, Int(start.center.t.y)-20, 40, 70])
         let tup = init_rect.tuple4
         let x = tup.0
         let y = tup.1
         let w = tup.2
         let h = tup.3
-        //     x, y, w, h = init_rect
-        // // except:
-        // //     exit()
 
-        // var toc = 0
         var state: PythonObject = 0
         var results = [PythonObject]()
 
         for (f, im) in frames.enumerated() {
-        // for f, im in enumerate(ims):
-            // let tic = cv2.getTickCount()
+
             let im_np = im.makeNumpyArray()
             let im_3d = np.squeeze(np.stack(Python.tuple([im_np, im_np, im_np]), axis: 2))
-            // print("image shape", im_3d.shape)
-            // cv2.imshow("SiamMask", im_3d)
+
             if f == 0 { // init
                 let target_pos = np.array([x + w / 2, y + h / 2])
                 let target_sz = np.array([w, h])
@@ -125,21 +83,14 @@ struct Brando03: ParsableCommand {
                 state = smtest.siamese_track(state, im_3d, mask_enable: true, refine_enable: true, device: device)  //# track
                 let location = state["ploygon"].flatten()
                 
-                // cv2.polylines(im_3d, [np.int0(location).reshape(Python.tuple([-1, 1, 2]))], true, Python.tuple([0,255,0]), 3)
-                // cv2.circle(im_3d, Python.tuple([centx, centy]), 10, Python.tuple([0,255,255]), 5)
-                // cv2.imwrite("SiamMask"+String(f)+".png", im_3d)
-                // let mask = state["mask"] > state["p"].seg_thr
+
                 results.append(location)
-                // im[:, :, 2] = (mask > 0) * 255 + (mask == 0) * im[:, :, 2]
 
                 
             }
             
         }
-        // results.map{print($0)}
-        // print("hello")
-        // print(type(of: results))
-        // print(results)
+
         var track = [OrientedBoundingBox]()
         for (i, result) in results.enumerated() {
           if i > 0 {
@@ -177,7 +128,6 @@ struct Brando03: ParsableCommand {
             if dx != 0 {
                 theta = atan(dy/dx)
             }
-            // if locx >= centx && locy >= centy{}
             
             if locx >= centx && locy < centy{
                 theta = -theta
@@ -190,7 +140,6 @@ struct Brando03: ParsableCommand {
 
             let rot = Rot2(theta)
             let vect = Vector2(Double(centx), Double(centy))
-            // let vect = Vector2(Double(pythonBB.0)! + Double(rows)/2, Double(pythonBB.1)! + Double(cols)/2)
             print("rotation", rot, "\n\n")
             let center = Pose2(rot, vect)
             let swiftBB = OrientedBoundingBox(center: center, rows: rows, cols: cols)
@@ -200,26 +149,17 @@ struct Brando03: ParsableCommand {
             track.append(swiftBB)
           }
         }
-        // print(track)
         return track
     }
 
     let plt = Python.import("matplotlib.pyplot")
     let sequenceCount = 20
     var eval_results = trackerEvaluation.evaluate(evalTracker, sequenceCount: sequenceCount, deltaAnchor: 175, outputFile: "brando03")
-    // print(results)
     print("done evaluating")
     var total_overlap = eval_results.sequences.prefix(sequenceCount)[0].subsequences.first!.metrics.overlap
-    // total_overlap += eval_results.sequences.prefix(sequenceCount)[1].subsequences.first!.metrics.overlap
 
     for (index, value) in eval_results.sequences.prefix(sequenceCount).enumerated() {
-      // var i: Int = 0
-      // zip(value.subsequences.first!.frames, zip(value.subsequences.first!.prediction, value.subsequences.first!.groundTruth)).map {
-      //   let (fig, axes) = plotFrameWithPatches(frame: $0.0, actual: $0.1.0.center, expected: $0.1.1.center, firstGroundTruth: value.subsequences.first!.groundTruth.first!.center)
-      //   fig.savefig("Results/brando03/sequence\(index)/brando03\(i).png", bbox_inches: "tight")
-      //   plt.close("all")
-      //   i = i + 1
-      // }
+
       print("done,", index)      
       let (fig, axes) = plt.subplots(1, 2, figsize: Python.tuple([20, 20])).tuple2
       fig.suptitle("Tracking positions and Subsequence Average Overlap with Accuracy \(String(format: "%.2f", value.subsequences.first!.metrics.accuracy)) and Robustness \(value.subsequences.first!.metrics.robustness).")

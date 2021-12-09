@@ -10,8 +10,8 @@ import Foundation
 
 
 
-/// Brando04: NNClassifier training
-struct Brando04: ParsableCommand {
+/// Brando15 SAVE PATCHES FOR LATER USE
+struct Brando15: ParsableCommand {
   typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, GaussianNB>
 
 
@@ -25,7 +25,9 @@ struct Brando04: ParsableCommand {
   ) -> (Tensor<Float>, Tensor<Double>) {
     print("bg")
 
+    // var allBoxes = [LikelihoodModel.Datum]()
     let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: num_boxes).map {
+      // (frame: $0.frame, type: LikelihoodModel.PatchType.bg, obb: $0.obb)
       $0.frame!.patch(at: $0.obb)
     }
     print("bg2")
@@ -35,23 +37,25 @@ struct Brando04: ParsableCommand {
     print("patches done bg")
     return (labels, patches)
   }
-  
 
 
   func getTrainingDataFG(
     from dataset: OISTBeeVideo
   ) -> (Tensor<Float>, Tensor<Double>) {
     print("fg")
-    let bgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: num_boxes).map {
+    // var allBoxes = [LikelihoodModel.Datum]()
+    let fgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: num_boxes).map {
+      // (frame: $0.frame, type: LikelihoodModel.PatchType.bg, obb: $0.obb)
       $0.frame!.patch(at: $0.obb)
     }
     print("bg2")
-    let labels = Tensor<Float>(zeros: [num_boxes])
+    let labels = Tensor<Float>(ones: [num_boxes])
     print("labels done bg")
-    let patches = Tensor<Double>(stacking: bgBoxes.map {$0})
+    let patches = Tensor<Double>(stacking: fgBoxes.map {$0})
     print("patches done bg")
     return (labels, patches)
   }
+
 
 
 
@@ -72,37 +76,16 @@ struct Brando04: ParsableCommand {
     
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
     let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!
-    var (labels_fg, patches_fg) = getTrainingDataFG(from: trainingDataset)
     var (labels_bg, patches_bg) = getTrainingDataBG(from: trainingDataset)
-    
+    let np = Python.import("numpy")
+    np.save("Patches_bg_\(num_boxes).npy", patches_bg.makeNumpyArray())
+    var (labels_fg, patches_fg) = getTrainingDataFG(from: trainingDataset)
 
+    // var patches = concatenate(patches_bg, patches_fg)
     var patches = Tensor(stacking: patches_bg.unstacked() + patches_fg.unstacked())
     var labels = Tensor<Int8>(concatenate(labels_bg, labels_fg))
     print("shape of patches", patches.shape)
     print("shape of labels", labels.shape)
-
-    let kHiddenDimension = 512
-    let featSize = 512
-    let iterations = [5,6,7]
-
-    for i in iterations {
-      let path = "./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featSize)_\(i)_60000boxes_600epochs.npy"
-      if FileManager.default.fileExists(atPath: path) {
-          print("File Already Exists. Abort training")
-          continue
-      }
-      print("Training...")
-      let rae: PretrainedNNClassifier = PretrainedNNClassifier(
-        patches: patches,
-        labels: labels,
-        given: PretrainedNNClassifier.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featSize, weightFile: "", learningRate: 1e-3),
-        train_mode: "from_scratch"
-      )
-      rae.save(to: path)
-
-    }
-
-    
-    
+    np.save("Patches_bg_fg_\(num_boxes).npy", patches.makeNumpyArray())
   }
 }

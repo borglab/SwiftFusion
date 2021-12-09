@@ -62,7 +62,7 @@ extension ArrayStorage where Element: VectorFactor {
           let (lFactor, lVars) = factor.linearizableComponent(at: vars)
           let gradIndices = LVariables.linearized(lFactor.edges)
           let grads = GradVariables(at: gradIndices, in: GradVariables.withoutMutation(gradBufs))
-          
+
           var newGrads = grads
           if let gradUpdate = lFactor.errorVector(at: lVars) as? Vector3 {
               newGrads = newGrads + gradient(at: lVars) { lFactor.errorVector(at: $0).squaredNorm }
@@ -72,7 +72,6 @@ extension ArrayStorage where Element: VectorFactor {
               currGrads.head.x = currGrads.head.x / 100.0
               newGrads = newGrads + (currGrads as! Element.LinearizableComponent.Variables.TangentVector)
           }
-          
           newGrads.assign(into: gradIndices, in: gradBufs)
         }
       }

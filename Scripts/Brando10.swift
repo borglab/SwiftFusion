@@ -44,11 +44,6 @@ struct Brando10: ParsableCommand {
         var (figs, axs) = plt.subplots(1,1, figsize: Python.tuple([10, 4])).tuple2
 
 
-        // axs[0].plot(t,posex_np, linewidth: 1)
-        // axs[0].set_title("x and y coordinates")
-        // axs[0].plot(t,posey_np, linewidth: 1)
-        // axs[1].set_title("theta")
-        // axs[1].plot(t,posetheta_np, linewidth: 1)
         axs[0].plot(t,error_np, linewidth: 1)
         axs[0].set_title("error")
         plt.subplots_adjust(left:0.1,
@@ -57,7 +52,6 @@ struct Brando10: ParsableCommand {
             top:0.9, 
             wspace:0.4, 
             hspace:0.4)
-        // axs[2].setylim(-200,50)
 
         figs.savefig(folderName + "/sampling_figure_\(i).png")
         plt.close("all")
@@ -66,19 +60,5 @@ struct Brando10: ParsableCommand {
     
 
 
-    // for featureSize in featureSizes {
-    // for kHiddenDimension in kHiddenDimensions {
-    // for j in iterations {
-        
-
-
-
-
-    // }
-    // }
-    // }
-
-
-    
   }
 }
