@@ -1,9 +1,3 @@
-// NN Classifier
-// Load 1st image
-// Load Classifier
-// take the error value at each pixel in cropped image
-// plot the error value on the image from white to red
-
 import ArgumentParser
 import SwiftFusion
 import BeeDataset
@@ -13,7 +7,7 @@ import PythonKit
 import Foundation
 import PenguinStructures
 
-/// Brando12: OPTIMIZATION CONVERGENCE VISUALIZATION
+/// Brando14: ERRORVALUE over entire image
 struct Brando14: ParsableCommand {
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
@@ -33,16 +27,14 @@ struct Brando14: ParsableCommand {
     let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
     let frames = testData.frames
     let firstTrack = testData.tracks[0]
-    // let firstTrack = testData.tracks[5]
     let firstFrame = frames[0]
     let firstObb = firstTrack.boxes[0]
-    // let firstObb = firstTrack.boxes[5]
 
     let range = 100.0
       
     // NN Params
     let (imageHeight, imageWidth, imageChannels) = (40, 70, 1)
-    let featureSize = 256
+    let featureSize = 512
     let kHiddenDimension = 512
 
 
@@ -53,8 +45,8 @@ struct Brando14: ParsableCommand {
     } else {
       str = "RAE"
     }
-    // let folderName = "Results/ErrorValueVizualized_\(str)_\(kHiddenDimension)_\(featureSize)_5"
-    let folderName = "Results/ErrorValueVizualized_\(str)Small_\(featureSize)_1"
+    let lr = 1e-6
+    let folderName = "Results/ErrorValueVizualized_\(str)_20000boxes_300epochs_retrained(0.0, 30, 0)_lr=\(lr)_2nd_iter.npy"
     if !FileManager.default.fileExists(atPath: folderName) {
     do {
         try FileManager.default.createDirectory(atPath: folderName, withIntermediateDirectories: true, attributes: nil)
@@ -77,8 +69,6 @@ struct Brando14: ParsableCommand {
         
     axs[0].set_xlim(firstGroundTruth.t.x - range/2, firstGroundTruth.t.x + range/2)
     axs[0].set_ylim(firstGroundTruth.t.y - range/2, firstGroundTruth.t.y + range/2)
-    // axs[1].set_xlim(firstGroundTruth.t.x - range/2, firstGroundTruth.t.x + range/2)
-    // axs[1].set_ylim(firstGroundTruth.t.y - range/2, firstGroundTruth.t.y + range/2)
     axs[1].set_xlim(0, range)
     axs[1].set_ylim(0, range)
     
@@ -90,18 +80,13 @@ struct Brando14: ParsableCommand {
     
 
     var values = Tensor<Double>(zeros: [Int(range), Int(range)])
-    // var values = Tensor<Double>(zeros:firstFrame.shape)
     print("printing tensor",values)
 
     if useClassifier {
-      // var classifier = NNClassifier(
-      //   imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, hiddenDimension: kHiddenDimension, latentDimension: featureSize
-      // )
-      var classifier = SmallerNNClassifier(
-      imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, latentDimension: featureSize
-    )
-      // classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featureSize)_5.npy", allow_pickle: true))
-      classifier.load(weights: np.load("./classifiers/classifiers_today/small_classifier_weight_\(featureSize)_1.npy", allow_pickle: true))
+      var classifier = NNClassifier(
+        imageHeight: imageHeight, imageWidth: imageWidth, imageChannels: imageChannels, hiddenDimension: kHiddenDimension, latentDimension: featureSize
+      )
+      classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_512_512_1_20000boxes_300epochs_retrained(0.0, 30, 0)_lr=\(lr)_2nd_iter.npy", allow_pickle: true))
 
       print("done loading")
       for i in 0...Int(range)-1 {
@@ -121,11 +106,8 @@ struct Brando14: ParsableCommand {
             appearanceModelSize: (40, 70)
             )
             fg.store(factorNNC)
-            // print("values at ij", values[i,j], factorNNC.errorVector(v[poseId]).x)
-            // print("error vector", Tensor<Double>([factorNNC.errorVector(v[poseId]).x]))
-            // print("value", (values[Int(x-range/2)+i,Int(y-range/2)+j]))
-            // values[Int(x-range/2)+i,Int(y-range/2)+j] = Tensor<Double>([factorNNC.errorVector(v[poseId]).x])
             values[i,j] = Tensor<Double>(factorNNC.errorVector(v[poseId]).x)
+            // print(Tensor<Double>(factorNNC.errorVector(v[poseId]).x))
 
 
 
@@ -134,7 +116,6 @@ struct Brando14: ParsableCommand {
         }
         print("row", i)
       }
-      // print(values[0...,0])
       let min_val = values.min()
       if Double(min_val)! < 0 {
         values = values-min_val
@@ -143,18 +124,6 @@ struct Brando14: ParsableCommand {
       print(values[0...,0])
       print(values.shape)
       axs[1].imshow(values.makeNumpyArray())
-
-
-     
-    //   axes.set_title(String(axes.get_title())! + "\n final err = \(final_err)" 
-    //   + "\n label err = \(label_err).x)" 
-    //   + "\n start err = \(start_err)"
-    //   + "\n learning rate = \(lr)"
-    //   + "\n converged = \(conv)")
-    //   figs.savefig(folderName + "/optimization_final_\(j).png", bbox_inches: "tight")
-    //   // let (figs2, axes2) = plotXYandTheta(xs: xs, ys: ys, thetas: thetas)
-    //   // figs2.savefig(folderName + "/optimization_final_\(j)_XYtheta.png", bbox_inches: "tight")
-    //   plt.close("all")
       fig.savefig(folderName + "/vizual_NNC.png", bbox_inches: "tight")
 
       
@@ -201,7 +170,6 @@ struct Brando14: ParsableCommand {
                     maxPossibleNegativity: 1e7
                 )
                 fg.store(factorRAE)
-                // print("values at ij", values[i,j], factorNNC.errorVector(v[poseId]).x)
                 values[i,j] = Tensor<Double>(factorRAE.errorVector(v[poseId]).x)
 
 
@@ -220,17 +188,6 @@ struct Brando14: ParsableCommand {
         print(values.shape)
         axs[1].imshow(values.makeNumpyArray())
 
-
-     
-    //   axes.set_title(String(axes.get_title())! + "\n final err = \(final_err)" 
-    //   + "\n label err = \(label_err).x)" 
-    //   + "\n start err = \(start_err)"
-    //   + "\n learning rate = \(lr)"
-    //   + "\n converged = \(conv)")
-    //   figs.savefig(folderName + "/optimization_final_\(j).png", bbox_inches: "tight")
-    //   // let (figs2, axes2) = plotXYandTheta(xs: xs, ys: ys, thetas: thetas)
-    //   // figs2.savefig(folderName + "/optimization_final_\(j)_XYtheta.png", bbox_inches: "tight")
-    //   plt.close("all")
       fig.savefig(folderName + "/vizual_RAE.png", bbox_inches: "tight")
 
       

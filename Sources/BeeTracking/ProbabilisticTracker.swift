@@ -228,7 +228,7 @@ public func makeProbabilisticTracker<
     addFixedBetweenFactor: { (values, variables, graph) -> () in
       let (prior) = unpack(values)
       let (poseID) = unpack(variables)
-      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 8, sdTheta:0.4))
+      graph.store(WeightedPriorFactorPose2SD(poseID, prior, sdX: 8, sdY: 4.6, sdTheta: 0.3))
     })
 }
 

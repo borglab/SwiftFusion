@@ -9,21 +9,17 @@ import Foundation
 
 import PenguinStructures
 
-/// Brando01 OpenCV tracker
+/// Brando02 OpenCV tracker
 struct Brando02: ParsableCommand {
     func run() {
 
         let np = Python.import("numpy")
         let cv2 = Python.import("cv2")
         let os = Python.import("os")
-        // let imutils = Python.import("utils")
-        print(Python.version)
-        print(Python.tuple([1,3,4]))
         let image_names = os.listdir("../OIST_Data/downsampled")
 		let track_names = os.listdir("../OIST_Data/tracks")
         image_names.sort()
 		track_names.sort()
-        // let tracker = cv2.TrackerCSRT_create()
         let track = track_names[10]
 		let frame = cv2.imread("../OIST_Data/downsampled/" + image_names[0])
         let centers = Python.list()
@@ -37,19 +33,13 @@ struct Brando02: ParsableCommand {
                 continue
             }
             i += 1
-            // print(type(of: line))
             let lineSwift = String(line)
-            // print(type(of: lineSwift))
-            
             let lineSwift2 = lineSwift ?? ""
-            // print(lineSwift2)
             let nums = lineSwift2.components(separatedBy: " ")
-            // print(nums)
             let height = Float(nums[1])
             let width = Float(nums[0])
 			centers.append(Python.tuple([Python.float(width),Python.float(height)]))
         }
-        // print(centers)
 
 
         let width1 = Float(centers[0][0])
@@ -58,9 +48,6 @@ struct Brando02: ParsableCommand {
         let height = height1 ?? 0
 		let BB = Python.tuple([Int(width-35),Int(height-35),70,70])
         let tracker = cv2.TrackerMIL_create()
-        // print(frames.first!.makeNumpyArray())
-            // BB = (width-35,height-35,70,70)
-        print(type(of: tracker))
         tracker[dynamicMember: "init"](frame, BB)
         var results = [PythonObject]()
         for image_name in image_names {
@@ -71,9 +58,6 @@ struct Brando02: ParsableCommand {
             if Bool(track_success)! {
                 results.append(newBB)
             }
-            // if Bool(track_success) {
-            //     results.append(BB)
-            // }
         }
 
     
