@@ -11,7 +11,7 @@ import Foundation
 
 
 /// Brando04: NNClassifier training
-struct Brando04: ParsableCommand {
+struct Brando04d1: ParsableCommand {
   typealias LikelihoodModel = TrackingLikelihoodModel<PretrainedDenseRAE, MultivariateGaussian, GaussianNB>
 
 
@@ -19,17 +19,23 @@ struct Brando04: ParsableCommand {
   var training: Bool = false
 
   let num_boxes: Int = 10000
+  let pert = Vector3(0.0, 30, 0)
 
   func getTrainingDataBG(
     from dataset: OISTBeeVideo
   ) -> (Tensor<Float>, Tensor<Double>) {
     print("bg")
-
-    let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: num_boxes).map {
-      $0.frame!.patch(at: $0.obb)
+    let frames_obbs = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: num_boxes)
+    var bgBoxes = [Tensor<Double>]()
+    for i in 0...frames_obbs.count-1 {
+      var obb = frames_obbs[i].obb
+      obb.center.perturbWith(stddev: pert)
+      bgBoxes.append(frames_obbs[i].frame!.patch(at: obb))
+    
     }
+    
     print("bg2")
-    let labels = Tensor<Float>(zeros: [num_boxes])
+    let labels = Tensor<Float>(ones: [num_boxes])
     print("labels done bg")
     let patches = Tensor<Double>(stacking: bgBoxes.map {$0})
     print("patches done bg")
@@ -42,21 +48,25 @@ struct Brando04: ParsableCommand {
     from dataset: OISTBeeVideo
   ) -> (Tensor<Float>, Tensor<Double>) {
     print("fg")
-    let bgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: num_boxes).map {
-      $0.frame!.patch(at: $0.obb)
+    let frames_obbs = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: num_boxes)
+    var fgBoxes = [Tensor<Double>]()
+    for i in 0...frames_obbs.count-1 {
+      var obb = frames_obbs[i].obb
+      obb.center.perturbWith(stddev: pert)
+      fgBoxes.append(frames_obbs[i].frame!.patch(at: obb))
+    
     }
+    
     print("bg2")
-    let labels = Tensor<Float>(zeros: [num_boxes])
+    let labels = Tensor<Float>(ones: [num_boxes])
     print("labels done bg")
-    let patches = Tensor<Double>(stacking: bgBoxes.map {$0})
+    let patches = Tensor<Double>(stacking: fgBoxes.map {$0})
     print("patches done bg")
     return (labels, patches)
   }
 
 
 
-  // Just runs an RP tracker and saves image to file
-  // Make sure you have a folder `Results/fan12` before running
   func run() {
     let folderName = "classifiers/classifiers_today"
     if !FileManager.default.fileExists(atPath: folderName) {
@@ -83,10 +93,13 @@ struct Brando04: ParsableCommand {
 
     let kHiddenDimension = 512
     let featSize = 512
-    let iterations = [5,6,7]
+    let iterations = [1]
 
+    
+    let lr = Float(1e-6)
     for i in iterations {
-      let path = "./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featSize)_\(i)_60000boxes_600epochs.npy"
+      let pretrained_weights = "./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featSize)_\(i)_20000boxes_300epochs_retrained(0.0, 30, 0)_lr=\(lr).npy"
+      let path = "./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featSize)_\(i)_20000boxes_300epochs_retrained(0.0, 30, 0)_lr=\(lr)_2nd_iter.npy"
       if FileManager.default.fileExists(atPath: path) {
           print("File Already Exists. Abort training")
           continue
@@ -95,8 +108,8 @@ struct Brando04: ParsableCommand {
       let rae: PretrainedNNClassifier = PretrainedNNClassifier(
         patches: patches,
         labels: labels,
-        given: PretrainedNNClassifier.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featSize, weightFile: "", learningRate: 1e-3),
-        train_mode: "from_scratch"
+        given: PretrainedNNClassifier.HyperParameters(hiddenDimension: kHiddenDimension, latentDimension: featSize, weightFile: pretrained_weights, learningRate: lr),
+        train_mode: "pretrained"
       )
       rae.save(to: path)
 

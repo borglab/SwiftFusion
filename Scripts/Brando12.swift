@@ -7,7 +7,7 @@ import PythonKit
 import Foundation
 import PenguinStructures
 
-/// Brando12: OPTIMIZATION CONVERGENCE VISUALIZATION
+/// Brando12: OPTIMIZATION CONVERGENCE VISUALIZATION [red & green dots]
 struct Brando12: ParsableCommand {
   @Option(help: "Run for number of frames")
   var trackLength: Int = 80
@@ -51,10 +51,8 @@ struct Brando12: ParsableCommand {
     let data = OISTBeeVideo(directory: dataDir, length: trainingDatasetSize)!
     let frames = testData.frames
     let firstTrack = testData.tracks[0]
-    // let firstTrack = testData.tracks[5]
     let firstFrame = frames[0]
     let firstObb = firstTrack.boxes[0]
-    // let firstObb = firstTrack.boxes[5]
       
 
     //OPTIMIZER GRADIENT DESCENT
@@ -91,7 +89,6 @@ struct Brando12: ParsableCommand {
       for j in 0...1 {
         axs[i,j].imshow(fr / 255.0, cmap: "gray")
         let firstGroundTruth = firstObb.center
-        // axs[i,j].plot(firstObb.corners.map{$0.x} + [firstObb.corners.first!.x], firstObb.corners.map{$0.y} + [firstObb.corners.first!.y], "b-")
         axs[i,j].set_xlim(firstGroundTruth.t.x - 50, firstGroundTruth.t.x + 50)
         axs[i,j].set_ylim(firstGroundTruth.t.y - 50, firstGroundTruth.t.y + 50)
         axs[i,j].get_xaxis().set_visible(false)
@@ -159,9 +156,7 @@ struct Brando12: ParsableCommand {
       let y_out_of_bounds =  (v[poseId].t.y > firstObb.center.t.y + xy_thresh) || (v[poseId].t.y < firstObb.center.t.y - xy_thresh)
       let theta_out_of_bounds = (v[poseId].rot.theta > firstObb.center.rot.theta + theta_thresh) || (v[poseId].rot.theta < firstObb.center.rot.theta - theta_thresh)
       if !x_out_of_bounds && !theta_out_of_bounds && !y_out_of_bounds {
-          // plot a green dot
-          // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"r", marker: ",")
-          // ax.scatter(startpose.t.x,startpose.t.y,c:"r", marker: ",")
+
           if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.1 {
               axs[0,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 1)
           } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.2 {
@@ -173,8 +168,7 @@ struct Brando12: ParsableCommand {
           }
           
       } else {
-          // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"g", marker: ",")
-          // ax.scatter(startpose.t.x,startpose.t.y,c:"g", marker: ",")
+
           if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.1 {
               axs[0,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 1)
           } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.2 {
