@@ -16,16 +16,13 @@ struct Brando07: ParsableCommand {
   
   @Option(help: "Size of feature space")
   var featureSize: Int = 256
-  // used to be 256
 
   @Option(help: "Pretrained weights")
   var weightsFile: String?
 
-  // Runs RAE tracker on n number of sequences and outputs relevant images and statistics
   func run() {
     let np = Python.import("numpy")
     let kHiddenDimension = 512
-    // used to be 512
 
     let (imageHeight, imageWidth, imageChannels) =
       (40, 70, 1)
@@ -47,13 +44,9 @@ struct Brando07: ParsableCommand {
 
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
     let numberOfTrainingSamples = 3000
-    // let fgRandomFrameCount = 10
-    // let bgRandomFrameCount = 10
-    // let boundingBoxSize = (40, 70)
 
     let dataset = OISTBeeVideo(directory: dataDir, length: 100)! // calling this twice caused the Killed to happen
     let batchSize = 3000
-    // print("tests here1")
     let fgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: batchSize)
     print("here 1.5")
     let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: batchSize)
@@ -62,21 +55,11 @@ struct Brando07: ParsableCommand {
     let bgpatches = Tensor<Double>(stacking: bgBoxes.map { $0.frame!.patch(at: $0.obb)})
     print("patches complete")
 
-    // let (fg, bg, _) = getTrainingBatches(
-    //     dataset: dataset, boundingBoxSize: boundingBoxSize,
-    //     fgBatchSize: numberOfTrainingSamples,
-    //     bgBatchSize: numberOfTrainingSamples,
-    //     fgRandomFrameCount: fgRandomFrameCount,
-    //     bgRandomFrameCount: bgRandomFrameCount,
-    //     useCache: true
-    // )
 
     let batchPositive = rae.encode(fgpatches)
     print("shape batch positive", batchPositive.shape)
-    // let foregroundModel = GaussianNB(from:batchPositive, regularizer: 1e-3)
     let foregroundModel = MultivariateGaussian(from:batchPositive, regularizer: 1e-3)
     let batchNegative = rae.encode(bgpatches)
-    // let backgroundModel = GaussianNB(from: batchNegative, regularizer: 1e-3)
     let backgroundModel = MultivariateGaussian(from: batchNegative, regularizer: 1e-3)
 
     var outfg0 = [Double]()
@@ -89,15 +72,12 @@ struct Brando07: ParsableCommand {
 
     for i in 0...numberOfTrainingSamples-1 {
         outfg0.append(backgroundModel.probability(batchPositive[i,0...]))
-        // print("probability", backgroundModel.probability(batchPositive[i,0...]))
         outfg1.append(foregroundModel.probability(batchPositive[i,0...]))
         outbg0.append(backgroundModel.probability(batchNegative[i,0...]))
         outbg1.append(foregroundModel.probability(batchNegative[i,0...]))
     }
-    // print(outfg0)
-    // print(outfg1)
 
-    // let batchSize = numberOfTrainingSamples
+
     var plt = Python.import("matplotlib.pyplot")
 
 
@@ -130,7 +110,6 @@ struct Brando07: ParsableCommand {
 
     var (figs, axs) = plt.subplots(2,2).tuple2
     print("asda")
-    // plt.GridSpec(2, 2, wspace: 0.1, hspace: 0.8)
 
     plt.subplots_adjust(left:0.1,
             bottom:0.1, 
@@ -140,7 +119,6 @@ struct Brando07: ParsableCommand {
             hspace:0.4)
 
 
-    // var (fig, ax1) = plt.subplots().tuple2
     var ax1 = axs[1,0]
     ax1.hist(fg0_arr, range: Python.tuple([-1,1]), bins: 50)
     var mean = fgsum0/Double(batchSize)
@@ -150,7 +128,6 @@ struct Brando07: ParsableCommand {
     }
     ax1.set_title("Foreground. Output response for background. \n Mean = \(String(format: "%.2f", mean)) and SD = \(sd).", fontsize:8)
 
-    // (fig, ax1) = plt.subplots().tuple2
     ax1 = axs[0,0]
     ax1.hist(fg1_arr, range: Python.tuple([-1,1]), bins: 50)
     mean = fgsum1/Double(batchSize)
@@ -161,7 +138,6 @@ struct Brando07: ParsableCommand {
     ax1.set_title("Foreground. Output response for foreground. \n Mean = \(String(format: "%.2f", mean)) and SD = \(sd).", fontsize:8)
 
     ax1 = axs[1,1]
-    // (fig, ax1) = plt.subplots().tuple2
     ax1.hist(bg0_arr, range: Python.tuple([-1,1]), bins: 50)
     mean = bgsum0/Double(batchSize)
     sd = 0.0
@@ -172,7 +148,6 @@ struct Brando07: ParsableCommand {
 
     ax1 = axs[0,1]
 
-    // (fig, ax1) = plt.subplots().tuple2
     ax1.hist(bg1_arr, range: Python.tuple([-1,1]), bins: 50)
     mean = bgsum1/Double(batchSize)
     sd = 0.0
