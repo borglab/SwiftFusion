@@ -252,7 +252,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // Initialize the variables one frame at a time. Each iteration intializes the `i+1`-th
     // variable.
     for i in 0..<(frames.count - 1) {
-      print("Infr \(i + 1)/\(frames.count - 1) ", terminator: "")
+      print("Inferring for frame \(i + 1) of \(frames.count - 1)")
       extendTrack(x: &x, fromFrame:i, withSampling:samplingFlag)
     }
     
