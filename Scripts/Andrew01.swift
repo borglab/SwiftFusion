@@ -16,7 +16,6 @@ struct Andrew01: ParsableCommand {
   
   @Option(help: "Size of feature space")
   var featureSize: Int = 256
-  // used to be 256
 
   @Option(help: "Pretrained weights")
   var weightsFile: String?
@@ -26,7 +25,6 @@ struct Andrew01: ParsableCommand {
   func run() {
     let np = Python.import("numpy")
     let kHiddenDimension = 512
-    // used to be 512
 
     let (imageHeight, imageWidth, imageChannels) =
       (40, 70, 1)
