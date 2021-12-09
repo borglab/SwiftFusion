@@ -267,8 +267,7 @@ extension LinearizableFactor2 {
 
   // Implements the error as half the squared norm of the error vector.
   public func error(at x: Variables) -> Double {
-    return errorVector(at: x).squaredNorm
-    // return 0.5 * errorVector(at: x).squaredNorm
+    return 0.5 * errorVector(at: x).squaredNorm
   }
 
   // Forwarding implementation.
