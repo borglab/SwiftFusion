@@ -88,21 +88,11 @@ public func plotPoseDifference(track: [Pose2], withGroundTruth expected: [Pose2]
 public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: Pose2, firstGroundTruth: Pose2) -> (PythonObject, PythonObject) {
   let plt = Python.import("matplotlib.pyplot")
   let mpl = Python.import("matplotlib")
-  // print("plottingFrameWithPatches")
-  // print("actual Pose", actual, expected)
-  // print("eh")
+
   let (fig, ax) = plt.subplots(figsize: Python.tuple([8, 4])).tuple2
-  // print("printing the frame shape")
-  // print(frame)
-  // print(frame.shape)
-  let np = Python.import("numpy")
-  let fr = np.squeeze(frame.makeNumpyArray())
-  ax.imshow(fr / 255.0, cmap: "gray")
-  // print("eh2")
+  ax.imshow(frame.makeNumpyArray() / 255.0, cmap: "gray")
   let actualBoundingBox = OrientedBoundingBox(center: actual, rows: 40, cols: 70)
   ax.plot(actualBoundingBox.corners.map{$0.x} + [actualBoundingBox.corners.first!.x], actualBoundingBox.corners.map{$0.y} + [actualBoundingBox.corners.first!.y], "r-")
-  // print("eh3")
-  // ax.plot(Python.tuple(actualBoundingBox.rot.)
   var supportPatch = mpl.patches.RegularPolygon(
     Python.tuple([actualBoundingBox.center.t.x, actualBoundingBox.center.t.y]),
     numVertices:3,
@@ -112,10 +102,9 @@ public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: 
   )
   ax.add_patch(supportPatch) 
 
-
   let expectedBoundingBox = OrientedBoundingBox(center: expected, rows: 40, cols: 70)
   ax.plot(Python.list(expectedBoundingBox.corners.map{$0.x} + [expectedBoundingBox.corners.first!.x]), Python.list(expectedBoundingBox.corners.map{$0.y} + [expectedBoundingBox.corners.first!.y]), "b-")
-  // print("eh5")
+
   supportPatch = mpl.patches.RegularPolygon(
     Python.tuple([expectedBoundingBox.center.t.x, expectedBoundingBox.center.t.y]),
     numVertices:3,
@@ -123,11 +112,10 @@ public func plotFrameWithPatches(frame: Tensor<Float>, actual: Pose2, expected: 
     color:"b",
     orientation: expectedBoundingBox.center.rot.theta - (Double.pi / 2)
   )
-  // print("eh6")
   ax.add_patch(supportPatch) 
-  ax.set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
-  ax.set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
-  // print("eh7")
+  ax.set_xlim(expected.t.x - 100, expected.t.x + 100)
+  ax.set_ylim(expected.t.y - 100, expected.t.y + 100)
+
   ax.title.set_text("Prediction (Red) vs. Actual (Green)")
   return (fig, ax)
 }
@@ -204,15 +192,11 @@ public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2
   let np = Python.import("numpy")
   let fr = np.squeeze(frame.makeNumpyArray())
   ax.imshow(fr / 255.0, cmap: "gray")
-  // print("eh2")
   let startBoundingBox = OrientedBoundingBox(center: start, rows: 40, cols: 70)
   ax.plot(startBoundingBox.corners.map{$0.x} + [startBoundingBox.corners.first!.x], startBoundingBox.corners.map{$0.y} + [startBoundingBox.corners.first!.y], "g-")
-  // print("eh3")
-  // ax.plot(Python.tuple(startBoundingBox.rot.)
 
   let expectedBoundingBox = OrientedBoundingBox(center: expected, rows: 40, cols: 70)
   ax.plot(Python.list(expectedBoundingBox.corners.map{$0.x} + [expectedBoundingBox.corners.first!.x]), Python.list(expectedBoundingBox.corners.map{$0.y} + [expectedBoundingBox.corners.first!.y]), "b-")
-  // print("eh5")
   var supportPatch = mpl.patches.RegularPolygon(
     Python.tuple([expectedBoundingBox.center.t.x, expectedBoundingBox.center.t.y]),
     numVertices:3,
@@ -220,7 +204,6 @@ public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2
     color:"b",
     orientation: expectedBoundingBox.center.rot.theta - (Double.pi / 2)
   )
-  // print("eh6")
   ax.add_patch(supportPatch) 
   supportPatch = mpl.patches.RegularPolygon(
     Python.tuple([startBoundingBox.center.t.x, startBoundingBox.center.t.y]),
@@ -234,8 +217,6 @@ public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2
 
   let endBoundingBox = OrientedBoundingBox(center: end, rows: 40, cols: 70)
   ax.plot(endBoundingBox.corners.map{$0.x} + [endBoundingBox.corners.first!.x], endBoundingBox.corners.map{$0.y} + [endBoundingBox.corners.first!.y], "r-")
-  // print("eh3")
-  // ax.plot(Python.tuple(endBoundingBox.rot.)
   supportPatch = mpl.patches.RegularPolygon(
     Python.tuple([endBoundingBox.center.t.x, endBoundingBox.center.t.y]),
     numVertices:3,
@@ -249,7 +230,6 @@ public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2
 
   ax.set_xlim(firstGroundTruth.t.x - 200, firstGroundTruth.t.x + 200)
   ax.set_ylim(firstGroundTruth.t.y - 200, firstGroundTruth.t.y + 200)
-  // print("eh7")
   ax.title.set_text("Start (Green), End (Red), vs. Label (Blue)")
 
   let ax1 = axs[0][1]
@@ -269,7 +249,6 @@ public func plotFrameWithPatches3(frame: Tensor<Float>, start: Pose2, end: Pose2
   ax5.plot(np.arange(0,xs.count), thetas)
   ax5.title.set_text("Theta")
 
-  // var spec = mpl.gridspec.GridSpec(ncols: 2, nrows: 1, width_ratios: [2, 1])
 
 
   return (fig, ax)

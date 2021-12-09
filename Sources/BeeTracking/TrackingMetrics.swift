@@ -42,7 +42,7 @@ public struct SubsequenceMetrics: Codable {
     // Find the first failure frame.
     var NFsa = prediction.count
     for (index, overlap) in overlaps.enumerated() {
-      if overlap < 0.1 {
+      if overlap < 0.05 {
         NFsa = index
         break
       }

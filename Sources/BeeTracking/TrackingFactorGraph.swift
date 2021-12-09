@@ -134,8 +134,8 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   ) -> ()
 
   /// The optimizer to use during inference.
-  public var optimizer = LM()
-  // public var optimizer = GradientDescent(learningRate: 1e-5)
+  // public var optimizer = LM()
+  public var optimizer = GradientDescent(learningRate: 1e-3)
 
   /// Creates an instance.
   ///
@@ -201,10 +201,11 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
     
-    for _ in 0..<256 {    //2000
+    for _ in 0..<256 {
       x[currentPoseID] = x[previousPoseID]
-      x[currentPoseID].perturbWith(stddev: Vector3(0.3, 8, 4.6))
+      x[currentPoseID].perturbWith(stddev: Vector3(0.2, 8, 8))
       let candidateError = g.error(at: x)
+
       if candidateError < bestError {
         bestError = candidateError
         bestPose = x[currentPoseID]
