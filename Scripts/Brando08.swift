@@ -14,21 +14,14 @@ import PenguinStructures
 struct Brando08: ParsableCommand {    
 
     func run() {
-        // let featSizes = [8,16,64,128,256]
         let dataDir = URL(fileURLWithPath: "./OIST_Data")
         let dataset = OISTBeeVideo(directory: dataDir, length: 100)!
         let batchSize = 300
-        // print("tests here1")
         let fgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: batchSize)
-        // print("here 1.5")
         let bgBoxes = dataset.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: batchSize)
-        // print("tests here2")
         let fgpatches = Tensor<Double>(stacking: fgBoxes.map { $0.frame!.patch(at: $0.obb)})
         let bgpatches = Tensor<Double>(stacking: bgBoxes.map { $0.frame!.patch(at: $0.obb)})
         let np = Python.import("numpy")
-        // let kHiddenDimensions = [256,512]
-        // let featSizes = [64,128,256]
-        // print("uu")
         var plt = Python.import("matplotlib.pyplot")
         let mpl = Python.import("matplotlib")
 
