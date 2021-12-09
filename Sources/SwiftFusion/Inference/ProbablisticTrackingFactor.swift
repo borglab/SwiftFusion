@@ -122,7 +122,6 @@ public struct ProbablisticTrackingFactor2<
 
   @differentiable
   public func errorVector(_ pose: Pose2) -> Vector1 {
-    // print("errorVector")
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
     let patch = Tensor<Double>(measurement.patch(at: region, outputSize: appearanceModelSize).tensor)
     let output = classifier.classify(patch.expandingShape(at: 0)).squeezingShape(at: 0)
