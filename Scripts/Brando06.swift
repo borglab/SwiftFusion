@@ -14,21 +14,16 @@ import PenguinStructures
 struct Brando06: ParsableCommand {    
 
     func run() {
-        // let featSizes = [8,16,64,128,256]
         let dataDir = URL(fileURLWithPath: "./OIST_Data")
         let testData = OISTBeeVideo(directory: dataDir, afterIndex: 100, length: 80)!
         let batchSize = 3000
-        // print("tests here1")
         let fgBoxes = testData.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: batchSize)
-        // print("here 1.5")
         let bgBoxes = testData.makeBackgroundBoundingBoxes(patchSize: (40, 70), batchSize: batchSize)
-        // print("tests here2")
         let fgpatches = Tensor<Double>(stacking: fgBoxes.map { $0.frame!.patch(at: $0.obb)})
         let bgpatches = Tensor<Double>(stacking: bgBoxes.map { $0.frame!.patch(at: $0.obb)})
         let np = Python.import("numpy")
         let kHiddenDimensions = [512]
         let featSizes = [512]
-        print("uu")
         var plt = Python.import("matplotlib.pyplot")
         
         
@@ -51,7 +46,6 @@ struct Brando06: ParsableCommand {
             if let weightsFile = weightsFile {
             classifier.load(weights: np.load(weightsFile, allow_pickle: true))
             } else {
-            // classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_\(kHiddenDimension)_\(featureSize)_\(num).npy", allow_pickle: true))
             classifier.load(weights: np.load("./classifiers/classifiers_today/classifier_weight_512_512_1_doubletraining.npy", allow_pickle: true))
             }
 
@@ -59,9 +53,6 @@ struct Brando06: ParsableCommand {
             let outbg = classifier.classify(bgpatches)
             let softmaxfg = softmax(outfg)
             let softmaxbg = softmax(outbg)
-            // print(outfg[0...3])
-            // print("printing foreground:", softmaxfg[0...10])
-            // print("printing background:", softmaxbg[0...10])
             let folderName = "Results/brando06/classified_images"
             if !FileManager.default.fileExists(atPath: folderName) {
             do {
@@ -91,8 +82,6 @@ struct Brando06: ParsableCommand {
 
             let shapefg = outfg.shape
             let shapebg = outbg.shape
-            // print("fg", outfg)
-            // print("bg", outbg)
 
             var fgsum0 = 0.0
             var fgsum1 = 0.0
@@ -123,7 +112,6 @@ struct Brando06: ParsableCommand {
 
             var (figs, axs) = plt.subplots(2,2).tuple2
             print("asda")
-            // plt.GridSpec(2, 2, wspace: 0.1, hspace: 0.8)
 
             plt.subplots_adjust(left:0.1,
                     bottom:0.1, 
@@ -133,7 +121,6 @@ struct Brando06: ParsableCommand {
                     hspace:0.4)
             
 
-            // var (fig, ax1) = plt.subplots().tuple2
             var ax1 = axs[1,0]
             ax1.hist(fg0_arr, range: Python.tuple([-1,1]), bins: 50)
             var mean = fgsum0/Double(batchSize)
@@ -143,7 +130,6 @@ struct Brando06: ParsableCommand {
             }
             ax1.set_title("Foreground. Output response for background. \n Mean = \(String(format: "%.2f", mean)) and SD = \(sd).", fontsize:8)
 
-            // (fig, ax1) = plt.subplots().tuple2
             ax1 = axs[0,0]
             ax1.hist(fg1_arr, range: Python.tuple([-1,1]), bins: 50)
             mean = fgsum1/Double(batchSize)
@@ -154,7 +140,6 @@ struct Brando06: ParsableCommand {
             ax1.set_title("Foreground. Output response for foreground. \n Mean = \(String(format: "%.2f", mean)) and SD = \(sd).", fontsize:8)
 
             ax1 = axs[1,1]
-            // (fig, ax1) = plt.subplots().tuple2
             ax1.hist(bg0_arr, range: Python.tuple([-1,1]), bins: 50)
             mean = bgsum0/Double(batchSize)
             sd = 0.0
@@ -165,7 +150,6 @@ struct Brando06: ParsableCommand {
 
             ax1 = axs[0,1]
 
-            // (fig, ax1) = plt.subplots().tuple2
             ax1.hist(bg1_arr, range: Python.tuple([-1,1]), bins: 50)
             mean = bgsum1/Double(batchSize)
             sd = 0.0
