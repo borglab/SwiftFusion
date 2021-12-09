@@ -86,16 +86,7 @@ extension OISTBeeVideo {
     /// Anything not completely overlapping labels
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
     let frames = self.randomFrames(self.frames.count, using: &deterministicEntropy)
-
-    print("OISTBeeVideo+Batches.swift. MakeForegroundBoundingBoxes")
-    let label = frames[0].1.labels[0]
-
-   
-
-    var label_count = 0
-    for i in 0...(frames.count-1) {
-      label_count += frames[i].1.labels.count
-    }
+    
     // We need `batchSize / frames.count` patches from each frame, plus the remainder of the
     // integer division.
     var patchesPerFrame = Array(repeating: batchSize / frames.count, count: frames.count)
@@ -126,14 +117,6 @@ extension OISTBeeVideo {
 
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
     let frames = self.randomFrames(self.frames.count, using: &deterministicEntropy)
-    print("OISTBeeVideo+Batches.swift. MakeBackgroundBoundingBoxes")
-    let label = frames[0].1.labels[0]
-
-   
-    var label_count = 0
-    for i in 0...(frames.count-1) {
-      label_count += frames[i].1.labels.count
-    }
 
     // We need `batchSize / frames.count` patches from each frame, plus the remainder of the
     // integer division.
