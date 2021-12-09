@@ -31,7 +31,6 @@ struct Fan05: ParsableCommand {
     let fgBoxes = dataset.makeForegroundBoundingBoxes(patchSize: (40, 70), batchSize: numberForeground).map {
       (frame: $0.frame, type: LikelihoodModel.PatchType.fg, obb: $0.obb)
     }
-    
     return fgBoxes + bgBoxes
   }
   

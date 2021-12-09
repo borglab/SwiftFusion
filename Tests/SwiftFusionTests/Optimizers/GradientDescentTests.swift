@@ -17,7 +17,7 @@ import SwiftFusion
 import XCTest
 
 final class GradientDescentTests: XCTestCase {
-  /// Test convergence for a simple Pose2SLAM graph.
+  // Test convergence for a simple Pose2SLAM graph.
   func testPose2SLAM() {
     var x = VariableAssignments()
     let pose1ID = x.store(Pose2(Rot2(0.2), Vector2(0.5, 0.0)))

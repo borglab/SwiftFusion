@@ -78,7 +78,7 @@ public struct MultivariateGaussian: GenerativeDensity {
     
     return t.scalarized() / 2.0
   }
-  
+
   /// Calculated normalized probability
   @differentiable public func probability(_ sample: T) -> Double {
     // - ToDo: Precalculate constant

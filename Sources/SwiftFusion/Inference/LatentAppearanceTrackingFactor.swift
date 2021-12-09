@@ -2,12 +2,22 @@ import PenguinParallel
 import PenguinStructures
 import TensorFlow
 
-public protocol AppearanceModelEncoder {
-  associatedtype HyperParameters
-  init(from imageBatch: Tensor<Double>, given: HyperParameters?)
+// Same as Encoder. To be used only for an end-to-end classifier
+public protocol Classifier {
+  @differentiable
+  func classify(_ imageBatch: Tensor<Double>) -> Tensor<Double>
+}
 
+// To be used as an encoder. 
+public protocol Encoder {
   @differentiable
   func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double>
+}
+
+
+public protocol AppearanceModelEncoder : Encoder {
+  associatedtype HyperParameters
+  init(from imageBatch: Tensor<Double>, given: HyperParameters?)
 }
 
 public extension AppearanceModelEncoder {

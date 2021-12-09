@@ -31,7 +31,7 @@ struct Fan12: ParsableCommand {
   // Just runs an RP tracker and saves image to file
   // Make sure you have a folder `Results/fan12` before running
   func run() {
-    let kHiddenDimension = 100
+    let kHiddenDimension = 512
     let dataDir = URL(fileURLWithPath: "./OIST_Data")
 
     let trainingDataset = OISTBeeVideo(directory: dataDir, length: 100)!

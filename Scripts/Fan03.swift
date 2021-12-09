@@ -27,7 +27,7 @@ struct Fan03: ParsableCommand {
     
     let rp = RandomProjection(fromShape: TensorShape([imageHeight, imageWidth, imageChannels]), toFeatureSize: featureSize)
 
-    let (fig, _, _) = runProbabilisticTracker(
+    let (fig, track, gt) = runProbabilisticTracker(
       directory: dataDir,
       encoder: rp,
       onTrack: trackId, forFrames: trackLength, withSampling: true,
@@ -37,5 +37,17 @@ struct Fan03: ParsableCommand {
 
     /// Actual track v.s. ground truth track
     fig.savefig("Results/fan03/fan03_track\(trackId)_\(featureSize).pdf", bbox_inches: "tight")
+
+
+    let json = JSONEncoder()
+    json.outputFormatting = .prettyPrinted
+    let track_data = try! json.encode(track)
+    try! track_data.write(to: URL(fileURLWithPath: "Results/fan04/fan04_track_\(trackId)_\(featureSize).json"))
+
+    let gt_data = try! json.encode(gt)
+    try! gt_data.write(to: URL(fileURLWithPath: "Results/fan04/fan04_gt_\(trackId)_\(featureSize).json"))
+
+    
+
   }
 }

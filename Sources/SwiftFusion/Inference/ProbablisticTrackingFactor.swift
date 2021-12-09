@@ -88,3 +88,48 @@ public struct ProbablisticTrackingFactor<
     return Vector1(result)
   }
 }
+
+
+public struct ProbablisticTrackingFactor2<
+    MyClassifier: Classifier
+  >: LinearizableFactor1a {
+  public typealias V0 = Pose2
+
+  public let edges: Variables.Indices
+
+  public let measurement: ArrayImage
+
+  public let classifier: MyClassifier
+
+  public var patchSize: (Int, Int)
+
+  public var appearanceModelSize: (Int, Int)
+
+
+  public init(
+    _ poseId: TypedID<Pose2>,
+    measurement: Tensor<Float>,
+    classifier: MyClassifier,
+    patchSize: (Int, Int),
+    appearanceModelSize: (Int, Int)
+  ) {
+    self.edges = Tuple1(poseId)
+    self.measurement = ArrayImage(measurement)
+    self.classifier = classifier
+    self.patchSize = patchSize
+    self.appearanceModelSize = appearanceModelSize
+  }
+
+  @differentiable
+  public func errorVector(_ pose: Pose2) -> Vector1 {
+    let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
+    let patch = Tensor<Double>(measurement.patch(at: region, outputSize: appearanceModelSize).tensor)
+    let output = classifier.classify(patch.expandingShape(at: 0)).squeezingShape(at: 0)
+
+    let sm = softmax(output)
+    let loglikelihood = -log(sm[1]) + log(sm[0])
+
+    var result = loglikelihood.scalarized()
+    return Vector1(result)
+  }
+}

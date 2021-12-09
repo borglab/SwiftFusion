@@ -42,7 +42,7 @@ public struct SubsequenceMetrics: Codable {
     // Find the first failure frame.
     var NFsa = prediction.count
     for (index, overlap) in overlaps.enumerated() {
-      if overlap < 0.1 {
+      if overlap < 0.05 {
         NFsa = index
         break
       }
@@ -194,6 +194,7 @@ extension TrackerEvaluationDataset {
       print("Evaluating sequence \(i + 1) of \(sequenceCount)")
       return sequence.evaluate(tracker, deltaAnchor: deltaAnchor, outputFile: "\(outputFile)-sequence\(i)")
     }
+
     let result = TrackerEvaluationResults(
       sequences: sequenceEvaluations,
       trackerMetrics: TrackerMetrics(sequenceEvaluations.map { $0.sequenceMetrics }),
@@ -252,10 +253,13 @@ extension TrackerEvaluationSequence {
           let subsequence = subsequences[i]
           print("Evaluating subsequence \(i + 1) of \(subsequences.count)")
           (buf.baseAddress! + i).initialize(to: tracker(subsequence.frames, subsequence.groundTruth[0]))
+
         }
       }
+
       actualCount = subsequences.count
     }
+
     let subsequenceEvaluations = zip(subsequences, subsequencePredictions).map {
       SubsequenceEvaluationResults(
         metrics: SubsequenceMetrics(groundTruth: $0.0.groundTruth, prediction: $0.1),
@@ -263,7 +267,6 @@ extension TrackerEvaluationSequence {
         groundTruth: $0.0.groundTruth,
         frames: $0.0.frames)
     }
-
     let result = SequenceEvaluationResults(
       subsequences: subsequenceEvaluations,
       sequenceMetrics: SequenceMetrics(subsequenceEvaluations.map { $0.metrics }))
@@ -281,7 +284,7 @@ extension TrackerEvaluationDataset {
     for track in video.tracks {
       let sequence = TrackerEvaluationSequence(
         frames: Array(
-          video.frames[track.startFrameIndex..<(track.startFrameIndex + track.boxes.count)]),
+          video.frames[track.startFrameIndex..<(track.boxes.count)]),
         groundTruth: track.boxes)
       sequences.append(sequence)
     }

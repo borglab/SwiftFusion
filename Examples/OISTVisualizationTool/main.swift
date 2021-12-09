@@ -44,9 +44,9 @@ struct ViewFrame: ParsableCommand {
 
     let image = dataset.loadFrame(frameRawId)!
 
-    plot(image, boxes: dataset.labels[frameId].enumerated().map {
-      (String($0), $1.location)
-    }, margin: 10.0, scale: 0.5).show()
+    // plot(image, boxes: dataset.labels[frameId].enumerated().map {
+    //   (String($0), $1.location)
+    // }, margin: 10.0, scale: 0.5).show()
   }
 }
 
@@ -118,7 +118,7 @@ struct RawTrack: ParsableCommand {
     
     var tracker = makeRawPixelTracker(frames: videos, target: startPatch)
 
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
+    // if verbose { tracker.optimizer.verbosity = .SUMMARY } For LM Optimizer
 
     let prediction = tracker.infer(knownStart: Tuple1(startPose))
 
@@ -150,9 +150,9 @@ struct RawTrack: ParsableCommand {
       print("Creating output plot")
     }
     startTimer("PLOTTING")
-    plot(image, boxes: bboxes.indices.map {
-      ("\($0)", bboxes[$0])
-    }, margin: 10.0, scale: 0.5).show()
+    // plot(image, boxes: bboxes.indices.map {
+    //   ("\($0)", bboxes[$0])
+    // }, margin: 10.0, scale: 0.5).show()
     stopTimer("PLOTTING")
 
     if verbose {
@@ -207,11 +207,11 @@ struct PpcaTrack: ParsableCommand {
     startTimer("MAKE_GRAPH")
     var tracker = makePPCATracker(model: ppca, statistics: statistics, frames: videos, targetSize: (40, 70))
     stopTimer("MAKE_GRAPH")
+    // For LM Optimizer
+    // if verbose { tracker.optimizer.verbosity = .SUMMARY }
 
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
-
-    tracker.optimizer.cgls_precision = 1e-6
-    tracker.optimizer.precision = 1e-2
+    // tracker.optimizer.cgls_precision = 1e-6
+    // tracker.optimizer.precision = 1e-2
 
     startTimer("GRAPH_INFER")
     let prediction = tracker.infer(knownStart: Tuple2(startPose, Vector10(flatTensor: startLatent)))
@@ -255,9 +255,9 @@ struct PpcaTrack: ParsableCommand {
       print("Creating output plot")
     }
     startTimer("PLOTTING")
-    plot(image, boxes: bboxes.indices.map {
-      ("\($0)", bboxes[$0])
-    }, margin: 10.0, scale: 0.5).show()
+    // plot(image, boxes: bboxes.indices.map {
+    //   ("\($0)", bboxes[$0])
+    // }, margin: 10.0, scale: 0.5).show()
     stopTimer("PLOTTING")
 
     if verbose {
@@ -358,11 +358,12 @@ struct NaiveRae: ParsableCommand {
     stopTimer("MAKE_GRAPH")
 
     if verbose { print("Starting Optimization...") }
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
+    // For LM Optimizer
+    // if verbose { tracker.optimizer.verbosity = .SUMMARY }
 
-    tracker.optimizer.cgls_precision = 1e-7
-    tracker.optimizer.precision = 1e-4
-    tracker.optimizer.max_iteration = 200
+    // tracker.optimizer.cgls_precision = 1e-7
+    // tracker.optimizer.precision = 1e-4
+    // tracker.optimizer.max_iteration = 200
 
     startTimer("GRAPH_INFER")
     let prediction = tracker.infer(knownStart: Tuple1(startPose))
@@ -402,9 +403,9 @@ struct NaiveRae: ParsableCommand {
       print("Creating output plot")
     }
     startTimer("PLOTTING")
-    plot(image, boxes: bboxes.indices.map {
-      ("\($0)", bboxes[$0])
-    }, margin: 10.0, scale: 0.5).show()
+    // plot(image, boxes: bboxes.indices.map {
+    //   ("\($0)", bboxes[$0])
+    // }, margin: 10.0, scale: 0.5).show()
     stopTimer("PLOTTING")
 
     if verbose {
@@ -578,11 +579,12 @@ struct NaivePca: ParsableCommand {
     stopTimer("MAKE_GRAPH")
 
     if verbose { print("Starting Optimization...") }
-    if verbose { tracker.optimizer.verbosity = .SUMMARY }
+    // For LM Optimizer
+    // if verbose { tracker.optimizer.verbosity = .SUMMARY }
 
-    tracker.optimizer.cgls_precision = 1e-7
-    tracker.optimizer.precision = 1e-4
-    tracker.optimizer.max_iteration = 200
+    // tracker.optimizer.cgls_precision = 1e-7
+    // tracker.optimizer.precision = 1e-4
+    // tracker.optimizer.max_iteration = 200
 
     startTimer("GRAPH_INFER")
     let prediction = tracker.infer(knownStart: Tuple1(startPose))
@@ -622,9 +624,9 @@ struct NaivePca: ParsableCommand {
       print("Creating output plot")
     }
     startTimer("PLOTTING")
-    plot(image, boxes: bboxes.indices.map {
-      ("\($0)", bboxes[$0])
-    }, margin: 10.0, scale: 0.5).show()
+    // plot(image, boxes: bboxes.indices.map {
+    //   ("\($0)", bboxes[$0])
+    // }, margin: 10.0, scale: 0.5).show()
     stopTimer("PLOTTING")
 
     if verbose {

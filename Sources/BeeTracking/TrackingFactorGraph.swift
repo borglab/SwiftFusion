@@ -134,7 +134,8 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
   ) -> ()
 
   /// The optimizer to use during inference.
-  public var optimizer = LM()
+  // public var optimizer = LM()
+  public var optimizer = GradientDescent(learningRate: 1e-3)
 
   /// Creates an instance.
   ///
@@ -172,6 +173,7 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     self.addBetweenFactor = addBetweenFactor
     self.addFixedBetweenFactor = addFixedBetweenFactor!
 
+    // For LM
     self.optimizer.precision = 1e-1
     self.optimizer.max_iteration = 100
     self.optimizer.cgls_precision = 1e-5
@@ -194,16 +196,16 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     // First get pose IDs: pose is assumed to be first variable in the frameVariableID tuple
     let currentPoseID = (frameVariableIDs[i + 1] as! Tuple1<TypedID<Pose2>>).head
     let previousPoseID = (frameVariableIDs[i] as! Tuple1<TypedID<Pose2>>).head
-    
     // Remember best pose
     var bestPose = x[currentPoseID]
-    
     // Sample from motion model and take best pose
     var bestError = g.error(at: x)
-    for _ in 0..<2000 {
+    
+    for _ in 0..<256 {
       x[currentPoseID] = x[previousPoseID]
-      x[currentPoseID].perturbWith(stddev: Vector3(0.3, 8, 4.6))
+      x[currentPoseID].perturbWith(stddev: Vector3(0.2, 8, 8))
       let candidateError = g.error(at: x)
+
       if candidateError < bestError {
         bestError = candidateError
         bestPose = x[currentPoseID]
@@ -212,20 +214,19 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     x[currentPoseID] = bestPose
   }
   
+  
   /// Extend the track
   mutating func extendTrack(x: inout VariableAssignments, fromFrame i:Int,
                             withSampling samplingFlag: Bool = false
   ) {
     let currentVarID = frameVariableIDs[i + 1]
     let previousVarID = frameVariableIDs[i]
-    
     // Create a tracking factor graph on just the `i+1`-th variable.
     var g = graph(on: (i + 1)..<(i + 2))
     
     // The `i`-th variable is already initialized well, so add a prior factor that it stays
     // near its current position.
     addFixedBetweenFactor(x[previousVarID], currentVarID, &g)
-    
     // Initialize
     if (samplingFlag) {
       // Try to initialize pose of the `i+1`-th variable by sampling
@@ -256,7 +257,6 @@ public struct TrackingConfiguration<FrameVariables: VariableTuple> {
     }
     
     // TODO: We could also do a final optimization on all the variables jointly here.
-    
     return x
   }
 }

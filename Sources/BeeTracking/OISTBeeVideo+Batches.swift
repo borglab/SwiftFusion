@@ -86,7 +86,7 @@ extension OISTBeeVideo {
     /// Anything not completely overlapping labels
     var deterministicEntropy = ARC4RandomNumberGenerator(seed: 42)
     let frames = self.randomFrames(self.frames.count, using: &deterministicEntropy)
-
+    
     // We need `batchSize / frames.count` patches from each frame, plus the remainder of the
     // integer division.
     var patchesPerFrame = Array(repeating: batchSize / frames.count, count: frames.count)
@@ -103,7 +103,6 @@ extension OISTBeeVideo {
             rows: patchSize.0, cols: patchSize.1))
       }
     }
-
     return obbs
   }
   

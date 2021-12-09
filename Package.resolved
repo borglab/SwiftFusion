@@ -2,30 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "CSV.swift",
-        "repositoryURL": "https://github.com/yaslab/CSV.swift.git",
-        "state": {
-          "branch": null,
-          "revision": "81d2874c51db364d7e1d71b0d99018a294c87ac1",
-          "version": "2.4.3"
-        }
-      },
-      {
         "package": "Penguin",
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
           "branch": "main",
           "revision": "2ed8978cfc91384f98c245cce3513f4345eec239",
           "version": null
-        }
-      },
-      {
-        "package": "Plotly",
-        "repositoryURL": "https://github.com/vojtamolda/Plotly.swift",
-        "state": {
-          "branch": null,
-          "revision": "6e80119ba37b913e5460459556e2bf58f02eba67",
-          "version": "0.4.0"
         }
       },
       {
@@ -44,24 +26,6 @@
           "branch": null,
           "revision": "8e0ef8bb7482ab97dcd2cd1d6855bd38921c345d",
           "version": "0.1.0"
-        }
-      },
-      {
-        "package": "swift-models",
-        "repositoryURL": "https://github.com/tensorflow/swift-models.git",
-        "state": {
-          "branch": null,
-          "revision": "b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4",
-          "version": null
-        }
-      },
-      {
-        "package": "SwiftProtobuf",
-        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
-        "state": {
-          "branch": null,
-          "revision": "da9a52be9cd36c63993291ce3f1b65dafcd1e826",
-          "version": "1.14.0"
         }
       },
       {
