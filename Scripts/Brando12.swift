@@ -195,8 +195,6 @@ struct Brando12: ParsableCommand {
       + "\n learning rate = \(lr)"
       + "\n converged = \(conv)")
       figs.savefig(folderName + "/optimization_final_\(j).png", bbox_inches: "tight")
-      // let (figs2, axes2) = plotXYandTheta(xs: xs, ys: ys, thetas: thetas)
-      // figs2.savefig(folderName + "/optimization_final_\(j)_XYtheta.png", bbox_inches: "tight")
       plt.close("all")
       fig.savefig(folderName + "/optimization_covergence_red_n_green_dots.png", bbox_inches: "tight")
 
@@ -267,9 +265,7 @@ struct Brando12: ParsableCommand {
         let y_out_of_bounds =  (v[poseId].t.y > firstObb.center.t.y + xy_thresh) || (v[poseId].t.y < firstObb.center.t.y - xy_thresh)
         let theta_out_of_bounds = (v[poseId].rot.theta > firstObb.center.rot.theta + theta_thresh) || (v[poseId].rot.theta < firstObb.center.rot.theta - theta_thresh)
           if !x_out_of_bounds && !theta_out_of_bounds && !y_out_of_bounds {
-              // plot a green dot
-              // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"r", marker: ",")
-              // ax.scatter(startpose.t.x,startpose.t.y,c:"r", marker: ",")
+              
               if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.1 {
                   axs[0,0].plot(startpose.t.x,startpose.t.y,"g,", ms: 1)
               } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.2 {
@@ -281,8 +277,6 @@ struct Brando12: ParsableCommand {
               }
               
           } else {
-              // ax.scatter(startpose.t.x-Double(xbegin),startpose.t.y-Double(ybegin),c:"g", marker: ",")
-              // ax.scatter(startpose.t.x,startpose.t.y,c:"g", marker: ",")
               if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.1 {
                   axs[0,0].plot(startpose.t.x,startpose.t.y,"r,", ms: 1)
               } else if fabs(startpose.rot.theta - firstObb.center.rot.theta) < 0.2 {
@@ -308,8 +302,6 @@ struct Brando12: ParsableCommand {
           + "\n learning rate = \(lr)"
           + "\n converged = \(conv)")
           figs.savefig(folderName + "/optimization_final_\(j).png", bbox_inches: "tight")
-          // let (figs2, axes2) = plotXYandTheta(xs: xs, ys: ys, thetas: thetas)
-          // figs2.savefig(folderName + "/optimization_final_\(j)_XYtheta.png", bbox_inches: "tight")
           plt.close("all")
           fig.savefig(folderName + "/optimization_covergence_red_n_green_dots.png", bbox_inches: "tight")
 
