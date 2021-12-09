@@ -40,7 +40,6 @@ struct Andrew01: ParsableCommand {
     } else {
       rae.load(weights: np.load("./oist_rae_weight_\(featureSize).npy", allow_pickle: true))
     }
-    print("s")
 
     // let (imageHeight, imageWidth, imageChannels) =
     //   (40, 70, 1)
@@ -54,7 +53,6 @@ struct Andrew01: ParsableCommand {
     let testData = OISTBeeVideo(directory: dataDir, afterIndex: trainingDatasetSize, length: trackLength)!
 
     let trackerEvaluation = TrackerEvaluationDataset(testData)
-    print("s1")
     let evalTracker: Tracker = {frames, start in
         var tracker = trainProbabilisticTracker(
             trainingData: data,
@@ -70,7 +68,6 @@ struct Andrew01: ParsableCommand {
 
         return track
     }
-    print("s2")
     let plt = Python.import("matplotlib.pyplot")
     let sequenceCount = 1
     var results = trackerEvaluation.evaluate(evalTracker, sequenceCount: sequenceCount, deltaAnchor: 175, outputFile: "andrew01")
