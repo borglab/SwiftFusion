@@ -1,5 +1,5 @@
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 
 /// SE(3) Lie group of 3D Euclidean Poses.
 public struct Pose3: LieGroup, Equatable, KeyPathIterable {
@@ -18,19 +18,19 @@ public struct Pose3: LieGroup, Equatable, KeyPathIterable {
   /// Creates a `Pose3` with rotation `r` and translation `t`.
   ///
   /// This is the bijection SO(3) x R^3 -> SE(3), where "x" means direct product of groups.
-  @differentiable
+  @differentiable(reverse)
   public init(_ r: Rot3, _ t: Vector3) {
     self.init(coordinate: Pose3Coordinate(r, t))
   }
   
   // MARK: Convenience Attributes
   
-  @differentiable public var t: Vector3 { coordinate.t }
+  @differentiable(reverse) public var t: Vector3 { coordinate.t }
   
-  @differentiable public var rot: Rot3 { coordinate.rot }
+  @differentiable(reverse) public var rot: Rot3 { coordinate.rot }
   
   /// Create from an element in tangent space (Expmap)
-  @differentiable
+  @differentiable(reverse)
   public static func fromTangent(_ vector: Vector6) -> Self {
     return Pose3(coordinate: Pose3Coordinate(Rot3(), Vector3.zero).retract(vector))
   }
@@ -38,7 +38,7 @@ public struct Pose3: LieGroup, Equatable, KeyPathIterable {
 
 extension Pose3 {
   /// Group action on `Vector3`.
-  @differentiable
+  @differentiable(reverse)
   public static func * (_ aTb: Pose3, _ bp: Vector3) -> Vector3 {
     aTb.coordinate * bp
   }
@@ -54,7 +54,7 @@ public struct Pose3Coordinate: Equatable, KeyPathIterable {
 }
 
 public extension Pose3Coordinate {
-  @differentiable
+  @differentiable(reverse)
   init(_ rot: Rot3, _ t: Vector3) {
     self.rot = rot
     self.t = t
@@ -69,7 +69,7 @@ public extension Pose3Coordinate {
   }
 
   /// Returns the components of `tangentVector`.
-  @differentiable
+  @differentiable(reverse)
   fileprivate static func decomposed(tangentVector: Vector6) -> DecomposedTangentVector {
     return DecomposedTangentVector(
       w: Vector3(tangentVector.s0, tangentVector.s1, tangentVector.s2),
@@ -78,7 +78,7 @@ public extension Pose3Coordinate {
   }
   
   /// Creates a tangent vector given its components.
-  @differentiable
+  @differentiable(reverse)
   fileprivate static func tangentVector(_ t: DecomposedTangentVector) -> Vector6 {
     let w = t.w
     let v = t.v
@@ -94,13 +94,13 @@ extension Pose3Coordinate: LieGroupCoordinate {
   }
 
   /// Product of two transforms
-  @differentiable
+  @differentiable(reverse)
   public static func * (lhs: Pose3Coordinate, rhs: Pose3Coordinate) -> Pose3Coordinate {
     Pose3Coordinate(lhs.rot * rhs.rot, lhs.t + lhs.rot * rhs.t)
   }
 
   /// Inverse of the rotation.
-  @differentiable
+  @differentiable(reverse)
   public func inverse() -> Pose3Coordinate {
     Pose3Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
   }
@@ -108,7 +108,7 @@ extension Pose3Coordinate: LieGroupCoordinate {
 
 extension Pose3Coordinate {
   /// Group action on `Vector3`.
-  @differentiable
+  @differentiable(reverse)
   static func * (_ aTb: Pose3Coordinate, _ bp: Vector3) -> Vector3 {
     aTb.rot * bp + aTb.t
   }
@@ -124,7 +124,7 @@ extension Vector3 {
   }
 }
 
-@differentiable
+@differentiable(reverse)
 public func skew_symmetric_v(_ v: Vector3) -> Matrix3 {
   Matrix3(
         0, -v.z, v.y,
@@ -135,7 +135,7 @@ public func skew_symmetric_v(_ v: Vector3) -> Matrix3 {
 
 extension Pose3Coordinate: ManifoldCoordinate {
   /// p * Exp(q)
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: Vector6) -> Self {
     // get angular velocity omega and translational velocity v from twist xi
     let decomposed = Pose3Coordinate.decomposed(tangentVector: local)
@@ -162,7 +162,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
   /// `global_p(local_p(q)) = q`
   /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
   /// This invariant will be tested in the tests.
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
@@ -176,7 +176,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
   }
 
   /// Implements `local` in the small rotation case.
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   private func localSmallRot(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
@@ -185,7 +185,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
   }
 
   /// Implements `local` in the non-small rotation case.
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   private func localBigRot(_ global: Self) -> Vector6 {
     let relative = self.inverse() * global
     let w = Rot3().coordinate.localCoordinate(relative.rot.coordinate)
@@ -205,7 +205,7 @@ extension Pose3Coordinate: ManifoldCoordinate {
 
 /// Methods related to the Lie group structure.
 extension Pose3Coordinate {
-  @differentiable(wrt: v)
+  @differentiable(reverse, wrt: v)
   public func Adjoint(_ v: Vector6) -> Vector6 {
     let d = Pose3Coordinate.decomposed(tangentVector: v)
     let rotW = rot.rotate(d.w)

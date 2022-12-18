@@ -19,7 +19,7 @@ import PenguinStructures
 import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import Foundation
 
 struct OISTVisualizationTool: ParsableCommand {

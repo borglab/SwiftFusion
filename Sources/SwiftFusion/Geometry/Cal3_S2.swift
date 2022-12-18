@@ -28,12 +28,12 @@ public struct Cal3_S2: Manifold, Equatable {
 
 /// CameraCalibration conformance.
 extension Cal3_S2: CameraCalibration {
-  @differentiable
+  @differentiable(reverse)
   public func uncalibrate(_ np: Vector2) -> Vector2 {
     coordinate.uncalibrate(np)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func calibrate(_ ip: Vector2) -> Vector2 {
     coordinate.calibrate(ip)
   }
@@ -95,12 +95,12 @@ public struct Cal3_S2Coordinate: Equatable {
 extension Cal3_S2Coordinate: ManifoldCoordinate {
   public typealias LocalCoordinate = Vector5
 
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: Vector5) -> Cal3_S2Coordinate {
     Cal3_S2Coordinate(asVector() + local)
   }
 
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Cal3_S2Coordinate) -> Vector5 {
     global.asVector() - asVector()
   }
@@ -108,12 +108,12 @@ extension Cal3_S2Coordinate: ManifoldCoordinate {
 
 /// Operations on a point.
 extension Cal3_S2Coordinate {
-  @differentiable
+  @differentiable(reverse)
   public func uncalibrate(_ np: Vector2) -> Vector2 {
     Vector2(fx * np.x + s * np.y + u0, fy * np.y + v0)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func calibrate(_ ip: Vector2) -> Vector2 {
     let (du, dv) = (ip.x - u0, ip.y - v0)
     let (fxInv, fyInv) = (1.0 / fx, 1.0 / fy)

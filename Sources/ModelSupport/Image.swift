@@ -15,7 +15,7 @@
 import _Differentiation
 import Foundation
 @_implementationOnly import STBImage
-import TensorFlow
+// import TensorFlow
 
 /// A high-level representation of an image, encapsulating common image saving, loading, and
 /// manipulation operations. The loading and saving functionality is inspired by

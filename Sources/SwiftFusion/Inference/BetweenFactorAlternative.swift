@@ -25,7 +25,7 @@ public struct BetweenFactorAlternative: LinearizableFactor2 {
     self.difference = difference
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ start: Pose3, _ end: Pose3) -> Vector12 {
     let actualMotion = between(start, end)
     let R = actualMotion.coordinate.rot.coordinate.R + (-1) * difference.rot.coordinate.R

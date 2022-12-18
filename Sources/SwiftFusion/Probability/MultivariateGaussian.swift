@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import TensorFlow
+// import TensorFlow
+import _Differentiation
+import ShapedArray
 
 /// Calculate the covariance of a data matrix
 /// preconditon: X.rank == 2
@@ -49,7 +51,8 @@ public struct MultivariateGaussian: GenerativeDensity {
     self.information = information
     self.constant = sqrt(_Raw.matrixDeterminant(information/(2.0 * .pi)).scalarized())
   }
-  
+
+#if false
   /// Initalize by fitting the model to the data
   ///  - data: Tensor of shape [N, <dims>]
   public init(from data: T, regularizer r: Double) {
@@ -65,10 +68,12 @@ public struct MultivariateGaussian: GenerativeDensity {
   public init(from data: T, given p:HyperParameters? = nil) {
     self.init(from:data, regularizer: p ?? 1e-10)
   }
-  
+
+#endif
+
   /// Calculated the negative log likelihood of *one* data point
   /// Note this is NOT normalized probability
-  @differentiable public func negativeLogLikelihood(_ sample: T) -> Double {
+  @differentiable(reverse) public func negativeLogLikelihood(_ sample: T) -> Double {
     precondition(sample.shape == mean.shape)
     let normalized = (sample - mean).expandingShape(at: 1)
     /// FIXME: this is a workaround for bug in the derivative of `.scalarized()`
@@ -80,7 +85,7 @@ public struct MultivariateGaussian: GenerativeDensity {
   }
   
   /// Calculated normalized probability
-  @differentiable public func probability(_ sample: T) -> Double {
+  @differentiable(reverse) public func probability(_ sample: T) -> Double {
     // - ToDo: Precalculate constant
     let E = negativeLogLikelihood(sample)
     return exp(-E) * self.constant

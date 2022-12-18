@@ -13,7 +13,7 @@ extension Vector5: ManifoldCoordinate {
   /// - `retract(LocalCoordinate.zero) == self`
   /// - There exists an open set `B` around `LocalCoordinate.zero` such that
   ///   `localCoordinate(retract(b)) == b` for all `b \in B`.
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: LocalCoordinate) -> Self {
     self + local
   }
@@ -24,7 +24,7 @@ extension Vector5: ManifoldCoordinate {
   /// - `localCoordinate(self) == LocalCoordinate.zero`
   /// - There exists an open set `B` around `self` such that `localCoordinate(retract(b)) == b` for all
   ///   `b \in B`.
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Self) -> LocalCoordinate {
     global - self
   }
@@ -70,18 +70,18 @@ extension Vector5: LieGroupCoordinate {
   }
 
   /// Returns the group inverse.
-  @differentiable(wrt: self)
+  @differentiable(reverse, wrt: self)
   public func inverse() -> Self {
     -self
   }
 
-  @differentiable(wrt: v)
+  @differentiable(reverse, wrt: v)
   public func Adjoint(_ v: LocalCoordinate) -> LocalCoordinate {
     defaultAdjoint(v)
   }
 
   /// The group operation.
-  @differentiable(wrt: (lhs, rhs))
+  @differentiable(reverse, wrt: (lhs, rhs))
   public static func * (_ lhs: Self, _ rhs: Self) -> Self {
     lhs + rhs
   }
@@ -97,12 +97,12 @@ extension Vector5: LieGroup {}
 extension Vector7: ManifoldCoordinate {
   public typealias LocalCoordinate = Self
 
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: LocalCoordinate) -> Self {
     self + local
   }
 
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Self) -> LocalCoordinate {
     global - self
   }
@@ -135,13 +135,13 @@ extension Vector7: LieGroupCoordinate {
   }
 
   /// Returns the group inverse.
-  @differentiable
+  @differentiable(reverse)
   public func inverse() -> Self {
     -self
   }
 
   /// The group operation.
-  @differentiable
+  @differentiable(reverse)
   public static func * (_ lhs: Self, _ rhs: Self) -> Self {
     lhs + rhs
   }
@@ -159,12 +159,12 @@ extension Vector7: LieGroup {}
 extension Vector10: ManifoldCoordinate {
   public typealias LocalCoordinate = Self
 
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: LocalCoordinate) -> Self {
     self + local
   }
 
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Self) -> LocalCoordinate {
     global - self
   }
@@ -197,13 +197,13 @@ extension Vector10: LieGroupCoordinate {
   }
 
   /// Returns the group inverse.
-  @differentiable
+  @differentiable(reverse)
   public func inverse() -> Self {
     -self
   }
 
   /// The group operation.
-  @differentiable
+  @differentiable(reverse)
   public static func * (_ lhs: Self, _ rhs: Self) -> Self {
     lhs + rhs
   }

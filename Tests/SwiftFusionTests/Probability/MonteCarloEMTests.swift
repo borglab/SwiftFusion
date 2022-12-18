@@ -15,13 +15,13 @@
 /// This file tests estimating a mixture of 2 Gaussians with Monte Carlo EM
 
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 // Simple two-component mixture model in 2D
 struct TwoComponents : McEmModel {
   typealias Datum = Tensor<Double>
-  enum Hidden { case one; case two}
+  enum Hidden { case one; case two }
   typealias HyperParameters = MultivariateGaussian.HyperParameters
   
   var c1, c2 : MultivariateGaussian

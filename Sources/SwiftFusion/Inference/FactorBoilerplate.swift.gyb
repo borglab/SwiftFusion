@@ -126,7 +126,7 @@ public protocol LinearizableFactor${arity}_ {
   associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   func errorVector(${repeated('_: V%d')}) -> ErrorVector
 }
 
@@ -146,7 +146,7 @@ extension LinearizableFactor${arity} {
   }
 
   // Forwarding implementation.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(${repeated(lambda i: tuple_component('x', i))})
   }

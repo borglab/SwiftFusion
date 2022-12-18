@@ -1,4 +1,4 @@
-import TensorFlow
+// import TensorFlow
 
 /// The mean and standard deviation of a collection of frames.
 public struct FrameStatistics {

@@ -1,5 +1,5 @@
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 
 /// Rot2 class is the Swift type for the SO(2) manifold of 2D Rotations around
 /// the origin.
@@ -20,33 +20,33 @@ public struct Rot2: Codable, Manifold, LieGroup, Equatable, KeyPathIterable {
   // MARK: - Convenience initializers and computed properties
 
   // Construct from theta.
-  @differentiable
+  @differentiable(reverse)
   public init(_ theta: Double) {
     self.init(coordinate: Rot2Coordinate(c: cos(theta), s: sin(theta)))
   }
 
-  @differentiable
+  @differentiable(reverse)
   public var theta: Double { coordinate.theta }
 
   /// Construct from cosine and sine values directly.
-  @differentiable
+  @differentiable(reverse)
   public init(c: Double, s: Double) {
     self.init(atan2wrap(s, c))
   }
 
   /// Cosine value.
-  @differentiable
+  @differentiable(reverse)
   public var c: Double { coordinate.c }
 
   /// Sine value.
-  @differentiable
+  @differentiable(reverse)
   public var s: Double { coordinate.s }
 
   /// Creates an instance from the given `direction`, which does not necessarily have to be
   /// normalized.
   ///
   /// The created instance rotates `(1, 0)` to point in the same direction as `direction`.
-  @differentiable
+  @differentiable(reverse)
   public init(direction: Vector2) {
     let norm = direction.norm
     self.init(c: direction.x / norm, s: direction.y / norm)
@@ -62,19 +62,19 @@ extension Rot2: CustomDebugStringConvertible {
 /// Group actions.
 extension Rot2 {
   /// Returns the result of acting `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   public func rotate(_ v: Vector2) -> Vector2 {
     coordinate.rotate(v)
   }
 
   /// Returns the result of acting the inverse of `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   public func unrotate(_ v: Vector2) -> Vector2 {
     coordinate.unrotate(v)
   }
 
   /// Returns the result of acting `aRb` on `bp`.
-  @differentiable
+  @differentiable(reverse)
   public static func * (aRb: Rot2, bp: Vector2) -> Vector2 {
     aRb.rotate(bp)
   }
@@ -87,13 +87,13 @@ public struct Rot2Coordinate: Codable, Equatable, KeyPathIterable {
 }
 
 public extension Rot2Coordinate {
-  @differentiable
+  @differentiable(reverse)
   init(_ theta: Double) {
     self.c = cos(theta)
     self.s = sin(theta)
   }
 
-  @differentiable
+  @differentiable(reverse)
   var theta: Double {
     atan2wrap(s, c)
   }
@@ -106,7 +106,7 @@ extension Rot2Coordinate: LieGroupCoordinate {
   }
 
   /// Product of two rotations.
-  @differentiable
+  @differentiable(reverse)
   public static func * (lhs: Rot2Coordinate, rhs: Rot2Coordinate) -> Rot2Coordinate {
     Rot2Coordinate(
       c: lhs.c * rhs.c - lhs.s * rhs.s,
@@ -114,7 +114,7 @@ extension Rot2Coordinate: LieGroupCoordinate {
   }
 
   /// Inverse of the rotation.
-  @differentiable
+  @differentiable(reverse)
   public func inverse() -> Rot2Coordinate {
     Rot2Coordinate(c: self.c, s: -self.s)
   }
@@ -123,12 +123,12 @@ extension Rot2Coordinate: LieGroupCoordinate {
 extension Rot2Coordinate: ManifoldCoordinate {
   public typealias LocalCoordinate = Vector1
 
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: Vector1) -> Self {
     self * Rot2Coordinate(local.x)
   }
 
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Self) -> Vector1 {
     Vector1((self.inverse() * global).theta)
   }
@@ -136,13 +136,13 @@ extension Rot2Coordinate: ManifoldCoordinate {
 
 extension Rot2Coordinate {
   /// Returns the result of acting `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   func rotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x - s * v.y, s * v.x + c * v.y)
   }
 
   /// Returns the result of acting the inverse of `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   func unrotate(_ v: Vector2) -> Vector2 {
     Vector2(c * v.x + s * v.y, -s * v.x + c * v.y)
   }
@@ -151,7 +151,7 @@ extension Rot2Coordinate {
 // MARK: - Helper functions
 
 // We need a special version of atan2 that provides a derivative.
-@differentiable
+@differentiable(reverse)
 fileprivate func atan2wrap(_ s: Double, _ c: Double) -> Double {
   atan2(s, c)
 }

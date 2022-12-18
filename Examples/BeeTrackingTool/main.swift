@@ -5,7 +5,7 @@ import PenguinParallelWithFoundation
 import PenguinStructures
 import PythonKit
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 struct BeeTrackingTool: ParsableCommand {
   static var configuration = CommandConfiguration(

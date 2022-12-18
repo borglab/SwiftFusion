@@ -1,7 +1,7 @@
 import _Differentiation
 import XCTest
 
-import TensorFlow
+// import TensorFlow
 import SwiftFusion
 
 class TensorFlowMatrixTests: XCTestCase {

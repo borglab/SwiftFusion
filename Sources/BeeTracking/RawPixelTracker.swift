@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import PenguinStructures
 
 /// Returns a tracking configuration for a tracker using an PPCA.

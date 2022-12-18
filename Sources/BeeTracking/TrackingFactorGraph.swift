@@ -1,7 +1,7 @@
 import BeeDataset
 import PenguinStructures
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import PythonKit
 import Foundation
 
@@ -19,7 +19,7 @@ public struct WeightedBetweenFactorPose2: LinearizableFactor2 {
     self.rotWeight = rotWeight
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
     let actualMotion = between(start, end)
     let weighted = weight * difference.localCoordinate(actualMotion)
@@ -44,7 +44,7 @@ public struct WeightedBetweenFactorPose2SD: LinearizableFactor2 {
     self.sdTheta = sdTheta
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ start: Pose, _ end: Pose) -> Pose.TangentVector {
     let actualMotion = between(start, end)
     let local = difference.localCoordinate(actualMotion)
@@ -66,7 +66,7 @@ public struct WeightedPriorFactorPose2: LinearizableFactor1 {
     self.rotWeight = rotWeight
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ start: Pose) -> Pose.TangentVector {
     let weighted = weight * prior.localCoordinate(start)
     return Vector3(rotWeight * weighted.x, weighted.y, weighted.z)
@@ -89,7 +89,7 @@ public struct WeightedPriorFactorPose2SD: LinearizableFactor1 {
     self.sdTheta = sdTheta
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ start: Pose) -> Pose.TangentVector {
     let local = prior.localCoordinate(start)
     return Vector3(local.x / sdTheta, local.y / sdX, local.z / sdY)

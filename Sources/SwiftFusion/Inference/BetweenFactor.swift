@@ -25,7 +25,7 @@ public struct BetweenFactor<Group: LieGroup>: LinearizableFactor2 {
     self.difference = difference
   }
   
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ start: Group, _ end: Group) -> Group.TangentVector {
     let actualMotion = between(start, end)
     return difference.localCoordinate(actualMotion)
@@ -44,7 +44,7 @@ public struct WeightedBetweenFactor<Group: LieGroup>: LinearizableFactor2 {
     self.weight = weight
   }
   
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ start: Group, _ end: Group) -> Group.TangentVector {
     let actualMotion = between(start, end)
     return weight * difference.localCoordinate(actualMotion)

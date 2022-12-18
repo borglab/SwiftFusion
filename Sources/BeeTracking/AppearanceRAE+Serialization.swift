@@ -1,5 +1,5 @@
 import PythonKit
-import TensorFlow
+// import TensorFlow
 
 extension Dense where Scalar: NumpyScalarCompatible {
   /// Loads weights and bias from the numpy arrays in `weights`.

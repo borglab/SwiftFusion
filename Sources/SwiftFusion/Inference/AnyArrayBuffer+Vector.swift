@@ -38,7 +38,7 @@ extension AnyVectorArrayBuffer {
   /// Returns the elementwise sum of `lhs` and `rhs`
   ///
   /// - Requires: the arguments have elements of the same type.
-  @differentiable
+  @differentiable(reverse)
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     .init(unsafelyCasting: lhs.dispatch.sum(lhs.upcast, rhs.upcast))
   }
@@ -46,7 +46,7 @@ extension AnyVectorArrayBuffer {
   /// Returns the elementwise difference of `lhs` and `rhs`.
   ///
   /// - Requires: the arguments have elements of the same type.
-  @differentiable
+  @differentiable(reverse)
   public static func - (_ lhs: Self, _ rhs: Self) -> Self {
     .init(unsafelyCasting: lhs.dispatch.difference(lhs.upcast, rhs.upcast))
   }
@@ -54,7 +54,7 @@ extension AnyVectorArrayBuffer {
   /// Accumulates the elements of rhs into those of lhs via addition.
   ///
   /// - Requires: the arguments have elements of the same type.
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.dispatch.add(&lhs.upcast, rhs.upcast)
   }
@@ -62,17 +62,17 @@ extension AnyVectorArrayBuffer {
   /// Accumulates the elements of rhs into those of lhs via subtraction.
   ///
   /// - Requires: the arguments have elements of the same type.
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.dispatch.subtract(&lhs.upcast, rhs.upcast)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.dispatch.scale(&lhs.upcast, rhs)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func * (_ lhs: Double, _ rhs: Self) -> Self {
     .init(unsafelyCasting: rhs.dispatch.scaled(rhs.upcast, lhs))
   }
@@ -82,7 +82,7 @@ extension AnyVectorArrayBuffer {
   /// This is the sum of the dot products of corresponding elements.
   ///
   /// - Requires: `others.count == count`.
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ others: Self) -> Double {
     dispatch.dot(self.upcast, others.upcast)
   }

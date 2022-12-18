@@ -25,7 +25,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// - `retract(LocalCoordinate.zero) == self`
   /// - There exists an open set `B` around `LocalCoordinate.zero` such that
   ///   `localCoordinate(retract(b)) == b` for all `b \in B`.
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   func retract(_ local: LocalCoordinate) -> Self
 
   /// Inverse of `retract`.
@@ -34,7 +34,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// - `localCoordinate(self) == LocalCoordinate.zero`
   /// - There exists an open set `B` around `self` such that `localCoordinate(retract(b)) == b` for all
   ///   `b \in B`.
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   func localCoordinate(_ global: Self) -> LocalCoordinate
 }
 
@@ -69,7 +69,7 @@ public protocol Manifold: Differentiable {
 /// in your manifold type.
 extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
   /// The coordinate of `self`.
-  @differentiable
+  @differentiable(reverse)
   public var coordinate: Coordinate {
     return coordinateStorage
   }
@@ -105,7 +105,7 @@ extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
   }
 
   /// Creates a manifold point with coordinate `coordinate`.
-  @differentiable
+  @differentiable(reverse)
   public init(coordinate: Coordinate) { self.init(coordinateStorage: coordinate) }
 
   /// A custom derivative of `init(coordinate:)` that converts from the local coordinate system's
@@ -162,7 +162,7 @@ extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
   /// - `retract(TangentVector.zero) == self`
   /// - There exists an open set `B` around `TangentVector.zero` such that
   ///   `localCoordinate(retract(b)) == b` for all `b \in B`.
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: TangentVector) -> Self {
     return Self(coordinate: self.coordinate.retract(local))
   }
@@ -183,7 +183,7 @@ extension Manifold where Self.TangentVector == Coordinate.LocalCoordinate {
   /// - `localCoordinate(self) == TangentVector.zero`
   /// - There exists an open set `B` around `self` such that `localCoordinate(retract(b)) == b` for all
   ///   `b \in B`.
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Self) -> TangentVector {
     return self.coordinate.localCoordinate(global.coordinate)
   }

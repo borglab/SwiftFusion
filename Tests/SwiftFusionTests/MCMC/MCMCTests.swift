@@ -6,7 +6,7 @@
 //
 
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 import SwiftFusion
 
 import XCTest

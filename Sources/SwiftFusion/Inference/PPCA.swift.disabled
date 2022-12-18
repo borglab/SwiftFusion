@@ -14,7 +14,7 @@
 // limitations under the License.
 
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 import PenguinStructures
 
 /// A class performing common activities in the PPCA framework.
@@ -101,7 +101,7 @@ public struct PPCA {
 
   /// Generate an image according to a latent
   /// Input: [latent_size] or [latent_size, 1]
-  @differentiable
+  @differentiable(reverse)
   public func decode(_ latent: Tensor<Double>) -> Patch {
     precondition(latent.rank == 1 || (latent.rank == 2 && latent.shape[1] == 1), "wrong latent dimension \(latent.shape)")
     if(latent.rank == 1) {
@@ -113,7 +113,7 @@ public struct PPCA {
   /// Generate an image according to a latent
   /// Input: [H, W, C]
   /// Output: [latent_size]
-  @differentiable
+  @differentiable(reverse)
   public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3 || (image.rank == 4), "wrong latent dimension \(image.shape)")
     let (N_, H_, W_, C_) = (image.shape[0], W.shape[0], W.shape[1], W.shape[2])
@@ -131,7 +131,7 @@ public struct PPCA {
 
   /// Generate an image and corresponding Jacobian according to a latent
   /// Input: [latent_size] or [latent_size, 1]
-  public func decodeWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch.TangentVector) {
+  public func decodeWithJacobian(_ latent: Tensor<Double>) -> (Patch, Patch) {
     return (decode(latent), W)
   }
 }

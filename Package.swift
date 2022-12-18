@@ -10,27 +10,28 @@ let package = Package(
     .library(
       name: "SwiftFusion",
       targets: ["SwiftFusion"]),
-    .library(
-      name: "BeeDataset",
-      targets: ["BeeDataset"]),
-    .library(
-      name: "BeeTracking",
-      targets: ["BeeTracking"]),
-    .executable(
-      name: "Pose3SLAMG2O",
-      targets: ["Pose3SLAMG2O"])
+    // .library(
+    //   name: "BeeDataset",
+    //   targets: ["BeeDataset"]),
+    // .library(
+    //   name: "BeeTracking",
+    //   targets: ["BeeTracking"]),
+    // .executable(
+    //   name: "Pose3SLAMG2O",
+    //   targets: ["Pose3SLAMG2O"])
   ],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
     .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", from: "0.1.0"),
 
-    .package(name: "Penguin", url: "https://github.com/saeta/penguin.git", .branch("main")),
+    .package(name: "Penguin", url: "https://github.com/ProfFan/penguin.git", .branch("dev/make-compile")),
 
-    .package(name: "TensorBoardX", url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
+    // .package(name: "TensorBoardX", url: "https://github.com/ProfFan/tensorboardx-s4tf.git", from: "0.1.3"),
     .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("swift-5.2-branch")),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.0"),
-    .package(name: "Plotly", url: "https://github.com/vojtamolda/Plotly.swift", from: "0.4.0"),
+    .package(name: "Plotly", url: "https://github.com/vojtamolda/Plotly.swift", .branch("0.4.0")),
+    .package(name: "swift-shaped-array", url: "https://github.com/ProfFan/swift-shaped-array.git", .branch("fan/devel"))
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -40,7 +41,8 @@ let package = Package(
       dependencies: [
         .product(name: "PenguinStructures", package: "Penguin"),
         .product(name: "PenguinTesting", package: "Penguin"),
-        .product(name: "PenguinParallelWithFoundation", package: "Penguin")
+        .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
+        .product(name: "ShapedArray", package: "swift-shaped-array")
       ],
       exclude: [
         "Core/VectorN.swift.gyb",
@@ -53,61 +55,61 @@ let package = Package(
         "Benchmark",
         "SwiftFusion",
       ]),
-    .target(
-      name: "BeeDataset",
-      dependencies: [
-        "SwiftFusion",
-        "Plotly",
-        "ModelSupport",
-      ]),
-    .target(
-      name: "BeeTracking",
-      dependencies: [
-        "BeeDataset",
-        "SwiftFusion",
-      ]),
-    .target(
-      name: "Pose3SLAMG2O",
-      dependencies: ["SwiftFusion", "TensorBoardX", .product(name: "SwiftToolsSupport", package: "swift-tools-support-core")],
-      path: "Examples/Pose3SLAMG2O"),
-    .target(
-      name: "BeeTrackingTool",
-      dependencies: [
-        "BeeDataset",
-        "BeeTracking",
-        .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
-        .product(name: "ArgumentParser", package: "swift-argument-parser"),
-      ],
-      path: "Examples/BeeTrackingTool"),
-    .target(
-      name: "OISTVisualizationTool",
-      dependencies: [
-        "BeeDataset",
-        "BeeTracking",
-        .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
-        "SwiftFusion",
-        "Plotly",
-        .product(name: "ArgumentParser", package: "swift-argument-parser"),
-      ],
-    path: "Examples/OISTVisualizationTool"),
-    .target(
-      name: "Scripts",
-      dependencies: [
-        "BeeDataset",
-        "BeeTracking",
-        .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
-        "SwiftFusion",
-        "Plotly",
-        .product(name: "ArgumentParser", package: "swift-argument-parser"),
-      ],
-      path: "Scripts",
-      exclude: ["README.md"]
-    ),
+    // .target(
+    //   name: "BeeDataset",
+    //   dependencies: [
+    //     "SwiftFusion",
+    //     "Plotly",
+    //     "ModelSupport",
+    //   ]),
+    // .target(
+    //   name: "BeeTracking",
+    //   dependencies: [
+    //     "BeeDataset",
+    //     "SwiftFusion",
+    //   ]),
+    // .target(
+    //   name: "Pose3SLAMG2O",
+    //   dependencies: ["SwiftFusion", "TensorBoardX", .product(name: "SwiftToolsSupport", package: "swift-tools-support-core")],
+    //   path: "Examples/Pose3SLAMG2O"),
+    // .target(
+    //   name: "BeeTrackingTool",
+    //   dependencies: [
+    //     "BeeDataset",
+    //     "BeeTracking",
+    //     .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
+    //     .product(name: "ArgumentParser", package: "swift-argument-parser"),
+    //   ],
+    //   path: "Examples/BeeTrackingTool"),
+    // .target(
+    //   name: "OISTVisualizationTool",
+    //   dependencies: [
+    //     "BeeDataset",
+    //     "BeeTracking",
+    //     .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
+    //     "SwiftFusion",
+    //     "Plotly",
+    //     .product(name: "ArgumentParser", package: "swift-argument-parser"),
+    //   ],
+    // path: "Examples/OISTVisualizationTool"),
+    // .target(
+    //   name: "Scripts",
+    //   dependencies: [
+    //     "BeeDataset",
+    //     "BeeTracking",
+    //     .product(name: "PenguinParallelWithFoundation", package: "Penguin"),
+    //     "SwiftFusion",
+    //     "Plotly",
+    //     .product(name: "ArgumentParser", package: "swift-argument-parser"),
+    //   ],
+    //   path: "Scripts",
+    //   exclude: ["README.md"]
+    // ),
     .testTarget(
       name: "SwiftFusionTests",
       dependencies: [
         "SwiftFusion",
-        "ModelSupport",
+        // "ModelSupport",
         .product(name: "PenguinTesting", package: "Penguin"),
       ],
       exclude: [
@@ -116,21 +118,21 @@ let package = Package(
         "Image"
       ]
     ),
-    .testTarget(
-      name: "BeeDatasetTests",
-      dependencies: ["BeeDataset"],
-      exclude: ["fakeDataset"]
-    ),
-    .testTarget(
-      name: "BeeTrackingTests",
-      dependencies: [
-        "BeeTracking",
-        .product(name: "PenguinTesting", package: "Penguin"),
-        "ModelSupport",
-      ]),
-    .target(
-      name: "ModelSupport",
-      dependencies: ["STBImage"]),
+    // .testTarget(
+    //   name: "BeeDatasetTests",
+    //   dependencies: ["BeeDataset"],
+    //   exclude: ["fakeDataset"]
+    // ),
+    // .testTarget(
+    //   name: "BeeTrackingTests",
+    //   dependencies: [
+    //     "BeeTracking",
+    //     .product(name: "PenguinTesting", package: "Penguin"),
+    //     "ModelSupport",
+    //   ]),
+    // .target(
+    //   name: "ModelSupport",
+    //   dependencies: ["STBImage"]),
     .target(
       name: "STBImage",
       exclude: 

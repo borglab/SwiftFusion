@@ -1,7 +1,7 @@
 import _Differentiation
 import Foundation
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 
 /// A vector, in a Euclidean vector space with standard orthonormal basis.
 //
@@ -21,24 +21,24 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
 
   // MARK: - AdditiveArithmetic requirements, refined to require differentiability.
 
-  @differentiable
+  @differentiable(reverse)
   static func += (_ lhs: inout Self, _ rhs: Self)
 
-  @differentiable
+  @differentiable(reverse)
   static func + (_ lhs: Self, _ rhs: Self) -> Self
 
-  @differentiable
+  @differentiable(reverse)
   static func -= (_ lhs: inout Self, _ rhs: Self)
 
-  @differentiable
+  @differentiable(reverse)
   static func - (_ lhs: Self, _ rhs: Self) -> Self
 
   // MARK: - Scalar multiplication.
 
-  @differentiable
+  @differentiable(reverse)
   static func *= (_ lhs: inout Self, _ rhs: Double)
 
-  @differentiable
+  @differentiable(reverse)
   static func * (_ lhs: Double, _ rhs: Self) -> Self
 
   /// A zero value of the same shape as `self`.
@@ -50,7 +50,7 @@ public protocol Vector: Differentiable where Self.TangentVector == Self {
   ///
   /// Note: Depends on Euclidean vector space structure, and therefore would not be available on a
   /// generalized vector.
-  @differentiable
+  @differentiable(reverse)
   func dot(_ other: Self) -> Double
 
   // MARK: - Methods for accessing the standard basis and for manipulating the coordinates under
@@ -176,36 +176,36 @@ extension FixedSizeVector {
 
 /// Vector space operations that can be implemented in terms of others.
 extension Vector {
-  @differentiable
+  @differentiable(reverse)
   public static prefix func - (_ v: Self) -> Self {
     return (-1) * v
   }
 
-  @differentiable
+  @differentiable(reverse)
   public var squaredNorm: Double {
     return self.dot(self)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public var norm: Double {
     return squaredNorm.squareRoot()
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     var result = lhs
     result += rhs
     return result
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func - (_ lhs: Self, _ rhs: Self) -> Self {
     var result = lhs
     result -= rhs
     return result
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func * (_ lhs: Double, _ rhs: Self) -> Self {
     var result = rhs
     result *= lhs
@@ -248,7 +248,7 @@ extension Vector {
 /// Conversion to `Tensor`.
 extension Vector {
   /// Returns a `Tensor` with shape `[Self.dimension]` with the same scalars as `self`.
-  @differentiable(where Self: ScalarsInitializableVector)
+  @differentiable(reverse where Self: ScalarsInitializableVector)
   public var flatTensor: Tensor<Double> {
     Tensor<Double>(shape: [scalars.count], scalars: Array(scalars))
   }
@@ -258,14 +258,14 @@ extension Vector {
   func vjpFlatTensor() -> (value: Tensor<Double>, pullback: (Tensor<Double>) -> Self)
     where Self: ScalarsInitializableVector
   {
-    return (self.flatTensor, { Self(flatTensor: $0) })
+    return (value: self.flatTensor, pullback: { Self(flatTensor: $0) })
   }
 }
 
 /// Conversion from `Tensor`.
 extension ScalarsInitializableVector {
   /// Creates an instance with the same scalars as `flatTensor`.
-  @differentiable
+  @differentiable(reverse)
   public init(flatTensor: Tensor<Double>) {
     self.init(flatTensor.scalars)
   }
@@ -276,7 +276,7 @@ extension ScalarsInitializableVector {
     value: Self,
     pullback: (Self) -> Tensor<Double>
   ) {
-    return (Self(flatTensor: flatTensor), { $0.flatTensor })
+    return (value: Self(flatTensor: flatTensor), pullback: { $0.flatTensor })
   }
 }
 
@@ -285,7 +285,7 @@ extension FixedSizeVector {
   /// Creates a vector with the same scalars as `v`.
   ///
   /// - Requires: `Self.dimension == V.dimension`.
-  @differentiable
+  @differentiable(reverse)
   public init<V: FixedSizeVector>(_ v: V) {
     precondition(Self.dimension == V.dimension)
     self.init(v.scalars)
@@ -303,7 +303,7 @@ extension FixedSizeVector {
   /// Creates a vector with the scalars from `v1`, followed by the scalars from `v2`.
   ///
   /// - Requires: `Self.dimension == V1.dimension + V2.dimension`.
-  @differentiable
+  @differentiable(reverse)
   public init<V1: FixedSizeVector, V2: FixedSizeVector>(concatenating v1: V1, _ v2: V2) {
     precondition(Self.dimension == V1.dimension + V2.dimension)
     self.init(v1.scalars.concatenated(to: v2.scalars))

@@ -58,7 +58,7 @@ where
     return 0.5 * errorVector(at: x).squaredNorm
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector_linearComponent(x) - error
   }

@@ -6,7 +6,7 @@
 
 import PenguinParallel
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 
 /// A factor that measures the difference between a `target` image patch and the actual image
 /// patch at a given pose.
@@ -38,7 +38,7 @@ public struct RawPixelTrackingFactor: LinearizableFactor1 {
   }
 
   /// Returns the difference between `target` and the region of `measurement` at `pose`.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ pose: Pose2) -> TensorVector {
     let patch = measurement.patch(
       at: OrientedBoundingBox(center: pose, rows: target.shape[0], cols: target.shape[1]))
@@ -112,7 +112,7 @@ public struct LinearizedRawPixelTrackingFactor: GaussianFactor {
     return 0.5 * errorVector(at: x).squaredNorm
   }
 
-    @differentiable
+    @differentiable(reverse)
   public func errorVector(at x: Variables) -> TensorVector {
     errorVector_linearComponent(x) - error
   }

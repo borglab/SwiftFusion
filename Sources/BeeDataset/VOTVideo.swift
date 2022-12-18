@@ -15,7 +15,7 @@
 import Foundation
 import ModelSupport
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 /// A video from VOT, with tracking labels.
 public struct VOTVideo {

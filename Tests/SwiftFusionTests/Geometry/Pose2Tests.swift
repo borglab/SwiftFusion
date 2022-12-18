@@ -1,5 +1,5 @@
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 import SwiftFusion
@@ -104,7 +104,7 @@ final class Pose2Tests: XCTestCase {
   }
 
   /// TODO(fan): Change this to a proper noise model
-  @differentiable
+  @differentiable(reverse)
   func e_pose2(_ ŷ: Pose2) -> Double {
     // Squared error with Gaussian variance as weights
     0.1 * ŷ.rot.theta * ŷ.rot.theta + 0.3 * ŷ.t.x * ŷ.t.x + 0.3 * ŷ.t.y * ŷ.t.y

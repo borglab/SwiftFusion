@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 /// A likelihood model has a a feature encoder, a foreground model and a background model
@@ -60,14 +60,14 @@ public struct TrackingLikelihoodModel<Encoder: AppearanceModelEncoder, FG:Genera
   }
 
   /// Calculate the negative log likelihood of the likelihood model of a patch
-  @differentiable
+  @differentiable(reverse)
   public func negativeLogLikelihood(of patch: Tensor<Double>) -> Double {
     let encoded = encoder.encode(sample: patch)
     return (foregroundModel.negativeLogLikelihood(encoded) - backgroundModel.negativeLogLikelihood(encoded))
   }
   
   /// Calculate the probability of the likelihood model of a patch
-  @differentiable public func unnormalizedProbability(of patch: Tensor<Double>) -> Double {
+  @differentiable(reverse) public func unnormalizedProbability(of patch: Tensor<Double>) -> Double {
     let E = negativeLogLikelihood(of: patch)
     return exp(-E)
   }

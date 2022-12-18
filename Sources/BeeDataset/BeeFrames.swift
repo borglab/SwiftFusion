@@ -16,7 +16,7 @@ import _Differentiation
 import Foundation
 import ModelSupport
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 /// An ordered collection of frames from a video of bees.
 ///

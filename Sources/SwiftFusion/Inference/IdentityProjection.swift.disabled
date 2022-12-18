@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import TensorFlow
+// import TensorFlow
 import PenguinStructures
 
 /// A class that does a identity feature mapping (directly outputs the pixels flattened)
@@ -46,7 +46,7 @@ public struct IdentityProjection {
   /// Generate an feature from image or image batch
   /// Input: [H, W, C] or [N,H,W,C]
   /// Output: [d] or [N, d]
-  @differentiable
+  @differentiable(reverse)
   public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3 || (image.rank == 4), "wrong feature dimension \(image.shape)")
     if image.rank == 4 {

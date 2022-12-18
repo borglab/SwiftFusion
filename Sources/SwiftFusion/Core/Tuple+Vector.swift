@@ -68,16 +68,16 @@ extension Empty: Vector {
   public var scalars: Scalars { get { .init() } set {  } }
   public var dimension: Int { return 0 }
 
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {}
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {}
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {}
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double { return 0 }
 }
 
@@ -94,25 +94,25 @@ where Head: Vector, Tail: Vector {
   
   public var dimension: Int { return head.dimension + tail.dimension }
 
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.head += rhs.head
     lhs.tail += rhs.tail
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.head -= rhs.head
     lhs.tail -= rhs.tail
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.head *= rhs
     lhs.tail *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     return head.dot(other.head) + tail.dot(other.tail)
   }

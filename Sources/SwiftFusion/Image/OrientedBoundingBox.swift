@@ -13,14 +13,14 @@ import _Differentiation
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import PythonKit
+// import PythonKit
 
 /// A rectangular region of an image, not necessarily axis-aligned.
 public struct OrientedBoundingBox: Codable, Differentiable {
   /// The pose of the region's center within the image.
   ///
   /// The translation component is in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
-  @differentiable
+  @differentiable(reverse)
   public var center: Pose2
 
   /// The number of pixels along the height axis.
@@ -34,7 +34,7 @@ public struct OrientedBoundingBox: Codable, Differentiable {
   @noDerivative public var cols: Int
 
   /// Creates a instance with the given `center`, `rows`, and `cols`.
-  @differentiable
+  @differentiable(reverse)
   public init(center: Pose2, rows: Int, cols: Int) {
     self.center = center
     self.rows = rows
@@ -43,7 +43,7 @@ public struct OrientedBoundingBox: Codable, Differentiable {
 
   /// The four corners of the region, in `(u, v)` coordinates as defined in
   /// `docs/ImageOperations.md`.
-  @differentiable
+  @differentiable(reverse)
   public var corners: [Vector2] {
     /// Returns a corner of `self`.
     ///
@@ -67,10 +67,10 @@ public struct OrientedBoundingBox: Codable, Differentiable {
   /// `self`, as a Shapely polygon.
   ///
   /// Precondition: The "Shapely" python library is installed on the system.
-  private var shapelyPolygon: PythonObject {
-    let geometry = Python.import("shapely.geometry")
-    return geometry.Polygon(corners.map { [$0.x, $0.y] })
-  }
+  // private var shapelyPolygon: PythonObject {
+  //   let geometry = Python.import("shapely.geometry")
+  //   return geometry.Polygon(corners.map { [$0.x, $0.y] })
+  // }
 }
 
 extension OrientedBoundingBox: Equatable {}

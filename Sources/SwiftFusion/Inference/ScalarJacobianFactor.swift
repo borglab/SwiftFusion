@@ -27,7 +27,7 @@ public struct ScalarJacobianFactor<ErrorVector: Vector>: GaussianFactor {
     self.scalar = scalar
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return scalar * x.head
   }

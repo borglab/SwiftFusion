@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 import PenguinParallelWithFoundation
 
 extension ArrayImage {
@@ -23,7 +23,7 @@ extension ArrayImage {
   ///   - region: the center, orientation, and size of the patch to extract.
   ///   - outputSize: The size, in `(height, width)` pixels, to scale the result to. If this is not
   ///                 specified, then the result has the same size as `region`.
-  @differentiable(wrt: region)
+  @differentiable(reverse, wrt: region)
   public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil) -> Self {
     let (outputRows, outputCols) = outputSize ?? (region.rows, region.cols)
     let rowScale = Double(region.rows) / Double(outputRows)
@@ -176,7 +176,7 @@ extension Tensor where Scalar: TensorFlowFloatingPoint {
   ///   - region: the center, orientation, and size of the patch to extract.
   ///   - outputSize: The size, in `(height, width)` pixels, to scale the result to. If this is not
   ///                 specified, then the result has the same size as `region`.
-  @differentiable(wrt: region)
+  @differentiable(reverse, wrt: region)
   public func patch(at region: OrientedBoundingBox, outputSize: (Int, Int)? = nil)
   -> Tensor<Scalar>
   {
@@ -234,7 +234,7 @@ extension Tensor where Scalar: TensorFlowFloatingPoint {
 ///     `width` are as defined in `docs/ImageOperations.md`.
 ///   - point: a point in `(u, v)` coordinates as defined in `docs/ImageOperations.md`.
 ///   - channel: The channel to return.
-@differentiable(wrt: point)
+@differentiable(reverse, wrt: point)
 public func bilinear(_ source: ArrayImage, _ point: Vector2, _ channel: Int) -> Float {
   // The `(i, j)` integer coordinates of the top left pixel to sample from.
   let sourceI = withoutDerivative(at: Int(floor(point.y - 0.5)))
@@ -281,7 +281,7 @@ public func dBilinear(
 }
 
 fileprivate extension Float {
-  @differentiable
+  @differentiable(reverse)
   init(differentiableConversion x: Double) {
     self.init(x)
   }

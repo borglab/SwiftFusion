@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import PythonKit
 
 // MARK: - The Regularized Autoencoder model.
@@ -142,7 +142,7 @@ public struct DenseRAE: Layer {
   }
 
   /// Differentiable encoder
-  @differentiable(wrt: imageBatch)
+  @differentiable(reverse, wrt: imageBatch)
   public func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double> {
     let batchSize = imageBatch.shape[0]
     let expectedShape: TensorShape = [batchSize, imageHeight, imageWidth, imageChannels]
@@ -155,7 +155,7 @@ public struct DenseRAE: Layer {
   }
 
   /// Differentiable decoder
-  @differentiable
+  @differentiable(reverse)
   public func decode(_ latent: Tensor<Double>) -> Tensor<Double> {
     let batchSize = latent.shape[0]
     precondition(
@@ -166,7 +166,7 @@ public struct DenseRAE: Layer {
   }
 
   /// Standard: add syntactic sugar to apply model as a function call.
-  @differentiable
+  @differentiable(reverse)
   public func callAsFunction(_ imageBatch: Tensor<Double>) -> DenseRAEOutput {
     let latent = encode(imageBatch)
     let reconstruction = decode(latent)
@@ -183,7 +183,7 @@ public struct DenseRAEOutput: Differentiable {
   public var reconstruction: Tensor<Double>
 
   /// Creates an instance with the given `latent` and `reconstruction`.
-  @differentiable
+  @differentiable(reverse)
   public init(latent: Tensor<Double>, reconstruction: Tensor<Double>) {
     self.latent = latent
     self.reconstruction = reconstruction
@@ -226,13 +226,13 @@ extension DenseRAE {
 
 extension DenseRAEOutput {
   // Reconstruction loss is just mean-squared error (defined in s4tf).
-  @differentiable
+  @differentiable(reverse)
   public func reconstructionLoss(_ data: Tensor<Double>) -> Tensor<Double> {
     return meanSquaredError(predicted: reconstruction, expected: data)
   }
 
   // Regularization loss is just a unit covariance multivariate Gaussian.
-  @differentiable
+  @differentiable(reverse)
   public func latentRegularizationLoss() -> Tensor<Double> {
     return latent.squared().mean()
   }
@@ -240,14 +240,14 @@ extension DenseRAEOutput {
 
 extension Dense {
   /// A regularization loss for the parameters of `self`.
-  @differentiable
+  @differentiable(reverse)
   public func parameterRegularizationLoss() -> Tensor<Scalar> {
     return weight.squared().mean() + bias.squared().mean()
   }
 }
 extension DenseRAE {
   /// A regularization loss for the parameters of `self`.
-  @differentiable
+  @differentiable(reverse)
   func parameterRegularizationLoss() -> Tensor<Double> {
     return encoder1.parameterRegularizationLoss() + encoder2.parameterRegularizationLoss()
       + decoder1.parameterRegularizationLoss() + decoder2.parameterRegularizationLoss()
@@ -281,7 +281,7 @@ public struct DenseRAELoss {
   /// Return the loss of `model` on `imageBatch`.
   ///
   /// Parameter printLoss: Whether to print the loss and its components.
-  @differentiable
+  @differentiable(reverse)
   public func callAsFunction(
     _ model: DenseRAE, _ imageBatch: Tensor<Double>, printLoss: Bool = false
   ) -> Tensor<Double> {
@@ -344,7 +344,7 @@ public struct PretrainedDenseRAE: AppearanceModelEncoder {
     np.save(path, np.array(inner.numpyWeights, dtype: Python.object))
   }
   
-  @differentiable
+  @differentiable(reverse)
   public func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double> {
     inner.encode(imageBatch)
   }

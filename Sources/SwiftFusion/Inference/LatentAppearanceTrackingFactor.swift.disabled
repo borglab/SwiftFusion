@@ -1,12 +1,12 @@
 import PenguinParallel
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 
 public protocol AppearanceModelEncoder {
   associatedtype HyperParameters
   init(from imageBatch: Tensor<Double>, given: HyperParameters?)
 
-  @differentiable
+  @differentiable(reverse)
   func encode(_ imageBatch: Tensor<Double>) -> Tensor<Double>
 }
 
@@ -16,14 +16,14 @@ public extension AppearanceModelEncoder {
     self.init(from: imageBatch, given: nil)
   }
   
-  @differentiable
+  @differentiable(reverse)
   func encode(sample: Tensor<Double>) -> Tensor<Double> {
     encode(sample.expandingShape(at: 0)).squeezingShape(at: 0)
   }
 }
 
 extension AppearanceModelEncoder {
-  @differentiable
+  @differentiable(reverse)
   fileprivate func encode<V: FixedSizeVector>(_ image: Tensor<Double>) -> V {
     V(flatTensor: encode(image.expandingShape(at: 0)).squeezingShape(at: 0))
   }
@@ -75,7 +75,7 @@ public struct LatentAppearanceTrackingFactor<LatentCode: FixedSizeVector, Encode
     self.appearanceModelSize = appearanceModelSize
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ pose: Pose2, _ latent: LatentCode) -> LatentCode {
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
     let patch = measurement.patch(at: region, outputSize: appearanceModelSize)

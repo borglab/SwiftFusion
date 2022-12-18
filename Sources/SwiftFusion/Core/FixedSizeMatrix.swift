@@ -14,7 +14,7 @@
 
 import _Differentiation
 import PenguinStructures
-import TensorFlow
+// // import TensorFlow
 
 public typealias Matrix2 = FixedSizeMatrix<Array2<Vector2>>
 public typealias Matrix3 = FixedSizeMatrix<Array3<Vector3>>
@@ -74,7 +74,7 @@ extension FixedSizeMatrix {
   }
 
   /// Creates a matrix with rows `r0`, `r1`, and `r2`.
-  @differentiable
+  @differentiable(reverse)
   public init(rows r0: Rows.Element, _ r1: Rows.Element, _ r2: Rows.Element) {
     // TODO: We can statically constrain `Rows` after TF-1292 is fixed.
     self.rows = Array3(r0, r1, r2) as! Rows
@@ -100,7 +100,7 @@ extension FixedSizeMatrix {
 
 extension FixedSizeMatrix where Rows == Array3<Vector3> {
   /// Creates a matrix with the given scalars, in row-major order.
-  @differentiable
+  @differentiable(reverse)
   public init(
     _ s00: Double, _ s01: Double, _ s02: Double,
     _ s10: Double, _ s11: Double, _ s12: Double,
@@ -162,7 +162,7 @@ extension FixedSizeMatrix: FixedSizeVector {
     set { self = newValue.base }
   }
   
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in
       rhs.withUnsafeBufferPointer { bRhs in
@@ -183,7 +183,7 @@ extension FixedSizeMatrix: FixedSizeVector {
     return ((), pullback)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.withUnsafeMutableBufferPointer { bLhs in
       rhs.withUnsafeBufferPointer { bRhs in
@@ -204,7 +204,7 @@ extension FixedSizeMatrix: FixedSizeVector {
     return ((), pullback)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.withUnsafeMutableBufferPointer { b in
       for i in 0..<Self.dimension {
@@ -226,7 +226,7 @@ extension FixedSizeMatrix: FixedSizeVector {
     return ((), pullback)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func /= (_ lhs: inout Self, _ rhs: Double) {
     lhs.withUnsafeMutableBufferPointer { b in
       for i in 0..<Self.dimension {
@@ -247,14 +247,14 @@ extension FixedSizeMatrix: FixedSizeVector {
     return ((), pullback)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func / (_ lhs: Self, _ rhs: Double) -> Self {
     var r = lhs
     r /= rhs
     return r
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     withUnsafeBufferPointer { b1 in
       other.withUnsafeBufferPointer { b2 in
@@ -296,7 +296,7 @@ extension FixedSizeMatrix {
   /// Returns the transpose of `self`.
   ///
   /// - Requires: `Self.isSquare`.
-  @differentiable
+  @differentiable(reverse)
   public func transposed() -> Self {
     precondition(Self.isSquare, "transposed() requires a square matrix")
     let d = Self.shape[0]
@@ -321,7 +321,7 @@ extension FixedSizeMatrix {
 /// Note: This is currently only implemented for square matrices, but could be extended later.
 ///
 /// - Requires: `type(of: lhs).isSquare`.
-@differentiable
+@differentiable(reverse)
 public func matvec<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: Rows.Element) -> Rows.Element {
   precondition(type(of: lhs).isSquare, "matvec only implemented for square matrices")
   var r = Rows.Element(repeatElement(0.0, count: rhs.dimension))
@@ -352,7 +352,7 @@ func vjpMatvec<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: Rows.Element)
 /// but could be extended later.
 ///
 /// - Requires: `type(of: lhs).isSquare`.
-@differentiable
+@differentiable(reverse)
 public func matmul<Rows>(_ lhs: FixedSizeMatrix<Rows>, _ rhs: FixedSizeMatrix<Rows>)
   -> FixedSizeMatrix<Rows>
 {

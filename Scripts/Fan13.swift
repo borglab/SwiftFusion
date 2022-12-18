@@ -3,7 +3,7 @@ import ArgumentParser
 import SwiftFusion
 import BeeDataset
 import BeeTracking
-import TensorFlow
+// import TensorFlow
 import PythonKit
 import Foundation
 

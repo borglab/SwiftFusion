@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 
 /// Image stored as an `Array`.
 ///
@@ -50,7 +50,7 @@ public struct ArrayImage: Differentiable {
   }
 
   /// Creates an instance from the given image `tensor`.
-  @differentiable
+  @differentiable(reverse)
   public init(_ tensor: Tensor<Float>) {
     precondition(
       tensor.shape.count == 2 || tensor.shape.count == 3,
@@ -64,7 +64,7 @@ public struct ArrayImage: Differentiable {
   }
 
   /// Returns this image as an image `Tensor`.
-  @differentiable
+  @differentiable(reverse)
   public var tensor: Tensor<Float> {
     Tensor(shape: [rows, cols, channels], scalars: pixels)
   }
@@ -97,7 +97,7 @@ public struct ArrayImage: Differentiable {
   /// Updates the pixel value at `(i, j, channel)` to `value`.
   ///
   /// Use this instead of the subscript when you need to differentiably modify the image.
-  @differentiable
+  @differentiable(reverse)
   public mutating func update(_ i: Int, _ j: Int, _ channel: Int, to value: Float) {
     self[i, j, channel] = value
   }

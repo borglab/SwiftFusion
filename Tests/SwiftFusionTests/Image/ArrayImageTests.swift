@@ -15,7 +15,7 @@
 import _Differentiation
 import ModelSupport
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 final class ArrayImageTests: XCTestCase {

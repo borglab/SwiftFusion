@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 import PenguinStructures
 
 /// A `NonlinearFactor` that calculates the bearing and range error of one pose and one landmark
@@ -35,7 +35,7 @@ public struct BearingRangeFactor2 : LinearizableFactor2 {
   }
 
   public typealias Variables = Tuple2<Base, Target>
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ base: Base, _ target: Target) -> Vector2 {
     let dx = (target - base.t)
     let actual_bearing = between(Rot2(c: dx.x / dx.norm, s: dx.y / dx.norm), base.rot)

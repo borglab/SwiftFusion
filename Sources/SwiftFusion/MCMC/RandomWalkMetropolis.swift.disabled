@@ -14,7 +14,7 @@
 
 import _Differentiation
 import Foundation
-import TensorFlow
+// import TensorFlow
 
 /// Runs one step of the RWM algorithm with symmetric proposal.
 /// Inspired by tfp [RandomWalkMetropolis](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc/RandomWalkMetropolis)

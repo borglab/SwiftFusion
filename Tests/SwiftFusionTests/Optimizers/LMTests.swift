@@ -2,7 +2,7 @@
 
 import _Differentiation
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 final class LMTests: XCTestCase {

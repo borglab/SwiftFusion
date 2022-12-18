@@ -16,7 +16,7 @@ import _Differentiation
 #if canImport(PythonKit)
 import PythonKit
 #endif
-import TensorFlow
+// import TensorFlow
 
 /// A wrapper for `Double` that traps instead of allowing `NaN`.
 public struct TrappingDouble: AdditiveArithmetic, Differentiable, Equatable {
@@ -140,47 +140,47 @@ extension TrappingDouble {
     self.init(value)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     return Self(lhs.value + rhs.value)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func - (_ lhs: Self, _ rhs: Self) -> Self {
     return Self(lhs.value - rhs.value)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.value += rhs.value
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.value -= rhs.value
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static prefix func - (_ v: Self) -> Self {
     return Self(-v.value)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func * (_ lhs: Self, _ rhs: Self) -> Self {
     return Self(lhs.value * rhs.value)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func / (_ lhs: Self, _ rhs: Self) -> Self {
     return Self(lhs.value / rhs.value)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Self) {
     lhs.value *= rhs.value
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func /= (_ lhs: inout Self, _ rhs: Self) {
     lhs.value /= rhs.value
   }
@@ -202,22 +202,22 @@ public func log(_ x: TrappingDouble) -> TrappingDouble {
   return TrappingDouble(log(x.value))
 }
 
-@differentiable
+@differentiable(reverse)
 public func sin(_ x: TrappingDouble) -> TrappingDouble {
   return TrappingDouble(sin(x.value))
 }
 
-@differentiable
+@differentiable(reverse)
 public func cos(_ x: TrappingDouble) -> TrappingDouble {
   return TrappingDouble(cos(x.value))
 }
 
-@differentiable
+@differentiable(reverse)
 public func asin(_ x: TrappingDouble) -> TrappingDouble {
   return TrappingDouble(asin(x.value))
 }
 
-@differentiable
+@differentiable(reverse)
 public func acos(_ x: TrappingDouble) -> TrappingDouble {
   return TrappingDouble(acos(x.value))
 }
@@ -226,7 +226,7 @@ public func atan2(_ x: TrappingDouble, _ y: TrappingDouble) -> TrappingDouble {
   return TrappingDouble(atan2(x.value, y.value))
 }
 
-@differentiable
+@differentiable(reverse)
 public func tan(_ x: TrappingDouble) -> TrappingDouble {
   return TrappingDouble(tan(x.value))
 }

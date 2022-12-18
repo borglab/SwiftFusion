@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Foundation
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 import PenguinStructures

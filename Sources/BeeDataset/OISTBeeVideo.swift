@@ -17,7 +17,7 @@ import ModelSupport
 import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 /// Label type
 public enum OISTLabelType {

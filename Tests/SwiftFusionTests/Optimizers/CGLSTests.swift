@@ -3,7 +3,7 @@
 import _Differentiation
 import SwiftFusion
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 final class CGLSTests: XCTestCase {  

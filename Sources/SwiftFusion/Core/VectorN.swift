@@ -1,14 +1,15 @@
 // WARNING: This is a generated file. Do not edit it. Instead, edit the corresponding ".gyb" file.
 // See "generate.sh" in the root of this repository for instructions how to regenerate files.
 
-import TensorFlow
+// import TensorFlow
+import _Differentiation
 
 
 /// An element of R^1, with Euclidean inner product.
 public struct Vector1: Codable, KeyPathIterable {
-  @differentiable public var x: Double
+  @differentiable(reverse) public var x: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ x: Double) {
     self.x = x
   }
@@ -16,22 +17,22 @@ public struct Vector1: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector1: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.x += rhs.x
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.x -= rhs.x
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.x *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.x * other.x
@@ -93,10 +94,10 @@ extension Vector1: FixedSizeVector {
 
 /// An element of R^2, with Euclidean inner product.
 public struct Vector2: Codable, KeyPathIterable {
-  @differentiable public var x: Double
-  @differentiable public var y: Double
+  @differentiable(reverse) public var x: Double
+  @differentiable(reverse) public var y: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ x: Double, _ y: Double) {
     self.x = x
     self.y = y
@@ -105,25 +106,25 @@ public struct Vector2: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector2: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.x += rhs.x
     lhs.y += rhs.y
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.x -= rhs.x
     lhs.y -= rhs.y
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.x *= rhs
     lhs.y *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.x * other.x
@@ -188,11 +189,11 @@ extension Vector2: FixedSizeVector {
 
 /// An element of R^3, with Euclidean inner product.
 public struct Vector3: Codable, KeyPathIterable {
-  @differentiable public var x: Double
-  @differentiable public var y: Double
-  @differentiable public var z: Double
+  @differentiable(reverse) public var x: Double
+  @differentiable(reverse) public var y: Double
+  @differentiable(reverse) public var z: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ x: Double, _ y: Double, _ z: Double) {
     self.x = x
     self.y = y
@@ -202,28 +203,28 @@ public struct Vector3: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector3: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.x += rhs.x
     lhs.y += rhs.y
     lhs.z += rhs.z
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.x -= rhs.x
     lhs.y -= rhs.y
     lhs.z -= rhs.z
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.x *= rhs
     lhs.y *= rhs
     lhs.z *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.x * other.x
@@ -291,12 +292,12 @@ extension Vector3: FixedSizeVector {
 
 /// An element of R^4, with Euclidean inner product.
 public struct Vector4: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -307,7 +308,7 @@ public struct Vector4: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector4: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -315,7 +316,7 @@ extension Vector4: AdditiveArithmetic, Vector {
     lhs.s3 += rhs.s3
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -323,7 +324,7 @@ extension Vector4: AdditiveArithmetic, Vector {
     lhs.s3 -= rhs.s3
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -331,7 +332,7 @@ extension Vector4: AdditiveArithmetic, Vector {
     lhs.s3 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -402,13 +403,13 @@ extension Vector4: FixedSizeVector {
 
 /// An element of R^5, with Euclidean inner product.
 public struct Vector5: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -420,7 +421,7 @@ public struct Vector5: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector5: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -429,7 +430,7 @@ extension Vector5: AdditiveArithmetic, Vector {
     lhs.s4 += rhs.s4
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -438,7 +439,7 @@ extension Vector5: AdditiveArithmetic, Vector {
     lhs.s4 -= rhs.s4
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -447,7 +448,7 @@ extension Vector5: AdditiveArithmetic, Vector {
     lhs.s4 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -521,14 +522,14 @@ extension Vector5: FixedSizeVector {
 
 /// An element of R^6, with Euclidean inner product.
 public struct Vector6: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
-  @differentiable public var s5: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
+  @differentiable(reverse) public var s5: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -541,7 +542,7 @@ public struct Vector6: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector6: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -551,7 +552,7 @@ extension Vector6: AdditiveArithmetic, Vector {
     lhs.s5 += rhs.s5
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -561,7 +562,7 @@ extension Vector6: AdditiveArithmetic, Vector {
     lhs.s5 -= rhs.s5
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -571,7 +572,7 @@ extension Vector6: AdditiveArithmetic, Vector {
     lhs.s5 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -648,15 +649,15 @@ extension Vector6: FixedSizeVector {
 
 /// An element of R^7, with Euclidean inner product.
 public struct Vector7: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
-  @differentiable public var s5: Double
-  @differentiable public var s6: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
+  @differentiable(reverse) public var s5: Double
+  @differentiable(reverse) public var s6: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -670,7 +671,7 @@ public struct Vector7: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector7: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -681,7 +682,7 @@ extension Vector7: AdditiveArithmetic, Vector {
     lhs.s6 += rhs.s6
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -692,7 +693,7 @@ extension Vector7: AdditiveArithmetic, Vector {
     lhs.s6 -= rhs.s6
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -703,7 +704,7 @@ extension Vector7: AdditiveArithmetic, Vector {
     lhs.s6 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -783,16 +784,16 @@ extension Vector7: FixedSizeVector {
 
 /// An element of R^8, with Euclidean inner product.
 public struct Vector8: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
-  @differentiable public var s5: Double
-  @differentiable public var s6: Double
-  @differentiable public var s7: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
+  @differentiable(reverse) public var s5: Double
+  @differentiable(reverse) public var s6: Double
+  @differentiable(reverse) public var s7: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -807,7 +808,7 @@ public struct Vector8: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector8: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -819,7 +820,7 @@ extension Vector8: AdditiveArithmetic, Vector {
     lhs.s7 += rhs.s7
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -831,7 +832,7 @@ extension Vector8: AdditiveArithmetic, Vector {
     lhs.s7 -= rhs.s7
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -843,7 +844,7 @@ extension Vector8: AdditiveArithmetic, Vector {
     lhs.s7 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -926,17 +927,17 @@ extension Vector8: FixedSizeVector {
 
 /// An element of R^9, with Euclidean inner product.
 public struct Vector9: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
-  @differentiable public var s5: Double
-  @differentiable public var s6: Double
-  @differentiable public var s7: Double
-  @differentiable public var s8: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
+  @differentiable(reverse) public var s5: Double
+  @differentiable(reverse) public var s6: Double
+  @differentiable(reverse) public var s7: Double
+  @differentiable(reverse) public var s8: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -952,7 +953,7 @@ public struct Vector9: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector9: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -965,7 +966,7 @@ extension Vector9: AdditiveArithmetic, Vector {
     lhs.s8 += rhs.s8
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -978,7 +979,7 @@ extension Vector9: AdditiveArithmetic, Vector {
     lhs.s8 -= rhs.s8
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -991,7 +992,7 @@ extension Vector9: AdditiveArithmetic, Vector {
     lhs.s8 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -1077,18 +1078,18 @@ extension Vector9: FixedSizeVector {
 
 /// An element of R^10, with Euclidean inner product.
 public struct Vector10: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
-  @differentiable public var s5: Double
-  @differentiable public var s6: Double
-  @differentiable public var s7: Double
-  @differentiable public var s8: Double
-  @differentiable public var s9: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
+  @differentiable(reverse) public var s5: Double
+  @differentiable(reverse) public var s6: Double
+  @differentiable(reverse) public var s7: Double
+  @differentiable(reverse) public var s8: Double
+  @differentiable(reverse) public var s9: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double, _ s9: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -1105,7 +1106,7 @@ public struct Vector10: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector10: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -1119,7 +1120,7 @@ extension Vector10: AdditiveArithmetic, Vector {
     lhs.s9 += rhs.s9
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -1133,7 +1134,7 @@ extension Vector10: AdditiveArithmetic, Vector {
     lhs.s9 -= rhs.s9
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -1147,7 +1148,7 @@ extension Vector10: AdditiveArithmetic, Vector {
     lhs.s9 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -1236,19 +1237,19 @@ extension Vector10: FixedSizeVector {
 
 /// An element of R^11, with Euclidean inner product.
 public struct Vector11: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
-  @differentiable public var s5: Double
-  @differentiable public var s6: Double
-  @differentiable public var s7: Double
-  @differentiable public var s8: Double
-  @differentiable public var s9: Double
-  @differentiable public var s10: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
+  @differentiable(reverse) public var s5: Double
+  @differentiable(reverse) public var s6: Double
+  @differentiable(reverse) public var s7: Double
+  @differentiable(reverse) public var s8: Double
+  @differentiable(reverse) public var s9: Double
+  @differentiable(reverse) public var s10: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double, _ s9: Double, _ s10: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -1266,7 +1267,7 @@ public struct Vector11: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector11: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -1281,7 +1282,7 @@ extension Vector11: AdditiveArithmetic, Vector {
     lhs.s10 += rhs.s10
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -1296,7 +1297,7 @@ extension Vector11: AdditiveArithmetic, Vector {
     lhs.s10 -= rhs.s10
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -1311,7 +1312,7 @@ extension Vector11: AdditiveArithmetic, Vector {
     lhs.s10 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0
@@ -1403,20 +1404,20 @@ extension Vector11: FixedSizeVector {
 
 /// An element of R^12, with Euclidean inner product.
 public struct Vector12: Codable, KeyPathIterable {
-  @differentiable public var s0: Double
-  @differentiable public var s1: Double
-  @differentiable public var s2: Double
-  @differentiable public var s3: Double
-  @differentiable public var s4: Double
-  @differentiable public var s5: Double
-  @differentiable public var s6: Double
-  @differentiable public var s7: Double
-  @differentiable public var s8: Double
-  @differentiable public var s9: Double
-  @differentiable public var s10: Double
-  @differentiable public var s11: Double
+  @differentiable(reverse) public var s0: Double
+  @differentiable(reverse) public var s1: Double
+  @differentiable(reverse) public var s2: Double
+  @differentiable(reverse) public var s3: Double
+  @differentiable(reverse) public var s4: Double
+  @differentiable(reverse) public var s5: Double
+  @differentiable(reverse) public var s6: Double
+  @differentiable(reverse) public var s7: Double
+  @differentiable(reverse) public var s8: Double
+  @differentiable(reverse) public var s9: Double
+  @differentiable(reverse) public var s10: Double
+  @differentiable(reverse) public var s11: Double
 
-  @differentiable
+  @differentiable(reverse)
   public init(_ s0: Double, _ s1: Double, _ s2: Double, _ s3: Double, _ s4: Double, _ s5: Double, _ s6: Double, _ s7: Double, _ s8: Double, _ s9: Double, _ s10: Double, _ s11: Double) {
     self.s0 = s0
     self.s1 = s1
@@ -1435,7 +1436,7 @@ public struct Vector12: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector12: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 += rhs.s0
     lhs.s1 += rhs.s1
@@ -1451,7 +1452,7 @@ extension Vector12: AdditiveArithmetic, Vector {
     lhs.s11 += rhs.s11
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs.s0 -= rhs.s0
     lhs.s1 -= rhs.s1
@@ -1467,7 +1468,7 @@ extension Vector12: AdditiveArithmetic, Vector {
     lhs.s11 -= rhs.s11
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs.s0 *= rhs
     lhs.s1 *= rhs
@@ -1483,7 +1484,7 @@ extension Vector12: AdditiveArithmetic, Vector {
     lhs.s11 *= rhs
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     result += self.s0 * other.s0

@@ -17,7 +17,7 @@
 import _Differentiation
 import Benchmark
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 let patchBenchmark = BenchmarkSuite(name: "Patch") { suite in
   suite.benchmark(

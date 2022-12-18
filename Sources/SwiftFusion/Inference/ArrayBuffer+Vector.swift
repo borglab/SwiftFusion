@@ -62,7 +62,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   public var dimension: Int { self.lazy.map(\.dimension).reduce(0, +) }
   
   /// Replaces lhs with the product of `lhs` and `rhs`.
-  @differentiable
+  @differentiable(reverse)
   public static func *= (lhs: inout ArrayBuffer, rhs: Double) -> Void {
     if lhs.isEmpty { return }
     if rhs == 0 { lhs = .init() }
@@ -86,7 +86,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   }
 
   /// Returns the product of `lhs` and `rhs`.
-  @differentiable
+  @differentiable(reverse)
   public static func * (lhs: Double, rhs: ArrayBuffer) -> ArrayBuffer {
     if rhs.isEmpty { return rhs }
     if lhs == 0 { return .init() }
@@ -104,7 +104,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Returns the dot product of `self` with `other`.
   ///
   /// - Requires: `self.tensorShapeIsCompatible(withThatOf: other)`
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: ArrayBuffer) -> Double {
     assert(self.tensorShapeIsCompatible(withThatOf: other))
     if self.isEmpty || other.isEmpty { return 0 }
@@ -126,12 +126,12 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Returns the sum of `lhs` and `rhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable
+  @differentiable(reverse)
   public static func + (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
     plus(lhs, rhs)
   }
   
-  @differentiable
+  @differentiable(reverse)
   private static func plus(_ lhs: ArrayBuffer, _ rhs: ArrayBuffer) -> ArrayBuffer {
     if lhs.isEmpty { return rhs }
     if rhs.isEmpty { return lhs }
@@ -148,7 +148,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable
+  @differentiable(reverse)
   public static func - (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
     minus(lhs, rhs)
   }
@@ -156,7 +156,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable
+  @differentiable(reverse)
   private static func minus (_ lhs: ArrayBuffer, _ rhs: ArrayBuffer) -> ArrayBuffer {
     if rhs.isEmpty { return lhs }
     if lhs.isEmpty { return .init(rhs.lazy.map { $0.zeroValue - $0 }) }
@@ -173,7 +173,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Replaces `lhs` with the sum of `lhs` and `rhs`
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable
+  @differentiable(reverse)
   public static func += (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     plusEquals(&lhs, rhs)
   }
@@ -181,7 +181,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Replaces `lhs` with the sum of `lhs` and `rhs`
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable
+  @differentiable(reverse)
   private static func plusEquals (_ lhs: inout ArrayBuffer, _ rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     else if lhs.isEmpty { lhs = rhs }
@@ -199,7 +199,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable
+  @differentiable(reverse)
   public static func -= (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     minusEquals(&lhs, rhs)
   }
@@ -207,7 +207,7 @@ extension ArrayBuffer: Vector where Element: Vector {
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable
+  @differentiable(reverse)
   private static func minusEquals(_ lhs: inout ArrayBuffer, _ rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     else if lhs.isEmpty { lhs = lhs - rhs }

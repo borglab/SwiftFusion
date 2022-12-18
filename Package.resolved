@@ -12,10 +12,10 @@
       },
       {
         "package": "Penguin",
-        "repositoryURL": "https://github.com/saeta/penguin.git",
+        "repositoryURL": "https://github.com/ProfFan/penguin.git",
         "state": {
-          "branch": "main",
-          "revision": "2ed8978cfc91384f98c245cce3513f4345eec239",
+          "branch": "dev/make-compile",
+          "revision": "44c494dfb5150e0fcc8bf2819c235474178e1872",
           "version": null
         }
       },
@@ -23,9 +23,9 @@
         "package": "Plotly",
         "repositoryURL": "https://github.com/vojtamolda/Plotly.swift",
         "state": {
-          "branch": null,
+          "branch": "0.4.0",
           "revision": "6e80119ba37b913e5460459556e2bf58f02eba67",
-          "version": "0.4.0"
+          "version": null
         }
       },
       {
@@ -47,21 +47,12 @@
         }
       },
       {
-        "package": "swift-models",
-        "repositoryURL": "https://github.com/tensorflow/swift-models.git",
+        "package": "swift-shaped-array",
+        "repositoryURL": "https://github.com/ProfFan/swift-shaped-array.git",
         "state": {
-          "branch": null,
-          "revision": "b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4",
+          "branch": "fan/devel",
+          "revision": "a736fd9018e36d7aa8788cb4002fa4c2be53f048",
           "version": null
-        }
-      },
-      {
-        "package": "SwiftProtobuf",
-        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
-        "state": {
-          "branch": null,
-          "revision": "da9a52be9cd36c63993291ce3f1b65dafcd1e826",
-          "version": "1.14.0"
         }
       },
       {
@@ -71,15 +62,6 @@
           "branch": "swift-5.2-branch",
           "revision": "7ecf17a83eab20cbd700d7e45d66c03409bc72d0",
           "version": null
-        }
-      },
-      {
-        "package": "TensorBoardX",
-        "repositoryURL": "https://github.com/ProfFan/tensorboardx-s4tf.git",
-        "state": {
-          "branch": null,
-          "revision": "02838220694f4236ba84a83856581b76ee9cf1bc",
-          "version": "0.1.3"
         }
       }
     ]

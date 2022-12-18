@@ -25,7 +25,7 @@ public struct PriorFactor<Group: LieGroup>: LinearizableFactor1 {
     self.prior = prior
   }
   
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ x: Group) -> Group.TangentVector {
     return prior.localCoordinate(x)
   }
@@ -43,7 +43,7 @@ public struct WeightedPriorFactor<Group: LieGroup>: LinearizableFactor1 {
     self.weight = weight
   }
   
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ x: Group) -> Group.TangentVector {
     return weight * prior.localCoordinate(x)
   }

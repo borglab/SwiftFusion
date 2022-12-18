@@ -5,7 +5,7 @@ import BeeDataset
 import BeeTracking
 import PythonKit
 import Foundation
-import TensorFlow
+// import TensorFlow
 
 /// Fan02: Random Projections Error Landscape
 struct Fan02: ParsableCommand {

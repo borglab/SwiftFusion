@@ -1,4 +1,4 @@
-import TensorFlow
+// import TensorFlow
 
 % dims = range(1, 13)
 % for dim in dims:
@@ -11,10 +11,10 @@ import TensorFlow
 /// An element of R^${dim}, with Euclidean inner product.
 public struct Vector${dim}: Codable, KeyPathIterable {
   % for coordinate in coordinates:
-  @differentiable public var ${coordinate}: Double
+  @differentiable(reverse) public var ${coordinate}: Double
   % end
 
-  @differentiable
+  @differentiable(reverse)
   public init(${', '.join(['_ %s: Double' % c for c in coordinates])}) {
     % for (index, coordinate) in enumerate(coordinates):
     self.${coordinate} = ${coordinate}
@@ -24,28 +24,28 @@ public struct Vector${dim}: Codable, KeyPathIterable {
 
 /// Conformance to Vector
 extension Vector${dim}: AdditiveArithmetic, Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     % for coordinate in coordinates:
     lhs.${coordinate} += rhs.${coordinate}
     % end
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     % for coordinate in coordinates:
     lhs.${coordinate} -= rhs.${coordinate}
     % end
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     % for coordinate in coordinates:
     lhs.${coordinate} *= rhs
     % end
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     var result = Double(0)
     % for coordinate in coordinates:

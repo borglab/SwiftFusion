@@ -26,7 +26,7 @@
 import _Differentiation
 import Foundation
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import TensorBoardX
 import TSCUtility
 

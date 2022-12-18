@@ -1,7 +1,7 @@
 import XCTest
 import PenguinStructures
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 class RandomProjectionTests: XCTestCase {
   func testEncode() {

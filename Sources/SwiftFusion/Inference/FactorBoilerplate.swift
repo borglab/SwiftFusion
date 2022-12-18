@@ -108,7 +108,7 @@ public protocol LinearizableFactor1_ {
   associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   func errorVector(_: V0) -> ErrorVector
 }
 
@@ -126,7 +126,7 @@ extension LinearizableFactor1 {
   }
 
   // Forwarding implementation.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head)
   }
@@ -228,7 +228,7 @@ public protocol LinearizableFactor2_ {
   associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   func errorVector(_: V0, _: V1) -> ErrorVector
 }
 
@@ -248,7 +248,7 @@ extension LinearizableFactor2 {
   }
 
   // Forwarding implementation.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head)
   }
@@ -360,7 +360,7 @@ public protocol LinearizableFactor3_ {
   associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   func errorVector(_: V0, _: V1, _: V2) -> ErrorVector
 }
 
@@ -382,7 +382,7 @@ extension LinearizableFactor3 {
   }
 
   // Forwarding implementation.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head, x.tail.tail.head)
   }
@@ -504,7 +504,7 @@ public protocol LinearizableFactor4_ {
   associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   func errorVector(_: V0, _: V1, _: V2, _: V3) -> ErrorVector
 }
 
@@ -528,7 +528,7 @@ extension LinearizableFactor4 {
   }
 
   // Forwarding implementation.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head, x.tail.tail.head, x.tail.tail.tail.head)
   }
@@ -660,7 +660,7 @@ public protocol LinearizableFactor5_ {
   associatedtype ErrorVector: Vector
 
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   func errorVector(_: V0, _: V1, _: V2, _: V3, _: V4) -> ErrorVector
 }
 
@@ -686,7 +686,7 @@ extension LinearizableFactor5 {
   }
 
   // Forwarding implementation.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     return errorVector(x.head, x.tail.head, x.tail.tail.head, x.tail.tail.tail.head, x.tail.tail.tail.tail.head)
   }

@@ -15,7 +15,7 @@ import BeeDataset
 import PenguinParallelWithFoundation
 import PenguinStructures
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 extension OISTBeeVideo {
   func getUnnormalizedBatch(

@@ -14,7 +14,7 @@
 
 import _Differentiation
 import Foundation
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 import PenguinStructures

@@ -1,7 +1,7 @@
 import _Differentiation
 import PenguinParallel
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 
 /// A factor over a target's pose and appearance in an image.
 public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: LinearizableFactor2 {
@@ -92,7 +92,7 @@ public struct AppearanceTrackingFactor<LatentCode: FixedSizeVector>: Linearizabl
 
   /// Returns the difference between the PPCA generated `Patch` and the `Patch` cropped from
   /// `measurement`.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ pose: Pose2, _ latent: LatentCode) -> Patch.TangentVector {
     let appearance = appearanceModel(latent.flatTensor)
     let region = OrientedBoundingBox(
@@ -200,7 +200,7 @@ public struct LinearizedAppearanceTrackingFactor<LatentCode: FixedSizeVector>: G
     return 0.5 * errorVector(at: x).squaredNorm
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> Patch {
     errorVector_linearComponent(x) - error
   }

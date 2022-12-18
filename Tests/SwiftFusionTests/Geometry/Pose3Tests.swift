@@ -2,7 +2,7 @@ import _Differentiation
 import XCTest
 import SwiftFusion
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 
 final class Pose3Tests: XCTestCase {
   /// Tests that the manifold invariant holds for Pose2

@@ -16,7 +16,7 @@
 
 import BeeTracking
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 // Test with a random projection feature space, and Gaussian/NB for FG/BG

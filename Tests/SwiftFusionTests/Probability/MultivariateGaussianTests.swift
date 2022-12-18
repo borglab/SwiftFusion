@@ -15,7 +15,7 @@
 /// This file tests proper Multivariate Gaussian behavior
 
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 final class MultivariateGaussianTests: XCTestCase {

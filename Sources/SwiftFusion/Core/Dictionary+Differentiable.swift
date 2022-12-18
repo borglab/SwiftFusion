@@ -41,7 +41,7 @@ extension Dictionary where Value: Differentiable {
   /// Returns the value with `key`.
   ///
   /// Precondition: `self` contains an entry with key `key`.
-  @differentiable
+  @differentiable(reverse)
   public func differentiableSubscript(_ key: Key) -> Value {
     self[key]!
   }

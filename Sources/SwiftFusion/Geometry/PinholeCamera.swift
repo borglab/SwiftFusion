@@ -9,14 +9,14 @@ public struct PinholeCamera<Calibration: CameraCalibration>: Differentiable {
   public var calibration: Calibration
 
   /// Initializes from camera pose and calibration.
-  @differentiable
+  @differentiable(reverse)
   public init(_ calibration: Calibration, _ wTc: Pose3) {
     self.calibration = calibration
     self.wTc = wTc
   }
 
   /// Initializes with identity pose.
-  @differentiable
+  @differentiable(reverse)
   public init(_ calibration: Calibration) {
     self.init(calibration, Pose3())
   }
@@ -30,7 +30,7 @@ public struct PinholeCamera<Calibration: CameraCalibration>: Differentiable {
 /// Project and backproject.
 extension PinholeCamera {
     /// Projects a 3D point in the world frame to 2D point in the image.
-  @differentiable
+  @differentiable(reverse)
   public func project(_ wp: Vector3) -> Vector2 {
     let np: Vector2 = projectToNormalized(wp)
     let ip = calibration.uncalibrate(np)
@@ -38,7 +38,7 @@ extension PinholeCamera {
   }
 
   /// Backprojects a 2D image point into 3D point in the world frame at given depth.
-  @differentiable
+  @differentiable(reverse)
   public func backproject(_ ip: Vector2, _ depth: Double) -> Vector3 {
     let np = calibration.calibrate(ip)
     let cp = Vector3(np.x * depth, np.y * depth, depth)
@@ -47,7 +47,7 @@ extension PinholeCamera {
   }
 
   /// Projects a 3D point in the world frame to 2D normalized coordinate.
-  @differentiable
+  @differentiable(reverse)
   func projectToNormalized(_ wp: Vector3) -> Vector2 {
     projectToNormalized(wp).ip
   }

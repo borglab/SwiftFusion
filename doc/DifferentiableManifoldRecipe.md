@@ -67,7 +67,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// - `retract(LocalCoordinate.zero) == self`
   /// - There exists an open set `B` around `LocalCoordinate.zero` such that
   ///   `localCoordinate(retract(b)) == b` for all `b \in B`.
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   func retract(_ local: LocalCoordinate) -> Self
 
   /// Inverse of `retract`.
@@ -76,7 +76,7 @@ public protocol ManifoldCoordinate: Differentiable {
   /// - `localCoordinate(self) == LocalCoordinate.zero`
   /// - There exists an open set `B` around `self` such that `localCoordinate(retract(b)) == b` for all
   ///   `b \in B`.
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   func localCoordinate(_ global: Self) -> LocalCoordinate
 }
 ```
@@ -114,11 +114,11 @@ The `Manifold` conformance also adds a computed property and initializer to your
 struct:
 ```
 // Automatically defined: don't define this yourself.
-@differentiable
+@differentiable(reverse)
 var coordinate: Coordinate
 
 // Automatically defined: don't define this yourself.
-@differentiable
+@differentiable(reverse)
 init(coordinate: Coordinate)
 ```
 
@@ -163,7 +163,7 @@ specified. For example:
 
 ```swift
 extension Rot2 {
-  @differentiable
+  @differentiable(reverse)
   var theta: Float {
     // atan2 in the stdlib does not have the derivative implementation
     // so we need to use a wrapped version that does

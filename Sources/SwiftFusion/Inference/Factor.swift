@@ -67,7 +67,7 @@ public protocol LinearizableFactor: VectorFactor
 where Variables: DifferentiableVariableTuple, Variables.TangentVector: Vector
 {
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   func errorVector(at x: Variables) -> ErrorVector
 }
 

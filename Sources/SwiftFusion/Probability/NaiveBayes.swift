@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import TensorFlow
+// import TensorFlow
+import _Differentiation
 
 /// A Gaussian Naive Bayes density
 ///
@@ -45,7 +46,7 @@ public struct GaussianNB: GenerativeDensity {
   
   /// Calculated the negative log likelihood of *one* data point
   /// Note this is NOT normalized probability
-  @differentiable public func negativeLogLikelihood(_ sample: T) -> Double {
+  @differentiable(reverse) public func negativeLogLikelihood(_ sample: T) -> Double {
     precondition(sample.shape == mu.shape)
     let t = (sample - mu).squared() * precisions
     return t.sum().scalarized() / 2.0

@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import TensorFlow
+// import TensorFlow
+import _Differentiation
 
 public protocol GenerativeDensity {
   associatedtype HyperParameters
   init(from data: Tensor<Double>, given: HyperParameters?)
-  @differentiable func negativeLogLikelihood(_ data: Tensor<Double>) -> Double
+  @differentiable(reverse) func negativeLogLikelihood(_ data: Tensor<Double>) -> Double
 }
 
 public extension GenerativeDensity {

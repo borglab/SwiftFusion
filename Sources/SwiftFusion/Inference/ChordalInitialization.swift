@@ -14,7 +14,7 @@
 
 import _Differentiation
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 
 /// A relaxed version of the Rot3 between that uses the Chordal (Frobenious) norm on rotation
 /// Please refer to Carlone15icra (Initialization Techniques for 3D SLAM: a Survey on Rotation Estimation and its Use in Pose Graph Optimization)
@@ -31,7 +31,7 @@ public struct RelaxedRotationFactorRot3: LinearizableFactor2
   
   public typealias ErrorVector = Vector9
   
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ R1: Matrix3, _ R2: Matrix3) -> ErrorVector {
     let R12 = difference
     let R1h = matmul(R12, R2.transposed()).transposed()
@@ -52,7 +52,7 @@ public struct RelaxedAnchorFactorRot3: LinearizableFactor1
   
   public typealias ErrorVector = Vector9
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ val: Matrix3) -> ErrorVector {
     ErrorVector(val - prior)
   }

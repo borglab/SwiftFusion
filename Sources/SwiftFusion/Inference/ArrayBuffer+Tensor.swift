@@ -40,7 +40,7 @@ extension ArrayBuffer {
   ///
   /// - Requires: `self.count == a.count`
   ///
-  // @differentiable(wrt: (self, a) where Element: Differentiable, E: Differentiable)
+  // @differentiable(reverse, wrt: (self, a) where Element: Differentiable, E: Differentiable)
   mutating func update<E>(
     elementwiseWith a: ArrayBuffer<E>,
     _ updateElement: /*@differentiable*/ (_ myX: inout Element, _ aX: E)->Void,
@@ -65,7 +65,7 @@ extension ArrayBuffer {
   /// Calls `updateElement(&myX, aX)` on each element `myX`, using `combine` (if supplied) to
   /// initialize new storage when required.
   ///
-  // @differentiable(wrt: (self, a) where Element: Differentiable, E: Differentiable)
+  // @differentiable(reverse, wrt: (self, a) where Element: Differentiable, E: Differentiable)
   mutating func update<T>(
     elementwise a: T,
     _ updateElement: /*@differentiable*/ (_ myX: inout Element, _ aX: T)->Void,
@@ -104,7 +104,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   /// Returns the sum of `lhs` and `rhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable(where Element: Differentiable)
+  @differentiable(reverse where Element: Differentiable)
   public static func + (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
     if lhs.isEmpty { return rhs }
     if rhs.isEmpty { return lhs }
@@ -123,7 +123,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable(where Element: Differentiable)
+  @differentiable(reverse where Element: Differentiable)
   public static func - (lhs: ArrayBuffer, rhs: ArrayBuffer) -> ArrayBuffer {
     if rhs.isEmpty { return lhs }
     if lhs.isEmpty { return .init(rhs.lazy.map { .zero - $0 }) }
@@ -136,13 +136,13 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
     -> (value: ArrayBuffer, pullback: (TangentVector)->(TangentVector, TangentVector))
   where Element: Differentiable
   {
-    (lhs - rhs, { x in (x, x.zeroTangentVector - x) })
+    (lhs - rhs, { x in (x, x.zero - x) })
   }
   
   /// Replaces `lhs` with the sum of `lhs` and `rhs`
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable(where Element: Differentiable)
+  @differentiable(reverse where Element: Differentiable)
   public static func += (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     else if lhs.isEmpty { lhs = rhs }
@@ -162,7 +162,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   /// Returns the result of subtracting `rhs` from `lhs`.
   ///
   /// - Requires: `lhs.tensorShapeIsCompatible(withThatOf: rhs)`
-  @differentiable(where Element: Differentiable)
+  @differentiable(reverse where Element: Differentiable)
   public static func -= (lhs: inout ArrayBuffer, rhs: ArrayBuffer) {
     if rhs.isEmpty { return }
     if lhs.isEmpty { lhs = lhs - rhs }
@@ -176,7 +176,7 @@ extension ArrayBuffer: AdditiveArithmetic where Element: AdditiveArithmetic {
   where Element: Differentiable
   {
     lhs -= rhs
-    return ((), { x in x.zeroTangentVector - x })
+    return ((), { x in x.zero - x })
   }
 }
 

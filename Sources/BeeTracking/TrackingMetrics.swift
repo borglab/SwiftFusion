@@ -3,7 +3,7 @@ import Foundation
 import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 /// Accuracy and robustness for a subsequence, as defined in the VOT 2020 challenge [1].
 ///

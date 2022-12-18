@@ -14,7 +14,7 @@
 
 import PenguinParallel
 import PenguinStructures
-import TensorFlow
+// import TensorFlow
 
 /// A factor over a target's pose and appearance in an image.
 public struct ProbablisticTrackingFactor<
@@ -72,7 +72,7 @@ public struct ProbablisticTrackingFactor<
     self.maxPossibleNegativity = maxPossibleNegativity
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(_ pose: Pose2) -> Vector1 {
     let region = OrientedBoundingBox(center: pose, rows: patchSize.0, cols: patchSize.1)
     let patch = Tensor<Double>(measurement.patch(at: region, outputSize: appearanceModelSize).tensor)

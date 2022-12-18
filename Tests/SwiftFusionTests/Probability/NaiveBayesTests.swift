@@ -15,7 +15,7 @@
 /// This file tests proper Naive Bayes behavior
 
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 final class NaiveBayesTests: XCTestCase {

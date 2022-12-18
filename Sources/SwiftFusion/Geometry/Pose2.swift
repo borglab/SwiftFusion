@@ -1,5 +1,5 @@
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 
 /// SE(2) Lie group of 2D Euclidean Poses.
 ///
@@ -52,16 +52,16 @@ public struct Pose2: Codable, LieGroup, Equatable, KeyPathIterable {
   ///
   /// This is the bijection SO(2) x R^2 -> SE(2), where "x" means direct product of groups. (Note:
   /// not a group homomorphism!)
-  @differentiable
+  @differentiable(reverse)
   public init(_ r: Rot2, _ t: Vector2) {
     self.init(coordinate: Pose2Coordinate(r, t))
   }
   
   // MARK: Convenience Attributes
   
-  @differentiable public var t: Vector2 { coordinate.t }
+  @differentiable(reverse) public var t: Vector2 { coordinate.t }
   
-  @differentiable public var rot: Rot2 { coordinate.rot }
+  @differentiable(reverse) public var rot: Rot2 { coordinate.rot }
 }
 
 // FRANK: Perturb randomly
@@ -86,7 +86,7 @@ extension Pose2 {
 // MARK: Convenience initializers
 extension Pose2 {
   /// Creates a `Pose2` with translation `x` and `y` and with rotation `theta`.
-  @differentiable
+  @differentiable(reverse)
   public init(_ x: Double, _ y: Double, _ theta: Double) {
     self.init(Rot2(theta), Vector2(x, y))
   }
@@ -110,7 +110,7 @@ extension Pose2 {
 
 extension Pose2 {
   /// Group action on `Vector2`.
-  @differentiable
+  @differentiable(reverse)
   public static func * (aTb: Pose2, bp: Vector2) -> Vector2 {
     aTb.coordinate * bp
   }
@@ -124,7 +124,7 @@ public struct Pose2Coordinate: Codable, Equatable, KeyPathIterable {
 }
 
 public extension Pose2Coordinate {
-  @differentiable
+  @differentiable(reverse)
   init(_ rot: Rot2, _ t: Vector2) {
     self.t = t
     self.rot = rot
@@ -149,13 +149,13 @@ extension Pose2Coordinate: LieGroupCoordinate {
   }
 
   /// Product of two transforms
-  @differentiable
+  @differentiable(reverse)
   public static func * (lhs: Pose2Coordinate, rhs: Pose2Coordinate) -> Pose2Coordinate {
     Pose2Coordinate(lhs.rot * rhs.rot, lhs * rhs.t)
   }
 
   /// Inverse of the rotation.
-  @differentiable
+  @differentiable(reverse)
   public func inverse() -> Pose2Coordinate {
     Pose2Coordinate(self.rot.inverse(), self.rot.unrotate(-self.t))
   }
@@ -163,7 +163,7 @@ extension Pose2Coordinate: LieGroupCoordinate {
 
 extension Pose2Coordinate {
   /// Group action on `Vector2`.
-  @differentiable
+  @differentiable(reverse)
   static func * (aTb: Pose2Coordinate, bp: Vector2) -> Vector2 {
     aTb.rot * bp + aTb.t
   }
@@ -171,7 +171,7 @@ extension Pose2Coordinate {
 
 extension Pose2Coordinate: ManifoldCoordinate {
   /// p * Exp(q)
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: Vector3) -> Self {
     // self * Pose2Coordinate(Rot2(local.x), Vector2(local.y, local.z))
     let v = Vector2(local.y,local.z)
@@ -195,7 +195,7 @@ extension Pose2Coordinate: ManifoldCoordinate {
   /// e.g. `p*Exp(Log(p^{-1} * q)) = q`
   /// This invariant will be tested in the tests.
   ///
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Self) -> Vector3 {
     let p = self.inverse() * global
 //    return Vector3(d.rot.theta, d.t.x, d.t.y)

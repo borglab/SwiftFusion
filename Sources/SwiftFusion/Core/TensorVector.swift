@@ -13,7 +13,20 @@
 // limitations under the License.
 
 import _Differentiation
-import TensorFlow
+import ShapedArray
+// import TensorFlow
+
+public typealias Tensor = ShapedArray
+
+extension ShapedArray: Differentiable where Scalar: FloatingPoint {
+  public typealias TangentVector = ShapedArray
+
+  public var zeroTangentVectorInitializer: () -> TangentVector {
+    let shape = self.shape
+    return { Tensor(zeros: shape) }
+  }
+}
+
 
 /// A view of a `Tensor` as a `Vector`.
 public struct TensorVector {
@@ -45,7 +58,7 @@ public struct TensorVector {
   @noDerivative public private(set) var shape: TensorShape
 
   /// This vector's underlying tensor.
-  @differentiable
+  @differentiable(reverse)
   public var tensor: Tensor<Double> {
     get {
       return scalars.storage.reshaped(to: shape)
@@ -63,7 +76,7 @@ public struct TensorVector {
   }
 
   /// Creates an instance that views `tensor` as a `Vector`.
-  @differentiable
+  @differentiable(reverse)
   public init(_ tensor: Tensor<Double>) {
     self.scalars = Scalars(storage: tensor.reshaped(to: [tensor.scalarCount]))
     self.shape = tensor.shape
@@ -71,22 +84,22 @@ public struct TensorVector {
 }
 
 extension TensorVector: AdditiveArithmetic {
-  @differentiable
+  @differentiable(reverse)
   public static func + (_ lhs: Self, _ rhs: Self) -> Self {
     Self(lhs.tensor + rhs.tensor)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func - (_ lhs: Self, _ rhs: Self) -> Self {
     Self(lhs.tensor - rhs.tensor)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func += (_ lhs: inout Self, _ rhs: Self) {
     lhs = Self(lhs.tensor + rhs.tensor)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public static func -= (_ lhs: inout Self, _ rhs: Self) {
     lhs = Self(lhs.tensor - rhs.tensor)
   }
@@ -105,12 +118,12 @@ extension TensorVector: Differentiable {
 }
 
 extension TensorVector: Vector {
-  @differentiable
+  @differentiable(reverse)
   public static func *= (_ lhs: inout Self, _ rhs: Double) {
     lhs = Self(lhs.tensor * rhs)
   }
 
-  @differentiable
+  @differentiable(reverse)
   public func dot(_ other: Self) -> Double {
     (self.tensor * other.tensor).sum().scalarized()
   }

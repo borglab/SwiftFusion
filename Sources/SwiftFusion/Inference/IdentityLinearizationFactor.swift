@@ -49,7 +49,7 @@ public struct IdentityLinearizationFactor<Base: GaussianFactor>: LinearApproxima
   }
 
   /// Returns the error vector given the values of the adjacent variables.
-  @differentiable
+  @differentiable(reverse)
   public func errorVector(at x: Variables) -> ErrorVector {
     base.errorVector(at: x)
   }

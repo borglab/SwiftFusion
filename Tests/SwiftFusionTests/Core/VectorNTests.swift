@@ -2,7 +2,7 @@
 // See "generate.sh" in the root of this repository for instructions how to regenerate files.
 
 import Foundation
-import TensorFlow
+// import TensorFlow
 import XCTest
 
 import SwiftFusion

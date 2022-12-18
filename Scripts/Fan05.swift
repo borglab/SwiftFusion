@@ -5,7 +5,7 @@ import BeeDataset
 import BeeTracking
 import PythonKit
 import Foundation
-import TensorFlow
+// import TensorFlow
 
 /// Fan05: Error Landscape
 struct Fan05: ParsableCommand {

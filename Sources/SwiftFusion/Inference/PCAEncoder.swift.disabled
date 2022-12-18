@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import TensorFlow
+// import TensorFlow
 import PenguinStructures
 
 /// A class that does PCA decomposition
@@ -70,7 +70,7 @@ public struct PCAEncoder {
   /// Generate an image according to a latent
   /// Input: [H, W, C]
   /// Output: [d]
-  @differentiable
+  @differentiable(reverse)
   public func encode(_ image: Patch) -> Tensor<Double> {
     precondition(image.rank == 3 || (image.rank == 4), "wrong latent dimension \(image.shape)")
     let (N_) = (image.shape[0])

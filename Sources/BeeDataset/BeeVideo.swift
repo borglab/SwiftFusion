@@ -16,7 +16,7 @@ import _Differentiation
 import Foundation
 import ModelSupport
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 /// A video of bees, with tracking labels.
 public struct BeeVideo {

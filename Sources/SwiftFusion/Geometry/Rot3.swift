@@ -1,6 +1,6 @@
 
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 
 /// SO(3) group of 3D Rotations
 public struct Rot3: LieGroup, Equatable, KeyPathIterable {
@@ -15,7 +15,7 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   }
 
   /// Construct from a rotation matrix, as doubles in *row-major* order
-  @differentiable
+  @differentiable(reverse)
   public init(_ r11 : Double, _ r12 : Double, _ r13 : Double,
               _ r21 : Double, _ r22 : Double, _ r23 : Double,
               _ r31 : Double, _ r32 : Double, _ r33 : Double) {
@@ -25,14 +25,14 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
   }
   
   /// Create Manifold object from element of the tangent (Expmap)
-  @differentiable
+  @differentiable(reverse)
   public static func fromTangent(_ vector: Vector3) -> Self {
     return Rot3(coordinate: Rot3().coordinate.retract(vector))
   }
   
   /// Create Manifold object from a quaternion representation
   /// Using the Eigen convention
-  @differentiable
+  @differentiable(reverse)
   public static func fromQuaternion(_ w: Double, _ x: Double, _ y: Double, _ z: Double) -> Self {
     let tx  = 2.0 * x
     let ty  = 2.0 * y
@@ -58,19 +58,19 @@ public struct Rot3: LieGroup, Equatable, KeyPathIterable {
 /// Group actions.
 extension Rot3 {
   /// Returns the result of acting `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   public func rotate(_ v: Vector3) -> Vector3 {
     coordinate.rotate(v)
   }
   
   /// Returns the result of acting the inverse of `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   public func unrotate(_ v: Vector3) -> Vector3 {
     coordinate.unrotate(v)
   }
   
   /// Returns the result of acting `aRb` on `bp`.
-  @differentiable
+  @differentiable(reverse)
   public static func * (aRb: Rot3, bp: Vector3) -> Vector3 {
     aRb.rotate(bp)
   }
@@ -114,7 +114,7 @@ public struct Matrix3Coordinate: Equatable, KeyPathIterable {
 
 public extension Matrix3Coordinate {
   /// Construct from a rotation matrix, as doubles in *row-major* order
-  @differentiable
+  @differentiable(reverse)
   init(_ r11 : Double, _ r12 : Double, _ r13 : Double,
               _ r21 : Double, _ r22 : Double, _ r23 : Double,
               _ r31 : Double, _ r32 : Double, _ r33 : Double) {
@@ -137,23 +137,23 @@ extension Matrix3Coordinate: LieGroupCoordinate {
   }
   
   /// Product of two rotations.
-  @differentiable(wrt: (lhs, rhs))
+  @differentiable(reverse, wrt: (lhs, rhs))
   public static func * (lhs: Matrix3Coordinate, rhs: Matrix3Coordinate) -> Matrix3Coordinate {
     Matrix3Coordinate(matmul(lhs.R, rhs.R))
   }
   
   /// Inverse of the rotation.
-  @differentiable
+  @differentiable(reverse)
   public func inverse() -> Matrix3Coordinate {
     Matrix3Coordinate(R.transposed())
   }
 
-  @differentiable(wrt: v)
+  @differentiable(reverse, wrt: v)
   public func Adjoint(_ v: Vector3) -> Vector3 {
     rotate(v)
   }
 
-  @differentiable(wrt: v)
+  @differentiable(reverse, wrt: v)
   public func AdjointTranspose(_ v: Vector3) -> Vector3 {
     unrotate(v)
   }
@@ -162,19 +162,19 @@ extension Matrix3Coordinate: LieGroupCoordinate {
 /// Actions.
 extension Matrix3Coordinate {
   /// Returns the result of acting `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   func rotate(_ v: Vector3) -> Vector3 {
     matvec(R, v)
   }
 
   /// Returns the result of acting the inverse of `self` on `v`.
-  @differentiable
+  @differentiable(reverse)
   func unrotate(_ v: Vector3) -> Vector3 {
     matvec(R.transposed(), v)
   }
 }
 
-@differentiable
+@differentiable(reverse)
 func sqrtWrap(_ v: Double) -> Double {
   sqrt(v)
 }
@@ -189,7 +189,7 @@ func _vjpSqrt(_ v: Double) -> (value: Double, pullback: (Double) -> Double) {
 
 extension Matrix3Coordinate: ManifoldCoordinate {
   /// Compose with the exponential map
-  @differentiable(wrt: local)
+  @differentiable(reverse, wrt: local)
   public func retract(_ local: Vector3) -> Matrix3Coordinate {
     let theta2 = local.squaredNorm
     let nearZero = theta2 <= .ulpOfOne
@@ -213,7 +213,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
     }
   }
 
-  @differentiable(wrt: global)
+  @differentiable(reverse, wrt: global)
   public func localCoordinate(_ global: Matrix3Coordinate) -> Vector3 {
     let relative = self.inverse() * global
     let R = Vector9(relative.R)
@@ -248,7 +248,7 @@ extension Matrix3Coordinate: ManifoldCoordinate {
   }
 
   /// Construct from Tensor
-  @differentiable
+  @differentiable(reverse)
   init(_ matrix: Matrix3) {
     R = matrix
   }

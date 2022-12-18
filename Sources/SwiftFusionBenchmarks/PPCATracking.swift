@@ -15,7 +15,7 @@
 import _Differentiation
 import Benchmark
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 let ppcaTrackingBenchmark = BenchmarkSuite(name: "PPCATracking") { suite in
   /// Returns a factor graph with a single `PPCATrackingFactor` with randomly initialized

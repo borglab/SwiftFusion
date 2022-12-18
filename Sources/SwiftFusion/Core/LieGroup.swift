@@ -1,5 +1,5 @@
 import _Differentiation
-import TensorFlow
+// import TensorFlow
 
 /// An element of a Lie group.
 ///
@@ -19,7 +19,7 @@ extension LieGroup {
   }
 
   /// Returns the group inverse.
-  @differentiable(wrt: self)
+  @differentiable(reverse, wrt: self)
   public func inverse() -> Self {
     return Self(coordinate: self.coordinate.inverse())
   }
@@ -37,9 +37,9 @@ extension LieGroup {
   }
 
   /// The group operation.
-  @differentiable(wrt: (lhs, rhs))
-  @differentiable(wrt: lhs)
-  @differentiable(wrt: rhs)
+  @differentiable(reverse, wrt: (lhs, rhs))
+  @differentiable(reverse, wrt: lhs)
+  @differentiable(reverse, wrt: rhs)
   public static func * (_ lhs: Self, _ rhs: Self) -> Self {
     return Self(coordinate: lhs.coordinate * rhs.coordinate)
   }
@@ -113,11 +113,11 @@ public protocol LieGroupCoordinate: ManifoldCoordinate {
   init()
 
   /// Returns the group inverse.
-  @differentiable(wrt: self)
+  @differentiable(reverse, wrt: self)
   func inverse() -> Self
 
   /// The group operation.
-  @differentiable(wrt: (lhs, rhs))
+  @differentiable(reverse, wrt: (lhs, rhs))
   static func * (_ lhs: Self, _ rhs: Self) -> Self
 
   /// The Adjoint group action of `self` on `v`.
@@ -129,7 +129,7 @@ public protocol LieGroupCoordinate: ManifoldCoordinate {
   ///
   /// This is differentiable with respect to `v` so that we can use a `pullback` to transpose it in
   /// the default implementation for `AdjointTranspose`.
-  @differentiable(wrt: v)
+  @differentiable(reverse, wrt: v)
   func Adjoint(_ v: LocalCoordinate) -> LocalCoordinate
 
   /// The transpose of the Adjoint group action of `self` on `v`.
@@ -144,7 +144,7 @@ public protocol LieGroupCoordinate: ManifoldCoordinate {
 /// Default implementations of `Adjoint` and `AdjointTranspose` in terms of other group
 /// operations.
 extension LieGroupCoordinate {
-  @differentiable(wrt: v)
+  @differentiable(reverse, wrt: v)
   public func Adjoint(_ v: LocalCoordinate) -> LocalCoordinate {
     return defaultAdjoint(v)
   }
@@ -155,7 +155,7 @@ extension LieGroupCoordinate {
 
   /// The default implementation of `Adjoint`, provided so that implementers can test their
   /// implementation against the default implementation.
-  @differentiable(wrt: v)
+  @differentiable(reverse, wrt: v)
   public func defaultAdjoint(_ v: LocalCoordinate) -> LocalCoordinate {
     let identity = Self()
     func log(_ g: Self) -> LocalCoordinate { return identity.localCoordinate(g) }
@@ -172,7 +172,7 @@ extension LieGroupCoordinate {
 }
 
 /// Calculate relative pose 1T2 between two poses wT1 and wT2
-@differentiable(wrt: (wT1, wT2))
+@differentiable(reverse, wrt: (wT1, wT2))
 public func between<T: LieGroup & Differentiable>(_ wT1: T, _ wT2: T) -> T {
   wT1.inverse() * wT2
 }

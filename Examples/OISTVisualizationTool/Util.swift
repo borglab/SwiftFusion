@@ -7,7 +7,7 @@ import PenguinStructures
 import PenguinParallelWithFoundation
 import PythonKit
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 import Foundation
 
 /// Returns a `[[h, w, c]]` batch of normalized patches from a VOT video, and returns the

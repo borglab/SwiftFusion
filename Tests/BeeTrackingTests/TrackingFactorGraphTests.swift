@@ -5,7 +5,7 @@ import PenguinStructures
 import BeeDataset
 import BeeTracking
 import SwiftFusion
-import TensorFlow
+// import TensorFlow
 
 class TrackingFactorGraphTests: XCTestCase {
   let datasetDirectory = URL.sourceFileDirectory().appendingPathComponent("../BeeDatasetTests/fakeDataset")
